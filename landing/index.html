@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>POLICE EXAM - เตรียมพร้อมสู่เครื่องแบบ</title>
+  <!-- Google Fonts: Kanit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="css/style.css">
+  <!-- Google Identity Services SDK -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <!-- External Application Script -->
+  <script src="js/app.js" defer></script>
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <header class="navbar">
+    <div class="nav-container">
+      <a href="#" class="logo">
+        <!-- Red Shield Icon -->
+        <svg class="logo-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 22C12 22 20 18 20 12V5L12 2L4 5V12C4 18 12 22 12 22Z" fill="#BD1B0B" stroke="#BD1B0B" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M9 11L11 13L15 9" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="logo-text">POLICE<span class="logo-highlight">EXAM</span></span>
+      </a>
+      
+      <!-- Hamburger Menu for Mobile -->
+      <button class="menu-toggle" id="menuToggle" aria-label="Toggle Navigation Menu">
+        <svg class="hamburger-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="4" y1="6" x2="20" y2="6" stroke-linecap="round"/>
+          <line x1="4" y1="12" x2="20" y2="12" stroke-linecap="round"/>
+          <line x1="4" y1="18" x2="20" y2="18" stroke-linecap="round"/>
+        </svg>
+      </button>
+
+      <!-- Nav Links & Auth States -->
+      <nav class="nav-menu" id="navMenu">
+        <!-- Default State: Log In & Register Links -->
+        <div class="nav-auth-links" id="navAuthLinks">
+          <a href="#" class="nav-link open-login-btn">เข้าสู่ระบบ</a>
+          <a href="#" class="btn-register open-register-btn">สมัครสมาชิก</a>
+        </div>
+        
+        <!-- Authenticated State: Profile Details -->
+        <div class="nav-profile-container" id="navProfile" style="display: none;">
+          <img src="" alt="User Avatar" class="user-avatar" id="userAvatar">
+          <span class="user-name" id="userName"></span>
+          <button class="btn-logout" id="btnLogout">ออกจากระบบ</button>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="container hero-container">
+      
+      <!-- AI Powered Badge -->
+      <div class="gemini-badge">
+        <svg class="sparkle-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 3V6M12 18V21M3 12H6M18 12H21M5.63604 5.63604L7.75736 7.75736M16.2426 16.2426L18.364 18.364M18.364 5.63604L16.2426 7.75736M7.75736 16.2426L5.63604 18.364M12 8C9.79086 8 8 9.79086 8 12C8 14.2091 9.79086 16 12 16C14.2091 16 16 14.2091 16 12C16 9.79086 14.2091 8 12 8Z" stroke="#BD1B0B" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <span>ขับเคลื่อนด้วย Gemini AI</span>
+      </div>
+
+      <!-- Main Heading -->
+      <h1 class="hero-title">
+        เตรียมพร้อม<br>
+        <span class="text-primary">สู่เครื่องแบบ</span>
+      </h1>
+
+      <!-- Hero Subtitle -->
+      <p class="hero-subtitle">
+        แพลตฟอร์มเตรียมสอบนายสิบตำรวจที่ครบวงจร ข้อสอบกว่า 50,000 ข้อ AI วิเคราะห์จุดอ่อน และ Battle Arena
+      </p>
+
+      <!-- CTA Buttons -->
+      <div class="hero-actions">
+        <a href="#" class="btn btn-primary open-register-btn">
+          <span>เริ่มต้นฟรี</span>
+          <svg class="arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="5" y1="12" x2="19" y2="12" stroke-linecap="round"/>
+            <polyline points="12 5 19 12 12 19" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </a>
+        <a href="#" class="btn btn-secondary open-login-btn">เข้าสู่ระบบ</a>
+      </div>
+
+      <!-- Stats Grid -->
+      <div class="stats-grid">
+        <div class="stat-item">
+          <span class="stat-number">15K+</span>
+          <span class="stat-label">ผู้ใช้งาน</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <span class="stat-number">50K+</span>
+          <span class="stat-label">ข้อสอบ</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <span class="stat-number">92%</span>
+          <span class="stat-label">ผ่านสอบ</span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Features Grid Section -->
+  <section class="features-section">
+    <div class="container">
+      <h2 class="section-title">ฟีเจอร์ครบครัน</h2>
+      
+      <div class="features-grid">
+        <!-- Feature 1: AI สร้างข้อสอบ -->
+        <div class="feature-card">
+          <div class="feature-icon-wrapper">
+            <!-- Brain Icon -->
+            <svg viewBox="0 0 24 24" fill="none" stroke="#BD1B0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/>
+              <path d="M12 6v12M8 10h8M9 14h6"/>
+            </svg>
+          </div>
+          <h3 class="feature-name">AI สร้างข้อสอบ</h3>
+        </div>
+
+        <!-- Feature 2: วิเคราะห์จุดอ่อน -->
+        <div class="feature-card">
+          <div class="feature-icon-wrapper">
+            <!-- Target Icon -->
+            <svg viewBox="0 0 24 24" fill="none" stroke="#BD1B0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <circle cx="12" cy="12" r="6"/>
+              <circle cx="12" cy="12" r="2"/>
+            </svg>
+          </div>
+          <h3 class="feature-name">วิเคราะห์จุดอ่อน</h3>
+        </div>
+
+        <!-- Feature 3: Battle Arena -->
+        <div class="feature-card">
+          <div class="feature-icon-wrapper">
+            <!-- Sword Icon -->
+            <svg viewBox="0 0 24 24" fill="none" stroke="#BD1B0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5"/>
+              <line x1="13" y1="19" x2="19" y2="13"/>
+              <line x1="16" y1="20" x2="20" y2="16"/>
+              <line x1="19" y1="21" x2="21" y2="19"/>
+            </svg>
+          </div>
+          <h3 class="feature-name">Battle Arena</h3>
+        </div>
+
+        <!-- Feature 4: Vocab Arena -->
+        <div class="feature-card">
+          <div class="feature-icon-wrapper">
+            <!-- Speaker Icon -->
+            <svg viewBox="0 0 24 24" fill="none" stroke="#BD1B0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
+            </svg>
+          </div>
+          <h3 class="feature-name">Vocab Arena</h3>
+        </div>
+
+        <!-- Feature 5: Bookmark -->
+        <div class="feature-card">
+          <div class="feature-icon-wrapper">
+            <!-- Bookmark Icon -->
+            <svg viewBox="0 0 24 24" fill="none" stroke="#BD1B0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+            </svg>
+          </div>
+          <h3 class="feature-name">Bookmark</h3>
+        </div>
+
+        <!-- Feature 6: Leaderboard -->
+        <div class="feature-card">
+          <div class="feature-icon-wrapper">
+            <!-- Trophy Icon -->
+            <svg viewBox="0 0 24 24" fill="none" stroke="#BD1B0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.45 1-1 1H4v2h16v-2h-5c-.55 0-1-.45-1-1v-2.34"/>
+              <path d="M12 2a4 4 0 0 1 4 4v7c0 .55-.45 1-1 1H9c-.55 0-1-.45-1-1V6a4 4 0 0 1 4-4z"/>
+            </svg>
+          </div>
+          <h3 class="feature-name">Leaderboard</h3>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Announcements Section -->
+  <section class="announcements-section">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">ประกาศล่าสุด</h2>
+        <a href="#" class="view-all-link">
+          <span>ทั้งหมด</span>
+          <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+        </a>
+      </div>
+
+      <div class="announcement-list" id="announcementList">
+        <!-- Announcements will be loaded from database via API -->
+        <div class="announcement-loading" style="text-align:center;padding:32px;color:#64748B;font-size:14px;">
+          กำลังโหลดข้อมูลประกาศ...
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================
+       Log In Modal (เข้าสู่ระบบ)
+       ========================================== -->
+  <div class="modal-overlay" id="loginModal">
+    <div class="modal-card">
+      <button class="modal-close" id="closeLogin" aria-label="ปิด">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+      
+      <div class="modal-header">
+        <div class="modal-logo-wrapper">
+          <!-- Red Shield Outline on red box -->
+          <svg class="modal-logo-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 22C12 22 20 18 20 12V5L12 2L4 5V12C4 18 12 22 12 22Z" fill="none" stroke="white" stroke-width="2" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <h2 class="modal-title">เข้าสู่ระบบ</h2>
+        <p class="modal-subtitle">ยินดีต้อนรับกลับมา</p>
+      </div>
+
+      <form class="modal-form" id="loginForm">
+        <div class="form-group">
+          <label class="form-label">อีเมล</label>
+          <input type="email" class="form-input-field" placeholder="example@email.com" required>
+        </div>
+        
+        <div class="form-group">
+          <div class="label-row">
+            <label class="form-label">รหัสผ่าน</label>
+            <a href="#" class="forgot-password-link" onclick="alert('ฟีเจอร์กู้คืนรหัสผ่านจะพร้อมใช้งานเร็วๆ นี้');">ลืมรหัสผ่าน?</a>
+          </div>
+          <input type="password" class="form-input-field" placeholder="........" required>
+        </div>
+
+        <button type="submit" class="btn-modal-submit">เข้าสู่ระบบ</button>
+      </form>
+
+      <div class="modal-or-divider">
+        <span>หรือ</span>
+      </div>
+
+      <button class="btn-modal-google">
+        <svg class="google-logo" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+          <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+          <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/>
+          <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/>
+        </svg>
+        <span>Sign in with Google</span>
+      </button>
+
+      <div class="modal-footer-text">
+        ยังไม่มีบัญชี? <a href="#" class="red-link" id="linkToRegister">สมัครสมาชิก</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       Register Modal (สมัครสมาชิก)
+       ========================================== -->
+  <div class="modal-overlay" id="registerModal">
+    <div class="modal-card">
+      <button class="modal-close" id="closeRegister" aria-label="ปิด">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+      
+      <div class="modal-header">
+        <div class="modal-logo-wrapper">
+          <!-- Red Shield Outline on red box -->
+          <svg class="modal-logo-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 22C12 22 20 18 20 12V5L12 2L4 5V12C4 18 12 22 12 22Z" fill="none" stroke="white" stroke-width="2" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <h2 class="modal-title">สมัครสมาชิก</h2>
+        <p class="modal-subtitle">เริ่มต้นเตรียมสอบ ฟรี!</p>
+      </div>
+
+      <form class="modal-form" id="registerForm">
+        <!-- Multi-column First/Last Name -->
+        <div class="form-row-2">
+          <div class="form-group">
+            <label class="form-label">ชื่อ</label>
+            <input type="text" class="form-input-field" placeholder="สมชาย" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">นามสกุล</label>
+            <input type="text" class="form-input-field" placeholder="ใจดี" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">อีเมล</label>
+          <input type="email" class="form-input-field" placeholder="example@email.com" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">เบอร์โทรศัพท์</label>
+          <input type="tel" class="form-input-field" placeholder="08X-XXX-XXXX" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">รหัสผ่าน</label>
+          <input type="password" class="form-input-field" placeholder="อย่างน้อย 8 ตัวอักษร" required minlength="8">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">ยืนยันรหัสผ่าน</label>
+          <input type="password" class="form-input-field" placeholder="........" required minlength="8">
+        </div>
+
+        <!-- Checkbox with styled terms link -->
+        <div class="form-group-checkbox">
+          <input type="checkbox" id="termsCheck" required>
+          <label for="termsCheck" class="checkbox-label">
+            ฉันยอมรับ <a href="#" class="red-link" onclick="alert('ข้อกำหนดการใช้งาน'); event.stopPropagation();">ข้อกำหนดการใช้งาน</a> และ <a href="#" class="red-link" onclick="alert('นโยบายความเป็นส่วนตัว'); event.stopPropagation();">นโยบายความเป็นส่วนตัว</a>
+          </label>
+        </div>
+
+        <button type="submit" class="btn-modal-submit">สมัครสมาชิก</button>
+      </form>
+
+      <div class="modal-or-divider">
+        <span>หรือ</span>
+      </div>
+
+      <button class="btn-modal-google">
+        <svg class="google-logo" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+          <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+          <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/>
+          <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/>
+        </svg>
+        <span>สมัครด้วย Google</span>
+      </button>
+
+      <div class="modal-footer-text">
+        มีบัญชีแล้ว? <a href="#" class="red-link" id="linkToLogin">เข้าสู่ระบบ</a>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

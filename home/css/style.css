@@ -1,0 +1,763 @@
+/* ==========================================
+   Design Tokens & CSS Variables
+   ========================================== */
+:root {
+  /* Colors */
+  --primary-color: #BD1B0B;
+  --primary-hover: #9E1307;
+  --primary-light: #FFF1F2;
+  --primary-light-hover: #FFE4E6;
+  
+  --text-dark: #0F172A;
+  --text-medium: #334155;
+  --text-light: #64748B;
+  --text-white: #FFFFFF;
+  
+  --bg-main: #F8FAFC; /* iOS-style soft gray background */
+  --bg-card: #FFFFFF;
+  
+  --border-color: #E2E8F0;
+  --border-hover: #CBD5E1;
+  
+  /* Badge Colors */
+  --badge-green-bg: #E6F4EA;
+  --badge-green-text: #137333;
+  --badge-blue-bg: #E8F0FE;
+  --badge-blue-text: #1A73E8;
+
+  /* Typography */
+  --font-family: 'Kanit', sans-serif;
+  
+  /* Transitions */
+  --transition-fast: all 0.2s ease;
+  --transition-normal: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* Shadow */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.06), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.04), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
+}
+
+/* ==========================================
+   Reset & Global Styles
+   ========================================== */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-family);
+  background-color: var(--bg-main);
+  color: var(--text-dark);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  padding-bottom: 90px; /* Spacing for sticky bottom nav */
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+  transition: var(--transition-fast);
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+  outline: none;
+}
+
+/* Layout Container */
+.container {
+  width: 100%;
+  max-width: 600px; /* Mobile dashboard focus */
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+/* ==========================================
+   Top Header Component
+   ========================================== */
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background-color: var(--bg-card);
+  border-bottom: 1px solid var(--border-color);
+  padding: 14px 0;
+}
+
+.nav-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.logo-icon {
+  width: 24px;
+  height: 24px;
+}
+
+.logo-text {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-dark);
+  letter-spacing: -0.5px;
+}
+
+.logo-highlight {
+  color: var(--primary-color);
+}
+
+/* Header Actions (Notification + Profile) */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.btn-notification {
+  position: relative;
+  color: var(--text-medium);
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: var(--transition-fast);
+}
+
+.btn-notification:hover {
+  background-color: var(--bg-main);
+  color: var(--primary-color);
+}
+
+.btn-notification svg {
+  width: 22px;
+  height: 22px;
+}
+
+/* Notification red badge dot */
+.notification-badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 8px;
+  height: 8px;
+  background-color: var(--primary-color);
+  border-radius: 50%;
+  border: 1.5px solid var(--bg-card);
+  display: none; /* Toggled via JS */
+}
+
+.notification-badge.active {
+  display: block;
+  animation: scalePop 0.3s ease;
+}
+
+/* Profile menu */
+.profile-menu-container {
+  position: relative;
+}
+
+.btn-profile-menu {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.header-avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.default-avatar {
+  width: 100%;
+  height: 100%;
+  background-color: var(--primary-color);
+  color: var(--text-white);
+  font-weight: 600;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Dropdown Menu */
+.profile-dropdown {
+  position: absolute;
+  top: 48px;
+  right: 0;
+  width: 220px;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+  padding: 12px;
+  display: none;
+  z-index: 200;
+  animation: slideIn 0.2s ease forwards;
+}
+
+.profile-dropdown.active {
+  display: block;
+}
+
+.dropdown-header {
+  display: flex;
+  flex-direction: column;
+  padding: 4px 8px 8px 8px;
+  text-align: left;
+}
+
+.dropdown-user-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.dropdown-user-email {
+  font-size: 12px;
+  color: var(--text-light);
+  word-break: break-all;
+}
+
+.dropdown-divider {
+  height: 1px;
+  background-color: var(--border-color);
+  margin: 8px 0;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  font-size: 14px;
+  color: var(--text-medium);
+  border-radius: 8px;
+  transition: var(--transition-fast);
+  text-align: left;
+}
+
+.dropdown-item:hover {
+  background-color: var(--bg-main);
+  color: var(--primary-color);
+}
+
+.dropdown-item svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* ==========================================
+   Greeting Section
+   ========================================== */
+.greeting-section {
+  padding: 24px 0 16px 0;
+  text-align: left;
+}
+
+.greeting-subtitle {
+  font-size: 14px;
+  color: var(--text-light);
+}
+
+.greeting-title {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin-top: 2px;
+  margin-bottom: 12px;
+}
+
+.countdown-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: var(--primary-light);
+  color: var(--primary-color);
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.clock-icon {
+  width: 15px;
+  height: 15px;
+}
+
+/* ==========================================
+   Daily Target Banner
+   ========================================== */
+.target-card {
+  background-color: var(--primary-color);
+  border-radius: 20px;
+  padding: 20px;
+  color: var(--text-white);
+  box-shadow: 0 10px 20px -5px rgba(189, 27, 11, 0.15);
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.target-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.target-subtitle {
+  font-size: 13px;
+  opacity: 0.9;
+  font-weight: 300;
+}
+
+.target-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+/* Play/Start Exam Button */
+.btn-start-exam {
+  background-color: var(--bg-card);
+  color: var(--primary-color);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 14px;
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition-normal);
+}
+
+.btn-start-exam:hover {
+  transform: scale(1.05);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-start-exam:active {
+  transform: scale(0.95);
+}
+
+.play-icon {
+  width: 12px;
+  height: 12px;
+}
+
+/* Target Progress Bar */
+.target-progress-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.progress-bar-bg {
+  width: 100%;
+  height: 8px;
+  background-color: rgba(255, 255, 255, 0.25);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background-color: var(--text-white);
+  border-radius: 99px;
+  transition: width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.progress-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+/* ==========================================
+   Stats Grid (2x2 Mobile Layout)
+   ========================================== */
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: var(--transition-fast);
+  text-align: left;
+}
+
+.stat-card:hover {
+  border-color: var(--border-hover);
+  box-shadow: var(--shadow-sm);
+}
+
+.stat-icon-wrapper {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stat-icon-wrapper svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Custom icon themes */
+.stat-red {
+  background-color: #FFF1F2;
+  color: var(--primary-color);
+}
+.stat-blue {
+  background-color: #EFF6FF;
+  color: #2563EB;
+}
+.stat-yellow {
+  background-color: #FEF3C7;
+  color: #D97706;
+}
+.stat-green {
+  background-color: #ECFDF5;
+  color: #059669;
+}
+
+.stat-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: var(--text-light);
+}
+
+.stat-number {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-dark);
+  line-height: 1.2;
+}
+
+/* ==========================================
+   Recent Results Section
+   ========================================== */
+.recent-results {
+  margin-bottom: 24px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  text-align: left;
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.report-link {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--primary-color);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.report-link:hover {
+  text-decoration: underline;
+}
+
+.report-link svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Result List Card */
+.result-list-container {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 6px 16px;
+}
+
+.result-item {
+  padding: 14px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-bottom: 1px solid #F1F5F9;
+}
+
+.result-item:last-child {
+  border-bottom: none;
+}
+
+.result-meta {
+  display: flex;
+  align-items: center;
+  text-align: left;
+}
+
+.subject-name {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-dark);
+  flex: 1;
+}
+
+.subject-score {
+  font-size: 15px;
+  font-weight: 600;
+  margin-right: 16px;
+}
+
+.score-green {
+  color: #16A34A;
+}
+
+.score-orange {
+  color: #EA580C;
+}
+
+.exam-date {
+  font-size: 12px;
+  color: var(--text-light);
+  min-width: 45px;
+  text-align: right;
+}
+
+/* Mini Bar inside item */
+.result-bar-bg {
+  width: 100%;
+  height: 5px;
+  background-color: #E2E8F0;
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.result-bar-fill {
+  height: 100%;
+  background-color: var(--primary-color);
+  border-radius: 99px;
+}
+
+/* ==========================================
+   Other Features Scrollable Section
+   ========================================== */
+.other-features {
+  margin-bottom: 24px;
+  text-align: left;
+}
+
+.other-features .section-title {
+  margin-bottom: 12px;
+}
+
+.features-scroll-wrapper {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  /* Hide scrollbar */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.features-scroll-wrapper::-webkit-scrollbar {
+  display: none;
+}
+
+.scroll-card {
+  min-width: 110px;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 12px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  transition: var(--transition-fast);
+}
+
+.scroll-card:hover {
+  border-color: var(--primary-color);
+  transform: translateY(-2px);
+}
+
+.scroll-icon-wrapper {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background-color: var(--primary-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.scroll-icon-wrapper svg {
+  width: 18px;
+  height: 18px;
+}
+
+.scroll-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-medium);
+}
+
+/* ==========================================
+   Sticky Bottom Navigation
+   ========================================== */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background-color: var(--bg-card);
+  border-top: 1px solid var(--border-color);
+  padding: 10px 0 20px 0; /* Padding bottom for phone safe-area */
+  z-index: 500;
+  box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.02);
+}
+
+.bottom-nav-container {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.nav-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-light);
+  transition: var(--transition-fast);
+  flex: 1;
+}
+
+.nav-tab:hover {
+  color: var(--text-medium);
+}
+
+.nav-tab.active {
+  color: var(--primary-color);
+}
+
+.tab-icon {
+  width: 22px;
+  height: 22px;
+  transition: var(--transition-fast);
+}
+
+.nav-tab.active .tab-icon {
+  transform: scale(1.05);
+}
+
+.tab-label {
+  font-size: 11px;
+  font-weight: 500;
+}
+
+/* ==========================================
+   Keyframes
+   ========================================== */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scalePop {
+  0% {
+    transform: scale(0);
+  }
+  80% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* ==========================================
+   PC/Tablet Breakpoints
+   ========================================== */
+@media (min-width: 768px) {
+  body {
+    padding-bottom: 40px; /* Remove bottom nav padding for desktop */
+  }
+
+  .container {
+    max-width: 720px;
+  }
+  
+  .navbar .nav-container {
+    max-width: 720px;
+  }
+
+  /* Stat cards 4 columns instead of 2 */
+  .stats-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  /* Bottom nav changes to a clean top bar? 
+     Mockup is a mobile screen, so bottom nav is standard. 
+     We can keep bottom nav centered & compact at the bottom */
+  .bottom-nav {
+    max-width: 720px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-radius: 20px 20px 0 0;
+    box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.05);
+  }
+}
