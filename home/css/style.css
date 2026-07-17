@@ -767,6 +767,9 @@ button {
 
   .container {
     max-width: 960px;
+  }
+
+  #homeView.active {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 24px;
