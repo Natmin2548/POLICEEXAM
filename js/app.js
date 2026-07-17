@@ -153,7 +153,7 @@ loginForm.addEventListener('submit', async (e) => {
     sessionStorage.setItem('userProfile', JSON.stringify(data.user));
 
     hideModal(loginModal);
-    window.location.href = '../home/index.html';
+    window.location.href = 'home/index.html';
 
   } catch (err) {
     console.error('Login fetch error:', err);
@@ -253,8 +253,8 @@ window.addEventListener('DOMContentLoaded', () => {
     .catch(err => {
       console.error('Failed to fetch auth config:', err);
       // Fallback: try reading from .env
-      fetch('../.env')
-        .then(res => res.ok ? res.text() : fetch('.env').then(r => r.text()))
+      fetch('.env')
+        .then(res => res.text())
         .then(text => {
           const lines = text.split('\n');
           for (let line of lines) {
@@ -320,7 +320,7 @@ async function handleGoogleCredential(response) {
     hideModal(loginModal);
     hideModal(registerModal);
 
-    window.location.href = '../home/index.html';
+    window.location.href = 'home/index.html';
 
   } catch (err) {
     console.error('Google auth fetch error:', err);

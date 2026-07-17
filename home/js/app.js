@@ -17,7 +17,7 @@ function checkSession() {
 
   if (!authToken || !sessionData) {
     alert('กรุณาเข้าสู่ระบบก่อนใช้งานแดชบอร์ด');
-    window.location.href = '../landing/index.html';
+    window.location.href = '../index.html';
     return;
   }
 
@@ -74,7 +74,7 @@ async function loadRealProfile() {
     if (!res.ok) {
       if (res.status === 401 || res.status === 403) {
         sessionStorage.clear();
-        window.location.href = '../landing/index.html';
+        window.location.href = '../index.html';
         return;
       }
       throw new Error('Profile fetch failed');
@@ -341,7 +341,7 @@ function handleLogout() {
   const confirmLog = confirm('คุณต้องการออกจากระบบใช่หรือไม่?');
   if (confirmLog) {
     sessionStorage.clear();
-    window.location.href = '../landing/index.html';
+    window.location.href = '../index.html';
   }
 }
 
