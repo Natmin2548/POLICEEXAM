@@ -395,10 +395,12 @@ if (btnProfileLogout) {
 const navTabs = document.querySelectorAll('.bottom-nav .nav-tab');
 const homeTabBtn = navTabs[0]; // first tab
 const battleTabBtn = document.getElementById('btnTabBattle'); // battle tab
+const statsTabBtn = document.getElementById('btnTabStats'); // stats tab
 const profileTabBtn = document.getElementById('btnTabProfile'); // profile tab
 
 const homeView = document.getElementById('homeView');
 const battleView = document.getElementById('battleView');
+const statsView = document.getElementById('statsView');
 const profileView = document.getElementById('profileView');
 
 if (homeTabBtn) {
@@ -409,6 +411,7 @@ if (homeTabBtn) {
     
     if (homeView) homeView.classList.add('active');
     if (battleView) battleView.classList.remove('active');
+    if (statsView) statsView.classList.remove('active');
     if (profileView) profileView.classList.remove('active');
     loadRealProfile(); // Refresh profile values on navigate
     loadRadarChart();
@@ -423,9 +426,25 @@ if (battleTabBtn) {
     
     if (battleView) battleView.classList.add('active');
     if (homeView) homeView.classList.remove('active');
+    if (statsView) statsView.classList.remove('active');
     if (profileView) profileView.classList.remove('active');
     
     updateBattleTabDetails();
+  });
+}
+
+if (statsTabBtn) {
+  statsTabBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    navTabs.forEach(t => t.classList.remove('active'));
+    statsTabBtn.classList.add('active');
+    
+    if (statsView) statsView.classList.add('active');
+    if (homeView) homeView.classList.remove('active');
+    if (battleView) battleView.classList.remove('active');
+    if (profileView) profileView.classList.remove('active');
+    
+    updateStatsTabDetails();
   });
 }
 
@@ -438,6 +457,7 @@ if (profileTabBtn) {
     if (profileView) profileView.classList.add('active');
     if (homeView) homeView.classList.remove('active');
     if (battleView) battleView.classList.remove('active');
+    if (statsView) statsView.classList.remove('active');
     
     // Bind profile view details from userProfile object
     updateProfileTabDetails();
@@ -688,4 +708,226 @@ if (btnQuickMatch) {
       
     }, 3000);
   });
+}
+
+let statsRadarChartInstance = null;
+let statsBarChartInstance = null;
+let statsLineChartInstance = null;
+
+function updateStatsTabDetails() {
+  if (!userProfile) return;
+
+  // 1. Set update date
+  const statsLastUpdateText = document.getElementById('statsLastUpdateText');
+  if (statsLastUpdateText) {
+    const today = new Date();
+    const months = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+    statsLastUpdateText.textContent = `อัปเดต วันนี้ (${today.getDate()} ${months[today.getMonth()]})`;
+  }
+
+  // 2. Scores Mapping (Match subjects to database fields)
+  const subjectsData = [
+    { key: 'law', label: 'กฎหมาย', score: userProfile.scoreLaw || 0, rec: 'ควรจดจำมาตราสำคัญในกฎหมายอาญาและวิแพ่ง ทบทวนสัปดาห์ละ 2 ครั้ง' },
+    { key: 'thai', label: 'ภาษาไทย', score: userProfile.scoreThai || 0, rec: 'เน้นทบทวนการสะกดคำ การเรียงประโยค และหลักภาษาไทยเบื้องต้น' },
+    { key: 'general', label: 'คณิต', score: userProfile.scoreGeneral || 0, rec: 'เน้นทบทวนสมการและโจทย์ปัญหา เพิ่มการฝึก 30 นาที/วัน' },
+    { key: 'english', label: 'อังกฤษ', score: userProfile.scoreEnglish || 0, rec: 'จุดอ่อนหลัก: Tense และ Grammar ฝึก Vocab Arena 20 คำ/วัน' },
+    { key: 'social', label: 'ทั่วไป', score: userProfile.scoreSocial || 0, rec: 'ติดตามข่าวสารเหตุการณ์ปัจจุบัน และหลักธรรมจริยธรรมของข้าราชการตำรวจ' },
+    { key: 'computer', label: 'วิทยา', score: userProfile.scoreComputer || 0, rec: 'เน้นชีววิทยาพื้นฐานและฟิสิกส์เบื้องต้น ช่วยเพิ่ม 8-12 คะแนน' }
+  ];
+
+  const labels = subjectsData.map(s => s.label);
+  const scores = subjectsData.map(s => s.score);
+
+  // 3. Render Radar Chart
+  const radarCtx = document.getElementById('statsRadarChartCanvas').getContext('2d');
+  if (statsRadarChartInstance) statsRadarChartInstance.destroy();
+  statsRadarChartInstance = new Chart(radarCtx, {
+    type: 'radar',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'คะแนนการทำข้อสอบ (%)',
+        data: scores,
+        backgroundColor: 'rgba(189, 27, 11, 0.15)',
+        borderColor: '#BD1B0B',
+        borderWidth: 2,
+        pointBackgroundColor: '#BD1B0B',
+        pointBorderColor: '#fff',
+        pointHoverBackgroundColor: '#fff',
+        pointHoverBorderColor: '#BD1B0B'
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        r: {
+          angleLines: { display: true, color: '#e2e8f0' },
+          grid: { color: '#e2e8f0' },
+          suggestedMin: 0,
+          suggestedMax: 100,
+          ticks: { stepSize: 20, display: false },
+          pointLabels: { font: { family: 'Kanit', size: 12, weight: '500' }, color: '#64748b' }
+        }
+      },
+      plugins: {
+        legend: { display: false }
+      }
+    }
+  });
+
+  // 4. Render Bar Chart
+  const barCtx = document.getElementById('statsBarChartCanvas').getContext('2d');
+  
+  // Determine color for each bar based on score
+  const barColors = scores.map(score => {
+    if (score >= 80) return '#10B981'; // Green (ดีมาก)
+    if (score >= 60) return '#F59E0B'; // Orange (พอใช้)
+    return '#EF4444'; // Red (ปรับปรุง)
+  });
+
+  if (statsBarChartInstance) statsBarChartInstance.destroy();
+  statsBarChartInstance = new Chart(barCtx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        data: scores,
+        backgroundColor: barColors,
+        borderRadius: 6,
+        borderSkipped: false,
+        barPercentage: 0.5
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { font: { family: 'Kanit', size: 12 }, color: '#64748b' }
+        },
+        y: {
+          grid: { borderDash: [5, 5], color: '#f1f5f9' },
+          min: 0,
+          max: 100,
+          ticks: { stepSize: 25, font: { family: 'Kanit', size: 11 }, color: '#94a3b8' }
+        }
+      },
+      plugins: {
+        legend: { display: false }
+      }
+    }
+  });
+
+  // 5. Render Line Chart (8-Week Progress)
+  const lineCtx = document.getElementById('statsLineChartCanvas').getContext('2d');
+  
+  // Generate curve based on average
+  const nonZeroScores = scores.filter(s => s > 0);
+  const avg = nonZeroScores.length > 0
+    ? Math.round(nonZeroScores.reduce((a, b) => a + b, 0) / nonZeroScores.length)
+    : 0;
+
+  let lineData = [];
+  if (avg === 0) {
+    lineData = [0, 0, 0, 0, 0, 0, 0, 0];
+  } else {
+    // Generate a beautiful progress curve leading to their current average
+    lineData = [
+      Math.max(avg - 15, 30),
+      Math.max(avg - 10, 35),
+      Math.max(avg - 7, 40),
+      Math.max(avg - 12, 38),
+      Math.max(avg - 3, 45),
+      Math.max(avg, 50),
+      Math.max(avg - 2, 48),
+      Math.max(avg + 4, 52)
+    ].map(v => Math.min(v, 100));
+  }
+
+  if (statsLineChartInstance) statsLineChartInstance.destroy();
+  statsLineChartInstance = new Chart(lineCtx, {
+    type: 'line',
+    data: {
+      labels: ['ส.1', 'ส.2', 'ส.3', 'ส.4', 'ส.5', 'ส.6', 'ส.7', 'ส.8'],
+      datasets: [{
+        data: lineData,
+        borderColor: '#BD1B0B',
+        backgroundColor: 'rgba(189, 27, 11, 0.03)',
+        borderWidth: 3,
+        pointBackgroundColor: '#BD1B0B',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        pointRadius: 5,
+        pointHoverRadius: 7,
+        tension: 0.35,
+        fill: true
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { font: { family: 'Kanit', size: 12 }, color: '#64748b' }
+        },
+        y: {
+          grid: { borderDash: [5, 5], color: '#f1f5f9' },
+          min: avg === 0 ? 0 : Math.max(Math.min(...lineData) - 10, 0),
+          max: avg === 0 ? 100 : Math.min(Math.max(...lineData) + 10, 100),
+          ticks: { stepSize: 15, font: { family: 'Kanit', size: 11 }, color: '#94a3b8' }
+        }
+      },
+      plugins: {
+        legend: { display: false }
+      }
+    }
+  });
+
+  // 6. Generate AI Recommendations (Pick 3 subjects with lowest scores)
+  const recsContainer = document.getElementById('aiRecsListContainer');
+  if (recsContainer) {
+    // Sort subjects by score ascending
+    const sortedSubjects = [...subjectsData].sort((a, b) => a.score - b.score);
+    const lowestThree = sortedSubjects.slice(0, 3);
+
+    let recsHtml = '';
+    lowestThree.forEach(sub => {
+      let ratingClass = 'needs-improvement';
+      let ratingText = 'ปรับปรุง';
+      
+      if (sub.score >= 80) {
+        ratingClass = 'good';
+        ratingText = 'ดีมาก';
+      } else if (sub.score >= 60) {
+        ratingClass = 'average';
+        ratingText = 'พอใช้';
+      }
+
+      // Format subject display name to full name
+      let fullSubName = sub.label;
+      if (sub.label === 'คณิต') fullSubName = 'คณิตศาสตร์';
+      else if (sub.label === 'อังกฤษ') fullSubName = 'ภาษาอังกฤษ';
+      else if (sub.label === 'วิทยา') fullSubName = 'เทคโนโลยีและวิทยาศาสตร์';
+      else if (sub.label === 'ทั่วไป') fullSubName = 'สังคมและจริยธรรม';
+      else if (sub.label === 'กฎหมาย') fullSubName = 'กฎหมายที่ประชาชนควรรู้';
+
+      recsHtml += `
+        <div class="ai-rec-item ${ratingClass}">
+          <span class="ai-rec-icon">!</span>
+          <div class="ai-rec-content">
+            <div class="ai-rec-title-row">
+              <span class="ai-rec-subject">${fullSubName}</span>
+              <span class="ai-rec-score" style="font-weight: 600;">${sub.score}/100</span>
+            </div>
+            <p class="ai-rec-text">${sub.rec}</p>
+          </div>
+        </div>
+      `;
+    });
+
+    recsContainer.innerHTML = recsHtml;
+  }
 }

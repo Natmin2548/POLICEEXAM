@@ -681,7 +681,7 @@ app.post('/api/auth/google', async (req, res) => {
           password: hashedPassword,
           emailVerified: true,
           role: 'USER',
-          points: 100,
+          points: 0,
           xp: 0,
           level: 1,
           streak: 0,
@@ -782,7 +782,7 @@ app.post('/api/auth/google-code', async (req, res) => {
               password: hashedPassword,
               emailVerified: true,
               role: 'USER',
-              points: 100, xp: 0, level: 1, streak: 0,
+              points: 0, xp: 0, level: 1, streak: 0,
               pigLevel: 1, pigXp: 0,
               scoreGeneral: 0, scoreThai: 0, scoreEnglish: 0,
               scoreComputer: 0, scoreSocial: 0, scoreSecretariat: 0, scoreLaw: 0
@@ -833,7 +833,7 @@ app.post('/api/auth/google-code', async (req, res) => {
         data: {
           username, fullName: name, email, password: hashedPassword,
           emailVerified: true, role: 'USER',
-          points: 100, xp: 0, level: 1, streak: 0,
+          points: 0, xp: 0, level: 1, streak: 0,
           pigLevel: 1, pigXp: 0,
           scoreGeneral: 0, scoreThai: 0, scoreEnglish: 0,
           scoreComputer: 0, scoreSocial: 0, scoreSecretariat: 0, scoreLaw: 0

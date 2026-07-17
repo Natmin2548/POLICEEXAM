@@ -517,8 +517,63 @@
               <div class="leaderboard-item-loading">กำลังโหลดอันดับ...</div>
             </div>
           </section>
+      </div>
+
+      <!-- Stats View Content -->
+      <div id="statsView" class="tab-view">
+        <!-- Header title -->
+        <section class="profile-header-title-section">
+          <h1 class="profile-header-title">รายงานจุดอ่อน</h1>
+          <span style="font-size: 12px; color: var(--text-light); text-align: right;" id="statsLastUpdateText">อัปเดต วันนี้</span>
+        </section>
+
+        <!-- Left Column Wrapper -->
+        <div class="profile-left-column">
+          <!-- Card 1: Radar Chart -->
+          <section class="stats-card-box">
+            <h3 class="stats-card-title">ภาพรวมรายวิชา</h3>
+            <div class="chart-container" style="position: relative; height: 260px; margin-top: 10px;">
+              <canvas id="statsRadarChartCanvas"></canvas>
+            </div>
+          </section>
+
+          <!-- Card 2: Bar Chart -->
+          <section class="stats-card-box">
+            <h3 class="stats-card-title">คะแนนแยกวิชา</h3>
+            <div class="chart-container" style="position: relative; height: 240px; margin-top: 10px;">
+              <canvas id="statsBarChartCanvas"></canvas>
+            </div>
+            <!-- Legend -->
+            <div class="bar-chart-legend" style="display: flex; justify-content: center; gap: 16px; margin-top: 12px; font-size: 12px;">
+              <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 12px; height: 12px; border-radius: 3px; background-color: #10B981;"></span>ดีมาก</span>
+              <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 12px; height: 12px; border-radius: 3px; background-color: #F59E0B;"></span>พอใช้</span>
+              <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 12px; height: 12px; border-radius: 3px; background-color: #EF4444;"></span>ปรับปรุง</span>
+            </div>
+          </section>
+        </div>
+
+        <!-- Right Column Wrapper -->
+        <div class="profile-right-column">
+          <!-- Card 3: Line Chart (8-Week Progress) -->
+          <section class="stats-card-box">
+            <h3 class="stats-card-title">พัฒนาการ 8 สัปดาห์</h3>
+            <div class="chart-container" style="position: relative; height: 200px; margin-top: 10px;">
+              <canvas id="statsLineChartCanvas"></canvas>
+            </div>
+          </section>
+
+          <!-- Card 4: AI Recommendations -->
+          <section class="stats-card-box">
+            <h3 class="stats-card-title" style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 18px;">🧠</span> คำแนะนำจาก AI
+            </h3>
+            <div class="ai-recommendations-list" id="aiRecsListContainer">
+              <div class="leaderboard-item-loading">กำลังวิเคราะห์คะแนน...</div>
+            </div>
+          </section>
         </div>
       </div>
+
 
 
     </div>
@@ -552,7 +607,7 @@
         <span class="tab-label">Battle</span>
       </a>
 
-      <a href="#" class="nav-tab" onclick="alert('หน้าสถิติวิเคราะห์ผลจะเปิดเร็วๆ นี้');">
+      <a href="#" class="nav-tab" id="btnTabStats">
         <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <line x1="18" y1="20" x2="18" y2="10"/>
           <line x1="12" y1="20" x2="12" y2="4"/>

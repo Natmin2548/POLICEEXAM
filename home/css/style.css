@@ -1147,7 +1147,8 @@ button {
 /* Desktop profile grid overrides */
 @media (min-width: 768px) {
   #profileView.active,
-  #battleView.active {
+  #battleView.active,
+  #statsView.active {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 24px;
@@ -1491,4 +1492,131 @@ button {
   color: var(--text-light);
   font-size: 14px;
 }
+
+/* ==========================================
+   Stats (Weakness Report) Style Sheet Rules
+   ========================================== */
+.stats-card-box {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+}
+
+.stats-card-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-dark);
+  text-align: left;
+  margin-bottom: 8px;
+}
+
+.ai-recommendations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.ai-rec-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  text-align: left;
+}
+
+.ai-rec-item.good {
+  background-color: #ECFDF5;
+  border: 1px solid #D1FAE5;
+}
+
+.ai-rec-item.average {
+  background-color: #FFFBEB;
+  border: 1px solid #FEF3C7;
+}
+
+.ai-rec-item.needs-improvement {
+  background-color: #FFF5F5;
+  border: 1px solid #FFE3E3;
+}
+
+.ai-rec-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.ai-rec-item.good .ai-rec-icon {
+  background-color: rgba(16, 185, 129, 0.15);
+  color: #10B981;
+}
+
+.ai-rec-item.average .ai-rec-icon {
+  background-color: rgba(245, 158, 11, 0.15);
+  color: #D97706;
+}
+
+.ai-rec-item.needs-improvement .ai-rec-icon {
+  background-color: rgba(239, 68, 68, 0.15);
+  color: #EF4444;
+}
+
+.ai-rec-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ai-rec-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ai-rec-subject {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.ai-rec-score {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 6px;
+}
+
+.ai-rec-item.good .ai-rec-score {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: #10B981;
+}
+
+.ai-rec-item.average .ai-rec-score {
+  background-color: rgba(245, 158, 11, 0.1);
+  color: #D97706;
+}
+
+.ai-rec-item.needs-improvement .ai-rec-score {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #EF4444;
+}
+
+.ai-rec-text {
+  font-size: 13px;
+  color: var(--text-light);
+  line-height: 1.4;
+}
+
 
