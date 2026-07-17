@@ -322,6 +322,14 @@
                 </div>
               </div>
               
+              <!-- Requests approval panel (Creator only, dynamic display) -->
+              <div id="groupJoinRequestsPanel" style="display: none; background: #FFFBEB; border-bottom: 1px solid #FEF3C7; padding: 12px 16px; text-align: left;">
+                <span id="lblGroupJoinRequestsCount" style="font-size: 12px; font-weight: 600; color: #B45309; display: block; margin-bottom: 8px;">📬 คำขอเข้าร่วมกลุ่ม (0)</span>
+                <div id="groupJoinRequestsContainer" style="display: flex; flex-direction: column; gap: 8px; max-height: 120px; overflow-y: auto;">
+                  <!-- pending requests -->
+                </div>
+              </div>
+              
               <!-- Message feed -->
               <div id="groupChatMessagesContainer" style="flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; background-color: #F8FAFC;">
                 <div class="leaderboard-item-loading">กำลังโหลดข้อความ...</div>
@@ -827,6 +835,17 @@
         <div>
           <label style="font-size: 13px; font-weight: 500; color: #64748B; display: block; margin-bottom: 4px;">รายละเอียดกลุ่ม (ไม่บังคับ)</label>
           <textarea id="txtCreateGroupDesc" placeholder="อธิบายวัตถุประสงค์ หรือแนวข้อสอบในกลุ่ม..." style="width: 100%; height: 60px; border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 12px; font-family: 'Kanit'; font-size: 14px; outline: none; resize: none;"></textarea>
+        </div>
+        <div>
+          <label style="font-size: 13px; font-weight: 500; color: #64748B; display: block; margin-bottom: 4px;">ประเภทกลุ่ม</label>
+          <div style="display: flex; gap: 16px; margin-top: 4px;">
+            <label style="display: flex; align-items: center; gap: 6px; font-size: 14px; cursor: pointer; color: var(--text-dark);">
+              <input type="radio" name="optGroupPrivacy" value="public" checked style="accent-color: var(--primary-color);"> 🔓 สาธารณะ (Public)
+            </label>
+            <label style="display: flex; align-items: center; gap: 6px; font-size: 14px; cursor: pointer; color: var(--text-dark);">
+              <input type="radio" name="optGroupPrivacy" value="private" style="accent-color: var(--primary-color);"> 🔒 ส่วนตัว (Private)
+            </label>
+          </div>
         </div>
       </div>
       <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px;">

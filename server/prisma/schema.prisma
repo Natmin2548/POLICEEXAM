@@ -264,6 +264,7 @@ model Group {
   id          Int                @id @default(autoincrement())
   name        String
   description String?            @db.Text
+  isPrivate   Boolean            @default(false)
   createdById Int
   createdBy   User               @relation("CreatedGroups", fields: [createdById], references: [id], onDelete: Cascade)
   createdAt   DateTime           @default(now())
@@ -277,6 +278,7 @@ model GroupMember {
   group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
   userId    Int
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status    String   @default("ACCEPTED")
   createdAt DateTime @default(now())
   @@unique([groupId, userId])
 }

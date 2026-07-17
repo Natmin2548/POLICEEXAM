@@ -1480,12 +1480,16 @@ async function loadGroupsList(searchVal = '') {
       // Creator options
       const isCreator = userProfile && g.createdById === userProfile.id;
       let actionBtnHtml = '';
-      if (g.isMember) {
+      if (g.membershipStatus === 'ACCEPTED') {
         actionBtnHtml = `
           <div style="display: flex; flex-direction: column; gap: 6px; align-items: flex-end;">
             <button class="btn-quick-match" style="padding: 6px 14px; font-size: 12px; border-radius: 8px; width: auto; box-shadow: none; display: block;" onclick="enterGroupChat(${g.id}, '${escapeHTML(g.name)}', ${g.memberCount}, ${g.createdById})">แชทกลุ่ม</button>
             ${isCreator ? '' : `<button class="post-action-btn delete" style="font-size: 11px; margin-right: 0;" onclick="leaveGroup(${g.id})">ออกจากกลุ่ม</button>`}
           </div>
+        `;
+      } else if (g.membershipStatus === 'PENDING') {
+        actionBtnHtml = `
+          <button class="btn-quick-match" style="padding: 6px 14px; font-size: 12px; border-radius: 8px; width: auto; box-shadow: none; background-color: #64748B; cursor: not-allowed;" disabled>รออนุมัติ</button>
         `;
       } else {
         actionBtnHtml = `
@@ -1503,9 +1507,12 @@ async function loadGroupsList(searchVal = '') {
           <div class="mode-item-left" style="text-align: left;">
             <div class="mode-icon-wrapper ranked-icon" style="background-color: #F1F5F9; color: var(--text-dark); font-size: 18px;">👮</div>
             <div class="mode-info">
-              <span class="mode-title" style="font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; color: var(--text-dark);">
+              <span class="mode-title" style="font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; color: var(--text-dark); flex-wrap: wrap;">
                 ${escapeHTML(g.name)}
                 <span style="font-size: 10px; background-color: #E2E8F0; color: #64748B; padding: 2px 6px; border-radius: 4px;">ID: #${g.id}</span>
+                <span style="font-size: 10px; background-color: ${g.isPrivate ? '#FEE2E2' : '#D1FAE5'}; color: ${g.isPrivate ? '#991B1B' : '#065F46'}; padding: 2px 6px; border-radius: 4px;">
+                  ${g.isPrivate ? '🔒 ส่วนตัว' : '🔓 สาธารณะ'}
+                </span>
               </span>
               <span class="mode-subtitle" style="font-size: 12px; display: block; margin-top: 4px;">
                 สมาชิก ${g.memberCount} คน • สร้างโดย ${escapeHTML(g.creatorName)} ${deleteBtnHtml}
@@ -1537,6 +1544,8 @@ if (btnOpenCreateGroupModal && createGroupModal) {
     createGroupModal.style.display = 'flex';
     document.getElementById('txtCreateGroupName').value = '';
     document.getElementById('txtCreateGroupDesc').value = '';
+    const publicRadio = document.querySelector('input[name="optGroupPrivacy"][value="public"]');
+    if (publicRadio) publicRadio.checked = true;
   };
 }
 
@@ -1552,6 +1561,8 @@ if (btnSubmitCreateGroup && createGroupModal) {
     const descInput = document.getElementById('txtCreateGroupDesc');
     const name = nameInput.value.trim();
     const description = descInput.value.trim();
+    const optPrivacy = document.querySelector('input[name="optGroupPrivacy"]:checked');
+    const isPrivate = optPrivacy ? optPrivacy.value === 'private' : false;
 
     if (!name) {
       alert('กรุณากรอกชื่อกลุ่ม');
@@ -1568,7 +1579,7 @@ if (btnSubmitCreateGroup && createGroupModal) {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${authToken}`
         },
-        body: JSON.stringify({ name, description })
+        body: JSON.stringify({ name, description, isPrivate })
       });
 
       if (!res.ok) {
@@ -1607,10 +1618,15 @@ window.joinGroup = async function(groupId) {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${authToken}` }
     });
-    if (!res.ok) throw new Error('Join failed');
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'Join failed');
+    }
+    const data = await res.json();
+    alert(data.message);
     loadGroupsList(txtGroupSearch ? txtGroupSearch.value.trim() : '');
   } catch (err) {
-    alert('ไม่สามารถเข้าร่วมกลุ่มได้');
+    alert(err.message || 'ไม่สามารถเข้าร่วมกลุ่มได้');
   }
 };
 
@@ -1680,10 +1696,23 @@ window.enterGroupChat = function(groupId, groupName, memberCount, createdById) {
     };
   }
 
+  // Load join requests if creator
+  const requestsPanel = document.getElementById('groupJoinRequestsPanel');
+  if (isCreator) {
+    loadJoinRequests(groupId);
+  } else {
+    if (requestsPanel) requestsPanel.style.display = 'none';
+  }
+
   // Load and start polling
   loadGroupChatMessages(groupId);
   if (groupChatPollInterval) clearInterval(groupChatPollInterval);
-  groupChatPollInterval = setInterval(() => loadGroupChatMessages(groupId), 3000);
+  groupChatPollInterval = setInterval(() => {
+    loadGroupChatMessages(groupId);
+    if (isCreator) {
+      loadJoinRequests(groupId);
+    }
+  }, 3000);
 };
 
 window.exitGroupChat = function() {
@@ -1692,9 +1721,83 @@ window.exitGroupChat = function() {
     clearInterval(groupChatPollInterval);
     groupChatPollInterval = null;
   }
+  const requestsPanel = document.getElementById('groupJoinRequestsPanel');
+  if (requestsPanel) requestsPanel.style.display = 'none';
+
   document.getElementById('groupChatScreenPanel').style.display = 'none';
   document.getElementById('groupListMainPanel').style.display = 'block';
   loadGroupsList(txtGroupSearch ? txtGroupSearch.value.trim() : '');
+};
+
+async function loadJoinRequests(groupId) {
+  const panel = document.getElementById('groupJoinRequestsPanel');
+  const container = document.getElementById('groupJoinRequestsContainer');
+  const countEl = document.getElementById('lblGroupJoinRequestsCount');
+  
+  if (!panel || !container || activeGroupId !== groupId) return;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/community/groups/${groupId}/requests`, {
+      headers: { 'Authorization': `Bearer ${authToken}` }
+    });
+    if (!res.ok) throw new Error();
+    const requests = await res.json();
+
+    if (requests.length === 0) {
+      panel.style.display = 'none';
+      return;
+    }
+
+    if (countEl) countEl.textContent = `📬 คำขอเข้าร่วมกลุ่ม (${requests.length})`;
+
+    let html = '';
+    requests.forEach(r => {
+      const displayName = r.user.fullName || r.user.username;
+      html += `
+        <div style="display: flex; justify-content: space-between; align-items: center; background: white; padding: 8px 12px; border-radius: 8px; border: 1px solid #FDE68A;">
+          <span style="font-size: 13px; font-weight: 500; color: var(--text-dark);">${escapeHTML(displayName)} (@${escapeHTML(r.user.username)})</span>
+          <div style="display: flex; gap: 6px;">
+            <button onclick="approveJoinRequest(${groupId}, ${r.user.id})" class="btn-quick-match" style="padding: 4px 10px; font-size: 11px; border-radius: 6px; width: auto; box-shadow: none; background-color: #10B981; color: white;">อนุมัติ</button>
+            <button onclick="declineJoinRequest(${groupId}, ${r.user.id})" class="post-action-btn delete" style="font-size: 11px; border: 1px solid #EF4444; border-radius: 6px; padding: 4px 10px; background: none; margin-right: 0;">ปฏิเสธ</button>
+          </div>
+        </div>
+      `;
+    });
+
+    container.innerHTML = html;
+    panel.style.display = 'block';
+
+  } catch (err) {
+    console.error('Load requests error:', err);
+  }
+}
+
+window.approveJoinRequest = async function(groupId, userId) {
+  try {
+    const res = await fetch(`${API_BASE}/api/community/groups/${groupId}/requests/${userId}/approve`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${authToken}` }
+    });
+    if (!res.ok) throw new Error();
+    loadJoinRequests(groupId);
+    loadGroupsList(txtGroupSearch ? txtGroupSearch.value.trim() : '');
+  } catch (err) {
+    alert('ไม่สามารถอนุมัติคำขอได้');
+  }
+};
+
+window.declineJoinRequest = async function(groupId, userId) {
+  if (!confirm('ปฏิเสธคำขอเข้าร่วมกลุ่มของบุคคลนี้ใช่หรือไม่?')) return;
+  try {
+    const res = await fetch(`${API_BASE}/api/community/groups/${groupId}/requests/${userId}/decline`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${authToken}` }
+    });
+    if (!res.ok) throw new Error();
+    loadJoinRequests(groupId);
+  } catch (err) {
+    alert('ไม่สามารถปฏิเสธคำขอได้');
+  }
 };
 
 const btnBackToGroups = document.getElementById('btnBackToGroups');

@@ -3781,7 +3781,7 @@ app.get('/api/community/stats', authenticateToken, async (req, res) => {
 
 // Create a new study group
 app.post('/api/community/groups', authenticateToken, async (req, res) => {
-  const { name, description } = req.body;
+  const { name, description, isPrivate } = req.body;
   if (!name || !name.trim()) {
     return res.status(400).json({ error: 'กรุณากรอกชื่อกลุ่ม' });
   }
@@ -3792,6 +3792,7 @@ app.post('/api/community/groups', authenticateToken, async (req, res) => {
         data: {
           name: name.trim(),
           description: description ? description.trim() : '',
+          isPrivate: !!isPrivate,
           createdById: req.user.userId
         }
       });
@@ -3799,7 +3800,8 @@ app.post('/api/community/groups', authenticateToken, async (req, res) => {
       await tx.groupMember.create({
         data: {
           groupId: newGroup.id,
-          userId: req.user.userId
+          userId: req.user.userId,
+          status: 'ACCEPTED'
         }
       });
       return newGroup;
@@ -3829,22 +3831,26 @@ app.get('/api/community/groups', authenticateToken, async (req, res) => {
           select: { id: true, username: true, fullName: true }
         },
         members: {
-          select: { userId: true }
+          select: { userId: true, status: true }
         }
       }
     });
 
     // Format output to include members count and membership flag
-    const formatted = groups.map(g => ({
-      id: g.id,
-      name: g.name,
-      description: g.description,
-      createdAt: g.createdAt,
-      createdById: g.createdById,
-      creatorName: g.createdBy.fullName || g.createdBy.username,
-      memberCount: g.members.length,
-      isMember: g.members.some(m => m.userId === req.user.userId)
-    }));
+    const formatted = groups.map(g => {
+      const membership = g.members.find(m => m.userId === req.user.userId);
+      return {
+        id: g.id,
+        name: g.name,
+        description: g.description,
+        isPrivate: g.isPrivate,
+        createdAt: g.createdAt,
+        createdById: g.createdById,
+        creatorName: g.createdBy.fullName || g.createdBy.username,
+        memberCount: g.members.filter(m => m.status === 'ACCEPTED').length,
+        membershipStatus: membership ? membership.status : 'NONE'
+      };
+    });
 
     res.json(formatted);
   } catch (err) {
@@ -3878,10 +3884,17 @@ app.delete('/api/community/groups/:groupId', authenticateToken, async (req, res)
   }
 });
 
-// Join group
+// Join group (or request to join if private)
 app.post('/api/community/groups/:groupId/join', authenticateToken, async (req, res) => {
   const { groupId } = req.params;
   try {
+    const group = await prisma.group.findUnique({
+      where: { id: parseInt(groupId) }
+    });
+    if (!group) {
+      return res.status(404).json({ error: 'ไม่พบกลุ่มที่ต้องการเข้าร่วม' });
+    }
+
     const existing = await prisma.groupMember.findUnique({
       where: {
         groupId_userId: {
@@ -3891,17 +3904,23 @@ app.post('/api/community/groups/:groupId/join', authenticateToken, async (req, r
       }
     });
     if (existing) {
-      return res.status(400).json({ error: 'คุณเป็นสมาชิกของกลุ่มนี้อยู่แล้ว' });
+      return res.status(400).json({ error: 'คุณมีสถานะสมาชิกหรือรอการอนุมัติในกลุ่มนี้อยู่แล้ว' });
     }
+
+    const status = group.isPrivate ? 'PENDING' : 'ACCEPTED';
 
     await prisma.groupMember.create({
       data: {
         groupId: parseInt(groupId),
-        userId: req.user.userId
+        userId: req.user.userId,
+        status
       }
     });
 
-    res.json({ message: 'เข้าร่วมกลุ่มสำเร็จ' });
+    res.json({
+      message: group.isPrivate ? 'ส่งคำขอเข้าร่วมกลุ่มแล้ว รอผู้สร้างอนุมัติ' : 'เข้าร่วมกลุ่มสำเร็จ',
+      status
+    });
   } catch (err) {
     console.error('Join group error:', err);
     res.status(500).json({ error: 'ไม่สามารถเข้าร่วมกลุ่มได้' });
@@ -3944,8 +3963,8 @@ app.post('/api/community/groups/:groupId/leave', authenticateToken, async (req, 
 app.get('/api/community/groups/:groupId/chat', authenticateToken, async (req, res) => {
   const { groupId } = req.params;
   try {
-    // Verify membership
-    const isMember = await prisma.groupMember.findUnique({
+    // Verify membership status is ACCEPTED
+    const member = await prisma.groupMember.findUnique({
       where: {
         groupId_userId: {
           groupId: parseInt(groupId),
@@ -3953,8 +3972,8 @@ app.get('/api/community/groups/:groupId/chat', authenticateToken, async (req, re
         }
       }
     });
-    if (!isMember) {
-      return res.status(403).json({ error: 'กรุณาเข้าร่วมกลุ่มก่อนอ่านข้อความแชท' });
+    if (!member || member.status !== 'ACCEPTED') {
+      return res.status(403).json({ error: 'กรุณาเข้าร่วมกลุ่ม (และได้รับการอนุมัติ) ก่อนเข้าอ่านแชท' });
     }
 
     const messages = await prisma.groupChatMessage.findMany({
@@ -3983,8 +4002,8 @@ app.post('/api/community/groups/:groupId/chat', authenticateToken, async (req, r
     return res.status(400).json({ error: 'กรุณากรอกข้อความแชท' });
   }
   try {
-    // Verify membership
-    const isMember = await prisma.groupMember.findUnique({
+    // Verify membership status is ACCEPTED
+    const member = await prisma.groupMember.findUnique({
       where: {
         groupId_userId: {
           groupId: parseInt(groupId),
@@ -3992,8 +4011,8 @@ app.post('/api/community/groups/:groupId/chat', authenticateToken, async (req, r
         }
       }
     });
-    if (!isMember) {
-      return res.status(403).json({ error: 'คุณไม่ได้เป็นสมาชิกกลุ่มนี้' });
+    if (!member || member.status !== 'ACCEPTED') {
+      return res.status(403).json({ error: 'คุณไม่ได้เป็นสมาชิก (หรือยังไม่ได้รับการอนุมัติ) ในกลุ่มนี้' });
     }
 
     const message = await prisma.groupChatMessage.create({
@@ -4013,6 +4032,94 @@ app.post('/api/community/groups/:groupId/chat', authenticateToken, async (req, r
   } catch (err) {
     console.error('Send group chat message error:', err);
     res.status(500).json({ error: 'ไม่สามารถส่งข้อความแชทกลุ่มได้' });
+  }
+});
+
+// Get join requests (creator only)
+app.get('/api/community/groups/:groupId/requests', authenticateToken, async (req, res) => {
+  const { groupId } = req.params;
+  try {
+    const group = await prisma.group.findUnique({
+      where: { id: parseInt(groupId) }
+    });
+    if (!group) return res.status(404).json({ error: 'ไม่พบกลุ่ม' });
+    if (group.createdById !== req.user.userId) {
+      return res.status(403).json({ error: 'ไม่มีสิทธิ์เข้าถึง (เฉพาะผู้สร้างกลุ่มเท่านั้น)' });
+    }
+
+    const requests = await prisma.groupMember.findMany({
+      where: {
+        groupId: parseInt(groupId),
+        status: 'PENDING'
+      },
+      include: {
+        user: {
+          select: { id: true, username: true, fullName: true, faceImage: true }
+        }
+      }
+    });
+
+    res.json(requests);
+  } catch (err) {
+    console.error('Fetch group requests error:', err);
+    res.status(500).json({ error: 'ไม่สามารถโหลดคำขอเข้าร่วมได้' });
+  }
+});
+
+// Approve join request (creator only)
+app.post('/api/community/groups/:groupId/requests/:userId/approve', authenticateToken, async (req, res) => {
+  const { groupId, userId } = req.params;
+  try {
+    const group = await prisma.group.findUnique({
+      where: { id: parseInt(groupId) }
+    });
+    if (!group) return res.status(404).json({ error: 'ไม่พบกลุ่ม' });
+    if (group.createdById !== req.user.userId) {
+      return res.status(403).json({ error: 'ไม่มีสิทธิ์อนุมัติ (เฉพาะผู้สร้างกลุ่มเท่านั้น)' });
+    }
+
+    await prisma.groupMember.update({
+      where: {
+        groupId_userId: {
+          groupId: parseInt(groupId),
+          userId: parseInt(userId)
+        }
+      },
+      data: { status: 'ACCEPTED' }
+    });
+
+    res.json({ message: 'อนุมัติผู้ใช้งานเข้าร่วมกลุ่มเรียบร้อย' });
+  } catch (err) {
+    console.error('Approve group request error:', err);
+    res.status(500).json({ error: 'ไม่สามารถอนุมัติคำขอได้' });
+  }
+});
+
+// Decline join request (creator only)
+app.post('/api/community/groups/:groupId/requests/:userId/decline', authenticateToken, async (req, res) => {
+  const { groupId, userId } = req.params;
+  try {
+    const group = await prisma.group.findUnique({
+      where: { id: parseInt(groupId) }
+    });
+    if (!group) return res.status(404).json({ error: 'ไม่พบกลุ่ม' });
+    if (group.createdById !== req.user.userId) {
+      return res.status(403).json({ error: 'ไม่มีสิทธิ์ปฏิเสธ (เฉพาะผู้สร้างกลุ่มเท่านั้น)' });
+    }
+
+    await prisma.groupMember.delete({
+      where: {
+        groupId_userId: {
+          groupId: parseInt(groupId),
+          userId: parseInt(userId)
+        }
+      }
+    });
+
+    res.json({ message: 'ปฏิเสธคำขอเข้าร่วมกลุ่มเรียบร้อย' });
+  } catch (err) {
+    console.error('Decline group request error:', err);
+    res.status(500).json({ error: 'ไม่สามารถปฏิเสธคำขอได้' });
   }
 });
 
