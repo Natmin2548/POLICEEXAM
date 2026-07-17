@@ -3558,6 +3558,131 @@ app.get('/api/leaderboard', async (req, res) => {
   }
 });
 
+// --- Community (Posts, Comments, Chat) Routes ---
+
+// Get all posts (latest first)
+app.get('/api/community/posts', authenticateToken, async (req, res) => {
+  try {
+    const posts = await prisma.post.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: {
+        user: {
+          select: { id: true, username: true, fullName: true, faceImage: true }
+        },
+        comments: {
+          orderBy: { createdAt: 'asc' },
+          include: {
+            user: {
+              select: { id: true, username: true, fullName: true, faceImage: true }
+            }
+          }
+        }
+      }
+    });
+    res.json(posts);
+  } catch (err) {
+    console.error('Fetch posts error:', err);
+    res.status(500).json({ error: 'ไม่สามารถโหลดโพสต์ได้' });
+  }
+});
+
+// Create a new post
+app.post('/api/community/posts', authenticateToken, async (req, res) => {
+  const { content } = req.body;
+  if (!content || !content.trim()) {
+    return res.status(400).json({ error: 'กรุณากรอกข้อความโพสต์' });
+  }
+  try {
+    const post = await prisma.post.create({
+      data: {
+        content,
+        userId: req.user.userId
+      },
+      include: {
+        user: {
+          select: { id: true, username: true, fullName: true, faceImage: true }
+        },
+        comments: true
+      }
+    });
+    res.json(post);
+  } catch (err) {
+    console.error('Create post error:', err);
+    res.status(500).json({ error: 'ไม่สามารถโพสต์ได้' });
+  }
+});
+
+// Add a comment to a post
+app.post('/api/community/posts/:postId/comments', authenticateToken, async (req, res) => {
+  const { postId } = req.params;
+  const { content } = req.body;
+  if (!content || !content.trim()) {
+    return res.status(400).json({ error: 'กรุณากรอกข้อความแสดงความคิดเห็น' });
+  }
+  try {
+    const comment = await prisma.comment.create({
+      data: {
+        content,
+        postId: parseInt(postId),
+        userId: req.user.userId
+      },
+      include: {
+        user: {
+          select: { id: true, username: true, fullName: true, faceImage: true }
+        }
+      }
+    });
+    res.json(comment);
+  } catch (err) {
+    console.error('Create comment error:', err);
+    res.status(500).json({ error: 'ไม่สามารถส่งความคิดเห็นได้' });
+  }
+});
+
+// Get chat messages (last 100 messages)
+app.get('/api/community/chat', authenticateToken, async (req, res) => {
+  try {
+    const messages = await prisma.chatMessage.findMany({
+      take: 100,
+      orderBy: { createdAt: 'asc' },
+      include: {
+        user: {
+          select: { id: true, username: true, fullName: true, faceImage: true }
+        }
+      }
+    });
+    res.json(messages);
+  } catch (err) {
+    console.error('Fetch chat messages error:', err);
+    res.status(500).json({ error: 'ไม่สามารถโหลดข้อความแชทได้' });
+  }
+});
+
+// Send a chat message
+app.post('/api/community/chat', authenticateToken, async (req, res) => {
+  const { content } = req.body;
+  if (!content || !content.trim()) {
+    return res.status(400).json({ error: 'กรุณากรอกข้อความแชท' });
+  }
+  try {
+    const message = await prisma.chatMessage.create({
+      data: {
+        content,
+        userId: req.user.userId
+      },
+      include: {
+        user: {
+          select: { id: true, username: true, fullName: true, faceImage: true }
+        }
+      }
+    });
+    res.json(message);
+  } catch (err) {
+    console.error('Send chat message error:', err);
+    res.status(500).json({ error: 'ไม่สามารถส่งข้อความแชทได้' });
+  }
+});
+
 // --- Points & Premium Status Route ---
 app.get('/api/user/points', authenticateToken, async (req, res) => {
   try {

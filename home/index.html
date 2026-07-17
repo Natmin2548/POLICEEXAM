@@ -243,6 +243,122 @@
       </section>
       </div> <!-- Close homeView -->
 
+      <!-- Community View Content -->
+      <div id="communityView" class="tab-view">
+        <!-- Header title & Sub Navigation -->
+        <section class="profile-header-title-section" style="flex-direction: column; align-items: flex-start; gap: 16px; width: 100%;">
+          <h1 class="profile-header-title">ชุมชนเตรียมสอบ</h1>
+          <!-- Sub Tabs Bar -->
+          <div class="community-subtabs-bar" style="display: flex; gap: 8px; width: 100%; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
+            <button class="subtab-btn active" id="btnSubtabPosts">โพสต์</button>
+            <button class="subtab-btn" id="btnSubtabChat">ช่องแชทรวม</button>
+            <button class="subtab-btn" id="btnSubtabGroups">กลุ่ม</button>
+          </div>
+        </section>
+
+        <!-- Left Column Wrapper (Subtab Contents) -->
+        <div class="profile-left-column">
+          <!-- SUBTAB 1: Posts list & compose -->
+          <div id="subtabContentPosts" class="subtab-content active">
+            <!-- Create Post Box -->
+            <div class="stats-card-box" style="padding: 16px; margin-bottom: 16px; gap: 12px;">
+              <textarea id="txtPostContent" placeholder="แบ่งปันแนวข้อสอบ หรือพูดคุยเตรียมสอบกับเพื่อนๆ..." style="width: 100%; height: 80px; border: 1px solid var(--border-color); border-radius: 12px; padding: 12px; font-family: 'Kanit', sans-serif; font-size: 14px; resize: none; outline: none; transition: 0.2s;" onfocus="this.style.borderColor='var(--primary-color)'" onblur="this.style.borderColor='var(--border-color)'"></textarea>
+              <div style="display: flex; justify-content: flex-end;">
+                <button id="btnCreatePost" class="btn-quick-match" style="padding: 8px 20px; font-size: 13px; border-radius: 8px; box-shadow: none;">โพสต์</button>
+              </div>
+            </div>
+
+            <!-- Posts Feed Container -->
+            <div id="postsFeedContainer" class="ai-recommendations-list">
+              <div class="leaderboard-item-loading">กำลังโหลดฟีดโพสต์...</div>
+            </div>
+          </div>
+
+          <!-- SUBTAB 2: Global Chat View -->
+          <div id="subtabContentChat" class="subtab-content">
+            <div class="stats-card-box" style="padding: 0; overflow: hidden; height: 480px; display: flex; flex-direction: column; justify-content: space-between; border-radius: 20px;">
+              <!-- Chat Messages Panel -->
+              <div id="chatMessagesContainer" style="flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; background-color: #F8FAFC;">
+                <div class="leaderboard-item-loading">กำลังโหลดข้อความ...</div>
+              </div>
+              <!-- Chat Input Panel -->
+              <div style="display: flex; align-items: center; padding: 12px; border-top: 1px solid var(--border-color); gap: 8px; background-color: white;">
+                <input type="text" id="txtChatInput" placeholder="พิมพ์ข้อความคุยแชทรวม..." style="flex: 1; border: 1px solid var(--border-color); border-radius: 12px; padding: 10px 14px; font-family: 'Kanit', sans-serif; font-size: 14px; outline: none;" onfocus="this.style.borderColor='var(--primary-color)'" onblur="this.style.borderColor='var(--border-color)'">
+                <button id="btnSendChat" class="btn-quick-match" style="padding: 10px 16px; border-radius: 12px; box-shadow: none; flex-shrink: 0; width: auto;">ส่ง</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- SUBTAB 3: Groups View -->
+          <div id="subtabContentGroups" class="subtab-content">
+            <div class="battle-modes-list">
+              <!-- Group 1 -->
+              <div class="battle-mode-item" style="cursor: default;">
+                <div class="mode-item-left">
+                  <div class="mode-icon-wrapper ranked-icon" style="background-color: #E0F2FE; color: #0284C7; font-size: 18px;">👮</div>
+                  <div class="mode-info">
+                    <span class="mode-title" style="font-size: 15px;">กลุ่มเตรียมสอบ นายสิบปราบปราม</span>
+                    <span class="mode-subtitle">สมาชิก 4,820 คน • พูดคุยสายปราบปรามโดยเฉพาะ</span>
+                  </div>
+                </div>
+                <button class="btn-quick-match" style="padding: 6px 14px; font-size: 12px; border-radius: 8px; width: auto; box-shadow: none;" onclick="alert('เข้าร่วมกลุ่มสำเร็จ! ห้องแชทเฉพาะกลุ่มจะเปิดให้บริการเร็วๆ นี้');">เข้าร่วม</button>
+              </div>
+              <!-- Group 2 -->
+              <div class="battle-mode-item" style="cursor: default;">
+                <div class="mode-item-left">
+                  <div class="mode-icon-wrapper ranked-icon" style="background-color: #FEF3C7; color: #D97706; font-size: 18px;">📁</div>
+                  <div class="mode-info">
+                    <span class="mode-title" style="font-size: 15px;">กลุ่มติวเตอร์ สายอำนวยการ</span>
+                    <span class="mode-subtitle">สมาชิก 2,940 คน • เจาะข้อสอบงานสารบรรณ กฎหมาย</span>
+                  </div>
+                </div>
+                <button class="btn-quick-match" style="padding: 6px 14px; font-size: 12px; border-radius: 8px; width: auto; box-shadow: none;" onclick="alert('เข้าร่วมกลุ่มสำเร็จ! ห้องแชทเฉพาะกลุ่มจะเปิดให้บริการเร็วๆ นี้');">เข้าร่วม</button>
+              </div>
+              <!-- Group 3 -->
+              <div class="battle-mode-item" style="cursor: default;">
+                <div class="mode-item-left">
+                  <div class="mode-icon-wrapper ranked-icon" style="background-color: #F0FDF4; color: #16A34A; font-size: 18px;">🇬🇧</div>
+                  <div class="mode-info">
+                    <span class="mode-title" style="font-size: 15px;">เน้นติวอังกฤษ นายสิบตำรวจ</span>
+                    <span class="mode-subtitle">สมาชิก 1,850 คน • ตะลุยโจทย์ Tense, Vocab, Grammar</span>
+                  </div>
+                </div>
+                <button class="btn-quick-match" style="padding: 6px 14px; font-size: 12px; border-radius: 8px; width: auto; box-shadow: none;" onclick="alert('เข้าร่วมกลุ่มสำเร็จ! ห้องแชทเฉพาะกลุ่มจะเปิดให้บริการเร็วๆ นี้');">เข้าร่วม</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column Wrapper (Community widgets) -->
+        <div class="profile-right-column">
+          <!-- Widget 1: Activity stats -->
+          <section class="stats-card-box" style="padding: 20px; margin-bottom: 20px;">
+            <h3 class="stats-card-title">ความเคลื่อนไหววันนี้</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px;">
+              <div style="background-color: #F8FAFC; padding: 12px; border-radius: 12px; text-align: center;">
+                <span style="font-size: 20px; font-weight: 700; color: var(--primary-color);" id="lblActivePostsCount">8</span>
+                <span style="font-size: 11px; color: var(--text-light); display: block; margin-top: 2px;">โพสต์วันนี้</span>
+              </div>
+              <div style="background-color: #F8FAFC; padding: 12px; border-radius: 12px; text-align: center;">
+                <span style="font-size: 20px; font-weight: 700; color: #10B981;" id="lblActiveUsersCount">92</span>
+                <span style="font-size: 11px; color: var(--text-light); display: block; margin-top: 2px;">ออนไลน์อยู่</span>
+              </div>
+            </div>
+          </section>
+
+          <!-- Widget 2: Rules/Notice -->
+          <section class="stats-card-box" style="padding: 20px;">
+            <h3 class="stats-card-title" style="display: flex; align-items: center; gap: 6px;">📢 กฎระเบียบชุมชน</h3>
+            <ul style="padding-left: 18px; margin: 8px 0 0 0; font-size: 12px; color: var(--text-light); display: flex; flex-direction: column; gap: 8px; text-align: left; line-height: 1.5; list-style-type: decimal;">
+              <li>แบ่งปันข้อมูลที่เป็นประโยชน์และส่งเสริมการสอบร่วมกัน</li>
+              <li>ห้ามโพสต์ซื้อขายข้อสอบ หรือการกระทำที่ทุจริต</li>
+              <li>ใช้ถ้อยคำสุภาพเพื่อรักษาบรรยากาศที่ดีในห้องแชท</li>
+            </ul>
+          </section>
+        </div>
+      </div>
+
+
       <!-- Profile View Content -->
       <div id="profileView" class="tab-view">
         <!-- Header title -->
@@ -590,7 +706,7 @@
         <span class="tab-label">หน้าแรก</span>
       </a>
 
-      <a href="#" class="nav-tab" onclick="alert('ระบบชุมชนผู้เตรียมสอบจะเปิดใช้งานเร็วๆ นี้');">
+      <a href="#" class="nav-tab" id="btnTabCommunity">
         <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
           <circle cx="9" cy="7" r="4"/>

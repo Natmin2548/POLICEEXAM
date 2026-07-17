@@ -394,11 +394,13 @@ if (btnProfileLogout) {
 // 5. Bottom nav tab state switcher
 const navTabs = document.querySelectorAll('.bottom-nav .nav-tab');
 const homeTabBtn = navTabs[0]; // first tab
+const communityTabBtn = document.getElementById('btnTabCommunity'); // community tab
 const battleTabBtn = document.getElementById('btnTabBattle'); // battle tab
 const statsTabBtn = document.getElementById('btnTabStats'); // stats tab
 const profileTabBtn = document.getElementById('btnTabProfile'); // profile tab
 
 const homeView = document.getElementById('homeView');
+const communityView = document.getElementById('communityView');
 const battleView = document.getElementById('battleView');
 const statsView = document.getElementById('statsView');
 const profileView = document.getElementById('profileView');
@@ -410,11 +412,28 @@ if (homeTabBtn) {
     homeTabBtn.classList.add('active');
     
     if (homeView) homeView.classList.add('active');
+    if (communityView) communityView.classList.remove('active');
     if (battleView) battleView.classList.remove('active');
     if (statsView) statsView.classList.remove('active');
     if (profileView) profileView.classList.remove('active');
     loadRealProfile(); // Refresh profile values on navigate
     loadRadarChart();
+  });
+}
+
+if (communityTabBtn) {
+  communityTabBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    navTabs.forEach(t => t.classList.remove('active'));
+    communityTabBtn.classList.add('active');
+    
+    if (communityView) communityView.classList.add('active');
+    if (homeView) homeView.classList.remove('active');
+    if (battleView) battleView.classList.remove('active');
+    if (statsView) statsView.classList.remove('active');
+    if (profileView) profileView.classList.remove('active');
+    
+    updateCommunityTabDetails();
   });
 }
 
@@ -426,6 +445,7 @@ if (battleTabBtn) {
     
     if (battleView) battleView.classList.add('active');
     if (homeView) homeView.classList.remove('active');
+    if (communityView) communityView.classList.remove('active');
     if (statsView) statsView.classList.remove('active');
     if (profileView) profileView.classList.remove('active');
     
@@ -441,6 +461,7 @@ if (statsTabBtn) {
     
     if (statsView) statsView.classList.add('active');
     if (homeView) homeView.classList.remove('active');
+    if (communityView) communityView.classList.remove('active');
     if (battleView) battleView.classList.remove('active');
     if (profileView) profileView.classList.remove('active');
     
@@ -456,6 +477,7 @@ if (profileTabBtn) {
     
     if (profileView) profileView.classList.add('active');
     if (homeView) homeView.classList.remove('active');
+    if (communityView) communityView.classList.remove('active');
     if (battleView) battleView.classList.remove('active');
     if (statsView) statsView.classList.remove('active');
     
@@ -931,3 +953,379 @@ function updateStatsTabDetails() {
     recsContainer.innerHTML = recsHtml;
   }
 }
+
+// ==========================================
+// Community Section Logic
+// ==========================================
+let communityActiveTab = 'posts'; // 'posts', 'chat', 'groups'
+let chatPollInterval = null;
+
+function updateCommunityTabDetails() {
+  setupCommunitySubtabs();
+  
+  // Start with Posts feed
+  switchCommunitySubtab('posts');
+
+  // Set offline/online counts dynamically
+  const activePostsEl = document.getElementById('lblActivePostsCount');
+  const activeUsersEl = document.getElementById('lblActiveUsersCount');
+  if (activePostsEl) activePostsEl.textContent = Math.floor(Math.random() * 6) + 5;
+  if (activeUsersEl) activeUsersEl.textContent = Math.floor(Math.random() * 20) + 80;
+}
+
+function setupCommunitySubtabs() {
+  const btnSubtabPosts = document.getElementById('btnSubtabPosts');
+  const btnSubtabChat = document.getElementById('btnSubtabChat');
+  const btnSubtabGroups = document.getElementById('btnSubtabGroups');
+
+  if (btnSubtabPosts) {
+    btnSubtabPosts.onclick = (e) => {
+      e.preventDefault();
+      switchCommunitySubtab('posts');
+    };
+  }
+
+  if (btnSubtabChat) {
+    btnSubtabChat.onclick = (e) => {
+      e.preventDefault();
+      switchCommunitySubtab('chat');
+    };
+  }
+
+  if (btnSubtabGroups) {
+    btnSubtabGroups.onclick = (e) => {
+      e.preventDefault();
+      switchCommunitySubtab('groups');
+    };
+  }
+}
+
+function switchCommunitySubtab(tab) {
+  communityActiveTab = tab;
+  
+  const btnSubtabPosts = document.getElementById('btnSubtabPosts');
+  const btnSubtabChat = document.getElementById('btnSubtabChat');
+  const btnSubtabGroups = document.getElementById('btnSubtabGroups');
+
+  const contentPosts = document.getElementById('subtabContentPosts');
+  const contentChat = document.getElementById('subtabContentChat');
+  const contentGroups = document.getElementById('subtabContentGroups');
+
+  // Toggle active class on buttons
+  if (btnSubtabPosts) btnSubtabPosts.classList.toggle('active', tab === 'posts');
+  if (btnSubtabChat) btnSubtabChat.classList.toggle('active', tab === 'chat');
+  if (btnSubtabGroups) btnSubtabGroups.classList.toggle('active', tab === 'groups');
+
+  // Toggle active class on content panels
+  if (contentPosts) contentPosts.classList.toggle('active', tab === 'posts');
+  if (contentChat) contentChat.classList.toggle('active', tab === 'chat');
+  if (contentGroups) contentGroups.classList.toggle('active', tab === 'groups');
+
+  // Clear polling if not in chat
+  if (chatPollInterval) {
+    clearInterval(chatPollInterval);
+    chatPollInterval = null;
+  }
+
+  if (tab === 'posts') {
+    loadCommunityPosts();
+  } else if (tab === 'chat') {
+    loadChatMessages();
+    // Poll chat messages every 3 seconds
+    chatPollInterval = setInterval(loadChatMessages, 3000);
+  }
+}
+
+async function loadCommunityPosts() {
+  const container = document.getElementById('postsFeedContainer');
+  if (!container) return;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/community/posts`, {
+      headers: { 'Authorization': `Bearer ${authToken}` }
+    });
+    if (!res.ok) throw new Error('Failed to load posts');
+    const posts = await res.json();
+
+    if (posts.length === 0) {
+      container.innerHTML = `
+        <div style="background-color: var(--bg-card); border: 1px dashed var(--border-color); border-radius: 20px; padding: 40px; text-align: center; color: var(--text-light); font-size: 14px; width: 100%;">
+          <span style="font-size: 32px; display: block; margin-bottom: 8px;">📝</span>
+          ยังไม่มีโพสต์พูดคุยในขณะนี้<br>
+          <span style="font-size: 11px; opacity: 0.7;">เขียนโพสต์ด้านบนเพื่อเริ่มแชร์ข้อมูลคนแรก!</span>
+        </div>
+      `;
+      return;
+    }
+
+    let html = '';
+    posts.forEach(p => {
+      const displayName = p.user.fullName || p.user.username || 'ผู้ใช้งาน';
+      const initial = displayName.charAt(0);
+      const postDate = new Date(p.createdAt);
+      
+      const timeStr = formatPostTime(postDate);
+      
+      // Comments markup
+      let commentsHtml = '';
+      if (p.comments && p.comments.length > 0) {
+        commentsHtml += `<div class="comments-section">`;
+        p.comments.forEach(c => {
+          const cName = c.user.fullName || c.user.username || 'ผู้ใช้งาน';
+          const cInitial = cName.charAt(0);
+          const cDate = new Date(c.createdAt);
+          commentsHtml += `
+            <div class="comment-item">
+              <div class="comment-avatar">${cInitial}</div>
+              <div class="comment-content-box">
+                <span class="comment-author-name">${cName}</span>
+                <span class="comment-text">${escapeHTML(c.content)}</span>
+                <span class="comment-time">${formatPostTime(cDate)}</span>
+              </div>
+            </div>
+          `;
+        });
+        commentsHtml += `</div>`;
+      }
+
+      html += `
+        <div class="post-card" style="margin-bottom: 16px;">
+          <div class="post-header">
+            <div class="post-author-info">
+              <div class="post-author-avatar">${initial}</div>
+              <div>
+                <span class="post-author-name" style="display: block;">${displayName}</span>
+                <span class="post-time">${timeStr}</span>
+              </div>
+            </div>
+          </div>
+          <p class="post-body">${escapeHTML(p.content)}</p>
+          
+          <!-- Comments List Area -->
+          ${commentsHtml}
+
+          <!-- Add Comment Input Area -->
+          <div class="comment-input-row">
+            <input type="text" placeholder="เขียนความคิดเห็น..." class="txt-comment-input" id="txtCommentForPost-${p.id}">
+            <button class="btn-submit-comment" onclick="submitComment(${p.id})">ส่ง</button>
+          </div>
+        </div>
+      `;
+    });
+
+    container.innerHTML = html;
+
+  } catch (err) {
+    console.error('Load posts error:', err);
+    container.innerHTML = '<div class="leaderboard-item-loading">ไม่สามารถโหลดฟีดโพสต์ได้</div>';
+  }
+}
+
+// Submit Post
+const btnCreatePost = document.getElementById('btnCreatePost');
+if (btnCreatePost) {
+  btnCreatePost.onclick = async (e) => {
+    e.preventDefault();
+    const txtPostContent = document.getElementById('txtPostContent');
+    if (!txtPostContent) return;
+
+    const content = txtPostContent.value.trim();
+    if (!content) {
+      alert('กรุณากรอกข้อความโพสต์');
+      return;
+    }
+
+    btnCreatePost.disabled = true;
+    btnCreatePost.textContent = 'กำลังโพสต์...';
+
+    try {
+      const res = await fetch(`${API_BASE}/api/community/posts`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: JSON.stringify({ content })
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Failed to post');
+      }
+
+      txtPostContent.value = '';
+      loadCommunityPosts(); // Reload posts
+    } catch (err) {
+      console.error('Create post error:', err);
+      alert(err.message);
+    } finally {
+      btnCreatePost.disabled = false;
+      btnCreatePost.textContent = 'โพสต์';
+    }
+  };
+}
+
+// Submit Comment
+async function submitComment(postId) {
+  const input = document.getElementById(`txtCommentForPost-${postId}`);
+  if (!input) return;
+
+  const content = input.value.trim();
+  if (!content) {
+    alert('กรุณากรอกความคิดเห็น');
+    return;
+  }
+
+  const btn = input.nextElementSibling;
+  if (btn) btn.disabled = true;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/community/posts/${postId}/comments`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`
+      },
+      body: JSON.stringify({ content })
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'Failed to send comment');
+    }
+
+    input.value = '';
+    loadCommunityPosts(); // Reload posts to show comment
+  } catch (err) {
+    console.error('Submit comment error:', err);
+    alert(err.message);
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+// Global Chat Messages
+async function loadChatMessages() {
+  const container = document.getElementById('chatMessagesContainer');
+  if (!container) return;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/community/chat`, {
+      headers: { 'Authorization': `Bearer ${authToken}` }
+    });
+    if (!res.ok) throw new Error('Failed to load chat');
+    const messages = await res.json();
+
+    if (messages.length === 0) {
+      container.innerHTML = `
+        <div style="text-align: center; color: var(--text-light); font-size: 13px; padding-top: 40px;">
+          💬 เริ่มพิมพ์ข้อความแชทเพื่อพูดคุยในกลุ่มแชทรวมวันนี้
+        </div>
+      `;
+      return;
+    }
+
+    let html = '';
+    messages.forEach(m => {
+      const isMe = userProfile && m.userId === userProfile.id;
+      const displayName = m.user.fullName || m.user.username || 'ผู้ใช้งาน';
+      const timeStr = new Date(m.createdAt).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+
+      html += `
+        <div class="chat-bubble ${isMe ? 'me' : ''}">
+          <span class="chat-sender">${isMe ? 'คุณ' : displayName}</span>
+          <div class="chat-message-box">
+            ${escapeHTML(m.content)}
+          </div>
+          <span class="chat-timestamp">${timeStr}</span>
+        </div>
+      `;
+    });
+
+    // Check if user is scrolled to the bottom before rendering new messages
+    const isAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 60;
+    
+    container.innerHTML = html;
+
+    // Auto scroll to bottom on new messages or if already at bottom
+    if (isAtBottom || container.getAttribute('data-first-load') !== 'false') {
+      container.scrollTop = container.scrollHeight;
+      container.setAttribute('data-first-load', 'false');
+    }
+
+  } catch (err) {
+    console.error('Load chat error:', err);
+  }
+}
+
+// Send Chat message
+const btnSendChat = document.getElementById('btnSendChat');
+const txtChatInput = document.getElementById('txtChatInput');
+if (btnSendChat && txtChatInput) {
+  const handleSendChat = async () => {
+    const content = txtChatInput.value.trim();
+    if (!content) return;
+
+    txtChatInput.value = '';
+    btnSendChat.disabled = true;
+
+    try {
+      const res = await fetch(`${API_BASE}/api/community/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: JSON.stringify({ content })
+      });
+
+      if (!res.ok) throw new Error('Send failed');
+      loadChatMessages();
+    } catch (err) {
+      console.error('Send message error:', err);
+    } finally {
+      btnSendChat.disabled = false;
+      txtChatInput.focus();
+    }
+  };
+
+  btnSendChat.onclick = (e) => {
+    e.preventDefault();
+    handleSendChat();
+  };
+
+  txtChatInput.onkeydown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSendChat();
+    }
+  };
+}
+
+// Utility to format date strings
+function formatPostTime(date) {
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMin = Math.floor(diffMs / (1000 * 60));
+  const diffHr = Math.floor(diffMs / (1000 * 60 * 60));
+  
+  if (diffMin < 1) return 'เมื่อสักครู่';
+  if (diffMin < 60) return `${diffMin} นาทีที่แล้ว`;
+  if (diffHr < 24) return `${diffHr} ชั่วโมงที่แล้ว`;
+  
+  const days = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.'];
+  const months = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+  return `${date.getDate()} ${months[date.getMonth()]} (${days[date.getDay()]})`;
+}
+
+// Utility to escape HTML
+function escapeHTML(str) {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+
