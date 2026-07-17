@@ -3739,6 +3739,44 @@ app.post('/api/community/chat', authenticateToken, async (req, res) => {
   }
 });
 
+// Get community activity stats (real values)
+app.get('/api/community/stats', authenticateToken, async (req, res) => {
+  try {
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const fifteenMinsAgo = new Date(Date.now() - 15 * 60 * 1000);
+
+    // Update current user's updatedAt to keep active status real
+    await prisma.user.update({
+      where: { id: req.user.userId },
+      data: { updatedAt: new Date() }
+    });
+
+    const activePostsCount = await prisma.post.count({
+      where: {
+        createdAt: {
+          gte: oneDayAgo
+        }
+      }
+    });
+
+    const activeUsersCount = await prisma.user.count({
+      where: {
+        updatedAt: {
+          gte: fifteenMinsAgo
+        }
+      }
+    });
+
+    res.json({
+      activePostsCount,
+      activeUsersCount: Math.max(1, activeUsersCount)
+    });
+  } catch (err) {
+    console.error('Fetch community stats error:', err);
+    res.status(500).json({ error: 'ไม่สามารถดึงข้อมูลความเคลื่อนไหวได้' });
+  }
+});
+
 // --- Study Groups API Routes ---
 
 // Create a new study group

@@ -968,11 +968,26 @@ function updateCommunityTabDetails() {
   // Start with Posts feed
   switchCommunitySubtab('posts');
 
-  // Set offline/online counts dynamically
+  // Load real active counts from DB
+  loadCommunityStats();
+}
+
+async function loadCommunityStats() {
   const activePostsEl = document.getElementById('lblActivePostsCount');
   const activeUsersEl = document.getElementById('lblActiveUsersCount');
-  if (activePostsEl) activePostsEl.textContent = Math.floor(Math.random() * 6) + 5;
-  if (activeUsersEl) activeUsersEl.textContent = Math.floor(Math.random() * 20) + 80;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/community/stats`, {
+      headers: { 'Authorization': `Bearer ${authToken}` }
+    });
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+
+    if (activePostsEl) activePostsEl.textContent = data.activePostsCount;
+    if (activeUsersEl) activeUsersEl.textContent = data.activeUsersCount;
+  } catch (err) {
+    console.error('Load community stats error:', err);
+  }
 }
 
 function setupCommunitySubtabs() {
@@ -1063,6 +1078,8 @@ function switchCommunitySubtab(tab) {
     loadFriendsList();
     loadBlockedList();
   }
+  
+  loadCommunityStats();
 }
 
 async function loadCommunityPosts() {
