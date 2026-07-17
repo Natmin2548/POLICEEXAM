@@ -1144,7 +1144,8 @@ button {
 
 /* Desktop profile grid overrides */
 @media (min-width: 768px) {
-  #profileView.active {
+  #profileView.active,
+  #battleView.active {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 24px;
@@ -1186,3 +1187,306 @@ button {
     margin-bottom: 0;
   }
 }
+
+/* ==========================================
+   Battle Arena Style Sheet Rules
+   ========================================== */
+.battle-elo-card {
+  background-color: #1E293B;
+  border-radius: 20px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  color: var(--text-white);
+  margin-bottom: 20px;
+  box-shadow: 0 10px 20px -5px rgba(30, 41, 59, 0.15);
+}
+
+.battle-elo-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.elo-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+}
+
+.elo-label {
+  font-size: 13px;
+  color: #94A3B8;
+  font-weight: 500;
+}
+
+.elo-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: #FFFFFF;
+}
+
+.elo-live-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background-color: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #10B981;
+  animation: elo-pulse 1.5s infinite;
+}
+
+.live-text {
+  font-size: 11px;
+  font-weight: 600;
+  color: #10B981;
+}
+
+@keyframes elo-pulse {
+  0% { opacity: 0.3; transform: scale(0.9); }
+  50% { opacity: 1; transform: scale(1.1); }
+  100% { opacity: 0.3; transform: scale(0.9); }
+}
+
+.btn-quick-match {
+  background-color: var(--primary-color);
+  color: var(--text-white);
+  border-radius: 16px;
+  padding: 14px;
+  font-size: 15px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: var(--transition-fast);
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(189, 27, 11, 0.25);
+}
+
+.btn-quick-match:hover {
+  background-color: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+.btn-quick-match svg {
+  width: 18px;
+  height: 18px;
+}
+
+.battle-modes-list {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  padding: 10px 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.battle-mode-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border-color);
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.battle-mode-item:last-child {
+  border-bottom: none;
+}
+
+.battle-mode-item:hover {
+  opacity: 0.8;
+}
+
+.mode-item-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.mode-icon-wrapper {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ranked-icon {
+  background-color: #FFF1F2;
+  color: var(--primary-color);
+}
+
+.tournament-icon {
+  background-color: #FFFBEB;
+  color: #D97706;
+}
+
+.challenge-icon {
+  background-color: #F0FDF4;
+  color: #16A34A;
+}
+
+.mode-icon-wrapper svg {
+  width: 20px;
+  height: 20px;
+}
+
+.mode-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+}
+
+.mode-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mode-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.mode-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.badge-ranked {
+  background-color: #FFF1F2;
+  color: var(--primary-color);
+}
+
+.badge-popular {
+  background-color: #FEF3C7;
+  color: #D97706;
+}
+
+.mode-subtitle {
+  font-size: 12px;
+  color: var(--text-light);
+}
+
+/* Leaderboard */
+.leaderboard-section-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: var(--shadow-sm);
+}
+
+.leaderboard-header-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-dark);
+  text-align: left;
+}
+
+.leaderboard-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.leaderboard-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.leaderboard-item:last-child {
+  border-bottom: none;
+}
+
+.leaderboard-item.my-rank {
+  background-color: #FFF1F2;
+  border-radius: 12px;
+  padding: 12px 10px;
+  margin: 4px -10px;
+  border-bottom: none;
+}
+
+.leaderboard-item-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.leaderboard-rank {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-light);
+  width: 24px;
+  text-align: center;
+}
+
+.leaderboard-medal {
+  font-size: 18px;
+  width: 24px;
+  text-align: center;
+}
+
+.leaderboard-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: #F1F5F9;
+  color: var(--text-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.leaderboard-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-dark);
+}
+
+.leaderboard-item.my-rank .leaderboard-name {
+  font-weight: 600;
+  color: var(--primary-color);
+}
+
+.leaderboard-elo {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+
+.leaderboard-item-loading {
+  padding: 20px 0;
+  text-align: center;
+  color: var(--text-light);
+  font-size: 14px;
+}
+

@@ -400,6 +400,127 @@
         </div>
       </div>
 
+      <!-- Battle View Content -->
+      <div id="battleView" class="tab-view">
+        <!-- Header title -->
+        <section class="profile-header-title-section">
+          <h1 class="profile-header-title">Battle Arena</h1>
+          <svg class="header-trophy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: #BD1B0B; width: 24px; height: 24px;">
+            <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
+            <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
+            <path d="M4 22h16"/>
+            <path d="M10 14.66V17c0 .55-.45 1-1 1H4v2h16v-2h-5c-.55 0-1-.45-1-1v-2.34"/>
+            <path d="M12 2a6 6 0 0 1 6 6v1H6V8a6 6 0 0 1 6-6z"/>
+          </svg>
+        </section>
+
+        <!-- Left Column Wrapper -->
+        <div class="profile-left-column">
+          <!-- ELO card -->
+          <section class="battle-elo-card">
+            <div class="battle-elo-header">
+              <div class="elo-info">
+                <span class="elo-label">คะแนน ELO ของคุณ</span>
+                <span class="elo-value" id="myEloValue">1,000</span>
+              </div>
+              <div class="elo-live-indicator">
+                <span class="live-dot"></span>
+                <span class="live-text">Live</span>
+              </div>
+            </div>
+            <!-- Quick Match Button -->
+            <button class="btn-quick-match" id="btnQuickMatch">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+              </svg>
+              <span>Quick Match</span>
+            </button>
+          </section>
+
+          <!-- Modes List Card -->
+          <section class="battle-modes-list">
+            <!-- Mode 1: Ranked Match -->
+            <div class="battle-mode-item" onclick="alert('Ranked Match จะพร้อมใช้งานเร็วๆ นี้');">
+              <div class="mode-item-left">
+                <div class="mode-icon-wrapper ranked-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                  </svg>
+                </div>
+                <div class="mode-info">
+                  <div class="mode-title-row">
+                    <span class="mode-title">Ranked Match</span>
+                    <span class="mode-badge badge-ranked">Ranked</span>
+                  </div>
+                  <span class="mode-subtitle">แข่งระดับ ELO เดียวกัน</span>
+                </div>
+              </div>
+              <svg class="menu-item-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6"/>
+              </svg>
+            </div>
+
+            <!-- Mode 2: Tournament -->
+            <div class="battle-mode-item" onclick="alert('Tournament จะพร้อมใช้งานเร็วๆ นี้');">
+              <div class="mode-item-left">
+                <div class="mode-icon-wrapper tournament-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
+                    <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
+                    <path d="M4 22h16"/>
+                    <path d="M10 14.66V17c0 .55-.45 1-1 1H4v2h16v-2h-5c-.55 0-1-.45-1-1v-2.34"/>
+                    <path d="M12 2a6 6 0 0 1 6 6v1H6V8a6 6 0 0 1 6-6z"/>
+                  </svg>
+                </div>
+                <div class="mode-info">
+                  <div class="mode-title-row">
+                    <span class="mode-title">Tournament</span>
+                    <span class="mode-badge badge-popular">Popular</span>
+                  </div>
+                  <span class="mode-subtitle">8 คน รางวัลพิเศษทุกสัปดาห์</span>
+                </div>
+              </div>
+              <svg class="menu-item-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6"/>
+              </svg>
+            </div>
+
+            <!-- Mode 3: Invite Friend -->
+            <div class="battle-mode-item" onclick="alert('ท้าทายเพื่อนจะพร้อมใช้งานเร็วๆ นี้');">
+              <div class="mode-item-left">
+                <div class="mode-icon-wrapper challenge-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+                  </svg>
+                </div>
+                <div class="mode-info">
+                  <span class="mode-title">ท้าเพื่อน</span>
+                  <span class="mode-subtitle">สร้างห้องและส่งลิงก์</span>
+                </div>
+              </div>
+              <svg class="menu-item-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6"/>
+              </svg>
+            </div>
+          </section>
+        </div>
+
+        <!-- Right Column Wrapper -->
+        <div class="profile-right-column">
+          <!-- Leaderboard Card -->
+          <section class="leaderboard-section-card">
+            <h3 class="leaderboard-header-title">Leaderboard สัปดาห์นี้</h3>
+            <div class="leaderboard-list" id="leaderboardListContainer">
+              <div class="leaderboard-item-loading">กำลังโหลดอันดับ...</div>
+            </div>
+          </section>
+        </div>
+      </div>
+
+
     </div>
   </main>
 
@@ -422,7 +543,7 @@
         <span class="tab-label">ข้อสอบ</span>
       </a>
 
-      <a href="#" class="nav-tab" onclick="alert('หน้า Battle Arena จะเปิดเร็วๆ นี้');">
+      <a href="#" class="nav-tab" id="btnTabBattle">
         <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5"/>
           <line x1="13" y1="19" x2="19" y2="13"/>

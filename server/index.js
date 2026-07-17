@@ -1049,8 +1049,29 @@ app.get('/api/user/profile', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'ไม่พบข้อมูลผู้ใช้งาน' });
     }
 
+    // Calculate actual answered questions count from completed stages
+    const completedProgress = await prisma.userStageProgress.findMany({
+      where: { userId: req.user.userId, completed: true },
+      include: { stage: true }
+    });
+
+    let answeredQuestionsCount = 0;
+    if (completedProgress.length > 0) {
+      const stageTitles = completedProgress.map(p => p.stage.title);
+      const matchingExamSets = await prisma.examSet.findMany({
+        where: { title: { in: stageTitles } },
+        select: { totalCount: true }
+      });
+      answeredQuestionsCount = matchingExamSets.reduce((sum, es) => sum + es.totalCount, 0);
+    }
+
     const { password, ...safeUser } = user;
-    res.json({ user: safeUser });
+    res.json({
+      user: {
+        ...safeUser,
+        answeredQuestionsCount
+      }
+    });
   } catch (err) {
     console.error('Fetch Profile Error:', err);
     res.status(500).json({ error: 'ไม่สามารถดึงข้อมูลโปรไฟล์ได้' });

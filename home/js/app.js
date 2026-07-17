@@ -237,6 +237,38 @@ function updateStatsFromProfile(user) {
   if (levelEl) levelEl.textContent = `Lv.${user.level || 1}`;
   if (pointsEl) pointsEl.textContent = (user.points || 0).toLocaleString();
 
+  // Calculate dynamic days until November 29, 2569 (2026-11-29)
+  const examDate = new Date(2026, 10, 29); // November is 10 (0-indexed)
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  examDate.setHours(0, 0, 0, 0);
+  const diffTime = examDate.getTime() - today.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+  const countdownTextEl = document.querySelector('.countdown-badge span');
+  if (countdownTextEl) {
+    if (diffDays > 0) {
+      countdownTextEl.textContent = `เหลืออีก ${diffDays} วันถึงวันสอบ`;
+    } else if (diffDays === 0) {
+      countdownTextEl.textContent = `วันนี้คือวันสอบ! 📝`;
+    } else {
+      countdownTextEl.textContent = `การสอบเสร็จสิ้นแล้ว 🎉`;
+    }
+  }
+
+  // Update target progress bar based on actual answered questions
+  const answered = user.answeredQuestionsCount || 0;
+  const target = 50;
+  const percent = Math.min(Math.round((answered / target) * 100), 100);
+  
+  const progressBarFill = document.getElementById('progressBarFill');
+  const progressCountText = document.getElementById('progressCountText');
+  const progressPercentText = document.getElementById('progressPercentText');
+  
+  if (progressBarFill) progressBarFill.style.width = `${percent}%`;
+  if (progressCountText) progressCountText.textContent = `${answered}/${target} ข้อ`;
+  if (progressPercentText) progressPercentText.textContent = `${percent}%`;
+
   // Update recent results with real scores
   updateRecentResults(user);
 }
@@ -362,9 +394,11 @@ if (btnProfileLogout) {
 // 5. Bottom nav tab state switcher
 const navTabs = document.querySelectorAll('.bottom-nav .nav-tab');
 const homeTabBtn = navTabs[0]; // first tab
-const profileTabBtn = document.getElementById('btnTabProfile'); // last tab
+const battleTabBtn = document.getElementById('btnTabBattle'); // battle tab
+const profileTabBtn = document.getElementById('btnTabProfile'); // profile tab
 
 const homeView = document.getElementById('homeView');
+const battleView = document.getElementById('battleView');
 const profileView = document.getElementById('profileView');
 
 if (homeTabBtn) {
@@ -374,9 +408,24 @@ if (homeTabBtn) {
     homeTabBtn.classList.add('active');
     
     if (homeView) homeView.classList.add('active');
+    if (battleView) battleView.classList.remove('active');
     if (profileView) profileView.classList.remove('active');
     loadRealProfile(); // Refresh profile values on navigate
     loadRadarChart();
+  });
+}
+
+if (battleTabBtn) {
+  battleTabBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    navTabs.forEach(t => t.classList.remove('active'));
+    battleTabBtn.classList.add('active');
+    
+    if (battleView) battleView.classList.add('active');
+    if (homeView) homeView.classList.remove('active');
+    if (profileView) profileView.classList.remove('active');
+    
+    updateBattleTabDetails();
   });
 }
 
@@ -388,6 +437,7 @@ if (profileTabBtn) {
     
     if (profileView) profileView.classList.add('active');
     if (homeView) homeView.classList.remove('active');
+    if (battleView) battleView.classList.remove('active');
     
     // Bind profile view details from userProfile object
     updateProfileTabDetails();
@@ -467,10 +517,169 @@ function updateProfileTabDetails() {
   if (profileAvgScore) profileAvgScore.textContent = `${avgScore}%`;
   if (profileStreakCount) profileStreakCount.textContent = `${userProfile.streak || 0} วัน`;
   
-  // Calculate answered questions dynamically (only if they have scores, otherwise show 0)
-  const hasScores = nonZeroScores.length > 0;
-  const totalDone = hasScores
-    ? (userProfile.points ? Math.floor(userProfile.points / 10) * 5 + 12 : 12)
-    : 0;
-  if (profileQuestionsCount) profileQuestionsCount.textContent = totalDone.toLocaleString();
+  // Display actual answered questions count from database
+  const answeredCount = userProfile.answeredQuestionsCount || 0;
+  if (profileQuestionsCount) profileQuestionsCount.textContent = answeredCount.toLocaleString();
+}
+
+function updateBattleTabDetails() {
+  const myEloValue = document.getElementById('myEloValue');
+  if (myEloValue && userProfile) {
+    myEloValue.textContent = (1000 + (userProfile.points || 0)).toLocaleString();
+  }
+
+  loadLeaderboard();
+}
+
+async function loadLeaderboard() {
+  const container = document.getElementById('leaderboardListContainer');
+  if (!container) return;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/leaderboard`, {
+      headers: { 'Authorization': `Bearer ${authToken}` }
+    });
+    if (!res.ok) throw new Error('Failed to fetch leaderboard');
+    const data = await res.json();
+
+    const topUsers = data.topUsers || [];
+    const myRank = data.myRank || null;
+
+    if (topUsers.length === 0) {
+      container.innerHTML = '<div class="leaderboard-item-loading">ไม่มีข้อมูลอันดับ</div>';
+      return;
+    }
+
+    let html = '';
+    
+    // Render top users
+    topUsers.forEach((u, index) => {
+      const rank = index + 1;
+      const elo = 1000 + (u.points || 0);
+      const displayName = u.fullName || u.username || 'ผู้ใช้งาน';
+      const initial = displayName.charAt(0);
+      
+      let rankDisplay = `<span class="leaderboard-rank">${rank}</span>`;
+      if (rank === 1) rankDisplay = '<span class="leaderboard-medal">🥇</span>';
+      else if (rank === 2) rankDisplay = '<span class="leaderboard-medal">🥈</span>';
+      else if (rank === 3) rankDisplay = '<span class="leaderboard-medal">🥉</span>';
+
+      const isMe = userProfile && u.id === userProfile.id;
+      
+      html += `
+        <div class="leaderboard-item ${isMe ? 'my-rank' : ''}">
+          <div class="leaderboard-item-left">
+            ${rankDisplay}
+            <div class="leaderboard-avatar">${initial}</div>
+            <span class="leaderboard-name">${displayName}${isMe ? ' (คุณ)' : ''}</span>
+          </div>
+          <span class="leaderboard-elo">${elo.toLocaleString()}</span>
+        </div>
+      `;
+    });
+
+    // If I am not in top 20, render my rank at the bottom
+    if (myRank && myRank.rank > 20) {
+      const myUser = myRank.user;
+      const elo = 1000 + (myUser.points || 0);
+      const displayName = myUser.fullName || myUser.username || 'ผู้ใช้งาน';
+      const initial = displayName.charAt(0);
+      
+      html += `
+        <div class="leaderboard-item my-rank" style="margin-top: 12px; border-top: 2px dashed var(--border-color);">
+          <div class="leaderboard-item-left">
+            <span class="leaderboard-rank">#${myRank.rank}</span>
+            <div class="leaderboard-avatar">${initial}</div>
+            <span class="leaderboard-name">${displayName} (คุณ)</span>
+          </div>
+          <span class="leaderboard-elo">${elo.toLocaleString()}</span>
+        </div>
+      `;
+    }
+
+    container.innerHTML = html;
+
+  } catch (err) {
+    console.error('Error loading leaderboard:', err);
+    container.innerHTML = '<div class="leaderboard-item-loading">ไม่สามารถดึงข้อมูลอันดับได้</div>';
+  }
+}
+
+// matchmaking mockup
+const btnQuickMatch = document.getElementById('btnQuickMatch');
+if (btnQuickMatch) {
+  btnQuickMatch.addEventListener('click', (e) => {
+    e.preventDefault();
+    if (!userProfile) return;
+    
+    // Create popup modal container
+    const modal = document.createElement('div');
+    modal.style.position = 'fixed';
+    modal.style.top = '0';
+    modal.style.left = '0';
+    modal.style.width = '100vw';
+    modal.style.height = '100vh';
+    modal.style.backgroundColor = 'rgba(0, 0, 0, 0.6)';
+    modal.style.display = 'flex';
+    modal.style.alignItems = 'center';
+    modal.style.justifyContent = 'center';
+    modal.style.zIndex = '9999';
+    modal.style.fontFamily = 'Kanit, sans-serif';
+    
+    modal.innerHTML = `
+      <div style="background: white; padding: 30px; border-radius: 24px; text-align: center; max-width: 400px; width: 90%; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);">
+        <div class="searching-spinner" style="width: 60px; height: 60px; border: 5px solid #F1F5F9; border-top-color: #BD1B0B; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px auto;"></div>
+        <h3 style="font-size: 20px; font-weight: 600; margin-bottom: 10px; color: #1E293B;">กำลังค้นหาคู่ประลอง...</h3>
+        <p style="font-size: 14px; color: #64748B; margin-bottom: 0;" id="matchmakingTimer">จับคู่ ELO ใกล้เคียงกัน (0s)</p>
+      </div>
+    `;
+    
+    // Append spin animation style tag dynamically if not exists
+    if (!document.getElementById('spin-keyframes')) {
+      const style = document.createElement('style');
+      style.id = 'spin-keyframes';
+      style.innerHTML = `@keyframes spin { to { transform: rotate(360deg); } }`;
+      document.head.appendChild(style);
+    }
+    
+    document.body.appendChild(modal);
+    
+    let seconds = 0;
+    const timerInterval = setInterval(() => {
+      seconds++;
+      const timerEl = document.getElementById('matchmakingTimer');
+      if (timerEl) timerEl.textContent = `จับคู่ ELO ใกล้เคียงกัน (${seconds}s)`;
+    }, 1000);
+    
+    setTimeout(() => {
+      clearInterval(timerInterval);
+      
+      const modalContent = modal.querySelector('div');
+      modalContent.innerHTML = `
+        <div style="font-size: 50px; margin-bottom: 20px;">⚡</div>
+        <h3 style="font-size: 20px; font-weight: 600; margin-bottom: 10px; color: #1E293B;">พบคู่ต่อสู้แล้ว!</h3>
+        <div style="display: flex; justify-content: space-around; align-items: center; margin: 24px 0; background: #F8FAFC; padding: 15px; border-radius: 16px;">
+          <div>
+            <div style="width: 48px; height: 48px; border-radius: 50%; background: #BD1B0B; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; margin: 0 auto 8px auto; font-size: 16px;">${userProfile.fullName ? userProfile.fullName.charAt(0) : 'ค'}</div>
+            <span style="font-size: 14px; font-weight: 600; color: #334155; display: block;">คุณ</span>
+            <span style="font-size: 12px; color: #64748B;">ELO ${(1000 + (userProfile.points || 0)).toLocaleString()}</span>
+          </div>
+          <div style="font-size: 18px; font-weight: 700; color: #BD1B0B;">VS</div>
+          <div>
+            <div style="width: 48px; height: 48px; border-radius: 50%; background: #D97706; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; margin: 0 auto 8px auto; font-size: 16px;">ป</div>
+            <span style="font-size: 14px; font-weight: 600; color: #334155; display: block;">ประสิทธิ์ สมร</span>
+            <span style="font-size: 12px; color: #64748B;">ELO 2,840</span>
+          </div>
+        </div>
+        <button id="btnStartBattleArena" style="background: #BD1B0B; color: white; border: none; padding: 12px 24px; border-radius: 12px; font-weight: 600; width: 100%; cursor: pointer; transition: 0.2s;">เริ่มประลอง</button>
+      `;
+      
+      const btnStart = document.getElementById('btnStartBattleArena');
+      btnStart.addEventListener('click', () => {
+        modal.remove();
+        alert('ระบบประลอง Arena กำลังอยู่ในการพัฒนาร่วมกับ AI เจนเนอเรเตอร์คำถาม จะเปิดใช้งานเต็มรูปแบบเร็วๆ นี้!');
+      });
+      
+    }, 3000);
+  });
 }
