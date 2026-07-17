@@ -874,7 +874,7 @@ button {
   border-radius: 16px;
   background-color: var(--primary-color);
   color: var(--text-white);
-  font-size: 32px;
+  font-size: 26px;
   font-weight: 700;
   display: flex;
   align-items: center;
@@ -1156,28 +1156,33 @@ button {
     grid-column: 1 / 3;
   }
   
-  .profile-user-card {
+  .profile-left-column {
     grid-column: 1 / 2;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  .profile-right-column {
+    grid-column: 2 / 3;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  .profile-user-card {
     margin-bottom: 0;
   }
   
   .profile-stats-row {
-    grid-column: 1 / 2;
-    margin-bottom: 0;
-  }
-  
-  .premium-banner-card {
-    grid-column: 1 / 2;
     margin-bottom: 0;
   }
   
   .profile-menu-container-card {
-    grid-column: 2 / 3;
     margin-bottom: 0;
   }
   
   .btn-profile-logout {
-    grid-column: 2 / 3;
     margin-bottom: 0;
   }
 }
