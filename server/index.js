@@ -4474,6 +4474,34 @@ app.get('/api/user/:userId/profile', authenticateToken, async (req, res) => {
   }
 });
 
+// Get another user's post history
+app.get('/api/user/:userId/posts', authenticateToken, async (req, res) => {
+  const targetId = parseInt(req.params.userId);
+  try {
+    const posts = await prisma.post.findMany({
+      where: { userId: targetId },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        user: {
+          select: { id: true, username: true, fullName: true, faceImage: true }
+        },
+        comments: {
+          orderBy: { createdAt: 'asc' },
+          include: {
+            user: {
+              select: { id: true, username: true, fullName: true, faceImage: true }
+            }
+          }
+        }
+      }
+    });
+    res.json(posts);
+  } catch (err) {
+    console.error('Fetch user posts error:', err);
+    res.status(500).json({ error: 'ไม่สามารถโหลดประวัติการโพสต์ได้' });
+  }
+});
+
 // Block a user
 app.post('/api/friends/block', authenticateToken, async (req, res) => {
   const { blockedId } = req.body;

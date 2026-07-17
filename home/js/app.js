@@ -2330,6 +2330,9 @@ window.showUserProfile = async function(userId) {
 
     if (actions) actions.innerHTML = buttonsHtml;
 
+    // Load post history
+    loadUserPostHistory(userId);
+
   } catch (err) {
     console.error('Load public profile error:', err);
     if (fullName) fullName.textContent = 'โหลดโปรไฟล์ล้มเหลว';
@@ -2346,6 +2349,47 @@ if (btnCloseUserProfileModal) {
   btnCloseUserProfileModal.onclick = () => {
     closeUserProfileModal();
   };
+}
+
+async function loadUserPostHistory(userId) {
+  const container = document.getElementById('userProfileModalPostsContainer');
+  if (!container) return;
+
+  container.innerHTML = '<div style="text-align: center; color: var(--text-light); font-size: 12px; padding: 12px 0;">กำลังโหลดโพสต์...</div>';
+
+  try {
+    const res = await fetch(`${API_BASE}/api/user/${userId}/posts`, {
+      headers: { 'Authorization': `Bearer ${authToken}` }
+    });
+    if (!res.ok) throw new Error();
+    const posts = await res.json();
+
+    if (posts.length === 0) {
+      container.innerHTML = '<div style="text-align: center; color: var(--text-light); font-size: 12px; padding: 12px 0;">ยังไม่มีโพสต์</div>';
+      return;
+    }
+
+    let html = '';
+    posts.forEach(p => {
+      const timeStr = formatPostTime(new Date(p.createdAt));
+      const commentCount = p.comments ? p.comments.length : 0;
+
+      html += `
+        <div style="background: #F8FAFC; border: 1px solid var(--border-color); border-radius: 12px; padding: 12px;">
+          <p style="font-size: 13px; color: var(--text-dark); margin: 0 0 6px 0; line-height: 1.5; word-break: break-word;">${escapeHTML(p.content)}</p>
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 10px; color: var(--text-light);">${timeStr}</span>
+            <span style="font-size: 10px; color: var(--text-light);">💬 ${commentCount} ความคิดเห็น</span>
+          </div>
+        </div>
+      `;
+    });
+
+    container.innerHTML = html;
+  } catch (err) {
+    console.error('Load user posts error:', err);
+    container.innerHTML = '<div style="text-align: center; color: var(--text-light); font-size: 12px; padding: 12px 0;">ไม่สามารถโหลดโพสต์ได้</div>';
+  }
 }
 
 // --- Direct Message Chat View Handlers ---
