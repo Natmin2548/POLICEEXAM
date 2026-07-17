@@ -1460,6 +1460,28 @@ window.saveEditPost = async function(postId) {
   }
 };
 
+// Delete a post (only owner)
+window.deletePost = async function(postId) {
+  if (!confirm('คุณต้องการลบโพสต์นี้หรือไม่?')) return;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/community/posts/${postId}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${authToken}` }
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'Failed to delete post');
+    }
+
+    loadCommunityPosts();
+  } catch (err) {
+    console.error('Delete post error:', err);
+    alert(err.message);
+  }
+};
+
 // ==========================================
 // Study Groups Logic
 // ==========================================

@@ -3658,9 +3658,17 @@ app.delete('/api/community/posts/:postId', authenticateToken, async (req, res) =
     if (post.userId !== req.user.userId) {
       return res.status(403).json({ error: 'ไม่มีสิทธิ์ลบโพสต์นี้' });
     }
-    await prisma.post.delete({
-      where: { id: parseInt(postId) }
-    });
+
+    // Delete comments first, then the post (transaction)
+    await prisma.$transaction([
+      prisma.comment.deleteMany({
+        where: { postId: parseInt(postId) }
+      }),
+      prisma.post.delete({
+        where: { id: parseInt(postId) }
+      })
+    ]);
+
     res.json({ message: 'ลบโพสต์สำเร็จ' });
   } catch (err) {
     console.error('Delete post error:', err);
