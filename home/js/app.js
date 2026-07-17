@@ -546,7 +546,13 @@ async function loadLeaderboard() {
     const myRank = data.myRank || null;
 
     if (topUsers.length === 0) {
-      container.innerHTML = '<div class="leaderboard-item-loading">ไม่มีข้อมูลอันดับ</div>';
+      container.innerHTML = `
+        <div class="leaderboard-item-loading" style="padding: 40px 0; text-align: center; color: var(--text-light); font-size: 13px; line-height: 1.6;">
+          <span style="font-size: 28px; display: block; margin-bottom: 8px;">⏳</span>
+          ยังไม่มีการประลองในสัปดาห์นี้<br>
+          <span style="font-size: 11px; opacity: 0.7; display: block; margin-top: 4px;">กด Quick Match เพื่อเข้าสู่ตารางอันดับเป็นคนแรก!</span>
+        </div>
+      `;
       return;
     }
 
@@ -578,8 +584,8 @@ async function loadLeaderboard() {
       `;
     });
 
-    // If I am not in top 20, render my rank at the bottom
-    if (myRank && myRank.rank > 20) {
+    // If I am not in top 20, render my rank at the bottom (only if I have at least 1 battle win)
+    if (myRank && myRank.rank > 20 && myRank.user.battleWins > 0) {
       const myUser = myRank.user;
       const elo = 1000 + (myUser.points || 0);
       const displayName = myUser.fullName || myUser.username || 'ผู้ใช้งาน';

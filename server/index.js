@@ -3504,11 +3504,16 @@ app.get('/api/admin/scores', requireAdmin, async (req, res) => {
 // --- Leaderboard Route ---
 app.get('/api/leaderboard', async (req, res) => {
   try {
-    // Query all users sorted by battleWins (desc) and level (desc)
+    // Query users who have won at least 1 battle (battleWins > 0)
     const allUsers = await prisma.user.findMany({
+      where: {
+        battleWins: {
+          gt: 0
+        }
+      },
       orderBy: [
         { battleWins: 'desc' },
-        { level: 'desc' }
+        { points: 'desc' }
       ],
       select: {
         id: true,

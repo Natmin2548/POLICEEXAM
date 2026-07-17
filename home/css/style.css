@@ -840,7 +840,9 @@ button {
    ========================================== */
 .profile-header-title-section {
   padding: 24px 0 16px 0;
-  text-align: left;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .profile-header-title {
