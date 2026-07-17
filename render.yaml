@@ -1,0 +1,29 @@
+services:
+  # 1. Backend Web Service (Express + Prisma)
+  - type: web
+    name: police-exam-backend
+    runtime: node
+    buildCommand: "cd server && npm install && npx prisma generate"
+    startCommand: "cd server && npm start"
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: PORT
+        value: 3000
+      - key: EMAIL_USER
+        sync: false
+      - key: EMAIL_PASS
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+
+  # 2. Frontend Static Site
+  - type: web
+    name: police-exam-frontend
+    runtime: static
+    buildCommand: "" # No build command required for pure static HTML/CSS/JS files
+    publishPath: "." # Publish the root directory containing /landing and /home
