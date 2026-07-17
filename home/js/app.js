@@ -1460,9 +1460,36 @@ window.saveEditPost = async function(postId) {
   }
 };
 
+// Custom centered confirm modal helper
+function showCenteredConfirm(title, message) {
+  return new Promise((resolve) => {
+    const modal = document.getElementById('customConfirmModal');
+    const titleEl = document.getElementById('customConfirmTitle');
+    const msgEl = document.getElementById('customConfirmMessage');
+    const btnOk = document.getElementById('btnConfirmOk');
+    const btnCancel = document.getElementById('btnConfirmCancel');
+
+    if (titleEl) titleEl.textContent = title;
+    if (msgEl) msgEl.textContent = message;
+    modal.style.display = 'flex';
+
+    function cleanup() {
+      modal.style.display = 'none';
+      btnOk.removeEventListener('click', onOk);
+      btnCancel.removeEventListener('click', onCancel);
+    }
+    function onOk() { cleanup(); resolve(true); }
+    function onCancel() { cleanup(); resolve(false); }
+
+    btnOk.addEventListener('click', onOk);
+    btnCancel.addEventListener('click', onCancel);
+  });
+}
+
 // Delete a post (only owner)
 window.deletePost = async function(postId) {
-  if (!confirm('คุณต้องการลบโพสต์นี้หรือไม่?')) return;
+  const confirmed = await showCenteredConfirm('ยืนยันการลบ', 'คุณต้องการลบโพสต์นี้หรือไม่?');
+  if (!confirmed) return;
 
   try {
     const res = await fetch(`${API_BASE}/api/community/posts/${postId}`, {

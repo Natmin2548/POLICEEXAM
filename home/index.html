@@ -913,5 +913,18 @@
     </div>
   </div>
 
+  <!-- Custom Confirm Modal (Centered) -->
+  <div id="customConfirmModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
+    <div style="background: white; border-radius: 16px; padding: 28px 24px; max-width: 340px; width: 90%; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.3); animation: modalPop 0.2s ease;">
+      <div style="font-size: 36px; margin-bottom: 12px;">⚠️</div>
+      <h3 id="customConfirmTitle" style="font-size: 16px; font-weight: 600; color: #1E293B; margin-bottom: 8px;">ยืนยันการลบ</h3>
+      <p id="customConfirmMessage" style="font-size: 13px; color: #64748B; margin-bottom: 20px; line-height: 1.5;">คุณต้องการลบโพสต์นี้หรือไม่?</p>
+      <div style="display: flex; gap: 10px;">
+        <button id="btnConfirmCancel" style="flex: 1; padding: 12px; border-radius: 10px; border: 1px solid #E2E8F0; background: #F8FAFC; color: #64748B; font-size: 14px; font-weight: 600; cursor: pointer;">ยกเลิก</button>
+        <button id="btnConfirmOk" style="flex: 1; padding: 12px; border-radius: 10px; border: none; background: #EF4444; color: white; font-size: 14px; font-weight: 600; cursor: pointer;">ลบเลย</button>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>
