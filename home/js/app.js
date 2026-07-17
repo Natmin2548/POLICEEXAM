@@ -1077,6 +1077,7 @@ function switchCommunitySubtab(tab) {
   } else if (tab === 'friends') {
     loadFriendsList();
     loadBlockedList();
+    loadFriendRequests();
   }
   
   loadCommunityStats();
@@ -1289,14 +1290,25 @@ async function loadChatMessages() {
       const isMe = userProfile && m.userId === userProfile.id;
       const displayName = m.user.fullName || m.user.username || 'ผู้ใช้งาน';
       const timeStr = new Date(m.createdAt).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+      const initial = displayName.charAt(0);
+
+      const avatarHtml = `
+        <div onclick="showUserProfile(${m.userId})" class="friend-user-avatar" style="width: 32px; height: 32px; font-size: 13px; cursor: pointer; flex-shrink: 0; background-color: ${isMe ? 'var(--primary-color)' : '#BD1B0B'}; display: flex; align-items: center; justify-content: center; color: white; border-radius: 50%; font-weight: 600; margin-right: 8px;">
+          ${escapeHTML(initial)}
+        </div>
+      `;
 
       html += `
-        <div class="chat-bubble ${isMe ? 'me' : ''}">
-          <span class="chat-sender">${isMe ? 'คุณ' : displayName}</span>
-          <div class="chat-message-box">
-            ${escapeHTML(m.content)}
+        <div style="display: flex; align-items: flex-start; margin-bottom: 12px; justify-content: ${isMe ? 'flex-end' : 'flex-start'};">
+          ${isMe ? '' : avatarHtml}
+          <div class="chat-bubble ${isMe ? 'me' : ''}" style="margin: 0;">
+            <span class="chat-sender" onclick="showUserProfile(${m.userId})" style="cursor: pointer; font-weight: 600;">${isMe ? 'คุณ' : displayName}</span>
+            <div class="chat-message-box">
+              ${escapeHTML(m.content)}
+            </div>
+            <span class="chat-timestamp">${timeStr}</span>
           </div>
-          <span class="chat-timestamp">${timeStr}</span>
+          ${isMe ? avatarHtml.replace('margin-right: 8px;', 'margin-left: 8px;') : ''}
         </div>
       `;
     });
@@ -1832,14 +1844,25 @@ async function loadGroupChatMessages(groupId) {
       const isMe = userProfile && m.userId === userProfile.id;
       const displayName = m.user.fullName || m.user.username || 'ผู้ใช้งาน';
       const timeStr = new Date(m.createdAt).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+      const initial = displayName.charAt(0);
+
+      const avatarHtml = `
+        <div onclick="showUserProfile(${m.userId})" class="friend-user-avatar" style="width: 32px; height: 32px; font-size: 13px; cursor: pointer; flex-shrink: 0; background-color: ${isMe ? 'var(--primary-color)' : '#BD1B0B'}; display: flex; align-items: center; justify-content: center; color: white; border-radius: 50%; font-weight: 600; margin-right: 8px;">
+          ${escapeHTML(initial)}
+        </div>
+      `;
 
       html += `
-        <div class="chat-bubble ${isMe ? 'me' : ''}">
-          <span class="chat-sender">${isMe ? 'คุณ' : displayName}</span>
-          <div class="chat-message-box">
-            ${escapeHTML(m.content)}
+        <div style="display: flex; align-items: flex-start; margin-bottom: 12px; justify-content: ${isMe ? 'flex-end' : 'flex-start'};">
+          ${isMe ? '' : avatarHtml}
+          <div class="chat-bubble ${isMe ? 'me' : ''}" style="margin: 0;">
+            <span class="chat-sender" onclick="showUserProfile(${m.userId})" style="cursor: pointer; font-weight: 600;">${isMe ? 'คุณ' : displayName}</span>
+            <div class="chat-message-box">
+              ${escapeHTML(m.content)}
+            </div>
+            <span class="chat-timestamp">${timeStr}</span>
           </div>
-          <span class="chat-timestamp">${timeStr}</span>
+          ${isMe ? avatarHtml.replace('margin-right: 8px;', 'margin-left: 8px;') : ''}
         </div>
       `;
     });
@@ -1937,10 +1960,14 @@ if (txtFriendUserSearch && friendUserSearchResultsContainer) {
           actionBtn = `<button class="btn-quick-match" style="padding: 4px 10px; font-size: 11px; border-radius: 6px; width: auto; box-shadow: none;" onclick="addFriend(${u.id})">เพิ่มเพื่อน</button>`;
         } else if (u.friendStatus === 'ACCEPTED') {
           actionBtn = `<span style="font-size: 11px; color: #10B981; font-weight: 500;">เป็นเพื่อนแล้ว</span>`;
+        } else if (u.friendStatus === 'PENDING_SENT') {
+          actionBtn = `<span style="font-size: 11px; color: #64748B; font-weight: 500;">รอรับแอด</span>`;
+        } else if (u.friendStatus === 'PENDING_RECEIVED') {
+          actionBtn = `<button class="btn-quick-match" style="padding: 4px 10px; font-size: 11px; border-radius: 6px; width: auto; box-shadow: none; background-color: #10B981;" onclick="acceptFriendRequest(${u.id})">รับแอด</button>`;
         }
 
         html += `
-          <div class="search-result-item">
+          <div class="search-result-item" style="cursor: pointer;" onclick="showUserProfile(${u.id})">
             <div style="display: flex; align-items: center; gap: 8px; text-align: left;">
               <div class="friend-user-avatar">${escapeHTML(u.fullName || u.username).charAt(0)}</div>
               <div>
@@ -1948,7 +1975,7 @@ if (txtFriendUserSearch && friendUserSearchResultsContainer) {
                 <span style="font-size: 10px; color: var(--text-light);">@${escapeHTML(u.username)}</span>
               </div>
             </div>
-            <div style="display: flex; align-items: center; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px;" onclick="event.stopPropagation()">
               ${actionBtn}
               <span class="post-action-btn delete" style="font-size: 11px; margin-right: 0;" onclick="blockUser(${u.id})">บล็อก</span>
             </div>
@@ -1979,6 +2006,8 @@ window.addFriend = async function(friendId) {
       const err = await res.json();
       throw new Error(err.error);
     }
+    const data = await res.json();
+    alert(data.message);
     
     if (txtFriendUserSearch) txtFriendUserSearch.value = '';
     if (friendUserSearchResultsContainer) friendUserSearchResultsContainer.style.display = 'none';
@@ -2044,15 +2073,18 @@ async function loadFriendsList() {
       const initial = displayName.charAt(0);
 
       html += `
-        <div class="friend-item-row" onclick="enterDmChat(${f.id}, '${escapeHTML(displayName)}')">
-          <div style="display: flex; align-items: center; gap: 10px;">
+        <div class="friend-item-row" style="cursor: default;">
+          <div style="display: flex; align-items: center; gap: 10px; cursor: pointer;" onclick="showUserProfile(${f.id})">
             <div class="friend-user-avatar" style="background-color: #BD1B0B;">${initial}</div>
             <div style="text-align: left;">
               <span class="friend-user-name" style="display: block;">${escapeHTML(displayName)}</span>
               <span style="font-size: 11px; color: var(--text-light);">แชทส่วนตัว</span>
             </div>
           </div>
-          <button class="btn-quick-match" style="padding: 6px 12px; font-size: 11px; border-radius: 8px; width: auto; box-shadow: none;">แชท</button>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn-quick-match" style="padding: 6px 12px; font-size: 11px; border-radius: 8px; width: auto; box-shadow: none;" onclick="enterDmChat(${f.id}, '${escapeHTML(displayName)}')">แชท</button>
+            <button class="post-action-btn delete" style="border: 1px solid #EF4444; border-radius: 8px; padding: 6px 12px; font-size: 11px; font-weight: 600; background: none; margin-right: 0;" onclick="unfriend(${f.id})">ลบเพื่อน</button>
+          </div>
         </div>
       `;
     });
@@ -2089,7 +2121,7 @@ async function loadBlockedList() {
       const displayName = u.fullName || u.username;
       html += `
         <div style="display: flex; justify-content: space-between; align-items: center; background: #F8FAFC; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-color); width: 100%;">
-          <div style="display: flex; align-items: center; gap: 8px; text-align: left;">
+          <div style="display: flex; align-items: center; gap: 8px; text-align: left; cursor: pointer;" onclick="showUserProfile(${u.id})">
             <div class="friend-user-avatar" style="background-color: #64748B; width: 26px; height: 26px; font-size: 11px;">${displayName.charAt(0)}</div>
             <div>
               <span style="font-size: 12px; font-weight: 600; color: var(--text-dark); display: block;">${escapeHTML(displayName)}</span>
@@ -2126,6 +2158,195 @@ window.unblockUser = async function(blockedId) {
     alert('ไม่สามารถปลดบล็อกผู้ใช้งานได้');
   }
 };
+
+// Fetch pending incoming friend requests
+async function loadFriendRequests() {
+  const panel = document.getElementById('friendRequestsPanel');
+  const container = document.getElementById('friendRequestsContainer');
+  if (!panel || !container) return;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/friends/requests`, {
+      headers: { 'Authorization': `Bearer ${authToken}` }
+    });
+    if (!res.ok) throw new Error();
+    const requests = await res.json();
+
+    if (requests.length === 0) {
+      panel.style.display = 'none';
+      return;
+    }
+
+    let html = '';
+    requests.forEach(r => {
+      const displayName = r.fullName || r.username;
+      html += `
+        <div style="display: flex; justify-content: space-between; align-items: center; background: white; padding: 8px 12px; border-radius: 8px; border: 1px solid #FDE68A;">
+          <div style="display: flex; align-items: center; gap: 8px; cursor: pointer;" onclick="showUserProfile(${r.senderId})">
+            <div class="friend-user-avatar" style="width: 28px; height: 28px; font-size: 11px; background-color: #BD1B0B; display: flex; align-items: center; justify-content: center; color: white; border-radius: 50%;">${displayName.charAt(0)}</div>
+            <div style="text-align: left;">
+              <span style="font-size: 12px; font-weight: 600; color: var(--text-dark); display: block;">${escapeHTML(displayName)}</span>
+              <span style="font-size: 9px; color: var(--text-light);">@${escapeHTML(r.username)}</span>
+            </div>
+          </div>
+          <div style="display: flex; gap: 6px;">
+            <button onclick="acceptFriendRequest(${r.senderId})" class="btn-quick-match" style="padding: 4px 10px; font-size: 11px; border-radius: 6px; width: auto; box-shadow: none; background-color: #10B981; color: white;">รับแอด</button>
+            <button onclick="declineFriendRequest(${r.senderId})" class="post-action-btn delete" style="font-size: 11px; border: 1px solid #EF4444; border-radius: 6px; padding: 4px 10px; background: none; margin-right: 0;">ปฏิเสธ</button>
+          </div>
+        </div>
+      `;
+    });
+
+    container.innerHTML = html;
+    panel.style.display = 'block';
+
+  } catch (err) {
+    console.error('Load friend requests error:', err);
+  }
+}
+
+window.acceptFriendRequest = async function(friendId) {
+  try {
+    const res = await fetch(`${API_BASE}/api/friends/request/${friendId}/accept`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${authToken}` }
+    });
+    if (!res.ok) throw new Error();
+    loadFriendRequests();
+    loadFriendsList();
+  } catch (err) {
+    alert('ไม่สามารถตอบรับเป็นเพื่อนได้');
+  }
+};
+
+window.declineFriendRequest = async function(friendId) {
+  try {
+    const res = await fetch(`${API_BASE}/api/friends/request/${friendId}/decline`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${authToken}` }
+    });
+    if (!res.ok) throw new Error();
+    loadFriendRequests();
+  } catch (err) {
+    alert('ไม่สามารถปฏิเสธคำขอได้');
+  }
+};
+
+window.unfriend = async function(friendId) {
+  if (!confirm('คุณต้องการลบเพื่อนคนนี้ใช่หรือไม่? แชทส่วนตัวจะถูกปิดตัวลง')) return;
+  try {
+    const res = await fetch(`${API_BASE}/api/friends/${friendId}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${authToken}` }
+    });
+    if (!res.ok) throw new Error();
+    loadFriendsList();
+  } catch (err) {
+    alert('ไม่สามารถลบเพื่อนได้');
+  }
+};
+
+// --- Show User Profile Preview Card ---
+window.showUserProfile = async function(userId) {
+  const modal = document.getElementById('userProfileModal');
+  const avatar = document.getElementById('userProfileModalAvatar');
+  const fullName = document.getElementById('lblUserProfileModalFullName');
+  const username = document.getElementById('lblUserProfileModalUsername');
+  const level = document.getElementById('lblUserProfileModalLevel');
+  const points = document.getElementById('lblUserProfileModalPoints');
+  const streak = document.getElementById('lblUserProfileModalStreak');
+  const wins = document.getElementById('lblUserProfileModalWins');
+  const actions = document.getElementById('userProfileModalActions');
+
+  if (!modal) return;
+
+  // Render loading state
+  if (avatar) avatar.textContent = '...';
+  if (fullName) fullName.textContent = 'กำลังโหลดโปรไฟล์...';
+  if (username) username.textContent = '';
+  if (level) level.textContent = '-';
+  if (points) points.textContent = '-';
+  if (streak) streak.textContent = '-';
+  if (wins) wins.textContent = '-';
+  if (actions) actions.innerHTML = '';
+
+  modal.style.display = 'flex';
+
+  try {
+    const res = await fetch(`${API_BASE}/api/user/${userId}/profile`, {
+      headers: { 'Authorization': `Bearer ${authToken}` }
+    });
+    if (!res.ok) throw new Error('Failed to load profile');
+    const u = await res.json();
+
+    const nameStr = u.fullName || u.username;
+    if (avatar) avatar.textContent = nameStr.charAt(0);
+    if (fullName) fullName.textContent = nameStr;
+    if (username) username.textContent = `@${u.username}`;
+    if (level) level.textContent = `Lv.${u.level || 1}`;
+    if (points) points.textContent = `${u.points || 0} พ้อยต์`;
+    if (streak) streak.textContent = `${u.streak || 0} วัน`;
+    if (wins) wins.textContent = `${u.battleWins || 0} ครั้ง`;
+
+    // Render action buttons based on relationStatus
+    let buttonsHtml = '';
+    const isMe = userProfile && u.id === userProfile.id;
+
+    if (isMe) {
+      buttonsHtml = `
+        <button class="btn-quick-match" style="width: 100%; box-shadow: none; background-color: #64748B;" onclick="closeUserProfileModal()">นี่คือโปรไฟล์ของคุณ</button>
+      `;
+    } else {
+      if (u.relationStatus === 'ACCEPTED') {
+        buttonsHtml = `
+          <button class="btn-quick-match" style="width: 100%; box-shadow: none;" onclick="enterDmChat(${u.id}, '${escapeHTML(nameStr)}'); closeUserProfileModal();">💬 ส่งข้อความส่วนตัว</button>
+          <button class="post-action-btn delete" style="width: 100%; border: 1px solid #EF4444; border-radius: 8px; padding: 10px; font-size: 13px; font-weight: 600; background: none; margin-right: 0;" onclick="unfriend(${u.id}); closeUserProfileModal();">👥 ลบเพื่อน</button>
+        `;
+      } else if (u.relationStatus === 'PENDING_SENT') {
+        buttonsHtml = `
+          <button class="btn-quick-match" style="width: 100%; box-shadow: none; background-color: #64748B; cursor: not-allowed;" disabled>รอการตอบรับคำขอเพื่อน</button>
+        `;
+      } else if (u.relationStatus === 'PENDING_RECEIVED') {
+        buttonsHtml = `
+          <button class="btn-quick-match" style="width: 100%; box-shadow: none; background-color: #10B981;" onclick="acceptFriendRequest(${u.id}); closeUserProfileModal();">👥 ยอมรับเป็นเพื่อน</button>
+          <button class="post-action-btn delete" style="width: 100%; border: 1px solid #EF4444; border-radius: 8px; padding: 10px; font-size: 13px; font-weight: 600; background: none; margin-right: 0;" onclick="declineFriendRequest(${u.id}); closeUserProfileModal();">ปฏิเสธคำขอ</button>
+        `;
+      } else if (u.relationStatus === 'BLOCKED') {
+        buttonsHtml = `
+          <button class="btn-quick-match" style="width: 100%; box-shadow: none; background-color: #EF4444;" onclick="unblockUser(${u.id}); closeUserProfileModal();">ปลดบล็อก</button>
+        `;
+      } else {
+        buttonsHtml = `
+          <button class="btn-quick-match" style="width: 100%; box-shadow: none;" onclick="addFriend(${u.id}); closeUserProfileModal();">👥 เพิ่มเพื่อน</button>
+        `;
+      }
+
+      if (u.relationStatus !== 'BLOCKED') {
+        buttonsHtml += `
+          <button class="post-action-btn delete" style="width: 100%; border: 1px solid #EF4444; border-radius: 8px; padding: 10px; font-size: 13px; font-weight: 600; background: none; margin-right: 0; margin-top: 4px;" onclick="blockUser(${u.id}); closeUserProfileModal();">🚫 บล็อกผู้ใช้งาน</button>
+        `;
+      }
+    }
+
+    if (actions) actions.innerHTML = buttonsHtml;
+
+  } catch (err) {
+    console.error('Load public profile error:', err);
+    if (fullName) fullName.textContent = 'โหลดโปรไฟล์ล้มเหลว';
+  }
+};
+
+window.closeUserProfileModal = function() {
+  const modal = document.getElementById('userProfileModal');
+  if (modal) modal.style.display = 'none';
+};
+
+const btnCloseUserProfileModal = document.getElementById('btnCloseUserProfileModal');
+if (btnCloseUserProfileModal) {
+  btnCloseUserProfileModal.onclick = () => {
+    closeUserProfileModal();
+  };
+}
 
 // --- Direct Message Chat View Handlers ---
 window.enterDmChat = function(friendId, friendName) {

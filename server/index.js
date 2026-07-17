@@ -4173,12 +4173,20 @@ app.get('/api/friends/search', authenticateToken, async (req, res) => {
 
     const formatted = users.map(u => {
       const rel = relationships.find(r => r.userId === u.id || r.friendId === u.id);
+      let status = 'NONE';
+      if (rel) {
+        if (rel.status === 'ACCEPTED') {
+          status = 'ACCEPTED';
+        } else if (rel.status === 'PENDING') {
+          status = rel.userId === req.user.userId ? 'PENDING_SENT' : 'PENDING_RECEIVED';
+        }
+      }
       return {
         id: u.id,
         username: u.username,
         fullName: u.fullName,
         faceImage: u.faceImage,
-        friendStatus: rel ? rel.status : 'NONE' // NONE, ACCEPTED, PENDING
+        friendStatus: status
       };
     });
 
@@ -4228,7 +4236,7 @@ app.get('/api/friends', authenticateToken, async (req, res) => {
   }
 });
 
-// Send or accept a friend request (seamless auto-accept)
+// Send friend request (saves as PENDING, or auto-accepts if opposite request exists)
 app.post('/api/friends/request', authenticateToken, async (req, res) => {
   const { friendId } = req.body;
   if (!friendId || parseInt(friendId) === req.user.userId) {
@@ -4263,26 +4271,206 @@ app.post('/api/friends/request', authenticateToken, async (req, res) => {
       if (existingRelation.status === 'ACCEPTED') {
         return res.status(400).json({ error: 'คุณและผู้ใช้งานรายนี้เป็นเพื่อนกันอยู่แล้ว' });
       }
-      // If it exists, update it to ACCEPTED
-      await prisma.friend.update({
-        where: { id: existingRelation.id },
-        data: { status: 'ACCEPTED' }
-      });
+      
+      // If a request from them to us is PENDING, we accept it
+      if (existingRelation.userId === fId) {
+        await prisma.friend.update({
+          where: { id: existingRelation.id },
+          data: { status: 'ACCEPTED' }
+        });
+        return res.json({ message: 'ยอมรับคำขอเป็นเพื่อนเรียบร้อยแล้ว', status: 'ACCEPTED' });
+      } else {
+        return res.status(400).json({ error: 'คุณได้ส่งคำขอเป็นเพื่อนไปแล้ว รอการตอบรับ' });
+      }
     } else {
-      // Auto-accept directly to keep it simple for study app
+      // Create new pending friend request
       await prisma.friend.create({
         data: {
           userId: req.user.userId,
           friendId: fId,
-          status: 'ACCEPTED'
+          status: 'PENDING'
         }
       });
+      res.json({ message: 'ส่งคำขอเป็นเพื่อนแล้ว รอการตอบรับ', status: 'PENDING' });
     }
-
-    res.json({ message: 'เพิ่มเพื่อนสำเร็จ' });
   } catch (err) {
     console.error('Add friend request error:', err);
     res.status(500).json({ error: 'ไม่สามารถเพิ่มเพื่อนได้' });
+  }
+});
+
+// Fetch pending incoming friend requests
+app.get('/api/friends/requests', authenticateToken, async (req, res) => {
+  try {
+    const requests = await prisma.friend.findMany({
+      where: {
+        friendId: req.user.userId,
+        status: 'PENDING'
+      },
+      include: {
+        user: {
+          select: { id: true, username: true, fullName: true, faceImage: true }
+        }
+      }
+    });
+    const formatted = requests.map(r => ({
+      id: r.id,
+      senderId: r.userId,
+      username: r.user.username,
+      fullName: r.user.fullName,
+      faceImage: r.user.faceImage
+    }));
+    res.json(formatted);
+  } catch (err) {
+    console.error('Fetch friend requests error:', err);
+    res.status(500).json({ error: 'ไม่สามารถโหลดคำขอเป็นเพื่อนได้' });
+  }
+});
+
+// Accept a friend request
+app.post('/api/friends/request/:friendId/accept', authenticateToken, async (req, res) => {
+  const fId = parseInt(req.params.friendId);
+  try {
+    const request = await prisma.friend.findUnique({
+      where: {
+        userId_friendId: {
+          userId: fId,
+          friendId: req.user.userId
+        }
+      }
+    });
+    if (!request || request.status !== 'PENDING') {
+      return res.status(404).json({ error: 'ไม่พบคำขอเป็นเพื่อนดังกล่าว' });
+    }
+
+    await prisma.friend.update({
+      where: { id: request.id },
+      data: { status: 'ACCEPTED' }
+    });
+
+    res.json({ message: 'รับแอดเป็นเพื่อนสำเร็จ' });
+  } catch (err) {
+    console.error('Accept friend error:', err);
+    res.status(500).json({ error: 'ไม่สามารถตอบรับเป็นเพื่อนได้' });
+  }
+});
+
+// Decline/Delete a friend request
+app.post('/api/friends/request/:friendId/decline', authenticateToken, async (req, res) => {
+  const fId = parseInt(req.params.friendId);
+  try {
+    const request = await prisma.friend.findUnique({
+      where: {
+        userId_friendId: {
+          userId: fId,
+          friendId: req.user.userId
+        }
+      }
+    });
+    if (!request) {
+      return res.status(404).json({ error: 'ไม่พบคำขอเป็นเพื่อนดังกล่าว' });
+    }
+
+    await prisma.friend.delete({
+      where: { id: request.id }
+    });
+
+    res.json({ message: 'ปฏิเสธคำขอเป็นเพื่อนสำเร็จ' });
+  } catch (err) {
+    console.error('Decline friend error:', err);
+    res.status(500).json({ error: 'ไม่สามารถปฏิเสธคำขอเป็นเพื่อนได้' });
+  }
+});
+
+// Delete a friend / Unfriend
+app.delete('/api/friends/:friendId', authenticateToken, async (req, res) => {
+  const fId = parseInt(req.params.friendId);
+  try {
+    const friendRelation = await prisma.friend.findFirst({
+      where: {
+        OR: [
+          { userId: req.user.userId, friendId: fId },
+          { userId: fId, friendId: req.user.userId }
+        ],
+        status: 'ACCEPTED'
+      }
+    });
+
+    if (!friendRelation) {
+      return res.status(404).json({ error: 'ไม่พบความสัมพันธ์เพื่อนดังกล่าว' });
+    }
+
+    await prisma.friend.delete({
+      where: { id: friendRelation.id }
+    });
+
+    res.json({ message: 'ลบเพื่อนสำเร็จ' });
+  } catch (err) {
+    console.error('Unfriend error:', err);
+    res.status(500).json({ error: 'ไม่สามารถลบเพื่อนได้' });
+  }
+});
+
+// Get another user's public profile and relation status
+app.get('/api/user/:userId/profile', authenticateToken, async (req, res) => {
+  const targetId = parseInt(req.params.userId);
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: targetId },
+      select: {
+        id: true,
+        username: true,
+        fullName: true,
+        faceImage: true,
+        level: true,
+        points: true,
+        streak: true,
+        battleWins: true
+      }
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'ไม่พบผู้ใช้งาน' });
+    }
+
+    // Check relationship status
+    const rel = await prisma.friend.findFirst({
+      where: {
+        OR: [
+          { userId: req.user.userId, friendId: targetId },
+          { userId: targetId, friendId: req.user.userId }
+        ]
+      }
+    });
+
+    // Check if blocked by either
+    const block = await prisma.block.findFirst({
+      where: {
+        OR: [
+          { userId: req.user.userId, blockedId: targetId },
+          { userId: targetId, blockedId: req.user.userId }
+        ]
+      }
+    });
+
+    let relationStatus = 'NONE'; // NONE, ACCEPTED, PENDING_SENT, PENDING_RECEIVED, BLOCKED
+    if (block) {
+      relationStatus = 'BLOCKED';
+    } else if (rel) {
+      if (rel.status === 'ACCEPTED') {
+        relationStatus = 'ACCEPTED';
+      } else if (rel.status === 'PENDING') {
+        relationStatus = rel.userId === req.user.userId ? 'PENDING_SENT' : 'PENDING_RECEIVED';
+      }
+    }
+
+    res.json({
+      ...user,
+      relationStatus
+    });
+  } catch (err) {
+    console.error('Fetch public profile error:', err);
+    res.status(500).json({ error: 'ไม่สามารถโหลดโปรไฟล์ผู้ใช้งานได้' });
   }
 });
 
