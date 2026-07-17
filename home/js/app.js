@@ -412,8 +412,24 @@ function updateProfileTabDetails() {
   if (profileName) profileName.textContent = displayName;
   if (profileEmail) profileEmail.textContent = userProfile.email || '';
   
-  // Format joining date (use fallback or mock)
-  const createdAt = userProfile.createdAt ? new Date(userProfile.createdAt) : new Date();
+  // Format joining date robustly parsing ISO string (independent of local browser calendar parsing offsets)
+  let createdAt = new Date();
+  if (userProfile.createdAt) {
+    try {
+      const dateParts = userProfile.createdAt.split('T')[0].split('-');
+      if (dateParts.length === 3) {
+        const year = parseInt(dateParts[0], 10);
+        const month = parseInt(dateParts[1], 10) - 1; // 0-indexed month
+        const day = parseInt(dateParts[2], 10);
+        createdAt = new Date(year, month, day);
+      } else {
+        createdAt = new Date(userProfile.createdAt);
+      }
+    } catch (e) {
+      createdAt = new Date();
+    }
+  }
+  
   const months = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
   const formattedDate = `สมาชิกตั้งแต่ ${months[createdAt.getMonth()]} ${createdAt.getFullYear() + 543}`;
   if (profileJoinDate) profileJoinDate.textContent = formattedDate;
@@ -451,7 +467,10 @@ function updateProfileTabDetails() {
   if (profileAvgScore) profileAvgScore.textContent = `${avgScore}%`;
   if (profileStreakCount) profileStreakCount.textContent = `${userProfile.streak || 0} วัน`;
   
-  // Calculate answered questions dynamically
-  const totalDone = userProfile.points ? Math.floor(userProfile.points / 10) * 5 + 12 : 12;
+  // Calculate answered questions dynamically (only if they have scores, otherwise show 0)
+  const hasScores = nonZeroScores.length > 0;
+  const totalDone = hasScores
+    ? (userProfile.points ? Math.floor(userProfile.points / 10) * 5 + 12 : 12)
+    : 0;
   if (profileQuestionsCount) profileQuestionsCount.textContent = totalDone.toLocaleString();
 }
