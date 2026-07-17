@@ -731,6 +731,140 @@ app.post('/api/auth/google', async (req, res) => {
   }
 });
 
+// --- Google Auth Code Exchange Route (OAuth2 Code Flow) ---
+app.post('/api/auth/google-code', async (req, res) => {
+  const { code } = req.body;
+  if (!code) {
+    return res.status(400).json({ error: 'ไม่พบรหัส Authorization Code' });
+  }
+
+  try {
+    // Exchange authorization code for tokens
+    const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        code,
+        client_id: process.env.GOOGLE_CLIENT_ID,
+        client_secret: process.env.GOOGLE_CLIENT_SECRET || '',
+        redirect_uri: 'postmessage',
+        grant_type: 'authorization_code'
+      })
+    });
+
+    const tokenData = await tokenRes.json();
+
+    if (!tokenRes.ok || !tokenData.id_token) {
+      // Fallback: try to get user info from access_token
+      if (tokenData.access_token) {
+        const userInfoRes = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+          headers: { 'Authorization': `Bearer ${tokenData.access_token}` }
+        });
+        const userInfo = await userInfoRes.json();
+
+        if (!userInfo.email) {
+          return res.status(400).json({ error: 'ไม่สามารถดึงข้อมูลจาก Google ได้' });
+        }
+
+        // Find or create user
+        let user = await prisma.user.findFirst({ where: { email: userInfo.email } });
+
+        if (!user) {
+          const username = userInfo.email.split('@')[0] + '_' + Math.floor(1000 + Math.random() * 9000);
+          const randomPass = crypto.randomBytes(16).toString('hex');
+          const hashedPassword = await bcrypt.hash(randomPass, 10);
+
+          user = await prisma.user.create({
+            data: {
+              username,
+              fullName: userInfo.name || 'ผู้ใช้งาน Google',
+              email: userInfo.email,
+              password: hashedPassword,
+              emailVerified: true,
+              role: 'USER',
+              points: 100, xp: 0, level: 1, streak: 0,
+              pigLevel: 1, pigXp: 0,
+              scoreGeneral: 0, scoreThai: 0, scoreEnglish: 0,
+              scoreComputer: 0, scoreSocial: 0, scoreSecretariat: 0, scoreLaw: 0
+            }
+          });
+        }
+
+        const jwtToken = jwt.sign(
+          { userId: user.id, username: user.username, role: user.role },
+          JWT_SECRET, { expiresIn: '30d' }
+        );
+        const { password: _, ...userWithoutPassword } = user;
+
+        return res.json({
+          message: 'เข้าสู่ระบบด้วย Google สำเร็จ!',
+          token: jwtToken,
+          user: userWithoutPassword,
+          redirectTo: (user.role === 'ADMIN' || user.role === 'OWNER') ? '/admin-dashboard/' : '/home/'
+        });
+      }
+
+      return res.status(400).json({ error: 'การแลกเปลี่ยน Authorization Code ล้มเหลว' });
+    }
+
+    // Verify the id_token
+    const googleUrl = `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(tokenData.id_token)}`;
+    const verifyRes = await fetch(googleUrl);
+    if (!verifyRes.ok) {
+      return res.status(400).json({ error: 'ID Token ไม่ถูกต้อง' });
+    }
+    const tokenInfo = await verifyRes.json();
+
+    const email = tokenInfo.email;
+    const name = tokenInfo.name || tokenInfo.given_name || 'ผู้ใช้งาน Google';
+
+    if (!email) {
+      return res.status(400).json({ error: 'บัญชี Google ไม่ได้เปิดเผยอีเมล' });
+    }
+
+    let user = await prisma.user.findFirst({ where: { email } });
+
+    if (!user) {
+      const username = email.split('@')[0] + '_' + Math.floor(1000 + Math.random() * 9000);
+      const randomPass = crypto.randomBytes(16).toString('hex');
+      const hashedPassword = await bcrypt.hash(randomPass, 10);
+
+      user = await prisma.user.create({
+        data: {
+          username, fullName: name, email, password: hashedPassword,
+          emailVerified: true, role: 'USER',
+          points: 100, xp: 0, level: 1, streak: 0,
+          pigLevel: 1, pigXp: 0,
+          scoreGeneral: 0, scoreThai: 0, scoreEnglish: 0,
+          scoreComputer: 0, scoreSocial: 0, scoreSecretariat: 0, scoreLaw: 0
+        }
+      });
+    } else if (!user.emailVerified) {
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data: { emailVerified: true }
+      });
+    }
+
+    const jwtToken = jwt.sign(
+      { userId: user.id, username: user.username, role: user.role },
+      JWT_SECRET, { expiresIn: '30d' }
+    );
+    const { password: _, ...userWithoutPassword } = user;
+
+    res.json({
+      message: 'เข้าสู่ระบบด้วย Google สำเร็จ!',
+      token: jwtToken,
+      user: userWithoutPassword,
+      redirectTo: (user.role === 'ADMIN' || user.role === 'OWNER') ? '/admin-dashboard/' : '/home/'
+    });
+
+  } catch (err) {
+    console.error('Google code exchange error:', err);
+    res.status(500).json({ error: 'เกิดข้อผิดพลาดในการตรวจสอบสิทธิ์กับ Google' });
+  }
+});
+
 // --- Forgot Password Route ---
 app.post('/api/auth/forgot-password', async (req, res) => {
   const { email } = req.body;

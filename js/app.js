@@ -240,58 +240,85 @@ registerForm.addEventListener('submit', async (e) => {
 // ==========================================
 // Real Google Sign-In via API (POST /api/auth/google)
 // ==========================================
-let googleClientId = '';
+const FALLBACK_GOOGLE_CLIENT_ID = '848275108419-q0171b1bmm4l29lp9blgpin3fl4p1fnh.apps.googleusercontent.com';
+let googleClientId = FALLBACK_GOOGLE_CLIENT_ID;
 
 window.addEventListener('DOMContentLoaded', () => {
-  // Fetch Google Client ID from API server
+  // Try to fetch Client ID from API, but use fallback immediately
   fetch(`${API_BASE}/api/auth/config`)
     .then(res => res.json())
     .then(data => {
-      googleClientId = data.googleClientId || '';
-      initGoogleIdentity();
+      if (data.googleClientId) googleClientId = data.googleClientId;
     })
-    .catch(err => {
-      console.error('Failed to fetch auth config:', err);
-      // Fallback: try reading from .env
-      fetch('.env')
-        .then(res => res.text())
-        .then(text => {
-          const lines = text.split('\n');
-          for (let line of lines) {
-            const parts = line.split('=');
-            if (parts[0] && parts[0].trim() === 'GOOGLE_CLIENT_ID') {
-              googleClientId = parts[1].trim().replace(/"/g, '');
-              break;
-            }
-          }
-          initGoogleIdentity();
-        })
-        .catch(() => {
-          googleClientId = '848275108419-q0171b1bmm4l29lp9blgpin3fl4p1fnh.apps.googleusercontent.com';
-          initGoogleIdentity();
-        });
+    .catch(() => {})
+    .finally(() => {
+      initGoogleIdentity();
     });
 });
 
 function initGoogleIdentity() {
   if (!googleClientId) return;
-  if (typeof google === 'undefined') {
+  if (typeof google === 'undefined' || !google.accounts) {
     setTimeout(initGoogleIdentity, 300);
     return;
   }
 
-  // Use Google Identity Services ID token flow (for server verification)
   google.accounts.id.initialize({
     client_id: googleClientId,
     callback: handleGoogleCredential,
     auto_select: false,
   });
 
-  // Bind all Google buttons to prompt picker
+  // Render hidden Google Sign-In buttons as invisible triggers
   document.querySelectorAll('.btn-modal-google').forEach(button => {
+    // Create a hidden container for Google's rendered button
+    const hiddenDiv = document.createElement('div');
+    hiddenDiv.style.cssText = 'position:absolute;opacity:0;pointer-events:none;width:0;height:0;overflow:hidden;';
+    hiddenDiv.id = 'gsi_' + Math.random().toString(36).slice(2);
+    document.body.appendChild(hiddenDiv);
+
+    google.accounts.id.renderButton(hiddenDiv, {
+      type: 'standard',
+      size: 'large',
+    });
+
+    // When user clicks our custom button, trigger Google popup via OAuth
     button.addEventListener('click', (e) => {
       e.preventDefault();
-      google.accounts.id.prompt();
+      // Use the Google Identity Services code client for popup flow
+      const client = google.accounts.oauth2.initCodeClient({
+        client_id: googleClientId,
+        scope: 'openid email profile',
+        ux_mode: 'popup',
+        callback: async (tokenResponse) => {
+          if (tokenResponse.error) {
+            alert('การเข้าสู่ระบบด้วย Google ถูกยกเลิก');
+            return;
+          }
+          // Exchange code for id_token via our backend
+          try {
+            const res = await fetch(`${API_BASE}/api/auth/google-code`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ code: tokenResponse.code })
+            });
+            const data = await res.json();
+            if (!res.ok) {
+              alert(data.error || 'เข้าสู่ระบบด้วย Google ไม่สำเร็จ');
+              return;
+            }
+            sessionStorage.setItem('authToken', data.token);
+            sessionStorage.setItem('userProfile', JSON.stringify(data.user));
+            hideModal(loginModal);
+            hideModal(registerModal);
+            window.location.href = 'home/index.html';
+          } catch (err) {
+            console.error('Google code exchange error:', err);
+            alert('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาลองใหม่');
+          }
+        }
+      });
+      client.requestCode();
     });
   });
 }
@@ -313,7 +340,6 @@ async function handleGoogleCredential(response) {
       return;
     }
 
-    // Save JWT token and user data
     sessionStorage.setItem('authToken', data.token);
     sessionStorage.setItem('userProfile', JSON.stringify(data.user));
 
