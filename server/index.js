@@ -3612,6 +3612,62 @@ app.post('/api/community/posts', authenticateToken, async (req, res) => {
   }
 });
 
+// Edit a post (only owner)
+app.put('/api/community/posts/:postId', authenticateToken, async (req, res) => {
+  const { postId } = req.params;
+  const { content } = req.body;
+  if (!content || !content.trim()) {
+    return res.status(400).json({ error: 'กรุณากรอกข้อความโพสต์' });
+  }
+  try {
+    const post = await prisma.post.findUnique({
+      where: { id: parseInt(postId) }
+    });
+    if (!post) {
+      return res.status(404).json({ error: 'ไม่พบโพสต์ที่ต้องการแก้ไข' });
+    }
+    if (post.userId !== req.user.userId) {
+      return res.status(403).json({ error: 'ไม่มีสิทธิ์แก้ไขโพสต์นี้' });
+    }
+    const updatedPost = await prisma.post.update({
+      where: { id: parseInt(postId) },
+      data: { content },
+      include: {
+        user: {
+          select: { id: true, username: true, fullName: true, faceImage: true }
+        }
+      }
+    });
+    res.json(updatedPost);
+  } catch (err) {
+    console.error('Update post error:', err);
+    res.status(500).json({ error: 'ไม่สามารถแก้ไขโพสต์ได้' });
+  }
+});
+
+// Delete a post (only owner)
+app.delete('/api/community/posts/:postId', authenticateToken, async (req, res) => {
+  const { postId } = req.params;
+  try {
+    const post = await prisma.post.findUnique({
+      where: { id: parseInt(postId) }
+    });
+    if (!post) {
+      return res.status(404).json({ error: 'ไม่พบโพสต์ที่ต้องการลบ' });
+    }
+    if (post.userId !== req.user.userId) {
+      return res.status(403).json({ error: 'ไม่มีสิทธิ์ลบโพสต์นี้' });
+    }
+    await prisma.post.delete({
+      where: { id: parseInt(postId) }
+    });
+    res.json({ message: 'ลบโพสต์สำเร็จ' });
+  } catch (err) {
+    console.error('Delete post error:', err);
+    res.status(500).json({ error: 'ไม่สามารถลบโพสต์ได้' });
+  }
+});
+
 // Add a comment to a post
 app.post('/api/community/posts/:postId/comments', authenticateToken, async (req, res) => {
   const { postId } = req.params;

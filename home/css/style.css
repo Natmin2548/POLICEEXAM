@@ -1867,5 +1867,27 @@ button {
   text-align: right;
 }
 
+/* Post Actions (Edit / Delete buttons) */
+.post-action-btn {
+  font-size: 11px;
+  color: var(--text-light);
+  cursor: pointer;
+  margin-right: 8px;
+  transition: var(--transition-fast);
+  user-select: none;
+}
+
+.post-action-btn:hover {
+  text-decoration: underline;
+}
+
+.post-action-btn.edit:hover {
+  color: #D97706;
+}
+
+.post-action-btn.delete:hover {
+  color: #EF4444;
+}
+
 
 

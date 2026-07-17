@@ -1065,6 +1065,18 @@ async function loadCommunityPosts() {
       const postDate = new Date(p.createdAt);
       
       const timeStr = formatPostTime(postDate);
+
+      // Render Edit & Delete actions for own posts
+      const isMyPost = userProfile && p.userId === userProfile.id;
+      let actionsHtml = '';
+      if (isMyPost) {
+        actionsHtml = `
+          <div style="display: flex; gap: 8px; margin-top: 4px;">
+            <span class="post-action-btn edit" onclick="startEditPost(${p.id})">แก้ไข</span>
+            <span class="post-action-btn delete" onclick="deletePost(${p.id})">ลบ</span>
+          </div>
+        `;
+      }
       
       // Comments markup
       let commentsHtml = '';
@@ -1096,10 +1108,11 @@ async function loadCommunityPosts() {
               <div>
                 <span class="post-author-name" style="display: block;">${displayName}</span>
                 <span class="post-time">${timeStr}</span>
+                ${actionsHtml}
               </div>
             </div>
           </div>
-          <p class="post-body">${escapeHTML(p.content)}</p>
+          <p class="post-body" id="postBodyText-${p.id}">${escapeHTML(p.content)}</p>
           
           <!-- Comments List Area -->
           ${commentsHtml}
@@ -1327,5 +1340,89 @@ function escapeHTML(str) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 }
+
+// Expose functions globally for HTML inline event listeners
+window.submitComment = submitComment;
+
+window.startEditPost = function(postId) {
+  const bodyTextEl = document.getElementById(`postBodyText-${postId}`);
+  if (!bodyTextEl) return;
+
+  // Retrieve current content and store backup
+  const currentContent = bodyTextEl.getAttribute('data-original-content') || bodyTextEl.textContent;
+  bodyTextEl.setAttribute('data-original-content', currentContent);
+
+  bodyTextEl.innerHTML = `
+    <div style="display: flex; flex-direction: column; gap: 8px; width: 100%; margin-top: 8px;">
+      <textarea id="txtEditPostContent-${postId}" style="width: 100%; height: 70px; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; font-family: 'Kanit', sans-serif; font-size: 13px; resize: none; outline: none; background-color: white;" onfocus="this.style.borderColor='var(--primary-color)'" onblur="this.style.borderColor='var(--border-color)'">${currentContent}</textarea>
+      <div style="display: flex; gap: 8px; justify-content: flex-end;">
+        <button class="btn-submit-comment" style="background-color: #F1F5F9; color: var(--text-dark);" onclick="cancelEditPost(${postId})">ยกเลิก</button>
+        <button class="btn-submit-comment" style="background-color: var(--primary-color); color: white;" onclick="saveEditPost(${postId})">บันทึก</button>
+      </div>
+    </div>
+  `;
+};
+
+window.cancelEditPost = function(postId) {
+  const bodyTextEl = document.getElementById(`postBodyText-${postId}`);
+  if (!bodyTextEl) return;
+  const original = bodyTextEl.getAttribute('data-original-content') || '';
+  bodyTextEl.innerHTML = escapeHTML(original);
+};
+
+window.saveEditPost = async function(postId) {
+  const input = document.getElementById(`txtEditPostContent-${postId}`);
+  if (!input) return;
+
+  const content = input.value.trim();
+  if (!content) {
+    alert('กรุณากรอกข้อความโพสต์');
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/api/community/posts/${postId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`
+      },
+      body: JSON.stringify({ content })
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'Failed to update post');
+    }
+
+    loadCommunityPosts();
+  } catch (err) {
+    console.error('Save post error:', err);
+    alert(err.message);
+  }
+};
+
+window.deletePost = async function(postId) {
+  if (!confirm('คุณต้องการลบโพสต์นี้ใช่หรือไม่? ความคิดเห็นทั้งหมดจะถูกลบออกไปด้วย')) return;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/community/posts/${postId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${authToken}`
+      }
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'Failed to delete post');
+    }
+
+    loadCommunityPosts();
+  } catch (err) {
+    console.error('Delete post error:', err);
+    alert(err.message);
+  }
+};
 
 
