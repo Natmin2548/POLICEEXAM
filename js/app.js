@@ -269,58 +269,29 @@ function initGoogleIdentity() {
     auto_select: false,
   });
 
-  // Render hidden Google Sign-In buttons as invisible triggers
-  document.querySelectorAll('.btn-modal-google').forEach(button => {
-    // Create a hidden container for Google's rendered button
-    const hiddenDiv = document.createElement('div');
-    hiddenDiv.style.cssText = 'position:absolute;opacity:0;pointer-events:none;width:0;height:0;overflow:hidden;';
-    hiddenDiv.id = 'gsi_' + Math.random().toString(36).slice(2);
-    document.body.appendChild(hiddenDiv);
-
-    google.accounts.id.renderButton(hiddenDiv, {
-      type: 'standard',
+  // Render official Google button for Login modal
+  const loginBtnContainer = document.getElementById('googleSignInButtonLogin');
+  if (loginBtnContainer) {
+    google.accounts.id.renderButton(loginBtnContainer, {
+      theme: 'outline',
       size: 'large',
+      text: 'signin_with',
+      shape: 'rectangular',
+      width: 320
     });
+  }
 
-    // When user clicks our custom button, trigger Google popup via OAuth
-    button.addEventListener('click', (e) => {
-      e.preventDefault();
-      // Use the Google Identity Services code client for popup flow
-      const client = google.accounts.oauth2.initCodeClient({
-        client_id: googleClientId,
-        scope: 'openid email profile',
-        ux_mode: 'popup',
-        callback: async (tokenResponse) => {
-          if (tokenResponse.error) {
-            alert('การเข้าสู่ระบบด้วย Google ถูกยกเลิก');
-            return;
-          }
-          // Exchange code for id_token via our backend
-          try {
-            const res = await fetch(`${API_BASE}/api/auth/google-code`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ code: tokenResponse.code })
-            });
-            const data = await res.json();
-            if (!res.ok) {
-              alert(data.error || 'เข้าสู่ระบบด้วย Google ไม่สำเร็จ');
-              return;
-            }
-            sessionStorage.setItem('authToken', data.token);
-            sessionStorage.setItem('userProfile', JSON.stringify(data.user));
-            hideModal(loginModal);
-            hideModal(registerModal);
-            window.location.href = 'home/index.html';
-          } catch (err) {
-            console.error('Google code exchange error:', err);
-            alert('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาลองใหม่');
-          }
-        }
-      });
-      client.requestCode();
+  // Render official Google button for Register modal
+  const registerBtnContainer = document.getElementById('googleSignInButtonRegister');
+  if (registerBtnContainer) {
+    google.accounts.id.renderButton(registerBtnContainer, {
+      theme: 'outline',
+      size: 'large',
+      text: 'signup_with',
+      shape: 'rectangular',
+      width: 320
     });
-  });
+  }
 }
 
 async function handleGoogleCredential(response) {
