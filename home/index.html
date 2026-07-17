@@ -10,6 +10,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <!-- Stylesheet -->
   <link rel="stylesheet" href="css/style.css">
+  <!-- Chart.js for Radar Chart -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
   <!-- External Application Script -->
   <script src="js/app.js" defer></script>
 </head>
@@ -170,6 +172,17 @@
           <div class="stat-info">
             <span class="stat-label">เลเวล</span>
             <span class="stat-number" id="statLevel">—</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Radar Chart Section -->
+      <section class="weakness-radar-section">
+        <h3 class="section-title">ภาพรวมข้อที่ตอบผิดสะสม</h3>
+        <div class="radar-card">
+          <canvas id="radarChartCanvas"></canvas>
+          <div id="radarEmptyState" class="empty-state" style="display: none;">
+            <p>ทำข้อสอบเพิ่มเติมเพื่อสะสมสถิติจุดอ่อน</p>
           </div>
         </div>
       </section>

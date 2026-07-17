@@ -513,6 +513,34 @@ button {
   height: 14px;
 }
 
+/* Weakness Radar Section */
+.weakness-radar-section {
+  margin-bottom: 24px;
+  text-align: left;
+}
+.radar-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 280px;
+  position: relative;
+}
+.radar-card canvas {
+  max-width: 100%;
+  max-height: 280px;
+}
+.radar-card .empty-state {
+  font-size: 13px;
+  color: var(--text-light);
+  text-align: center;
+  padding: 40px 0;
+  font-weight: 500;
+}
+
 /* Result List Card */
 .result-list-container {
   background-color: var(--bg-card);

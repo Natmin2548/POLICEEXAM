@@ -22,6 +22,7 @@ function checkSession() {
   userProfile = JSON.parse(sessionData);
   initializeDashboard();
   loadRealProfile();
+  loadRadarChart();
 }
 
 function initializeDashboard() {
@@ -86,6 +87,121 @@ async function loadRealProfile() {
     }
   } catch (err) {
     console.error('Failed to load profile:', err);
+  }
+}
+
+// ==========================================
+// Load Weaknesses Data & Render Radar Chart
+// ==========================================
+let radarChartInstance = null;
+
+async function loadRadarChart() {
+  try {
+    const res = await fetch(`${API_BASE}/api/user/weaknesses`, {
+      headers: { 'Authorization': `Bearer ${authToken}` }
+    });
+
+    if (!res.ok) throw new Error('Failed to load weaknesses');
+    const data = await res.json();
+
+    const categories = {
+      law: 'กฎหมาย',
+      thai: 'ภาษาไทย',
+      general: 'ความรู้ทั่วไป',
+      english: 'ภาษาอังกฤษ',
+      computer: 'คอมพิวเตอร์',
+      social: 'สังคม/จริยธรรม',
+      secretariat: 'งานสารบรรณ'
+    };
+
+    const labels = Object.values(categories);
+    const values = Object.keys(categories).map(key => {
+      // API can return category counts directly in root or in summary object
+      const count = (data[key] !== undefined) ? data[key] : (data.summary && data.summary[key] ? data.summary[key] : 0);
+      return count || 0;
+    });
+
+    const totalWrong = values.reduce((sum, val) => sum + val, 0);
+
+    const canvas = document.getElementById('radarChartCanvas');
+    const emptyState = document.getElementById('radarEmptyState');
+
+    if (!canvas) return;
+
+    if (totalWrong === 0) {
+      canvas.style.display = 'none';
+      if (emptyState) emptyState.style.display = 'block';
+      return;
+    }
+
+    canvas.style.display = 'block';
+    if (emptyState) emptyState.style.display = 'none';
+
+    if (radarChartInstance) {
+      radarChartInstance.destroy();
+    }
+
+    if (typeof Chart === 'undefined') {
+      console.warn('Waiting for Chart.js to load...');
+      setTimeout(loadRadarChart, 300);
+      return;
+    }
+
+    const ctx = canvas.getContext('2d');
+    radarChartInstance = new Chart(ctx, {
+      type: 'radar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'ข้อที่ตอบผิดสะสม',
+          data: values,
+          backgroundColor: 'rgba(189, 27, 11, 0.15)',
+          borderColor: '#BD1B0B',
+          borderWidth: 2,
+          pointBackgroundColor: '#BD1B0B',
+          pointBorderColor: '#fff',
+          pointHoverBackgroundColor: '#fff',
+          pointHoverBorderColor: '#BD1B0B'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false
+          }
+        },
+        scales: {
+          r: {
+            angleLines: {
+              color: '#E2E8F0'
+            },
+            grid: {
+              color: '#E2E8F0'
+            },
+            pointLabels: {
+              font: {
+                family: 'Kanit',
+                size: 11
+              },
+              color: '#64748B'
+            },
+            ticks: {
+              backdropColor: 'transparent',
+              color: '#64748B',
+              font: {
+                size: 9
+              },
+              precision: 0
+            }
+          }
+        }
+      }
+    });
+
+  } catch (err) {
+    console.error('Error loading radar chart:', err);
   }
 }
 
