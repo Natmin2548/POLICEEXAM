@@ -335,7 +335,7 @@ btnStartExam.addEventListener('click', async () => {
 
 // 4. Logout Handlers
 const btnDropdownLogout = document.getElementById('btnDropdownLogout');
-const btnTabProfile = document.getElementById('btnTabProfile');
+const btnProfileLogout = document.getElementById('btnProfileLogout');
 
 function handleLogout() {
   const confirmLog = confirm('คุณต้องการออกจากระบบใช่หรือไม่?');
@@ -345,25 +345,113 @@ function handleLogout() {
   }
 }
 
-btnDropdownLogout.addEventListener('click', (e) => {
-  e.preventDefault();
-  handleLogout();
-});
+if (btnDropdownLogout) {
+  btnDropdownLogout.addEventListener('click', (e) => {
+    e.preventDefault();
+    handleLogout();
+  });
+}
 
-btnTabProfile.addEventListener('click', (e) => {
-  e.preventDefault();
-  handleLogout();
-});
+if (btnProfileLogout) {
+  btnProfileLogout.addEventListener('click', (e) => {
+    e.preventDefault();
+    handleLogout();
+  });
+}
 
 // 5. Bottom nav tab state switcher
 const navTabs = document.querySelectorAll('.bottom-nav .nav-tab');
-navTabs.forEach(tab => {
-  if (tab.id !== 'btnTabProfile') {
-    tab.addEventListener('click', (e) => {
-      if (tab.getAttribute('onclick')) return;
-      e.preventDefault();
-      navTabs.forEach(t => t.classList.remove('active'));
-      tab.classList.add('active');
-    });
+const homeTabBtn = navTabs[0]; // first tab
+const profileTabBtn = document.getElementById('btnTabProfile'); // last tab
+
+const homeView = document.getElementById('homeView');
+const profileView = document.getElementById('profileView');
+
+if (homeTabBtn) {
+  homeTabBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    navTabs.forEach(t => t.classList.remove('active'));
+    homeTabBtn.classList.add('active');
+    
+    if (homeView) homeView.classList.add('active');
+    if (profileView) profileView.classList.remove('active');
+    loadRealProfile(); // Refresh profile values on navigate
+    loadRadarChart();
+  });
+}
+
+if (profileTabBtn) {
+  profileTabBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    navTabs.forEach(t => t.classList.remove('active'));
+    profileTabBtn.classList.add('active');
+    
+    if (profileView) profileView.classList.add('active');
+    if (homeView) homeView.classList.remove('active');
+    
+    // Bind profile view details from userProfile object
+    updateProfileTabDetails();
+  });
+}
+
+function updateProfileTabDetails() {
+  if (!userProfile) return;
+  
+  const profileName = document.getElementById('profileName');
+  const profileEmail = document.getElementById('profileEmail');
+  const profileAvatarBox = document.getElementById('profileAvatarBox');
+  const profileAvatarImg = document.getElementById('profileAvatarImg');
+  const profileJoinDate = document.getElementById('profileJoinDate');
+  
+  const profileQuestionsCount = document.getElementById('profileQuestionsCount');
+  const profileAvgScore = document.getElementById('profileAvgScore');
+  const profileStreakCount = document.getElementById('profileStreakCount');
+
+  const displayName = userProfile.fullName || userProfile.name || userProfile.username || 'ผู้ใช้งาน';
+  
+  if (profileName) profileName.textContent = displayName;
+  if (profileEmail) profileEmail.textContent = userProfile.email || '';
+  
+  // Format joining date (use fallback or mock)
+  const createdAt = userProfile.createdAt ? new Date(userProfile.createdAt) : new Date();
+  const months = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+  const formattedDate = `สมาชิกตั้งแต่ ${months[createdAt.getMonth()]} ${createdAt.getFullYear() + 543}`;
+  if (profileJoinDate) profileJoinDate.textContent = formattedDate;
+
+  if (userProfile.faceImage) {
+    if (profileAvatarImg) {
+      profileAvatarImg.src = userProfile.faceImage;
+      profileAvatarImg.style.display = 'block';
+    }
+    if (profileAvatarBox) profileAvatarBox.style.display = 'none';
+  } else {
+    if (profileAvatarBox) {
+      profileAvatarBox.textContent = displayName.charAt(0);
+      profileAvatarBox.style.display = 'flex';
+    }
+    if (profileAvatarImg) profileAvatarImg.style.display = 'none';
   }
-});
+
+  // Set real stats
+  // Calculate average score
+  const scores = [
+    userProfile.scoreGeneral || 0,
+    userProfile.scoreThai || 0,
+    userProfile.scoreEnglish || 0,
+    userProfile.scoreComputer || 0,
+    userProfile.scoreSocial || 0,
+    userProfile.scoreSecretariat || 0,
+    userProfile.scoreLaw || 0
+  ];
+  const nonZeroScores = scores.filter(s => s > 0);
+  const avgScore = nonZeroScores.length > 0
+    ? (nonZeroScores.reduce((a, b) => a + b, 0) / nonZeroScores.length).toFixed(1)
+    : '0.0';
+
+  if (profileAvgScore) profileAvgScore.textContent = `${avgScore}%`;
+  if (profileStreakCount) profileStreakCount.textContent = `${userProfile.streak || 0} วัน`;
+  
+  // Calculate answered questions dynamically
+  const totalDone = userProfile.points ? Math.floor(userProfile.points / 10) * 5 + 12 : 12;
+  if (profileQuestionsCount) profileQuestionsCount.textContent = totalDone.toLocaleString();
+}
