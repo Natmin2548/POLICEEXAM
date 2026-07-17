@@ -957,8 +957,10 @@ function updateStatsTabDetails() {
 // ==========================================
 // Community Section Logic
 // ==========================================
-let communityActiveTab = 'posts'; // 'posts', 'chat', 'groups'
+let communityActiveTab = 'posts'; // 'posts', 'chat', 'groups', 'friends'
 let chatPollInterval = null;
+let groupChatPollInterval = null;
+let dmChatPollInterval = null;
 
 function updateCommunityTabDetails() {
   setupCommunitySubtabs();
@@ -977,6 +979,7 @@ function setupCommunitySubtabs() {
   const btnSubtabPosts = document.getElementById('btnSubtabPosts');
   const btnSubtabChat = document.getElementById('btnSubtabChat');
   const btnSubtabGroups = document.getElementById('btnSubtabGroups');
+  const btnSubtabFriends = document.getElementById('btnSubtabFriends');
 
   if (btnSubtabPosts) {
     btnSubtabPosts.onclick = (e) => {
@@ -998,6 +1001,13 @@ function setupCommunitySubtabs() {
       switchCommunitySubtab('groups');
     };
   }
+
+  if (btnSubtabFriends) {
+    btnSubtabFriends.onclick = (e) => {
+      e.preventDefault();
+      switchCommunitySubtab('friends');
+    };
+  }
 }
 
 function switchCommunitySubtab(tab) {
@@ -1006,26 +1016,40 @@ function switchCommunitySubtab(tab) {
   const btnSubtabPosts = document.getElementById('btnSubtabPosts');
   const btnSubtabChat = document.getElementById('btnSubtabChat');
   const btnSubtabGroups = document.getElementById('btnSubtabGroups');
+  const btnSubtabFriends = document.getElementById('btnSubtabFriends');
 
   const contentPosts = document.getElementById('subtabContentPosts');
   const contentChat = document.getElementById('subtabContentChat');
   const contentGroups = document.getElementById('subtabContentGroups');
+  const contentFriends = document.getElementById('subtabContentFriends');
 
   // Toggle active class on buttons
   if (btnSubtabPosts) btnSubtabPosts.classList.toggle('active', tab === 'posts');
   if (btnSubtabChat) btnSubtabChat.classList.toggle('active', tab === 'chat');
   if (btnSubtabGroups) btnSubtabGroups.classList.toggle('active', tab === 'groups');
+  if (btnSubtabFriends) btnSubtabFriends.classList.toggle('active', tab === 'friends');
 
   // Toggle active class on content panels
   if (contentPosts) contentPosts.classList.toggle('active', tab === 'posts');
   if (contentChat) contentChat.classList.toggle('active', tab === 'chat');
   if (contentGroups) contentGroups.classList.toggle('active', tab === 'groups');
+  if (contentFriends) contentFriends.classList.toggle('active', tab === 'friends');
 
-  // Clear polling if not in chat
-  if (chatPollInterval) {
-    clearInterval(chatPollInterval);
-    chatPollInterval = null;
-  }
+  // Clear all polling intervals
+  if (chatPollInterval) { clearInterval(chatPollInterval); chatPollInterval = null; }
+  if (groupChatPollInterval) { clearInterval(groupChatPollInterval); groupChatPollInterval = null; }
+  if (dmChatPollInterval) { clearInterval(dmChatPollInterval); dmChatPollInterval = null; }
+
+  // Reset panels view states
+  const groupListMainPanel = document.getElementById('groupListMainPanel');
+  const groupChatScreenPanel = document.getElementById('groupChatScreenPanel');
+  if (groupListMainPanel) groupListMainPanel.style.display = 'block';
+  if (groupChatScreenPanel) groupChatScreenPanel.style.display = 'none';
+
+  const friendsMainPanel = document.getElementById('friendsMainPanel');
+  const dmChatScreenPanel = document.getElementById('dmChatScreenPanel');
+  if (friendsMainPanel) friendsMainPanel.style.display = 'block';
+  if (dmChatScreenPanel) dmChatScreenPanel.style.display = 'none';
 
   if (tab === 'posts') {
     loadCommunityPosts();
@@ -1033,6 +1057,11 @@ function switchCommunitySubtab(tab) {
     loadChatMessages();
     // Poll chat messages every 3 seconds
     chatPollInterval = setInterval(loadChatMessages, 3000);
+  } else if (tab === 'groups') {
+    loadGroupsList();
+  } else if (tab === 'friends') {
+    loadFriendsList();
+    loadBlockedList();
   }
 }
 
@@ -1402,27 +1431,716 @@ window.saveEditPost = async function(postId) {
   }
 };
 
-window.deletePost = async function(postId) {
-  if (!confirm('คุณต้องการลบโพสต์นี้ใช่หรือไม่? ความคิดเห็นทั้งหมดจะถูกลบออกไปด้วย')) return;
+// ==========================================
+// Study Groups Logic
+// ==========================================
+let activeGroupId = null;
+
+async function loadGroupsList(searchVal = '') {
+  const container = document.getElementById('groupsListContainer');
+  if (!container) return;
 
   try {
-    const res = await fetch(`${API_BASE}/api/community/posts/${postId}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${authToken}`
-      }
+    const res = await fetch(`${API_BASE}/api/community/groups?search=${encodeURIComponent(searchVal)}`, {
+      headers: { 'Authorization': `Bearer ${authToken}` }
     });
+    if (!res.ok) throw new Error('Failed to load groups');
+    const groups = await res.json();
 
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.error || 'Failed to delete post');
+    if (groups.length === 0) {
+      container.innerHTML = `
+        <div style="background-color: var(--bg-card); border: 1px dashed var(--border-color); border-radius: 20px; padding: 40px; text-align: center; color: var(--text-light); font-size: 14px; grid-column: 1 / 3; width: 100%;">
+          <span style="font-size: 32px; display: block; margin-bottom: 8px;">👥</span>
+          ไม่พบกลุ่มติวที่ค้นหา<br>
+          <span style="font-size: 11px; opacity: 0.7;">คลิก "สร้างกลุ่ม" ขวาบนเพื่อตั้งกลุ่มแรกของคุณ!</span>
+        </div>
+      `;
+      return;
     }
 
-    loadCommunityPosts();
+    let html = '';
+    groups.forEach(g => {
+      // Creator options
+      const isCreator = userProfile && g.createdById === userProfile.id;
+      let actionBtnHtml = '';
+      if (g.isMember) {
+        actionBtnHtml = `
+          <div style="display: flex; flex-direction: column; gap: 6px; align-items: flex-end;">
+            <button class="btn-quick-match" style="padding: 6px 14px; font-size: 12px; border-radius: 8px; width: auto; box-shadow: none; display: block;" onclick="enterGroupChat(${g.id}, '${escapeHTML(g.name)}', ${g.memberCount}, ${g.createdById})">แชทกลุ่ม</button>
+            ${isCreator ? '' : `<button class="post-action-btn delete" style="font-size: 11px; margin-right: 0;" onclick="leaveGroup(${g.id})">ออกจากกลุ่ม</button>`}
+          </div>
+        `;
+      } else {
+        actionBtnHtml = `
+          <button class="btn-quick-match" style="padding: 6px 14px; font-size: 12px; border-radius: 8px; width: auto; box-shadow: none;" onclick="joinGroup(${g.id})">เข้าร่วม</button>
+        `;
+      }
+
+      let deleteBtnHtml = '';
+      if (isCreator) {
+        deleteBtnHtml = `<span class="post-action-btn delete" style="font-size: 11px; margin-left: 8px;" onclick="deleteGroup(${g.id})">ลบกลุ่ม</span>`;
+      }
+
+      html += `
+        <div class="battle-mode-item" style="cursor: default; padding: 14px 18px; margin-bottom: 12px;">
+          <div class="mode-item-left" style="text-align: left;">
+            <div class="mode-icon-wrapper ranked-icon" style="background-color: #F1F5F9; color: var(--text-dark); font-size: 18px;">👮</div>
+            <div class="mode-info">
+              <span class="mode-title" style="font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; color: var(--text-dark);">
+                ${escapeHTML(g.name)}
+                <span style="font-size: 10px; background-color: #E2E8F0; color: #64748B; padding: 2px 6px; border-radius: 4px;">ID: #${g.id}</span>
+              </span>
+              <span class="mode-subtitle" style="font-size: 12px; display: block; margin-top: 4px;">
+                สมาชิก ${g.memberCount} คน • สร้างโดย ${escapeHTML(g.creatorName)} ${deleteBtnHtml}
+              </span>
+              ${g.description ? `<p style="font-size: 12px; color: var(--text-light); margin: 6px 0 0 0; line-height: 1.4;">${escapeHTML(g.description)}</p>` : ''}
+            </div>
+          </div>
+          ${actionBtnHtml}
+        </div>
+      `;
+    });
+
+    container.innerHTML = html;
+
   } catch (err) {
-    console.error('Delete post error:', err);
-    alert(err.message);
+    console.error('Load groups error:', err);
+    container.innerHTML = '<div class="leaderboard-item-loading">ไม่สามารถโหลดกลุ่มได้</div>';
+  }
+}
+
+// Modal open/close handlers
+const btnOpenCreateGroupModal = document.getElementById('btnOpenCreateGroupModal');
+const createGroupModal = document.getElementById('createGroupModal');
+const btnCancelCreateGroup = document.getElementById('btnCancelCreateGroup');
+const btnSubmitCreateGroup = document.getElementById('btnSubmitCreateGroup');
+
+if (btnOpenCreateGroupModal && createGroupModal) {
+  btnOpenCreateGroupModal.onclick = () => {
+    createGroupModal.style.display = 'flex';
+    document.getElementById('txtCreateGroupName').value = '';
+    document.getElementById('txtCreateGroupDesc').value = '';
+  };
+}
+
+if (btnCancelCreateGroup && createGroupModal) {
+  btnCancelCreateGroup.onclick = () => {
+    createGroupModal.style.display = 'none';
+  };
+}
+
+if (btnSubmitCreateGroup && createGroupModal) {
+  btnSubmitCreateGroup.onclick = async () => {
+    const nameInput = document.getElementById('txtCreateGroupName');
+    const descInput = document.getElementById('txtCreateGroupDesc');
+    const name = nameInput.value.trim();
+    const description = descInput.value.trim();
+
+    if (!name) {
+      alert('กรุณากรอกชื่อกลุ่ม');
+      return;
+    }
+
+    btnSubmitCreateGroup.disabled = true;
+    btnSubmitCreateGroup.textContent = 'กำลังสร้าง...';
+
+    try {
+      const res = await fetch(`${API_BASE}/api/community/groups`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: JSON.stringify({ name, description })
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Failed to create group');
+      }
+
+      createGroupModal.style.display = 'none';
+      loadGroupsList(); // Reload feed
+    } catch (err) {
+      console.error('Create group error:', err);
+      alert(err.message);
+    } finally {
+      btnSubmitCreateGroup.disabled = false;
+      btnSubmitCreateGroup.textContent = 'สร้างกลุ่ม';
+    }
+  };
+}
+
+// Search groups input listener
+const txtGroupSearch = document.getElementById('txtGroupSearch');
+if (txtGroupSearch) {
+  let searchTimeout = null;
+  txtGroupSearch.oninput = () => {
+    if (searchTimeout) clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+      loadGroupsList(txtGroupSearch.value.trim());
+    }, 400);
+  };
+}
+
+// Join Group action
+window.joinGroup = async function(groupId) {
+  try {
+    const res = await fetch(`${API_BASE}/api/community/groups/${groupId}/join`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${authToken}` }
+    });
+    if (!res.ok) throw new Error('Join failed');
+    loadGroupsList(txtGroupSearch ? txtGroupSearch.value.trim() : '');
+  } catch (err) {
+    alert('ไม่สามารถเข้าร่วมกลุ่มได้');
   }
 };
+
+// Leave Group action
+window.leaveGroup = async function(groupId) {
+  if (!confirm('คุณแน่ใจว่าต้องการออกจากกลุ่มนี้ใช่หรือไม่?')) return;
+  try {
+    const res = await fetch(`${API_BASE}/api/community/groups/${groupId}/leave`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${authToken}` }
+    });
+    if (!res.ok) throw new Error('Leave failed');
+    loadGroupsList(txtGroupSearch ? txtGroupSearch.value.trim() : '');
+  } catch (err) {
+    alert('ไม่สามารถออกจากกลุ่มได้');
+  }
+};
+
+// Delete Group action
+window.deleteGroup = async function(groupId) {
+  if (!confirm('คุณต้องการลบกลุ่มติวนี้ใช่หรือไม่? ข้อมูลสมาชิกและข้อความทั้งหมดจะถูกลบถาวร')) return;
+  try {
+    const res = await fetch(`${API_BASE}/api/community/groups/${groupId}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${authToken}` }
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error);
+    }
+    loadGroupsList(txtGroupSearch ? txtGroupSearch.value.trim() : '');
+  } catch (err) {
+    alert(err.message || 'ไม่สามารถลบกลุ่มได้');
+  }
+};
+
+// --- Group Chat View Handlers ---
+window.enterGroupChat = function(groupId, groupName, memberCount, createdById) {
+  activeGroupId = groupId;
+  document.getElementById('groupListMainPanel').style.display = 'none';
+  
+  const screen = document.getElementById('groupChatScreenPanel');
+  screen.style.display = 'flex';
+
+  document.getElementById('lblChatGroupName').textContent = groupName;
+  document.getElementById('lblChatGroupMeta').textContent = `ID: #${groupId} • สมาชิก ${memberCount} คน`;
+
+  // Creator options inside header
+  const isCreator = userProfile && createdById === userProfile.id;
+  const btnDelete = document.getElementById('btnDeleteGroup');
+  const btnLeave = document.getElementById('btnLeaveGroup');
+
+  if (btnDelete) btnDelete.style.display = isCreator ? 'block' : 'none';
+  if (btnLeave) btnLeave.style.display = isCreator ? 'none' : 'block';
+
+  // Set event handlers for header buttons
+  if (btnLeave) {
+    btnLeave.onclick = async () => {
+      await leaveGroup(groupId);
+      exitGroupChat();
+    };
+  }
+  if (btnDelete) {
+    btnDelete.onclick = async () => {
+      await deleteGroup(groupId);
+      exitGroupChat();
+    };
+  }
+
+  // Load and start polling
+  loadGroupChatMessages(groupId);
+  if (groupChatPollInterval) clearInterval(groupChatPollInterval);
+  groupChatPollInterval = setInterval(() => loadGroupChatMessages(groupId), 3000);
+};
+
+window.exitGroupChat = function() {
+  activeGroupId = null;
+  if (groupChatPollInterval) {
+    clearInterval(groupChatPollInterval);
+    groupChatPollInterval = null;
+  }
+  document.getElementById('groupChatScreenPanel').style.display = 'none';
+  document.getElementById('groupListMainPanel').style.display = 'block';
+  loadGroupsList(txtGroupSearch ? txtGroupSearch.value.trim() : '');
+};
+
+const btnBackToGroups = document.getElementById('btnBackToGroups');
+if (btnBackToGroups) {
+  btnBackToGroups.onclick = () => {
+    exitGroupChat();
+  };
+}
+
+async function loadGroupChatMessages(groupId) {
+  const container = document.getElementById('groupChatMessagesContainer');
+  if (!container || activeGroupId !== groupId) return;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/community/groups/${groupId}/chat`, {
+      headers: { 'Authorization': `Bearer ${authToken}` }
+    });
+    if (!res.ok) throw new Error();
+    const messages = await res.json();
+
+    if (messages.length === 0) {
+      container.innerHTML = `
+        <div style="text-align: center; color: var(--text-light); font-size: 13px; padding-top: 40px;">
+          💬 เริ่มพิมพ์ข้อความแชทเพื่อพูดคุยในกลุ่มติววันนี้
+        </div>
+      `;
+      return;
+    }
+
+    let html = '';
+    messages.forEach(m => {
+      const isMe = userProfile && m.userId === userProfile.id;
+      const displayName = m.user.fullName || m.user.username || 'ผู้ใช้งาน';
+      const timeStr = new Date(m.createdAt).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+
+      html += `
+        <div class="chat-bubble ${isMe ? 'me' : ''}">
+          <span class="chat-sender">${isMe ? 'คุณ' : displayName}</span>
+          <div class="chat-message-box">
+            ${escapeHTML(m.content)}
+          </div>
+          <span class="chat-timestamp">${timeStr}</span>
+        </div>
+      `;
+    });
+
+    const isAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 60;
+    container.innerHTML = html;
+
+    if (isAtBottom || container.getAttribute('data-first-load') !== 'false') {
+      container.scrollTop = container.scrollHeight;
+      container.setAttribute('data-first-load', 'false');
+    }
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+// Send group chat message
+const btnSendGroupChat = document.getElementById('btnSendGroupChat');
+const txtGroupChatInput = document.getElementById('txtGroupChatInput');
+if (btnSendGroupChat && txtGroupChatInput) {
+  const handleSendGroupChat = async () => {
+    if (!activeGroupId) return;
+    const content = txtGroupChatInput.value.trim();
+    if (!content) return;
+
+    txtGroupChatInput.value = '';
+    btnSendGroupChat.disabled = true;
+
+    try {
+      const res = await fetch(`${API_BASE}/api/community/groups/${activeGroupId}/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: JSON.stringify({ content })
+      });
+      if (!res.ok) throw new Error();
+      loadGroupChatMessages(activeGroupId);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      btnSendGroupChat.disabled = false;
+      txtGroupChatInput.focus();
+    }
+  };
+
+  btnSendGroupChat.onclick = (e) => {
+    e.preventDefault();
+    handleSendGroupChat();
+  };
+
+  txtGroupChatInput.onkeydown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSendGroupChat();
+    }
+  };
+}
+
+// ==========================================
+// Friends, Blocks & Direct Chat Logic
+// ==========================================
+let activeFriendId = null;
+
+// Search other users to add as friends
+const txtFriendUserSearch = document.getElementById('txtFriendUserSearch');
+const friendUserSearchResultsContainer = document.getElementById('friendUserSearchResultsContainer');
+
+if (txtFriendUserSearch && friendUserSearchResultsContainer) {
+  txtFriendUserSearch.oninput = async () => {
+    const val = txtFriendUserSearch.value.trim();
+    if (!val) {
+      friendUserSearchResultsContainer.style.display = 'none';
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_BASE}/api/friends/search?search=${encodeURIComponent(val)}`, {
+        headers: { 'Authorization': `Bearer ${authToken}` }
+      });
+      if (!res.ok) throw new Error();
+      const users = await res.json();
+
+      if (users.length === 0) {
+        friendUserSearchResultsContainer.innerHTML = '<div style="padding: 10px 16px; font-size: 13px; color: var(--text-light); text-align: center;">ไม่พบผู้ใช้งาน</div>';
+        friendUserSearchResultsContainer.style.display = 'block';
+        return;
+      }
+
+      let html = '';
+      users.forEach(u => {
+        let actionBtn = '';
+        if (u.friendStatus === 'NONE') {
+          actionBtn = `<button class="btn-quick-match" style="padding: 4px 10px; font-size: 11px; border-radius: 6px; width: auto; box-shadow: none;" onclick="addFriend(${u.id})">เพิ่มเพื่อน</button>`;
+        } else if (u.friendStatus === 'ACCEPTED') {
+          actionBtn = `<span style="font-size: 11px; color: #10B981; font-weight: 500;">เป็นเพื่อนแล้ว</span>`;
+        }
+
+        html += `
+          <div class="search-result-item">
+            <div style="display: flex; align-items: center; gap: 8px; text-align: left;">
+              <div class="friend-user-avatar">${escapeHTML(u.fullName || u.username).charAt(0)}</div>
+              <div>
+                <span class="friend-user-name" style="display: block;">${escapeHTML(u.fullName || u.username)}</span>
+                <span style="font-size: 10px; color: var(--text-light);">@${escapeHTML(u.username)}</span>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              ${actionBtn}
+              <span class="post-action-btn delete" style="font-size: 11px; margin-right: 0;" onclick="blockUser(${u.id})">บล็อก</span>
+            </div>
+          </div>
+        `;
+      });
+
+      friendUserSearchResultsContainer.innerHTML = html;
+      friendUserSearchResultsContainer.style.display = 'block';
+    } catch (err) {
+      console.error(err);
+    }
+  };
+}
+
+// Add Friend action
+window.addFriend = async function(friendId) {
+  try {
+    const res = await fetch(`${API_BASE}/api/friends/request`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`
+      },
+      body: JSON.stringify({ friendId })
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error);
+    }
+    
+    if (txtFriendUserSearch) txtFriendUserSearch.value = '';
+    if (friendUserSearchResultsContainer) friendUserSearchResultsContainer.style.display = 'none';
+    
+    loadFriendsList();
+  } catch (err) {
+    alert(err.message || 'ไม่สามารถเพิ่มเพื่อนได้');
+  }
+};
+
+// Block User action
+window.blockUser = async function(blockedId) {
+  if (!confirm('คุณแน่ใจว่าต้องการบล็อกผู้ใช้งานรายนี้ใช่หรือไม่? ความสัมพันธ์ความเป็นเพื่อนและแชททั้งหมดจะถูกซ่อนไว้')) return;
+  try {
+    const res = await fetch(`${API_BASE}/api/friends/block`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`
+      },
+      body: JSON.stringify({ blockedId })
+    });
+    if (!res.ok) throw new Error();
+
+    if (txtFriendUserSearch) txtFriendUserSearch.value = '';
+    if (friendUserSearchResultsContainer) friendUserSearchResultsContainer.style.display = 'none';
+
+    loadFriendsList();
+    loadBlockedList();
+  } catch (err) {
+    alert('ไม่สามารถบล็อกผู้ใช้งานได้');
+  }
+};
+
+// Load friends list
+async function loadFriendsList() {
+  const container = document.getElementById('friendsListContainer');
+  const countEl = document.getElementById('lblFriendsCount');
+  if (!container) return;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/friends`, {
+      headers: { 'Authorization': `Bearer ${authToken}` }
+    });
+    if (!res.ok) throw new Error();
+    const friends = await res.json();
+
+    if (countEl) countEl.textContent = `${friends.length} คน`;
+
+    if (friends.length === 0) {
+      container.innerHTML = `
+        <div style="text-align: center; color: var(--text-light); font-size: 12px; padding: 20px 0; width: 100%;">
+          ยังไม่มีเพื่อนในขณะนี้<br>
+          <span style="font-size: 10px; opacity: 0.7;">พิมพ์ค้นหาชื่อเพื่อนด้านบนเพื่อกดเพิ่มเพื่อน</span>
+        </div>
+      `;
+      return;
+    }
+
+    let html = '';
+    friends.forEach(f => {
+      const displayName = f.fullName || f.username;
+      const initial = displayName.charAt(0);
+
+      html += `
+        <div class="friend-item-row" onclick="enterDmChat(${f.id}, '${escapeHTML(displayName)}')">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div class="friend-user-avatar" style="background-color: #BD1B0B;">${initial}</div>
+            <div style="text-align: left;">
+              <span class="friend-user-name" style="display: block;">${escapeHTML(displayName)}</span>
+              <span style="font-size: 11px; color: var(--text-light);">แชทส่วนตัว</span>
+            </div>
+          </div>
+          <button class="btn-quick-match" style="padding: 6px 12px; font-size: 11px; border-radius: 8px; width: auto; box-shadow: none;">แชท</button>
+        </div>
+      `;
+    });
+
+    container.innerHTML = html;
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+// Load blocked list
+async function loadBlockedList() {
+  const container = document.getElementById('blockedUsersListContainer');
+  if (!container) return;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/friends/blocked`, {
+      headers: { 'Authorization': `Bearer ${authToken}` }
+    });
+    if (!res.ok) throw new Error();
+    const blocked = await res.json();
+
+    if (blocked.length === 0) {
+      container.innerHTML = `
+        <div style="text-align: center; color: var(--text-light); font-size: 12px; padding: 10px 0; width: 100%;">
+          ไม่มีรายชื่อที่บล็อก
+        </div>
+      `;
+      return;
+    }
+
+    let html = '';
+    blocked.forEach(u => {
+      const displayName = u.fullName || u.username;
+      html += `
+        <div style="display: flex; justify-content: space-between; align-items: center; background: #F8FAFC; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-color); width: 100%;">
+          <div style="display: flex; align-items: center; gap: 8px; text-align: left;">
+            <div class="friend-user-avatar" style="background-color: #64748B; width: 26px; height: 26px; font-size: 11px;">${displayName.charAt(0)}</div>
+            <div>
+              <span style="font-size: 12px; font-weight: 600; color: var(--text-dark); display: block;">${escapeHTML(displayName)}</span>
+              <span style="font-size: 9px; color: var(--text-light);">@${escapeHTML(u.username)}</span>
+            </div>
+          </div>
+          <button class="post-action-btn edit" style="font-size: 11px; margin-right: 0;" onclick="unblockUser(${u.id})">ปลดบล็อก</button>
+        </div>
+      `;
+    });
+
+    container.innerHTML = html;
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+// Unblock User action
+window.unblockUser = async function(blockedId) {
+  try {
+    const res = await fetch(`${API_BASE}/api/friends/unblock`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`
+      },
+      body: JSON.stringify({ blockedId })
+    });
+    if (!res.ok) throw new Error();
+
+    loadBlockedList();
+    loadFriendsList();
+  } catch (err) {
+    alert('ไม่สามารถปลดบล็อกผู้ใช้งานได้');
+  }
+};
+
+// --- Direct Message Chat View Handlers ---
+window.enterDmChat = function(friendId, friendName) {
+  activeFriendId = friendId;
+  document.getElementById('friendsMainPanel').style.display = 'none';
+  
+  const screen = document.getElementById('dmChatScreenPanel');
+  screen.style.display = 'flex';
+
+  document.getElementById('lblDmChatFriendName').textContent = friendName;
+
+  // Block handler inside direct messages header
+  const btnBlock = document.getElementById('btnBlockCurrentFriend');
+  if (btnBlock) {
+    btnBlock.onclick = async () => {
+      await blockUser(friendId);
+      exitDmChat();
+    };
+  }
+
+  // Load and poll DM messages
+  loadDmChatMessages(friendId);
+  if (dmChatPollInterval) clearInterval(dmChatPollInterval);
+  dmChatPollInterval = setInterval(() => loadDmChatMessages(friendId), 3000);
+};
+
+window.exitDmChat = function() {
+  activeFriendId = null;
+  if (dmChatPollInterval) {
+    clearInterval(dmChatPollInterval);
+    dmChatPollInterval = null;
+  }
+  document.getElementById('dmChatScreenPanel').style.display = 'none';
+  document.getElementById('friendsMainPanel').style.display = 'block';
+  loadFriendsList();
+};
+
+const btnBackToFriends = document.getElementById('btnBackToFriends');
+if (btnBackToFriends) {
+  btnBackToFriends.onclick = () => {
+    exitDmChat();
+  };
+}
+
+async function loadDmChatMessages(friendId) {
+  const container = document.getElementById('dmChatMessagesContainer');
+  if (!container || activeFriendId !== friendId) return;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/friends/chat/${friendId}`, {
+      headers: { 'Authorization': `Bearer ${authToken}` }
+    });
+    if (!res.ok) throw new Error();
+    const messages = await res.json();
+
+    if (messages.length === 0) {
+      container.innerHTML = `
+        <div style="text-align: center; color: var(--text-light); font-size: 13px; padding-top: 40px;">
+          💬 เริ่มพิมพ์ข้อความแชทส่วนตัวกับเพื่อนได้แล้ววันนี้
+        </div>
+      `;
+      return;
+    }
+
+    let html = '';
+    messages.forEach(m => {
+      const isMe = userProfile && m.senderId === userProfile.id;
+      const timeStr = new Date(m.createdAt).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+
+      html += `
+        <div class="chat-bubble ${isMe ? 'me' : ''}">
+          <div class="chat-message-box">
+            ${escapeHTML(m.content)}
+          </div>
+          <span class="chat-timestamp">${timeStr}</span>
+        </div>
+      `;
+    });
+
+    const isAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 60;
+    container.innerHTML = html;
+
+    if (isAtBottom || container.getAttribute('data-first-load') !== 'false') {
+      container.scrollTop = container.scrollHeight;
+      container.setAttribute('data-first-load', 'false');
+    }
+  } catch (err) {
+    // If blocked or request fails, exit DM chat
+    console.error(err);
+    exitDmChat();
+  }
+}
+
+// Send Direct Message
+const btnSendDmChat = document.getElementById('btnSendDmChat');
+const txtDmChatInput = document.getElementById('txtDmChatInput');
+if (btnSendDmChat && txtDmChatInput) {
+  const handleSendDmChat = async () => {
+    if (!activeFriendId) return;
+    const content = txtDmChatInput.value.trim();
+    if (!content) return;
+
+    txtDmChatInput.value = '';
+    btnSendDmChat.disabled = true;
+
+    try {
+      const res = await fetch(`${API_BASE}/api/friends/chat/${activeFriendId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: JSON.stringify({ content })
+      });
+      if (!res.ok) throw new Error();
+      loadDmChatMessages(activeFriendId);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      btnSendDmChat.disabled = false;
+      txtDmChatInput.focus();
+    }
+  };
+
+  btnSendDmChat.onclick = (e) => {
+    e.preventDefault();
+    handleSendDmChat();
+  };
+
+  txtDmChatInput.onkeydown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSendDmChat();
+    }
+  };
+}
 
 

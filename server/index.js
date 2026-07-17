@@ -3739,6 +3739,588 @@ app.post('/api/community/chat', authenticateToken, async (req, res) => {
   }
 });
 
+// --- Study Groups API Routes ---
+
+// Create a new study group
+app.post('/api/community/groups', authenticateToken, async (req, res) => {
+  const { name, description } = req.body;
+  if (!name || !name.trim()) {
+    return res.status(400).json({ error: 'กรุณากรอกชื่อกลุ่ม' });
+  }
+  try {
+    // Create group and automatically add creator as a member in a transaction
+    const group = await prisma.$transaction(async (tx) => {
+      const newGroup = await tx.group.create({
+        data: {
+          name: name.trim(),
+          description: description ? description.trim() : '',
+          createdById: req.user.userId
+        }
+      });
+      // Add creator as member
+      await tx.groupMember.create({
+        data: {
+          groupId: newGroup.id,
+          userId: req.user.userId
+        }
+      });
+      return newGroup;
+    });
+
+    res.json(group);
+  } catch (err) {
+    console.error('Create group error:', err);
+    res.status(500).json({ error: 'ไม่สามารถสร้างกลุ่มได้' });
+  }
+});
+
+// Search and list groups
+app.get('/api/community/groups', authenticateToken, async (req, res) => {
+  const { search } = req.query;
+  try {
+    const groups = await prisma.group.findMany({
+      where: search ? {
+        OR: [
+          { name: { contains: search, mode: 'insensitive' } },
+          { description: { contains: search, mode: 'insensitive' } }
+        ]
+      } : undefined,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        createdBy: {
+          select: { id: true, username: true, fullName: true }
+        },
+        members: {
+          select: { userId: true }
+        }
+      }
+    });
+
+    // Format output to include members count and membership flag
+    const formatted = groups.map(g => ({
+      id: g.id,
+      name: g.name,
+      description: g.description,
+      createdAt: g.createdAt,
+      createdById: g.createdById,
+      creatorName: g.createdBy.fullName || g.createdBy.username,
+      memberCount: g.members.length,
+      isMember: g.members.some(m => m.userId === req.user.userId)
+    }));
+
+    res.json(formatted);
+  } catch (err) {
+    console.error('List groups error:', err);
+    res.status(500).json({ error: 'ไม่สามารถดึงข้อมูลกลุ่มได้' });
+  }
+});
+
+// Delete group (creator only)
+app.delete('/api/community/groups/:groupId', authenticateToken, async (req, res) => {
+  const { groupId } = req.params;
+  try {
+    const group = await prisma.group.findUnique({
+      where: { id: parseInt(groupId) }
+    });
+    if (!group) {
+      return res.status(404).json({ error: 'ไม่พบกลุ่มที่ต้องการลบ' });
+    }
+    if (group.createdById !== req.user.userId) {
+      return res.status(403).json({ error: 'ไม่มีสิทธิ์ลบกลุ่มนี้ (เฉพาะผู้สร้างกลุ่มเท่านั้น)' });
+    }
+
+    await prisma.group.delete({
+      where: { id: parseInt(groupId) }
+    });
+
+    res.json({ message: 'ลบกลุ่มสำเร็จ' });
+  } catch (err) {
+    console.error('Delete group error:', err);
+    res.status(500).json({ error: 'ไม่สามารถลบกลุ่มได้' });
+  }
+});
+
+// Join group
+app.post('/api/community/groups/:groupId/join', authenticateToken, async (req, res) => {
+  const { groupId } = req.params;
+  try {
+    const existing = await prisma.groupMember.findUnique({
+      where: {
+        groupId_userId: {
+          groupId: parseInt(groupId),
+          userId: req.user.userId
+        }
+      }
+    });
+    if (existing) {
+      return res.status(400).json({ error: 'คุณเป็นสมาชิกของกลุ่มนี้อยู่แล้ว' });
+    }
+
+    await prisma.groupMember.create({
+      data: {
+        groupId: parseInt(groupId),
+        userId: req.user.userId
+      }
+    });
+
+    res.json({ message: 'เข้าร่วมกลุ่มสำเร็จ' });
+  } catch (err) {
+    console.error('Join group error:', err);
+    res.status(500).json({ error: 'ไม่สามารถเข้าร่วมกลุ่มได้' });
+  }
+});
+
+// Leave group
+app.post('/api/community/groups/:groupId/leave', authenticateToken, async (req, res) => {
+  const { groupId } = req.params;
+  try {
+    const member = await prisma.groupMember.findUnique({
+      where: {
+        groupId_userId: {
+          groupId: parseInt(groupId),
+          userId: req.user.userId
+        }
+      }
+    });
+    if (!member) {
+      return res.status(400).json({ error: 'คุณไม่ได้เป็นสมาชิกกลุ่มนี้' });
+    }
+
+    await prisma.groupMember.delete({
+      where: {
+        groupId_userId: {
+          groupId: parseInt(groupId),
+          userId: req.user.userId
+        }
+      }
+    });
+
+    res.json({ message: 'ออกจากกลุ่มสำเร็จ' });
+  } catch (err) {
+    console.error('Leave group error:', err);
+    res.status(500).json({ error: 'ไม่สามารถออกจากกลุ่มได้' });
+  }
+});
+
+// Get group chat messages
+app.get('/api/community/groups/:groupId/chat', authenticateToken, async (req, res) => {
+  const { groupId } = req.params;
+  try {
+    // Verify membership
+    const isMember = await prisma.groupMember.findUnique({
+      where: {
+        groupId_userId: {
+          groupId: parseInt(groupId),
+          userId: req.user.userId
+        }
+      }
+    });
+    if (!isMember) {
+      return res.status(403).json({ error: 'กรุณาเข้าร่วมกลุ่มก่อนอ่านข้อความแชท' });
+    }
+
+    const messages = await prisma.groupChatMessage.findMany({
+      where: { groupId: parseInt(groupId) },
+      take: 100,
+      orderBy: { createdAt: 'asc' },
+      include: {
+        user: {
+          select: { id: true, username: true, fullName: true, faceImage: true }
+        }
+      }
+    });
+
+    res.json(messages);
+  } catch (err) {
+    console.error('Get group chat error:', err);
+    res.status(500).json({ error: 'ไม่สามารถโหลดข้อความแชทกลุ่มได้' });
+  }
+});
+
+// Send message to group chat
+app.post('/api/community/groups/:groupId/chat', authenticateToken, async (req, res) => {
+  const { groupId } = req.params;
+  const { content } = req.body;
+  if (!content || !content.trim()) {
+    return res.status(400).json({ error: 'กรุณากรอกข้อความแชท' });
+  }
+  try {
+    // Verify membership
+    const isMember = await prisma.groupMember.findUnique({
+      where: {
+        groupId_userId: {
+          groupId: parseInt(groupId),
+          userId: req.user.userId
+        }
+      }
+    });
+    if (!isMember) {
+      return res.status(403).json({ error: 'คุณไม่ได้เป็นสมาชิกกลุ่มนี้' });
+    }
+
+    const message = await prisma.groupChatMessage.create({
+      data: {
+        content: content.trim(),
+        groupId: parseInt(groupId),
+        userId: req.user.userId
+      },
+      include: {
+        user: {
+          select: { id: true, username: true, fullName: true, faceImage: true }
+        }
+      }
+    });
+
+    res.json(message);
+  } catch (err) {
+    console.error('Send group chat message error:', err);
+    res.status(500).json({ error: 'ไม่สามารถส่งข้อความแชทกลุ่มได้' });
+  }
+});
+
+// --- Friends, Blocks & Direct Messages API ---
+
+// Search for other users to add as friends
+app.get('/api/friends/search', authenticateToken, async (req, res) => {
+  const { search } = req.query;
+  if (!search || !search.trim()) {
+    return res.json([]);
+  }
+  try {
+    // Fetch users except current user, who are not blocked by current user and who haven't blocked current user
+    const blockedIds = (await prisma.block.findMany({
+      where: {
+        OR: [
+          { userId: req.user.userId },
+          { blockedId: req.user.userId }
+        ]
+      }
+    })).map(b => b.userId === req.user.userId ? b.blockedId : b.userId);
+
+    const users = await prisma.user.findMany({
+      where: {
+        id: {
+          notIn: [req.user.userId, ...blockedIds]
+        },
+        OR: [
+          { username: { contains: search, mode: 'insensitive' } },
+          { fullName: { contains: search, mode: 'insensitive' } }
+        ]
+      },
+      select: {
+        id: true,
+        username: true,
+        fullName: true,
+        faceImage: true
+      },
+      take: 20
+    });
+
+    // Check relationship status for each user
+    const relationships = await prisma.friend.findMany({
+      where: {
+        OR: [
+          { userId: req.user.userId, friendId: { in: users.map(u => u.id) } },
+          { userId: { in: users.map(u => u.id) }, friendId: req.user.userId }
+        ]
+      }
+    });
+
+    const formatted = users.map(u => {
+      const rel = relationships.find(r => r.userId === u.id || r.friendId === u.id);
+      return {
+        id: u.id,
+        username: u.username,
+        fullName: u.fullName,
+        faceImage: u.faceImage,
+        friendStatus: rel ? rel.status : 'NONE' // NONE, ACCEPTED, PENDING
+      };
+    });
+
+    res.json(formatted);
+  } catch (err) {
+    console.error('Search friends error:', err);
+    res.status(500).json({ error: 'ไม่สามารถค้นหาผู้ใช้งานได้' });
+  }
+});
+
+// Get accepted friends list
+app.get('/api/friends', authenticateToken, async (req, res) => {
+  try {
+    const friendRelations = await prisma.friend.findMany({
+      where: {
+        OR: [
+          { userId: req.user.userId },
+          { friendId: req.user.userId }
+        ],
+        status: 'ACCEPTED'
+      },
+      include: {
+        user: {
+          select: { id: true, username: true, fullName: true, faceImage: true }
+        },
+        friend: {
+          select: { id: true, username: true, fullName: true, faceImage: true }
+        }
+      }
+    });
+
+    const friendsList = friendRelations.map(rel => {
+      const isUser = rel.userId === req.user.userId;
+      const targetUser = isUser ? rel.friend : rel.user;
+      return {
+        id: targetUser.id,
+        username: targetUser.username,
+        fullName: targetUser.fullName,
+        faceImage: targetUser.faceImage
+      };
+    });
+
+    res.json(friendsList);
+  } catch (err) {
+    console.error('List friends error:', err);
+    res.status(500).json({ error: 'ไม่สามารถดึงรายชื่อเพื่อนได้' });
+  }
+});
+
+// Send or accept a friend request (seamless auto-accept)
+app.post('/api/friends/request', authenticateToken, async (req, res) => {
+  const { friendId } = req.body;
+  if (!friendId || parseInt(friendId) === req.user.userId) {
+    return res.status(400).json({ error: 'รหัสเพื่อนไม่ถูกต้อง' });
+  }
+  const fId = parseInt(friendId);
+
+  try {
+    // Check if blocked
+    const isBlocked = await prisma.block.findFirst({
+      where: {
+        OR: [
+          { userId: req.user.userId, blockedId: fId },
+          { userId: fId, blockedId: req.user.userId }
+        ]
+      }
+    });
+    if (isBlocked) {
+      return res.status(400).json({ error: 'ไม่สามารถเพิ่มเพื่อนได้เนื่องจากถูกบล็อก' });
+    }
+
+    const existingRelation = await prisma.friend.findFirst({
+      where: {
+        OR: [
+          { userId: req.user.userId, friendId: fId },
+          { userId: fId, friendId: req.user.userId }
+        ]
+      }
+    });
+
+    if (existingRelation) {
+      if (existingRelation.status === 'ACCEPTED') {
+        return res.status(400).json({ error: 'คุณและผู้ใช้งานรายนี้เป็นเพื่อนกันอยู่แล้ว' });
+      }
+      // If it exists, update it to ACCEPTED
+      await prisma.friend.update({
+        where: { id: existingRelation.id },
+        data: { status: 'ACCEPTED' }
+      });
+    } else {
+      // Auto-accept directly to keep it simple for study app
+      await prisma.friend.create({
+        data: {
+          userId: req.user.userId,
+          friendId: fId,
+          status: 'ACCEPTED'
+        }
+      });
+    }
+
+    res.json({ message: 'เพิ่มเพื่อนสำเร็จ' });
+  } catch (err) {
+    console.error('Add friend request error:', err);
+    res.status(500).json({ error: 'ไม่สามารถเพิ่มเพื่อนได้' });
+  }
+});
+
+// Block a user
+app.post('/api/friends/block', authenticateToken, async (req, res) => {
+  const { blockedId } = req.body;
+  if (!blockedId || parseInt(blockedId) === req.user.userId) {
+    return res.status(400).json({ error: 'รหัสบล็อกไม่ถูกต้อง' });
+  }
+  const bId = parseInt(blockedId);
+
+  try {
+    // Add to block list in transaction
+    await prisma.$transaction(async (tx) => {
+      // Create block
+      const existingBlock = await tx.block.findUnique({
+        where: {
+          userId_blockedId: {
+            userId: req.user.userId,
+            blockedId: bId
+          }
+        }
+      });
+      if (!existingBlock) {
+        await tx.block.create({
+          data: {
+            userId: req.user.userId,
+            blockedId: bId
+          }
+        });
+      }
+
+      // Remove friend relationship if it exists
+      const existingFriend = await tx.friend.findFirst({
+        where: {
+          OR: [
+            { userId: req.user.userId, friendId: bId },
+            { userId: bId, friendId: req.user.userId }
+          ]
+        }
+      });
+      if (existingFriend) {
+        await tx.friend.delete({
+          where: { id: existingFriend.id }
+        });
+      }
+    });
+
+    res.json({ message: 'บล็อกผู้ใช้งานสำเร็จ' });
+  } catch (err) {
+    console.error('Block user error:', err);
+    res.status(500).json({ error: 'ไม่สามารถบล็อกผู้ใช้งานได้' });
+  }
+});
+
+// Get blocked users list
+app.get('/api/friends/blocked', authenticateToken, async (req, res) => {
+  try {
+    const blockedList = await prisma.block.findMany({
+      where: { userId: req.user.userId },
+      include: {
+        blockedUser: {
+          select: { id: true, username: true, fullName: true, faceImage: true }
+        }
+      }
+    });
+
+    const formatted = blockedList.map(b => ({
+      id: b.blockedUser.id,
+      username: b.blockedUser.username,
+      fullName: b.blockedUser.fullName,
+      faceImage: b.blockedUser.faceImage
+    }));
+
+    res.json(formatted);
+  } catch (err) {
+    console.error('Fetch blocked list error:', err);
+    res.status(500).json({ error: 'ไม่สามารถโหลดรายชื่อที่บล็อกได้' });
+  }
+});
+
+// Unblock a user
+app.post('/api/friends/unblock', authenticateToken, async (req, res) => {
+  const { blockedId } = req.body;
+  if (!blockedId) return res.status(400).json({ error: 'รหัสผู้ใช้งานไม่ถูกต้อง' });
+  const bId = parseInt(blockedId);
+
+  try {
+    await prisma.block.delete({
+      where: {
+        userId_blockedId: {
+          userId: req.user.userId,
+          blockedId: bId
+        }
+      }
+    });
+    res.json({ message: 'ปลดบล็อกผู้ใช้งานสำเร็จ' });
+  } catch (err) {
+    console.error('Unblock user error:', err);
+    res.status(500).json({ error: 'ไม่สามารถปลดบล็อกได้' });
+  }
+});
+
+// Fetch private messages with a specific friend
+app.get('/api/friends/chat/:friendId', authenticateToken, async (req, res) => {
+  const fId = parseInt(req.params.friendId);
+  try {
+    // Check if either user has blocked the other
+    const isBlocked = await prisma.block.findFirst({
+      where: {
+        OR: [
+          { userId: req.user.userId, blockedId: fId },
+          { userId: fId, blockedId: req.user.userId }
+        ]
+      }
+    });
+    if (isBlocked) {
+      return res.status(403).json({ error: 'ไม่สามารถแชทส่วนตัวกับผู้ใช้งานรายนี้ได้' });
+    }
+
+    const messages = await prisma.privateChatMessage.findMany({
+      where: {
+        OR: [
+          { senderId: req.user.userId, receiverId: fId },
+          { senderId: fId, receiverId: req.user.userId }
+        ]
+      },
+      orderBy: { createdAt: 'asc' },
+      include: {
+        sender: {
+          select: { id: true, username: true, fullName: true, faceImage: true }
+        }
+      }
+    });
+
+    res.json(messages);
+  } catch (err) {
+    console.error('Fetch private chat error:', err);
+    res.status(500).json({ error: 'ไม่สามารถโหลดแชทส่วนตัวได้' });
+  }
+});
+
+// Send a private message
+app.post('/api/friends/chat/:friendId', authenticateToken, async (req, res) => {
+  const fId = parseInt(req.params.friendId);
+  const { content } = req.body;
+  if (!content || !content.trim()) {
+    return res.status(400).json({ error: 'กรุณากรอกข้อความแชท' });
+  }
+  try {
+    // Check if blocked
+    const isBlocked = await prisma.block.findFirst({
+      where: {
+        OR: [
+          { userId: req.user.userId, blockedId: fId },
+          { userId: fId, blockedId: req.user.userId }
+        ]
+      }
+    });
+    if (isBlocked) {
+      return res.status(403).json({ error: 'ไม่สามารถส่งข้อความได้เนื่องจากถูกบล็อก' });
+    }
+
+    const message = await prisma.privateChatMessage.create({
+      data: {
+        content: content.trim(),
+        senderId: req.user.userId,
+        receiverId: fId
+      },
+      include: {
+        sender: {
+          select: { id: true, username: true, fullName: true, faceImage: true }
+        }
+      }
+    });
+
+    res.json(message);
+  } catch (err) {
+    console.error('Send private message error:', err);
+    res.status(500).json({ error: 'ไม่สามารถส่งข้อความแชทส่วนตัวได้' });
+  }
+});
+
 // --- Points & Premium Status Route ---
 app.get('/api/user/points', authenticateToken, async (req, res) => {
   try {

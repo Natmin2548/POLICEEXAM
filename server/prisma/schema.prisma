@@ -56,6 +56,15 @@ model User {
   posts             Post[]
   comments          Comment[]
   chatMessages      ChatMessage[]
+  createdGroups           Group[]              @relation("CreatedGroups")
+  groupMemberships        GroupMember[]
+  groupMessages           GroupChatMessage[]
+  friendsAsUser           Friend[]             @relation("UserFriends")
+  friendsAsFriend         Friend[]             @relation("FriendUsers")
+  blockedUsers            Block[]              @relation("BlockedByUser")
+  blockedBy               Block[]              @relation("BlockedUserUsers")
+  sentPrivateMessages     PrivateChatMessage[] @relation("SentPrivateMessages")
+  receivedPrivateMessages PrivateChatMessage[] @relation("ReceivedPrivateMessages")
 }
 
 model Stage {
@@ -249,4 +258,66 @@ model ChatMessage {
   userId    Int
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
+}
+
+model Group {
+  id          Int                @id @default(autoincrement())
+  name        String
+  description String?            @db.Text
+  createdById Int
+  createdBy   User               @relation("CreatedGroups", fields: [createdById], references: [id], onDelete: Cascade)
+  createdAt   DateTime           @default(now())
+  members     GroupMember[]
+  messages    GroupChatMessage[]
+}
+
+model GroupMember {
+  id        Int      @id @default(autoincrement())
+  groupId   Int
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  @@unique([groupId, userId])
+}
+
+model GroupChatMessage {
+  id        Int      @id @default(autoincrement())
+  content   String   @db.Text
+  groupId   Int
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+model Friend {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation("UserFriends", fields: [userId], references: [id], onDelete: Cascade)
+  friendId  Int
+  friend    User     @relation("FriendUsers", fields: [friendId], references: [id], onDelete: Cascade)
+  status    String   @default("ACCEPTED")
+  createdAt DateTime @default(now())
+  @@unique([userId, friendId])
+}
+
+model Block {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation("BlockedByUser", fields: [userId], references: [id], onDelete: Cascade)
+  blockedId Int
+  blockedUser User   @relation("BlockedUserUsers", fields: [blockedId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  @@unique([userId, blockedId])
+}
+
+model PrivateChatMessage {
+  id         Int      @id @default(autoincrement())
+  content    String   @db.Text
+  senderId   Int
+  sender     User     @relation("SentPrivateMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiverId Int
+  receiver   User     @relation("ReceivedPrivateMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
 }

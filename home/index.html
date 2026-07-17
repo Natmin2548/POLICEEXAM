@@ -249,10 +249,11 @@
         <section class="profile-header-title-section" style="flex-direction: column; align-items: flex-start; gap: 16px; width: 100%;">
           <h1 class="profile-header-title">ชุมชนเตรียมสอบ</h1>
           <!-- Sub Tabs Bar -->
-          <div class="community-subtabs-bar" style="display: flex; gap: 8px; width: 100%; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
+          <div class="community-subtabs-bar" style="display: flex; gap: 8px; width: 100%; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; flex-wrap: wrap;">
             <button class="subtab-btn active" id="btnSubtabPosts">โพสต์</button>
             <button class="subtab-btn" id="btnSubtabChat">ช่องแชทรวม</button>
             <button class="subtab-btn" id="btnSubtabGroups">กลุ่ม</button>
+            <button class="subtab-btn" id="btnSubtabFriends">เพื่อน & แชทส่วนตัว</button>
           </div>
         </section>
 
@@ -291,39 +292,109 @@
 
           <!-- SUBTAB 3: Groups View -->
           <div id="subtabContentGroups" class="subtab-content">
-            <div class="battle-modes-list">
-              <!-- Group 1 -->
-              <div class="battle-mode-item" style="cursor: default;">
-                <div class="mode-item-left">
-                  <div class="mode-icon-wrapper ranked-icon" style="background-color: #E0F2FE; color: #0284C7; font-size: 18px;">👮</div>
-                  <div class="mode-info">
-                    <span class="mode-title" style="font-size: 15px;">กลุ่มเตรียมสอบ นายสิบปราบปราม</span>
-                    <span class="mode-subtitle">สมาชิก 4,820 คน • พูดคุยสายปราบปรามโดยเฉพาะ</span>
-                  </div>
-                </div>
-                <button class="btn-quick-match" style="padding: 6px 14px; font-size: 12px; border-radius: 8px; width: auto; box-shadow: none;" onclick="alert('เข้าร่วมกลุ่มสำเร็จ! ห้องแชทเฉพาะกลุ่มจะเปิดให้บริการเร็วๆ นี้');">เข้าร่วม</button>
+            <!-- Group List Main Panel -->
+            <div id="groupListMainPanel">
+              <div style="display: flex; gap: 12px; margin-bottom: 16px; align-items: center;">
+                <input type="text" id="txtGroupSearch" placeholder="🔍 ค้นหาชื่อกลุ่มติว..." style="flex: 1; border: 1px solid var(--border-color); border-radius: 12px; padding: 10px 14px; font-family: 'Kanit', sans-serif; font-size: 14px; outline: none;">
+                <button id="btnOpenCreateGroupModal" class="btn-quick-match" style="padding: 10px 16px; border-radius: 12px; font-size: 13px; box-shadow: none; width: auto; flex-shrink: 0;">สร้างกลุ่ม</button>
               </div>
-              <!-- Group 2 -->
-              <div class="battle-mode-item" style="cursor: default;">
-                <div class="mode-item-left">
-                  <div class="mode-icon-wrapper ranked-icon" style="background-color: #FEF3C7; color: #D97706; font-size: 18px;">📁</div>
-                  <div class="mode-info">
-                    <span class="mode-title" style="font-size: 15px;">กลุ่มติวเตอร์ สายอำนวยการ</span>
-                    <span class="mode-subtitle">สมาชิก 2,940 คน • เจาะข้อสอบงานสารบรรณ กฎหมาย</span>
-                  </div>
-                </div>
-                <button class="btn-quick-match" style="padding: 6px 14px; font-size: 12px; border-radius: 8px; width: auto; box-shadow: none;" onclick="alert('เข้าร่วมกลุ่มสำเร็จ! ห้องแชทเฉพาะกลุ่มจะเปิดให้บริการเร็วๆ นี้');">เข้าร่วม</button>
+              
+              <!-- Dynamic list -->
+              <div id="groupsListContainer" class="battle-modes-list">
+                <div class="leaderboard-item-loading">กำลังโหลดกลุ่มติว...</div>
               </div>
-              <!-- Group 3 -->
-              <div class="battle-mode-item" style="cursor: default;">
-                <div class="mode-item-left">
-                  <div class="mode-icon-wrapper ranked-icon" style="background-color: #F0FDF4; color: #16A34A; font-size: 18px;">🇬🇧</div>
-                  <div class="mode-info">
-                    <span class="mode-title" style="font-size: 15px;">เน้นติวอังกฤษ นายสิบตำรวจ</span>
-                    <span class="mode-subtitle">สมาชิก 1,850 คน • ตะลุยโจทย์ Tense, Vocab, Grammar</span>
+            </div>
+
+            <!-- Group Chat Screen (Initially Hidden) -->
+            <div id="groupChatScreenPanel" style="display: none; flex-direction: column; height: 480px; background-color: white; border: 1px solid var(--border-color); border-radius: 20px; overflow: hidden;">
+              <!-- Header -->
+              <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--border-color); background: #F8FAFC;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <button id="btnBackToGroups" style="background: none; border: none; font-size: 18px; cursor: pointer; color: var(--text-dark);">⬅️</button>
+                  <div style="text-align: left;">
+                    <span id="lblChatGroupName" style="font-weight: 600; display: block; font-size: 14px; color: var(--text-dark);">ชื่อกลุ่ม</span>
+                    <span id="lblChatGroupMeta" style="font-size: 11px; color: var(--text-light); display: block;">ID: #1 • สมาชิก 1 คน</span>
                   </div>
                 </div>
-                <button class="btn-quick-match" style="padding: 6px 14px; font-size: 12px; border-radius: 8px; width: auto; box-shadow: none;" onclick="alert('เข้าร่วมกลุ่มสำเร็จ! ห้องแชทเฉพาะกลุ่มจะเปิดให้บริการเร็วๆ นี้');">เข้าร่วม</button>
+                <div style="display: flex; gap: 8px;">
+                  <button id="btnLeaveGroup" class="post-action-btn delete" style="font-weight: 600; font-size: 12px; border: 1px solid #EF4444; padding: 4px 10px; border-radius: 6px; background: none; margin-right: 0;">ออกจากกลุ่ม</button>
+                  <button id="btnDeleteGroup" class="post-action-btn delete" style="font-weight: 600; font-size: 12px; border: 1px solid #EF4444; padding: 4px 10px; border-radius: 6px; background: #EF4444; color: white; display: none; margin-right: 0;">ลบกลุ่ม</button>
+                </div>
+              </div>
+              
+              <!-- Message feed -->
+              <div id="groupChatMessagesContainer" style="flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; background-color: #F8FAFC;">
+                <div class="leaderboard-item-loading">กำลังโหลดข้อความ...</div>
+              </div>
+              
+              <!-- Input -->
+              <div style="display: flex; align-items: center; padding: 12px; border-top: 1px solid var(--border-color); gap: 8px; background-color: white;">
+                <input type="text" id="txtGroupChatInput" placeholder="พิมพ์ข้อความแชทคุยในกลุ่ม..." style="flex: 1; border: 1px solid var(--border-color); border-radius: 12px; padding: 10px 14px; font-family: 'Kanit', sans-serif; font-size: 14px; outline: none;">
+                <button id="btnSendGroupChat" class="btn-quick-match" style="padding: 10px 16px; border-radius: 12px; box-shadow: none; flex-shrink: 0; width: auto;">ส่ง</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- SUBTAB 4: Friends & Direct Chat -->
+          <div id="subtabContentFriends" class="subtab-content">
+            <!-- Active Chat Panel & Friends list -->
+            <div id="friendsMainPanel">
+              <!-- Search Friends Input -->
+              <div style="margin-bottom: 16px; position: relative;">
+                <input type="text" id="txtFriendUserSearch" placeholder="🔍 ค้นหาชื่อเพื่อเพิ่มเพื่อน..." style="width: 100%; border: 1px solid var(--border-color); border-radius: 12px; padding: 10px 14px; font-family: 'Kanit', sans-serif; font-size: 14px; outline: none;">
+                <!-- Search results list -->
+                <div id="friendUserSearchResultsContainer" style="position: absolute; left: 0; right: 0; top: 100%; margin-top: 4px; max-height: 180px; overflow-y: auto; display: none; background: white; border: 1px solid var(--border-color); border-radius: 12px; box-shadow: var(--shadow-sm); z-index: 50; padding: 6px 0;">
+                  <!-- results -->
+                </div>
+              </div>
+
+              <div style="display: flex; flex-direction: column; gap: 16px;">
+                <!-- Friends List -->
+                <div class="stats-card-box" style="padding: 16px;">
+                  <h3 class="stats-card-title" style="font-size: 14px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+                    <span>👥 รายชื่อเพื่อนของคุณ (คลิกเพื่อแชทส่วนตัว)</span>
+                    <span id="lblFriendsCount" style="font-size: 11px; font-weight: normal; color: var(--text-light);">0 คน</span>
+                  </h3>
+                  <div id="friendsListContainer" style="display: flex; flex-direction: column; gap: 8px; max-height: 250px; overflow-y: auto;">
+                    <div class="leaderboard-item-loading" style="font-size: 12px;">กำลังโหลดรายชื่อเพื่อน...</div>
+                  </div>
+                </div>
+
+                <!-- Blocked List -->
+                <div class="stats-card-box" style="padding: 16px;">
+                  <h3 class="stats-card-title" style="font-size: 14px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+                    <span>🚫 รายชื่อที่คุณบล็อก</span>
+                  </h3>
+                  <div id="blockedUsersListContainer" style="display: flex; flex-direction: column; gap: 8px; max-height: 150px; overflow-y: auto;">
+                    <div class="leaderboard-item-loading" style="font-size: 12px;">ไม่มีรายชื่อที่บล็อก</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Direct Message Chat Panel (Initially Hidden) -->
+            <div id="dmChatScreenPanel" style="display: none; flex-direction: column; height: 480px; background-color: white; border: 1px solid var(--border-color); border-radius: 20px; overflow: hidden;">
+              <!-- Header -->
+              <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--border-color); background: #F8FAFC;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <button id="btnBackToFriends" style="background: none; border: none; font-size: 18px; cursor: pointer; color: var(--text-dark);">⬅️</button>
+                  <div style="text-align: left;">
+                    <span id="lblDmChatFriendName" style="font-weight: 600; display: block; font-size: 14px; color: var(--text-dark);">ชื่อเพื่อน</span>
+                    <span style="font-size: 11px; color: var(--text-light); display: block;">แชทส่วนตัว</span>
+                  </div>
+                </div>
+                <button id="btnBlockCurrentFriend" class="post-action-btn delete" style="font-weight: 600; font-size: 12px; border: 1px solid #EF4444; padding: 4px 10px; border-radius: 6px; background: none; margin-right: 0;">บล็อก</button>
+              </div>
+              
+              <!-- Message panel -->
+              <div id="dmChatMessagesContainer" style="flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; background-color: #F8FAFC;">
+                <div class="leaderboard-item-loading">กำลังโหลดข้อความ...</div>
+              </div>
+              
+              <!-- Input panel -->
+              <div style="display: flex; align-items: center; padding: 12px; border-top: 1px solid var(--border-color); gap: 8px; background-color: white;">
+                <input type="text" id="txtDmChatInput" placeholder="พิมพ์ข้อความคุยแชทส่วนตัว..." style="flex: 1; border: 1px solid var(--border-color); border-radius: 12px; padding: 10px 14px; font-family: 'Kanit', sans-serif; font-size: 14px; outline: none;">
+                <button id="btnSendDmChat" class="btn-quick-match" style="padding: 10px 16px; border-radius: 12px; box-shadow: none; flex-shrink: 0; width: auto;">ส่ง</button>
               </div>
             </div>
           </div>
@@ -743,6 +814,27 @@
       </a>
     </div>
   </nav>
+
+  <!-- Create Group Modal -->
+  <div class="modal-overlay" id="createGroupModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.4); display: flex; align-items: center; justify-content: center; z-index: 100;">
+    <div class="modal-card" style="background: white; max-width: 400px; width: 90%; padding: 24px; border-radius: 20px; text-align: left; box-shadow: var(--shadow-lg);">
+      <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 16px; color: #1E293B;">สร้างกลุ่มติวใหม่</h3>
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div>
+          <label style="font-size: 13px; font-weight: 500; color: #64748B; display: block; margin-bottom: 4px;">ชื่อกลุ่ม</label>
+          <input type="text" id="txtCreateGroupName" placeholder="เช่น ตะลุยโจทย์อังกฤษ นายสิบตำรวจ" style="width: 100%; border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 12px; font-family: 'Kanit'; font-size: 14px; outline: none;">
+        </div>
+        <div>
+          <label style="font-size: 13px; font-weight: 500; color: #64748B; display: block; margin-bottom: 4px;">รายละเอียดกลุ่ม (ไม่บังคับ)</label>
+          <textarea id="txtCreateGroupDesc" placeholder="อธิบายวัตถุประสงค์ หรือแนวข้อสอบในกลุ่ม..." style="width: 100%; height: 60px; border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 12px; font-family: 'Kanit'; font-size: 14px; outline: none; resize: none;"></textarea>
+        </div>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px;">
+        <button id="btnCancelCreateGroup" style="background: #F1F5F9; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer;">ยกเลิก</button>
+        <button id="btnSubmitCreateGroup" style="background: var(--primary-color); color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer;">สร้างกลุ่ม</button>
+      </div>
+    </div>
+  </div>
 
 </body>
 </html>
