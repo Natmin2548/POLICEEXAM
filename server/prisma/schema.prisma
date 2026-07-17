@@ -1,0 +1,222 @@
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  email     String   @unique
+  password  String
+  fullName  String   @default("")
+  role             String   @default("USER")
+  emailVerified    Boolean  @default(false)
+  emailVerifyToken String?
+  points           Int      @default(0)
+  level            Int      @default(1)
+  xp               Int      @default(0)
+  streak           Int      @default(0)
+  battleWins       Int      @default(0)
+  scoreGeneral     Int      @default(0)
+  scoreThai        Int      @default(0)
+  scoreEnglish     Int      @default(0)
+  scoreComputer    Int      @default(0)
+  scoreSocial      Int      @default(0)
+  scoreSecretariat Int      @default(0)
+  scoreLaw         Int      @default(0)
+  pigName          String   @default("น้องหมูนำโชค")
+  pigLevel         Int      @default(1)
+  pigXp            Int      @default(0)
+  pigHunger        Int      @default(80)
+  pigThirst        Int      @default(80)
+  pigSkin          String   @default("default")
+  pigWeapon        String   @default("default")
+  pigPenLevel      Int      @default(1)
+  pigUnlockedSkins String   @default("default")
+  pigUnlockedWeapons String @default("default")
+  faceImage        String?  @db.Text
+  premiumUntil     DateTime?
+  aiGenCount       Int      @default(0)
+  aiGenLastDate    DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  stageProgress    UserStageProgress[]
+  examSets         ExamSet[]
+  premiumRequests  PremiumRequest[]
+  vocabRecords     VocabRecord[]
+  incorrectQuestions IncorrectQuestion[]
+  wrongCategories   WrongCategory[]
+  bookmarks         Bookmark[]
+  reportedQuestions ReportedQuestion[]
+}
+
+model Stage {
+  id        Int      @id @default(autoincrement())
+  title     String
+  icon      String   @default("📝")
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  progress  UserStageProgress[]
+}
+
+model UserStageProgress {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  stageId     Int
+  completed   Boolean  @default(false)
+  score       Int      @default(0)
+  completedAt DateTime?
+  user        User     @relation(fields: [userId], references: [id])
+  stage       Stage    @relation(fields: [stageId], references: [id])
+  @@unique([userId, stageId])
+}
+
+model ExamSet {
+  id          Int        @id @default(autoincrement())
+  title       String
+  category    String
+  subcategory String?
+  totalCount  Int        @default(0)
+  isPublic    Boolean    @default(true)
+  status      String     @default("COMPLETED")
+  createdById Int
+  createdBy   User       @relation(fields: [createdById], references: [id])
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  questions   Question[]
+}
+
+model Question {
+  id            Int      @id @default(autoincrement())
+  examSetId     Int
+  examSet       ExamSet  @relation(fields: [examSetId], references: [id], onDelete: Cascade)
+  questionText  String   @db.Text
+  choice1       String   @db.Text
+  choice2       String   @db.Text
+  choice3       String   @db.Text
+  choice4       String   @db.Text
+  correctAnswer Int
+  explanation   String?  @db.Text
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+  incorrectQuestions IncorrectQuestion[]
+}
+
+model Announcement {
+  id               Int      @id @default(autoincrement())
+  orgName          String   // ชื่อหน่วยงานเต็ม เช่น กองบัญชาการศึกษา
+  orgAbbr          String   // ตัวย่อหน่วยงาน เช่น บช.ศ.
+  jobTitle         String   // สายงาน/รายละเอียดงาน เช่น กลุ่มสายงานอำนวยการและสนับสนุน ม.6/ปวช.
+  positionsCount   Int      // จำนวนอัตรา เช่น 800
+  year             Int      // ปี พ.ศ. เช่น 2569
+  announcementDate String   @default("") // วันที่ประกาศ
+  registerDate     String   @default("") // วันที่รับสมัคร
+  seatSelectDate   String   @default("") // วันที่เลือกที่นั่งสอบ
+  photoEditDate    String   @default("") // วันที่ให้แก้ไขรูปถ่าย
+  printCardDate    String   @default("") // วันพิมพ์บัตรประจำตัวสอบ
+  examDate         String   @default("") // วันสอบ
+  status           String   @default("เปิดรับสมัครล่าสุด") // สถานะประกาศ
+  link             String   @default("") // ลิงก์ต้นทางสมัครสอบ
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model Feedback {
+  id        Int      @id @default(autoincrement())
+  sender    String
+  email     String
+  type      String
+  message   String   @db.Text
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model PremiumRequest {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  slipImage String   @db.Text
+  status    String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model VocabRecord {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  level       String   // A1, A2, B1, B2, C1
+  mode        String   // same, trans
+  timeSeconds Int
+  createdAt   DateTime @default(now())
+}
+
+model IncorrectQuestion {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  questionId Int
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, questionId])
+}
+
+model PasswordReset {
+  id        Int      @id @default(autoincrement())
+  email     String
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model SystemSetting {
+  key   String @id
+  value String @db.Text
+}
+
+model WrongCategory {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  category  String   // e.g. "general", "thai", "english", "computer", "social", "secretariat", "law"
+  count     Int      @default(0)
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, category])
+}
+
+model Bookmark {
+  id            Int      @id @default(autoincrement())
+  userId        Int
+  questionId    String   // 'ai-gen-...' or numeric string
+  questionText  String   @db.Text
+  choice1       String   @db.Text
+  choice2       String   @db.Text
+  choice3       String   @db.Text
+  choice4       String   @db.Text
+  correctAnswer Int
+  explanation   String?  @db.Text
+  category      String
+  subcategory   String?
+  createdAt     DateTime @default(now())
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, questionId])
+}
+
+model ReportedQuestion {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  questionId   String
+  questionText String   @db.Text
+  reason       String   @db.Text
+  createdAt    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
