@@ -808,7 +808,7 @@ function updateStatsTabDetails() {
     { key: 'law', label: 'กฎหมาย', score: userProfile.scoreLaw || 0, rec: 'ควรจดจำมาตราสำคัญในกฎหมายอาญาและวิแพ่ง ทบทวนสัปดาห์ละ 2 ครั้ง' },
     { key: 'thai', label: 'ภาษาไทย', score: userProfile.scoreThai || 0, rec: 'เน้นทบทวนการสะกดคำ การเรียงประโยค และหลักภาษาไทยเบื้องต้น' },
     { key: 'general', label: 'คณิต', score: userProfile.scoreGeneral || 0, rec: 'เน้นทบทวนสมการและโจทย์ปัญหา เพิ่มการฝึก 30 นาที/วัน' },
-    { key: 'english', label: 'อังกฤษ', score: userProfile.scoreEnglish || 0, rec: 'จุดอ่อนหลัก: Tense และ Grammar ฝึก Vocab Arena 20 คำ/วัน' },
+    { key: 'english', label: 'อังกฤษ', score: userProfile.scoreEnglish || 0, rec: 'จุดอ่อนหลัก: Tense และ Grammar ฝึก Vocab 20 คำ/วัน' },
     { key: 'social', label: 'ทั่วไป', score: userProfile.scoreSocial || 0, rec: 'ติดตามข่าวสารเหตุการณ์ปัจจุบัน และหลักธรรมจริยธรรมของข้าราชการตำรวจ' },
     { key: 'computer', label: 'วิทยา', score: userProfile.scoreComputer || 0, rec: 'เน้นชีววิทยาพื้นฐานและฟิสิกส์เบื้องต้น ช่วยเพิ่ม 8-12 คะแนน' }
   ];
@@ -2613,35 +2613,10 @@ if (btnSendDmChat && txtDmChatInput) {
 }
 
 // ==========================================
-// Vocab Arena Mini-Game Logic
+// Vocab Mini-Game Logic
 // ==========================================
-const vocabWords = [
-  { word: "Jurisdiction", meaning: "เขตอำนาจศาล", options: ["เขตอำนาจศาล", "การจับกุม", "หลักฐาน", "การพิพากษา"] },
-  { word: "Apprehend", meaning: "จับกุม", options: ["ปล่อยตัว", "จับกุม", "สืบสวน", "ฟ้องร้อง"] },
-  { word: "Interrogate", meaning: "สอบสวน", options: ["ตัดสิน", "ควบคุมตัว", "สอบสวน", "แจ้งข้อหา"] },
-  { word: "Surveillance", meaning: "การเฝ้าระวัง", options: ["การป้องกัน", "การสืบสวน", "การเฝ้าระวัง", "การสื่อสาร"] },
-  { word: "Defendant", meaning: "จำเลย", options: ["โจทก์", "พยาน", "จำเลย", "ผู้พิพากษา"] },
-  { word: "Prosecute", meaning: "ฟ้องร้อง", options: ["แก้ต่าง", "สืบพยาน", "ฟ้องร้อง", "ถอนฟ้อง"] },
-  { word: "Evidence", meaning: "หลักฐาน", options: ["หลักฐาน", "ข้อตกลง", "คำสารภาพ", "พยานบุคคล"] },
-  { word: "Alibi", meaning: "ข้ออ้างที่อยู่ขณะเกิดเหตุ", options: ["คำให้การ", "ข้ออ้างที่อยู่ขณะเกิดเหตุ", "แรงจูงใจ", "การขู่กรรโชก"] },
-  { word: "Warrant", meaning: "หมายศาล/หมายจับ", options: ["ใบรับรอง", "สัญญา", "หมายศาล/หมายจับ", "คำสั่งกักขัง"] },
-  { word: "Custody", meaning: "การควบคุมตัว", options: ["การปล่อยตัวชั่วคราว", "การควบคุมตัว", "การทัณฑ์บน", "การสืบสวน"] },
-  { word: "Conspiracy", meaning: "การสมคบคิด", options: ["การก่อกบฏ", "การทรยศ", "การสมคบคิด", "การสมรู้ร่วมคิด"] },
-  { word: "Assault", meaning: "การทำร้ายร่างกาย", options: ["การลักทรัพย์", "การทำร้ายร่างกาย", "การข่มขู่", "การบุกรุก"] },
-  { word: "Bail", meaning: "การประกันตัว", options: ["การปรับ", "การประกันตัว", "การคุมประพฤติ", "การรอลงอาญา"] },
-  { word: "Verdict", meaning: "คำพิพากษาของลูกขุน", options: ["ข้อหา", "คำให้การ", "คำพิพากษาของลูกขุน", "ข้อโต้แย้ง"] },
-  { word: "Testimony", meaning: "คำให้การของพยาน", options: ["ข้อตกลง", "เอกสารอ้างอิง", "คำให้การของพยาน", "รายงานชันสูตร"] },
-  { word: "Investigation", meaning: "การสืบสวนสอบสวน", options: ["การลงโทษ", "การสืบสวนสอบสวน", "การไกล่เกลี่ย", "การตรวจสอบ"] },
-  { word: "Bribery", meaning: "การติดสินบน", options: ["การยักยอก", "การติดสินบน", "การกรรโชกทรัพย์", "การฟอกเงิน"] },
-  { word: "Homicide", meaning: "การฆาตกรรม", options: ["การฆาตกรรม", "การทำร้ายร่างกาย", "การลักพาตัว", "การโจรกรรม"] },
-  { word: "Kidnapping", meaning: "การลักพาตัว", options: ["การปล้นทรัพย์", "การกักขังหน่วงเหนี่ยว", "การลักพาตัว", "การทำลายทรัพย์สิน"] },
-  { word: "Vandalism", meaning: "การทำลายทรัพย์สินสาธารณะ", options: ["การวางเพลิง", "การทำลายทรัพย์สินสาธารณะ", "การลอบวางระเบิด", "การบุกรุก"] },
-  { word: "Larceny", meaning: "การลักทรัพย์", options: ["การชิงทรัพย์", "การลักทรัพย์", "การวิ่งราวทรัพย์", "การฉ้อโกง"] },
-  { word: "Burglary", meaning: "การลักลอบบุกรุกเข้าไปลักทรัพย์", options: ["การบุกรุก", "การลักลอบบุกรุกเข้าไปลักทรัพย์", "การโจรกรรมรถยนต์", "การปล้นสะดม"] },
-  { word: "Fraud", meaning: "การฉ้อโกง", options: ["การปลอมแปลง", "การติดสินบน", "การฉ้อโกง", "การฟอกเงิน"] },
-  { word: "Arson", meaning: "การวางเพลิง", options: ["การวางเพลิง", "การระเบิด", "การก่อวินาศกรรม", "การทำร้ายร่างกาย"] },
-  { word: "Embezzlement", meaning: "การยักยอกทรัพย์", options: ["การติดสินบน", "การฉ้อโกง", "การยักยอกทรัพย์", "การกรรโชกทรัพย์"] }
-];
+let currentLevel = 'B1';
+let currentSessionQuestions = [];
 
 let vocabIdx = 0;
 let vocabScore = 0;
@@ -2650,16 +2625,15 @@ let vocabCompletedInRound = 0;
 let isVocabFeedbackActive = false;
 
 window.openVocabArena = function() {
-  vocabIdx = 0;
-  vocabScore = 0;
-  vocabStreak = 0;
-  vocabCompletedInRound = 0;
-  isVocabFeedbackActive = false;
-  
   const modal = document.getElementById('vocabArenaModal');
   if (modal) {
+    // Show level selection screen, hide gameplay
+    const lvlSelection = document.getElementById('vocabLevelSelection');
+    const gameplaySec = document.getElementById('vocabGameplaySection');
+    if (lvlSelection) lvlSelection.style.display = 'block';
+    if (gameplaySec) gameplaySec.style.display = 'none';
+
     modal.style.display = 'flex';
-    renderVocabQuestion();
   }
 };
 
@@ -2678,6 +2652,55 @@ if (btnCloseVocabArena) {
   };
 }
 
+window.startVocabSession = function(level) {
+  currentLevel = level;
+  vocabIdx = 0;
+  vocabScore = 0;
+  vocabStreak = 0;
+  vocabCompletedInRound = 0;
+  isVocabFeedbackActive = false;
+
+  const allWords = (window.VOCAB_DATA && window.VOCAB_DATA[level]) || [];
+  if (allWords.length < 5) {
+    showCenteredAlert('ข้อมูลคำศัพท์ไม่เพียงพอ');
+    return;
+  }
+
+  // Pick 5 unique random indices
+  const selectedIndices = new Set();
+  while (selectedIndices.size < 5) {
+    selectedIndices.add(Math.floor(Math.random() * allWords.length));
+  }
+
+  currentSessionQuestions = Array.from(selectedIndices).map(idx => {
+    const wObj = allWords[idx];
+    
+    // Pick 3 random distractor meanings from same level
+    const otherMeanings = allWords
+      .filter(w => w.word !== wObj.word)
+      .map(w => w.meaning);
+    
+    const shuffledOthers = otherMeanings.sort(() => 0.5 - Math.random());
+    const distractors = shuffledOthers.slice(0, 3);
+    
+    const options = [wObj.meaning, ...distractors].sort(() => 0.5 - Math.random());
+    
+    return {
+      word: wObj.word,
+      meaning: wObj.meaning,
+      options: options
+    };
+  });
+
+  // Switch display sections
+  const lvlSelection = document.getElementById('vocabLevelSelection');
+  const gameplaySec = document.getElementById('vocabGameplaySection');
+  if (lvlSelection) lvlSelection.style.display = 'none';
+  if (gameplaySec) gameplaySec.style.display = 'block';
+
+  renderVocabQuestion();
+};
+
 function renderVocabQuestion() {
   if (vocabCompletedInRound >= 5) {
     completeVocabSession();
@@ -2685,7 +2708,7 @@ function renderVocabQuestion() {
   }
 
   isVocabFeedbackActive = false;
-  const wordObj = vocabWords[vocabIdx % vocabWords.length];
+  const wordObj = currentSessionQuestions[vocabCompletedInRound];
 
   // UI elements
   document.getElementById('vocabGameScore').textContent = vocabScore;
@@ -2727,7 +2750,7 @@ async function handleVocabAnswer(selectedOpt, btnElement) {
   if (isVocabFeedbackActive) return;
   isVocabFeedbackActive = true;
 
-  const wordObj = vocabWords[vocabIdx % vocabWords.length];
+  const wordObj = currentSessionQuestions[vocabCompletedInRound];
   const wordCard = document.getElementById('vocabWordCard');
   const feedbackEl = document.getElementById('vocabFeedbackMessage');
   
@@ -2782,7 +2805,6 @@ async function handleVocabAnswer(selectedOpt, btnElement) {
 
   // Next word after 1.5 seconds
   setTimeout(() => {
-    vocabIdx++;
     renderVocabQuestion();
   }, 1500);
 }
@@ -2798,7 +2820,7 @@ async function completeVocabSession() {
         'Authorization': `Bearer ${authToken}`
       },
       body: JSON.stringify({
-        level: 'B1',
+        level: currentLevel,
         matchedPairs: 5,
         timeSeconds: 30,
         mode: 'sentence'
