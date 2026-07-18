@@ -35,6 +35,15 @@
     .vocab-lvl-btn:active {
       transform: translateY(0);
     }
+    .vocab-count-btn {
+      background: transparent;
+      color: #64748B;
+    }
+    .vocab-count-btn.active-count {
+      background: white;
+      color: #BD1B0B;
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    }
   </style>
   <script src="vocab-data.js" defer></script>
   <script src="js/app.js" defer></script>
@@ -976,8 +985,18 @@
 
       <!-- Level Selection Section -->
       <div id="vocabLevelSelection" style="display: block; margin-top: 10px;">
+        <!-- Question Count Selector -->
+        <div style="margin-bottom: 20px; text-align: left;">
+          <p style="font-size: 13px; color: #64748B; font-weight: 600; margin-bottom: 8px;">จำนวนคำศัพท์ที่ต้องการฝึกฝน</p>
+          <div style="display: flex; background: #E2E8F0; border-radius: 12px; padding: 4px; gap: 4px;">
+            <button onclick="setVocabWordCount(10)" id="btnVocabCount10" class="vocab-count-btn active-count" style="flex: 1; border: none; padding: 8px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; font-family: inherit;">10 คำ</button>
+            <button onclick="setVocabWordCount(20)" id="btnVocabCount20" class="vocab-count-btn" style="flex: 1; border: none; padding: 8px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; font-family: inherit;">20 คำ</button>
+            <button onclick="setVocabWordCount(30)" id="btnVocabCount30" class="vocab-count-btn" style="flex: 1; border: none; padding: 8px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; font-family: inherit;">30 คำ</button>
+          </div>
+        </div>
+
         <p style="font-size: 13px; color: #64748B; font-weight: 600; margin-bottom: 16px; text-align: left;">เลือกความยากของคำศัพท์ภาษาอังกฤษ (CEFR)</p>
-        <div style="display: flex; flex-direction: column; gap: 10px; max-height: 320px; overflow-y: auto; padding-right: 4px;">
+        <div style="display: flex; flex-direction: column; gap: 10px; max-height: 260px; overflow-y: auto; padding-right: 4px;">
           <button onclick="startVocabSession('A1')" class="vocab-lvl-btn">
             <span style="font-size: 24px; padding: 8px; background: #ECFDF5; border-radius: 12px; color: #22C55E; display: flex; align-items: center; justify-content: center; width: 42px; height: 42px;">🌱</span>
             <div style="flex: 1;">
@@ -1054,6 +1073,35 @@
         <!-- Choices 2x2 grid -->
         <div id="vocabChoicesGrid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 10px;">
           <!-- Dynamic options -->
+        </div>
+      </div>
+
+      <!-- Summary Section -->
+      <div id="vocabSummarySection" style="display: none; text-align: left; margin-top: 10px;">
+        <h3 style="font-size: 16px; font-weight: 800; color: #1E293B; margin: 0 0 4px 0; text-align: center;">📊 สรุปผลการฝึกฝน</h3>
+        <p style="font-size: 12px; color: #64748B; margin: 0 0 16px 0; text-align: center;" id="lblVocabSummaryMeta">ระดับ A2 | 10 คำ</p>
+        
+        <div style="background: white; border-radius: 16px; border: 1px solid #E2E8F0; padding: 16px; margin-bottom: 20px; box-shadow: var(--shadow-sm); display: grid; grid-template-columns: 1fr 1fr; gap: 12px; text-align: center;">
+          <div>
+            <span style="font-size: 20px; font-weight: 800; color: #BD1B0B;" id="vocabSummaryScore">0</span>
+            <p style="font-size: 10px; color: #94A3B8; margin: 2px 0 0 0; font-weight: 600;">คะแนนรวม</p>
+          </div>
+          <div>
+            <span style="font-size: 20px; font-weight: 800; color: #10B981;" id="vocabSummaryAccuracy">0%</span>
+            <p style="font-size: 10px; color: #94A3B8; margin: 2px 0 0 0; font-weight: 600;">ความถูกต้อง</p>
+          </div>
+        </div>
+
+        <div id="vocabWrongAnswersContainer" style="display: block; margin-bottom: 20px;">
+          <p style="font-size: 12px; color: #E11D48; font-weight: 700; margin-bottom: 8px;">❌ คำศัพท์ที่ตอบผิด:</p>
+          <div id="vocabWrongAnswersList" style="max-height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 4px;">
+            <!-- Wrong answers list -->
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-top: 15px;">
+          <button onclick="openVocabArena()" style="flex: 1; padding: 12px; border-radius: 14px; border: none; background: #BD1B0B; color: white; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s; font-family: inherit;">เล่นอีกครั้ง</button>
+          <button onclick="closeVocabArena()" style="flex: 1; padding: 12px; border-radius: 14px; border: 1px solid #E2E8F0; background: white; color: #475569; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s; font-family: inherit;">ปิด</button>
         </div>
       </div>
     </div>

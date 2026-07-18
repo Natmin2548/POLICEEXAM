@@ -2617,6 +2617,8 @@ if (btnSendDmChat && txtDmChatInput) {
 // ==========================================
 let currentLevel = 'B1';
 let currentSessionQuestions = [];
+let vocabSessionWordCount = 10;
+let wrongAnswers = [];
 
 let vocabIdx = 0;
 let vocabScore = 0;
@@ -2627,11 +2629,16 @@ let isVocabFeedbackActive = false;
 window.openVocabArena = function() {
   const modal = document.getElementById('vocabArenaModal');
   if (modal) {
-    // Show level selection screen, hide gameplay
+    // Show level selection screen, hide gameplay and summary
     const lvlSelection = document.getElementById('vocabLevelSelection');
     const gameplaySec = document.getElementById('vocabGameplaySection');
+    const summarySec = document.getElementById('vocabSummarySection');
     if (lvlSelection) lvlSelection.style.display = 'block';
     if (gameplaySec) gameplaySec.style.display = 'none';
+    if (summarySec) summarySec.style.display = 'none';
+
+    // Synchronize UI active-count class with current setting
+    window.setVocabWordCount(vocabSessionWordCount);
 
     modal.style.display = 'flex';
   }
@@ -2652,6 +2659,20 @@ if (btnCloseVocabArena) {
   };
 }
 
+window.setVocabWordCount = function(count) {
+  vocabSessionWordCount = count;
+  
+  // Update active classes on buttons
+  document.querySelectorAll('.vocab-count-btn').forEach(btn => {
+    btn.classList.remove('active-count');
+  });
+  
+  const activeBtn = document.getElementById(`btnVocabCount${count}`);
+  if (activeBtn) {
+    activeBtn.classList.add('active-count');
+  }
+};
+
 window.startVocabSession = function(level) {
   currentLevel = level;
   vocabIdx = 0;
@@ -2659,16 +2680,17 @@ window.startVocabSession = function(level) {
   vocabStreak = 0;
   vocabCompletedInRound = 0;
   isVocabFeedbackActive = false;
+  wrongAnswers = [];
 
   const allWords = (window.VOCAB_DATA && window.VOCAB_DATA[level]) || [];
-  if (allWords.length < 5) {
+  if (allWords.length < vocabSessionWordCount) {
     showCenteredAlert('ข้อมูลคำศัพท์ไม่เพียงพอ');
     return;
   }
 
-  // Pick 5 unique random indices
+  // Pick N unique random indices
   const selectedIndices = new Set();
-  while (selectedIndices.size < 5) {
+  while (selectedIndices.size < vocabSessionWordCount) {
     selectedIndices.add(Math.floor(Math.random() * allWords.length));
   }
 
@@ -2695,14 +2717,16 @@ window.startVocabSession = function(level) {
   // Switch display sections
   const lvlSelection = document.getElementById('vocabLevelSelection');
   const gameplaySec = document.getElementById('vocabGameplaySection');
+  const summarySec = document.getElementById('vocabSummarySection');
   if (lvlSelection) lvlSelection.style.display = 'none';
   if (gameplaySec) gameplaySec.style.display = 'block';
+  if (summarySec) summarySec.style.display = 'none';
 
   renderVocabQuestion();
 };
 
 function renderVocabQuestion() {
-  if (vocabCompletedInRound >= 5) {
+  if (vocabCompletedInRound >= vocabSessionWordCount) {
     completeVocabSession();
     return;
   }
@@ -2713,7 +2737,7 @@ function renderVocabQuestion() {
   // UI elements
   document.getElementById('vocabGameScore').textContent = vocabScore;
   document.getElementById('vocabGameStreak').textContent = `${vocabStreak} 🔥`;
-  document.getElementById('vocabGameCount').textContent = `${vocabCompletedInRound + 1}/5`;
+  document.getElementById('vocabGameCount').textContent = `${vocabCompletedInRound + 1}/${vocabSessionWordCount}`;
 
   const streakAlert = document.getElementById('vocabStreakAlert');
   const streakCount = document.getElementById('vocabStreakCount');
@@ -2779,6 +2803,12 @@ async function handleVocabAnswer(selectedOpt, btnElement) {
     feedbackEl.style.display = 'block';
 
   } else {
+    wrongAnswers.push({
+      word: wordObj.word,
+      correctMeaning: wordObj.meaning,
+      userMeaning: selectedOpt
+    });
+
     vocabStreak = 0;
     vocabCompletedInRound++;
 
@@ -2810,7 +2840,54 @@ async function handleVocabAnswer(selectedOpt, btnElement) {
 }
 
 async function completeVocabSession() {
-  closeVocabArena();
+  // Show ELO/XP/Points loading indicator or summary screen
+  const lvlSelection = document.getElementById('vocabLevelSelection');
+  const gameplaySec = document.getElementById('vocabGameplaySection');
+  const summarySec = document.getElementById('vocabSummarySection');
+
+  if (lvlSelection) lvlSelection.style.display = 'none';
+  if (gameplaySec) gameplaySec.style.display = 'none';
+  if (summarySec) summarySec.style.display = 'block';
+
+  // Compute final statistics
+  const totalQuestions = vocabCompletedInRound;
+  const correctCount = totalQuestions - wrongAnswers.length;
+  const accuracy = Math.round((correctCount / totalQuestions) * 100);
+
+  // Set text labels
+  document.getElementById('lblVocabSummaryMeta').textContent = `ระดับ ${currentLevel} | จำนวน ${totalQuestions} คำ`;
+  document.getElementById('vocabSummaryScore').textContent = vocabScore;
+  document.getElementById('vocabSummaryAccuracy').textContent = `${accuracy}%`;
+
+  // Render wrong answers list
+  const container = document.getElementById('vocabWrongAnswersList');
+  const wrongContainer = document.getElementById('vocabWrongAnswersContainer');
+  if (container && wrongContainer) {
+    container.innerHTML = '';
+    if (wrongAnswers.length === 0) {
+      wrongContainer.style.display = 'none';
+      
+      const successDiv = document.createElement('div');
+      successDiv.style.cssText = 'text-align: center; color: #10B981; font-weight: 700; font-size: 14px; padding: 20px 0;';
+      successDiv.innerHTML = '🎉 ยอดเยี่ยมมาก! คุณตอบถูกทุกข้อ';
+      container.appendChild(successDiv);
+      wrongContainer.style.display = 'block';
+    } else {
+      wrongAnswers.forEach(item => {
+        const div = document.createElement('div');
+        div.style.cssText = 'background: #FFF1F2; border: 1px solid #FFE4E6; border-radius: 12px; padding: 10px 12px; font-size: 12px;';
+        div.innerHTML = `
+          <div style="font-weight: 700; color: #9F1239;">${item.word}</div>
+          <div style="color: #475569; margin-top: 2px;">
+            แปลว่า: <span style="font-weight: 600; color: #10B981;">${item.correctMeaning}</span> 
+            (คุณตอบ: <span style="font-weight: 600; color: #EF4444;">${item.userMeaning}</span>)
+          </div>
+        `;
+        container.appendChild(div);
+      });
+      wrongContainer.style.display = 'block';
+    }
+  }
 
   try {
     const res = await fetch(`${API_BASE}/api/user/vocab-complete`, {
@@ -2821,24 +2898,17 @@ async function completeVocabSession() {
       },
       body: JSON.stringify({
         level: currentLevel,
-        matchedPairs: 5,
-        timeSeconds: 30,
+        matchedPairs: totalQuestions,
+        timeSeconds: totalQuestions * 6,
         mode: 'sentence'
       })
     });
 
-    if (!res.ok) throw new Error();
-    const data = await res.json();
-
-    await showCenteredAlert(
-      `🎉 สำเร็จ! คุณเล่นรอบนี้เสร็จสิ้น\nคะแนนที่ได้: ${vocabScore} PTS\n${data.message}`,
-      { title: 'สำเร็จการฝึกฝน', icon: '🏆' }
-    );
-
-    loadRealProfile(); // Refresh ELO, XP, level on dashboard
+    if (res.ok) {
+      loadRealProfile(); // Refresh ELO, XP, level on dashboard
+    }
   } catch (err) {
     console.error('Error saving vocab session:', err);
-    await showCenteredAlert('สำเร็จมินิเกมคำศัพท์แล้ว! แต่ไม่สามารถบันทึกคะแนนเข้าเซิร์ฟเวอร์ได้');
   }
 }
 
