@@ -1,0 +1,11 @@
+{
+  "name": "police-exam-root",
+  "version": "1.0.0",
+  "description": "Root package proxy for Render deployment",
+  "main": "server/index.js",
+  "scripts": {
+    "build": "cd server && npm install && npx prisma generate",
+    "start": "cd server && npm start"
+  },
+  "dependencies": {}
+}
