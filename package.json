@@ -4,7 +4,7 @@
   "description": "Root package proxy for Render deployment",
   "main": "server/index.js",
   "scripts": {
-    "build": "cd server && npm install && npx prisma generate",
+    "build": "cd server && npm install && npx prisma generate && cd .. && node build-frontend.js",
     "start": "cd server && npm start"
   },
   "dependencies": {}
