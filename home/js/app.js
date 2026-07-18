@@ -6,17 +6,73 @@ const API_BASE = window.location.hostname === 'localhost' || window.location.hos
   : 'https://police-exam-t090.onrender.com';
 
 // ==========================================
+// Custom Centered Dialogs
+// ==========================================
+function showCenteredConfirm(title, message, opts = {}) {
+  return new Promise((resolve) => {
+    const modal = document.getElementById('customConfirmModal');
+    const iconEl = document.getElementById('customConfirmIcon');
+    const titleEl = document.getElementById('customConfirmTitle');
+    const msgEl = document.getElementById('customConfirmMessage');
+    const btnOk = document.getElementById('btnConfirmOk');
+    const btnCancel = document.getElementById('btnConfirmCancel');
+
+    if (iconEl) iconEl.textContent = opts.icon || '⚠️';
+    if (titleEl) titleEl.textContent = title;
+    if (msgEl) msgEl.textContent = message;
+    if (btnOk) btnOk.textContent = opts.okText || 'ยืนยัน';
+    if (btnOk && opts.okColor) btnOk.style.background = opts.okColor;
+    else if (btnOk) btnOk.style.background = '#EF4444';
+    modal.style.display = 'flex';
+
+    function cleanup() {
+      modal.style.display = 'none';
+      btnOk.removeEventListener('click', onOk);
+      btnCancel.removeEventListener('click', onCancel);
+    }
+    function onOk() { cleanup(); resolve(true); }
+    function onCancel() { cleanup(); resolve(false); }
+
+    btnOk.addEventListener('click', onOk);
+    btnCancel.addEventListener('click', onCancel);
+  });
+}
+
+function showCenteredAlert(message, opts = {}) {
+  return new Promise((resolve) => {
+    const modal = document.getElementById('customAlertModal');
+    const iconEl = document.getElementById('customAlertIcon');
+    const titleEl = document.getElementById('customAlertTitle');
+    const msgEl = document.getElementById('customAlertMessage');
+    const btnOk = document.getElementById('btnAlertOk');
+
+    if (iconEl) iconEl.textContent = opts.icon || 'ℹ️';
+    if (titleEl) titleEl.textContent = opts.title || 'แจ้งเตือน';
+    if (msgEl) msgEl.textContent = message;
+    modal.style.display = 'flex';
+
+    function cleanup() {
+      modal.style.display = 'none';
+      btnOk.removeEventListener('click', onOk);
+    }
+    function onOk() { cleanup(); resolve(); }
+
+    btnOk.addEventListener('click', onOk);
+  });
+}
+
+// ==========================================
 // Session Route Guard & Initialization
 // ==========================================
 let userProfile = null;
 let authToken = null;
 
-function checkSession() {
+async function checkSession() {
   authToken = sessionStorage.getItem('authToken');
   const sessionData = sessionStorage.getItem('userProfile');
 
   if (!authToken || !sessionData) {
-    alert('กรุณาเข้าสู่ระบบก่อนใช้งานแดชบอร์ด');
+    await showCenteredAlert('กรุณาเข้าสู่ระบบก่อนใช้งานแดชบอร์ด');
     window.location.href = '../index.html';
     return;
   }
@@ -352,13 +408,13 @@ btnStartExam.addEventListener('click', async () => {
     if (res.ok) {
       const data = await res.json();
       const questionCount = data.questions ? data.questions.length : 0;
-      alert(`📝 พร้อมทำข้อสอบ! มีทั้งหมด ${questionCount} ข้อ\n\n(ฟีเจอร์ทำข้อสอบเต็มรูปแบบจะเปิดในเวอร์ชันหน้า)`);
+      await showCenteredAlert(`📝 พร้อมทำข้อสอบ! มีทั้งหมด ${questionCount} ข้อ\n\n(ฟีเจอร์ทำข้อสอบเต็มรูปแบบจะเปิดในเวอร์ชันหน้า)`);
     } else {
-      alert('ไม่สามารถโหลดข้อสอบได้ กรุณาลองใหม่');
+      await showCenteredAlert('ไม่สามารถโหลดข้อสอบได้ กรุณาลองใหม่');
     }
   } catch (err) {
     console.error('Daily exam fetch error:', err);
-    alert('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
+    await showCenteredAlert('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
   }
 
   btnStartExam.disabled = false;
@@ -369,8 +425,8 @@ btnStartExam.addEventListener('click', async () => {
 const btnDropdownLogout = document.getElementById('btnDropdownLogout');
 const btnProfileLogout = document.getElementById('btnProfileLogout');
 
-function handleLogout() {
-  const confirmLog = confirm('คุณต้องการออกจากระบบใช่หรือไม่?');
+async function handleLogout() {
+  const confirmLog = await showCenteredConfirm('ยืนยันการออกจากระบบ', 'คุณต้องการออกจากระบบใช่หรือไม่?', { okText: 'ออกจากระบบ', okColor: '#EF4444' });
   if (confirmLog) {
     sessionStorage.clear();
     window.location.href = '../index.html';
@@ -723,9 +779,9 @@ if (btnQuickMatch) {
       `;
       
       const btnStart = document.getElementById('btnStartBattleArena');
-      btnStart.addEventListener('click', () => {
+      btnStart.addEventListener('click', async () => {
         modal.remove();
-        alert('ระบบประลอง Arena กำลังอยู่ในการพัฒนาร่วมกับ AI เจนเนอเรเตอร์คำถาม จะเปิดใช้งานเต็มรูปแบบเร็วๆ นี้!');
+        await showCenteredAlert('ระบบประลอง Arena กำลังอยู่ในการพัฒนาร่วมกับ AI เจนเนอเรเตอร์คำถาม จะเปิดใช้งานเต็มรูปแบบเร็วๆ นี้!', { title: 'ประลอง Arena' });
       });
       
     }, 3000);
@@ -1191,7 +1247,7 @@ if (btnCreatePost) {
 
     const content = txtPostContent.value.trim();
     if (!content) {
-      alert('กรุณากรอกข้อความโพสต์');
+      await showCenteredAlert('กรุณากรอกข้อความโพสต์');
       return;
     }
 
@@ -1217,7 +1273,7 @@ if (btnCreatePost) {
       loadCommunityPosts(); // Reload posts
     } catch (err) {
       console.error('Create post error:', err);
-      alert(err.message);
+      await showCenteredAlert(err.message);
     } finally {
       btnCreatePost.disabled = false;
       btnCreatePost.textContent = 'โพสต์';
@@ -1232,7 +1288,7 @@ async function submitComment(postId) {
 
   const content = input.value.trim();
   if (!content) {
-    alert('กรุณากรอกความคิดเห็น');
+    await showCenteredAlert('กรุณากรอกความคิดเห็น');
     return;
   }
 
@@ -1258,7 +1314,7 @@ async function submitComment(postId) {
     loadCommunityPosts(); // Reload posts to show comment
   } catch (err) {
     console.error('Submit comment error:', err);
-    alert(err.message);
+    await showCenteredAlert(err.message);
   } finally {
     if (btn) btn.disabled = false;
   }
@@ -1434,7 +1490,7 @@ window.saveEditPost = async function(postId) {
 
   const content = input.value.trim();
   if (!content) {
-    alert('กรุณากรอกข้อความโพสต์');
+    await showCenteredAlert('กรุณากรอกข้อความโพสต์');
     return;
   }
 
@@ -1456,35 +1512,9 @@ window.saveEditPost = async function(postId) {
     loadCommunityPosts();
   } catch (err) {
     console.error('Save post error:', err);
-    alert(err.message);
+    await showCenteredAlert(err.message);
   }
 };
-
-// Custom centered confirm modal helper
-function showCenteredConfirm(title, message) {
-  return new Promise((resolve) => {
-    const modal = document.getElementById('customConfirmModal');
-    const titleEl = document.getElementById('customConfirmTitle');
-    const msgEl = document.getElementById('customConfirmMessage');
-    const btnOk = document.getElementById('btnConfirmOk');
-    const btnCancel = document.getElementById('btnConfirmCancel');
-
-    if (titleEl) titleEl.textContent = title;
-    if (msgEl) msgEl.textContent = message;
-    modal.style.display = 'flex';
-
-    function cleanup() {
-      modal.style.display = 'none';
-      btnOk.removeEventListener('click', onOk);
-      btnCancel.removeEventListener('click', onCancel);
-    }
-    function onOk() { cleanup(); resolve(true); }
-    function onCancel() { cleanup(); resolve(false); }
-
-    btnOk.addEventListener('click', onOk);
-    btnCancel.addEventListener('click', onCancel);
-  });
-}
 
 // Delete a post (only owner)
 window.deletePost = async function(postId) {
@@ -1505,7 +1535,7 @@ window.deletePost = async function(postId) {
     loadCommunityPosts();
   } catch (err) {
     console.error('Delete post error:', err);
-    alert(err.message);
+    await showCenteredAlert(err.message);
   }
 };
 
@@ -1626,7 +1656,7 @@ if (btnSubmitCreateGroup && createGroupModal) {
     const isPrivate = optPrivacy ? optPrivacy.value === 'private' : false;
 
     if (!name) {
-      alert('กรุณากรอกชื่อกลุ่ม');
+      await showCenteredAlert('กรุณากรอกชื่อกลุ่ม');
       return;
     }
 
@@ -1652,7 +1682,7 @@ if (btnSubmitCreateGroup && createGroupModal) {
       loadGroupsList(); // Reload feed
     } catch (err) {
       console.error('Create group error:', err);
-      alert(err.message);
+      await showCenteredAlert(err.message);
     } finally {
       btnSubmitCreateGroup.disabled = false;
       btnSubmitCreateGroup.textContent = 'สร้างกลุ่ม';
@@ -1684,16 +1714,17 @@ window.joinGroup = async function(groupId) {
       throw new Error(err.error || 'Join failed');
     }
     const data = await res.json();
-    alert(data.message);
+    await showCenteredAlert(data.message);
     loadGroupsList(txtGroupSearch ? txtGroupSearch.value.trim() : '');
   } catch (err) {
-    alert(err.message || 'ไม่สามารถเข้าร่วมกลุ่มได้');
+    await showCenteredAlert(err.message || 'ไม่สามารถเข้าร่วมกลุ่มได้');
   }
 };
 
 // Leave Group action
 window.leaveGroup = async function(groupId) {
-  if (!confirm('คุณแน่ใจว่าต้องการออกจากกลุ่มนี้ใช่หรือไม่?')) return;
+  const confirmed = await showCenteredConfirm('ออกจากกลุ่ม', 'คุณแน่ใจว่าต้องการออกจากกลุ่มนี้ใช่หรือไม่?', { okText: 'ออกจากกลุ่ม', okColor: '#EF4444' });
+  if (!confirmed) return;
   try {
     const res = await fetch(`${API_BASE}/api/community/groups/${groupId}/leave`, {
       method: 'POST',
@@ -1702,13 +1733,14 @@ window.leaveGroup = async function(groupId) {
     if (!res.ok) throw new Error('Leave failed');
     loadGroupsList(txtGroupSearch ? txtGroupSearch.value.trim() : '');
   } catch (err) {
-    alert('ไม่สามารถออกจากกลุ่มได้');
+    await showCenteredAlert('ไม่สามารถออกจากกลุ่มได้');
   }
 };
 
 // Delete Group action
 window.deleteGroup = async function(groupId) {
-  if (!confirm('คุณต้องการลบกลุ่มติวนี้ใช่หรือไม่? ข้อมูลสมาชิกและข้อความทั้งหมดจะถูกลบถาวร')) return;
+  const confirmed = await showCenteredConfirm('ลบกลุ่มติว', 'คุณต้องการลบกลุ่มติวนี้ใช่หรือไม่? ข้อมูลสมาชิกและข้อความทั้งหมดจะถูกลบถาวร', { okText: 'ลบกลุ่ม', okColor: '#EF4444' });
+  if (!confirmed) return;
   try {
     const res = await fetch(`${API_BASE}/api/community/groups/${groupId}`, {
       method: 'DELETE',
@@ -1720,7 +1752,7 @@ window.deleteGroup = async function(groupId) {
     }
     loadGroupsList(txtGroupSearch ? txtGroupSearch.value.trim() : '');
   } catch (err) {
-    alert(err.message || 'ไม่สามารถลบกลุ่มได้');
+    await showCenteredAlert(err.message || 'ไม่สามารถลบกลุ่มได้');
   }
 };
 
@@ -1843,12 +1875,13 @@ window.approveJoinRequest = async function(groupId, userId) {
     loadJoinRequests(groupId);
     loadGroupsList(txtGroupSearch ? txtGroupSearch.value.trim() : '');
   } catch (err) {
-    alert('ไม่สามารถอนุมัติคำขอได้');
+    await showCenteredAlert('ไม่สามารถอนุมัติคำขอได้');
   }
 };
 
 window.declineJoinRequest = async function(groupId, userId) {
-  if (!confirm('ปฏิเสธคำขอเข้าร่วมกลุ่มของบุคคลนี้ใช่หรือไม่?')) return;
+  const confirmed = await showCenteredConfirm('ปฏิเสธคำขอ', 'ปฏิเสธคำขอเข้าร่วมกลุ่มของบุคคลนี้ใช่หรือไม่?', { okText: 'ปฏิเสธ', okColor: '#EF4444' });
+  if (!confirmed) return;
   try {
     const res = await fetch(`${API_BASE}/api/community/groups/${groupId}/requests/${userId}/decline`, {
       method: 'POST',
@@ -1857,7 +1890,7 @@ window.declineJoinRequest = async function(groupId, userId) {
     if (!res.ok) throw new Error();
     loadJoinRequests(groupId);
   } catch (err) {
-    alert('ไม่สามารถปฏิเสธคำขอได้');
+    await showCenteredAlert('ไม่สามารถปฏิเสธคำขอได้');
   }
 };
 
@@ -2056,20 +2089,21 @@ window.addFriend = async function(friendId) {
       throw new Error(err.error);
     }
     const data = await res.json();
-    alert(data.message);
+    await showCenteredAlert(data.message);
     
     if (txtFriendUserSearch) txtFriendUserSearch.value = '';
     if (friendUserSearchResultsContainer) friendUserSearchResultsContainer.style.display = 'none';
     
     loadFriendsList();
   } catch (err) {
-    alert(err.message || 'ไม่สามารถเพิ่มเพื่อนได้');
+    await showCenteredAlert(err.message || 'ไม่สามารถเพิ่มเพื่อนได้');
   }
 };
 
 // Block User action
 window.blockUser = async function(blockedId) {
-  if (!confirm('คุณแน่ใจว่าต้องการบล็อกผู้ใช้งานรายนี้ใช่หรือไม่? ความสัมพันธ์ความเป็นเพื่อนและแชททั้งหมดจะถูกซ่อนไว้')) return;
+  const confirmed = await showCenteredConfirm('บล็อกผู้ใช้งาน', 'คุณแน่ใจว่าต้องการบล็อกผู้ใช้งานรายนี้ใช่หรือไม่? ความสัมพันธ์ความเป็นเพื่อนและแชททั้งหมดจะถูกซ่อนไว้', { okText: 'บล็อก', okColor: '#EF4444' });
+  if (!confirmed) return;
   try {
     const res = await fetch(`${API_BASE}/api/friends/block`, {
       method: 'POST',
@@ -2087,7 +2121,7 @@ window.blockUser = async function(blockedId) {
     loadFriendsList();
     loadBlockedList();
   } catch (err) {
-    alert('ไม่สามารถบล็อกผู้ใช้งานได้');
+    await showCenteredAlert('ไม่สามารถบล็อกผู้ใช้งานได้');
   }
 };
 
@@ -2204,7 +2238,7 @@ window.unblockUser = async function(blockedId) {
     loadBlockedList();
     loadFriendsList();
   } catch (err) {
-    alert('ไม่สามารถปลดบล็อกผู้ใช้งานได้');
+    await showCenteredAlert('ไม่สามารถปลดบล็อกผู้ใช้งานได้');
   }
 };
 
@@ -2264,7 +2298,7 @@ window.acceptFriendRequest = async function(friendId) {
     loadFriendRequests();
     loadFriendsList();
   } catch (err) {
-    alert('ไม่สามารถตอบรับเป็นเพื่อนได้');
+    await showCenteredAlert('ไม่สามารถตอบรับเป็นเพื่อนได้');
   }
 };
 
@@ -2277,12 +2311,13 @@ window.declineFriendRequest = async function(friendId) {
     if (!res.ok) throw new Error();
     loadFriendRequests();
   } catch (err) {
-    alert('ไม่สามารถปฏิเสธคำขอได้');
+    await showCenteredAlert('ไม่สามารถปฏิเสธคำขอได้');
   }
 };
 
 window.unfriend = async function(friendId) {
-  if (!confirm('คุณต้องการลบเพื่อนคนนี้ใช่หรือไม่? แชทส่วนตัวจะถูกปิดตัวลง')) return;
+  const confirmed = await showCenteredConfirm('ลบเพื่อน', 'คุณต้องการลบเพื่อนคนนี้ใช่หรือไม่? แชทส่วนตัวจะถูกปิดตัวลง', { okText: 'ลบเพื่อน', okColor: '#EF4444' });
+  if (!confirmed) return;
   try {
     const res = await fetch(`${API_BASE}/api/friends/${friendId}`, {
       method: 'DELETE',
@@ -2291,7 +2326,7 @@ window.unfriend = async function(friendId) {
     if (!res.ok) throw new Error();
     loadFriendsList();
   } catch (err) {
-    alert('ไม่สามารถลบเพื่อนได้');
+    await showCenteredAlert('ไม่สามารถลบเพื่อนได้');
   }
 };
 
