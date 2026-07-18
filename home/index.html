@@ -211,7 +211,7 @@
       <section class="other-features">
         <h3 class="section-title">ฟีเจอร์อื่นๆ</h3>
         <div class="features-scroll-wrapper">
-          <div class="scroll-card">
+          <div class="scroll-card" style="cursor: pointer;" onclick="document.getElementById('btnTabBattle').click();">
             <div class="scroll-icon-wrapper">
               <svg viewBox="0 0 24 24" fill="none" stroke="#BD1B0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5"/>
@@ -221,7 +221,7 @@
             <span class="scroll-name">Battle Arena</span>
           </div>
 
-          <div class="scroll-card">
+          <div class="scroll-card" style="cursor: pointer;" onclick="openVocabArena();">
             <div class="scroll-icon-wrapper">
               <svg viewBox="0 0 24 24" fill="none" stroke="#BD1B0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
@@ -935,6 +935,55 @@
       <button id="btnAlertOk" style="width: 100%; padding: 12px; border-radius: 10px; border: none; background: var(--primary-color); color: white; font-size: 14px; font-weight: 600; cursor: pointer;">ตกลง</button>
     </div>
   </div>
+
+  <!-- Vocab Arena Game Modal -->
+  <div id="vocabArenaModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(8px); z-index: 1000; align-items: center; justify-content: center;">
+    <div class="modal-card" style="background: #F8FAFC; max-width: 440px; width: 94%; padding: 24px; border-radius: 24px; text-align: center; box-shadow: var(--shadow-xl); position: relative; animation: modalPop 0.25s ease;">
+      <!-- Close button -->
+      <button id="btnCloseVocabArena" style="position: absolute; right: 20px; top: 20px; background: #E2E8F0; border: none; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; cursor: pointer; color: var(--text-dark); transition: all 0.2s;">❌</button>
+
+      <!-- Title / Header -->
+      <div style="margin-bottom: 20px;">
+        <span style="font-size: 24px; display: block; margin-bottom: 4px;">📖</span>
+        <h2 style="font-size: 18px; font-weight: 800; color: #1E293B; margin: 0;">Vocab Arena</h2>
+        <span style="font-size: 12px; color: #64748B;">มินิเกมฝึกคำศัพท์ภาษาอังกฤษสอบตำรวจ</span>
+      </div>
+
+      <!-- Stats row -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; background: white; padding: 14px 10px; border-radius: 16px; border: 1px solid #E2E8F0; margin-bottom: 20px; box-shadow: var(--shadow-sm);">
+        <div style="text-align: center;">
+          <p id="vocabGameScore" style="font-size: 18px; font-weight: 800; color: #BD1B0B; margin: 0;">0</p>
+          <p style="font-size: 10px; color: #94A3B8; margin: 2px 0 0 0; font-weight: 600;">คะแนน</p>
+        </div>
+        <div style="text-align: center; border-left: 1px solid #E2E8F0; border-right: 1px solid #E2E8F0;">
+          <p id="vocabGameStreak" style="font-size: 18px; font-weight: 800; color: #D97706; margin: 0;">0 🔥</p>
+          <p style="font-size: 10px; color: #94A3B8; margin: 2px 0 0 0; font-weight: 600;">Streak</p>
+        </div>
+        <div style="text-align: center;">
+          <p id="vocabGameCount" style="font-size: 18px; font-weight: 800; color: #1E293B; margin: 0;">1/5</p>
+          <p style="font-size: 10px; color: #94A3B8; margin: 2px 0 0 0; font-weight: 600;">คำศัพท์ที่ทำ</p>
+        </div>
+      </div>
+
+      <!-- Word display card -->
+      <div id="vocabWordCard" style="background: white; border-radius: 20px; border: 2px solid #E2E8F0; padding: 32px 16px; margin-bottom: 20px; transition: all 0.2s; position: relative;">
+        <div id="vocabStreakAlert" style="display: none; position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: #F59E0B; color: white; padding: 4px 12px; border-radius: 20px; font-size: 10px; font-weight: 800; box-shadow: var(--shadow-sm); animation: bounce 1s infinite;">
+          🔥 <span id="vocabStreakCount">0</span> STREAK!
+        </div>
+        <p id="lblVocabWord" style="font-size: 32px; font-weight: 900; color: #1E293B; margin: 0 0 6px 0; letter-spacing: -0.5px;"></p>
+        <p style="font-size: 12px; color: #94A3B8; margin: 0; font-weight: 500;">เลือกคำแปลภาษาไทยที่ถูกต้อง</p>
+        
+        <!-- Feedback placeholder -->
+        <div id="vocabFeedbackMessage" style="margin-top: 14px; font-size: 13px; font-weight: 700; display: none;"></div>
+      </div>
+
+      <!-- Choices 2x2 grid -->
+      <div id="vocabChoicesGrid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 10px;">
+        <!-- Dynamic options -->
+      </div>
+    </div>
+  </div>
+
 
 </body>
 </html>
