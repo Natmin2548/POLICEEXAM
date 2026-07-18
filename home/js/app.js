@@ -338,6 +338,7 @@ function updateRecentResults(user) {
     { name: 'ภาษาอังกฤษ', score: user.scoreEnglish || 0 },
     { name: 'คอมพิวเตอร์', score: user.scoreComputer || 0 },
     { name: 'สังคม/จริยธรรม', score: user.scoreSocial || 0 },
+    { name: 'งานสารบรรณ', score: user.scoreSecretariat || 0 }
   ];
 
   // Update result list container
@@ -810,7 +811,8 @@ function updateStatsTabDetails() {
     { key: 'general', label: 'คณิต', score: userProfile.scoreGeneral || 0, rec: 'เน้นทบทวนสมการและโจทย์ปัญหา เพิ่มการฝึก 30 นาที/วัน' },
     { key: 'english', label: 'อังกฤษ', score: userProfile.scoreEnglish || 0, rec: 'จุดอ่อนหลัก: Tense และ Grammar ฝึก Vocab 20 คำ/วัน' },
     { key: 'social', label: 'ทั่วไป', score: userProfile.scoreSocial || 0, rec: 'ติดตามข่าวสารเหตุการณ์ปัจจุบัน และหลักธรรมจริยธรรมของข้าราชการตำรวจ' },
-    { key: 'computer', label: 'วิทยา', score: userProfile.scoreComputer || 0, rec: 'เน้นชีววิทยาพื้นฐานและฟิสิกส์เบื้องต้น ช่วยเพิ่ม 8-12 คะแนน' }
+    { key: 'computer', label: 'วิทยา', score: userProfile.scoreComputer || 0, rec: 'เน้นชีววิทยาพื้นฐานและฟิสิกส์เบื้องต้น ช่วยเพิ่ม 8-12 คะแนน' },
+    { key: 'secretariat', label: 'งานสารบรรณ', score: userProfile.scoreSecretariat || 0, rec: 'ทบทวนระเบียบงานสารบรรณตำรวจ และชนิดของหนังสือราชการเป็นประจำ' }
   ];
 
   const labels = subjectsData.map(s => s.label);
