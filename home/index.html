@@ -11,6 +11,9 @@
   <!-- Stylesheet -->
   <link rel="stylesheet" href="css/style.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
+  <!-- Cropper.js -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js" defer></script>
   <!-- External Application Script -->
   <style>
     .vocab-lvl-btn {
@@ -1104,6 +1107,21 @@
           <button onclick="openVocabArena()" style="flex: 1; padding: 12px; border-radius: 14px; border: none; background: #BD1B0B; color: white; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s; font-family: inherit;">เล่นอีกครั้ง</button>
           <button onclick="closeVocabArena()" style="flex: 1; padding: 12px; border-radius: 14px; border: 1px solid #E2E8F0; background: white; color: #475569; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s; font-family: inherit;">ปิด</button>
         </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Image Crop Modal -->
+  <div id="cropModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.85); z-index: 2000; align-items: center; justify-content: center;">
+    <div style="background: white; border-radius: 20px; width: 90%; max-width: 500px; padding: 20px; text-align: center;">
+      <h3 style="margin-top: 0; color: #1E293B; font-weight: 700;">ครอบตัดรูปโปรไฟล์</h3>
+      <div style="width: 100%; max-height: 400px; margin-bottom: 20px; overflow: hidden; background: #f8fafc; border-radius: 10px;">
+        <img id="imageToCrop" src="" style="max-width: 100%; display: block;" alt="Image to crop">
+      </div>
+      <div style="display: flex; gap: 10px;">
+        <button onclick="confirmCrop()" style="flex: 1; padding: 12px; border-radius: 10px; background: #10B981; color: white; border: none; font-weight: 700; cursor: pointer;">ยืนยัน</button>
+        <button onclick="cancelCrop()" style="flex: 1; padding: 12px; border-radius: 10px; background: #EF4444; color: white; border: none; font-weight: 700; cursor: pointer;">ยกเลิก</button>
       </div>
     </div>
   </div>

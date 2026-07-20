@@ -2929,80 +2929,92 @@ async function completeVocabSession() {
   }
 }
 
-window.handleProfileImageUpload = async function(event) {
+let currentCropper = null;
+
+window.handleProfileImageUpload = function(event) {
   const file = event.target.files[0];
   if (!file) return;
 
   const reader = new FileReader();
   reader.onload = function(e) {
-    const img = new Image();
-    img.onload = async function() {
-      // Resize to max 500x500
-      const canvas = document.createElement('canvas');
-      const max_size = 500;
-      let width = img.width;
-      let height = img.height;
-
-      if (width > height) {
-        if (width > max_size) {
-          height *= max_size / width;
-          width = max_size;
-        }
-      } else {
-        if (height > max_size) {
-          width *= max_size / height;
-          height = max_size;
-        }
-      }
-
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, width, height);
-
-      const base64Image = canvas.toDataURL('image/jpeg', 0.8);
-
-      try {
-        const res = await fetch(`${API_BASE}/api/user/profile/upload-face`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${authToken}`
-          },
-          body: JSON.stringify({ faceImage: base64Image })
-        });
-        
-        if (res.ok) {
-          const data = await res.json();
-          userProfile.faceImage = base64Image;
-          sessionStorage.setItem('userProfile', JSON.stringify(userProfile));
-          
-          const headerAvatar = document.getElementById('headerAvatar');
-          const profileAvatarImg = document.getElementById('profileAvatarImg');
-          const profileAvatarBox = document.getElementById('profileAvatarBox');
-          
-          if (headerAvatar) {
-            headerAvatar.src = base64Image;
-            headerAvatar.style.display = 'block';
-          }
-          if (profileAvatarImg) {
-            profileAvatarImg.src = base64Image;
-            profileAvatarImg.style.display = 'block';
-          }
-          if (profileAvatarBox) {
-            profileAvatarBox.style.display = 'none';
-          }
-          
-          showCenteredAlert('อัปเดตรูปโปรไฟล์สำเร็จ');
-        } else {
-          showCenteredAlert('เกิดข้อผิดพลาดในการอัปโหลด');
-        }
-      } catch (err) {
-        console.error('Upload Error:', err);
-        showCenteredAlert('เกิดข้อผิดพลาดในการเชื่อมต่อ');
-      }
-    };
-    img.src = e.target.result;
+    const imageToCrop = document.getElementById('imageToCrop');
+    imageToCrop.src = e.target.result;
+    document.getElementById('cropModal').style.display = 'flex';
+    
+    if (currentCropper) {
+      currentCropper.destroy();
+    }
+    
+    currentCropper = new Cropper(imageToCrop, {
+      aspectRatio: 1,
+      viewMode: 1,
+    });
   };
   reader.readAsDataURL(file);
+  
+  // clear input so same file can be selected again if needed
+  event.target.value = '';
+};
+
+window.cancelCrop = function() {
+  document.getElementById('cropModal').style.display = 'none';
+  if (currentCropper) {
+    currentCropper.destroy();
+    currentCropper = null;
+  }
+};
+
+window.confirmCrop = async function() {
+  if (!currentCropper) return;
+  
+  // Get cropped canvas with fixed max size
+  const canvas = currentCropper.getCroppedCanvas({
+    width: 500,
+    height: 500,
+  });
+  
+  if (!canvas) return;
+  
+  const base64Image = canvas.toDataURL('image/jpeg', 0.8);
+  cancelCrop();
+  
+  try {
+    const res = await fetch(`${API_BASE}/api/user/profile/upload-face`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`
+      },
+      body: JSON.stringify({ faceImage: base64Image })
+    });
+    
+    if (res.ok) {
+      const data = await res.json();
+      userProfile.faceImage = base64Image;
+      sessionStorage.setItem('userProfile', JSON.stringify(userProfile));
+      
+      const headerAvatar = document.getElementById('headerAvatar');
+      const profileAvatarImg = document.getElementById('profileAvatarImg');
+      const profileAvatarBox = document.getElementById('profileAvatarBox');
+      
+      if (headerAvatar) {
+        headerAvatar.src = base64Image;
+        headerAvatar.style.display = 'block';
+      }
+      if (profileAvatarImg) {
+        profileAvatarImg.src = base64Image;
+        profileAvatarImg.style.display = 'block';
+      }
+      if (profileAvatarBox) {
+        profileAvatarBox.style.display = 'none';
+      }
+      
+      showCenteredAlert('อัปเดตรูปโปรไฟล์สำเร็จ');
+    } else {
+      showCenteredAlert('เกิดข้อผิดพลาดในการอัปโหลด');
+    }
+  } catch (err) {
+    console.error('Upload Error:', err);
+    showCenteredAlert('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+  }
 };
