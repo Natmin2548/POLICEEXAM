@@ -2679,6 +2679,7 @@ window.startVocabSession = function(level) {
   currentLevel = level;
   vocabIdx = 0;
   vocabScore = 0;
+  window.vocabCorrectCount = 0;
   vocabStreak = 0;
   vocabCompletedInRound = 0;
   isVocabFeedbackActive = false;
@@ -2727,6 +2728,15 @@ window.startVocabSession = function(level) {
   renderVocabQuestion();
 };
 
+window.playVocabAudio = function(text) {
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'en-US';
+    window.speechSynthesis.speak(utterance);
+  }
+};
+
 function renderVocabQuestion() {
   if (vocabCompletedInRound >= vocabSessionWordCount) {
     completeVocabSession();
@@ -2737,7 +2747,7 @@ function renderVocabQuestion() {
   const wordObj = currentSessionQuestions[vocabCompletedInRound];
 
   // UI elements
-  document.getElementById('vocabGameScore').textContent = vocabScore;
+  document.getElementById('vocabGameScore').textContent = `${window.vocabCorrectCount || 0}/${vocabSessionWordCount}`;
   document.getElementById('vocabGameStreak').textContent = `${vocabStreak} 🔥`;
   document.getElementById('vocabGameCount').textContent = `${vocabCompletedInRound + 1}/${vocabSessionWordCount}`;
 
@@ -2755,6 +2765,10 @@ function renderVocabQuestion() {
   wordCard.style.backgroundColor = 'white';
 
   document.getElementById('lblVocabWord').textContent = wordObj.word;
+  
+  if (typeof window.playVocabAudio === 'function') {
+    window.playVocabAudio(wordObj.word);
+  }
 
   const feedbackEl = document.getElementById('vocabFeedbackMessage');
   feedbackEl.style.display = 'none';
@@ -2789,6 +2803,7 @@ async function handleVocabAnswer(selectedOpt, btnElement) {
 
   const isCorrect = selectedOpt === wordObj.meaning;
   if (isCorrect) {
+    window.vocabCorrectCount++;
     vocabScore += (10 + vocabStreak * 2);
     vocabStreak++;
     vocabCompletedInRound++;
@@ -2858,7 +2873,7 @@ async function completeVocabSession() {
 
   // Set text labels
   document.getElementById('lblVocabSummaryMeta').textContent = `ระดับ ${currentLevel} | จำนวน ${totalQuestions} คำ`;
-  document.getElementById('vocabSummaryScore').textContent = vocabScore;
+  document.getElementById('vocabSummaryScore').textContent = `${correctCount}/${totalQuestions}`;
   document.getElementById('vocabSummaryAccuracy').textContent = `${accuracy}%`;
 
   // Render wrong answers list
