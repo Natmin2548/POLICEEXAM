@@ -2929,5 +2929,80 @@ async function completeVocabSession() {
   }
 }
 
+window.handleProfileImageUpload = async function(event) {
+  const file = event.target.files[0];
+  if (!file) return;
 
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = new Image();
+    img.onload = async function() {
+      // Resize to max 500x500
+      const canvas = document.createElement('canvas');
+      const max_size = 500;
+      let width = img.width;
+      let height = img.height;
 
+      if (width > height) {
+        if (width > max_size) {
+          height *= max_size / width;
+          width = max_size;
+        }
+      } else {
+        if (height > max_size) {
+          width *= max_size / height;
+          height = max_size;
+        }
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+
+      const base64Image = canvas.toDataURL('image/jpeg', 0.8);
+
+      try {
+        const res = await fetch(`${API_BASE}/api/user/profile/upload-face`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`
+          },
+          body: JSON.stringify({ faceImage: base64Image })
+        });
+        
+        if (res.ok) {
+          const data = await res.json();
+          userProfile.faceImage = base64Image;
+          sessionStorage.setItem('userProfile', JSON.stringify(userProfile));
+          
+          const headerAvatar = document.getElementById('headerAvatar');
+          const profileAvatarImg = document.getElementById('profileAvatarImg');
+          const profileAvatarBox = document.getElementById('profileAvatarBox');
+          
+          if (headerAvatar) {
+            headerAvatar.src = base64Image;
+            headerAvatar.style.display = 'block';
+          }
+          if (profileAvatarImg) {
+            profileAvatarImg.src = base64Image;
+            profileAvatarImg.style.display = 'block';
+          }
+          if (profileAvatarBox) {
+            profileAvatarBox.style.display = 'none';
+          }
+          
+          showCenteredAlert('อัปเดตรูปโปรไฟล์สำเร็จ');
+        } else {
+          showCenteredAlert('เกิดข้อผิดพลาดในการอัปโหลด');
+        }
+      } catch (err) {
+        console.error('Upload Error:', err);
+        showCenteredAlert('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+      }
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+};

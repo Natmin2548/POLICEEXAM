@@ -6219,4 +6219,21 @@ app.listen(PORT, async () => {
   console.log(`[Server] Running on http://localhost:${PORT}`);
   await ensureDefaultQuestions();
   await startExamGenerationWorker();
+
+  // Chat cleanup worker (runs every 15 mins to delete messages older than 3 hours)
+  setInterval(async () => {
+    try {
+      const threeHoursAgo = new Date(Date.now() - 3 * 60 * 60 * 1000);
+      const res = await prisma.chatMessage.deleteMany({
+        where: {
+          createdAt: { lt: threeHoursAgo }
+        }
+      });
+      if (res.count > 0) {
+        console.log(`[Chat Cleanup] Deleted ${res.count} messages older than 3 hours.`);
+      }
+    } catch (e) {
+      console.error('[Chat Cleanup] Error:', e);
+    }
+  }, 15 * 60 * 1000);
 });
