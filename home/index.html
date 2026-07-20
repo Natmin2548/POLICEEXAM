@@ -287,7 +287,7 @@
         </section>
 
         <!-- Left Pane: Posts (Always Visible) -->
-        <div class="profile-left-column">
+        <div class="profile-left-column" style="height: calc(100vh - 220px); overflow-y: auto; padding-right: 8px; overflow-x: hidden;">
             <h3 class="stats-card-title" style="margin-bottom: 12px; margin-top: 0;">โพสต์</h3>
             <!-- SUBTAB 1: Posts list & compose -->
             <div id="subtabContentPosts" style="display: block;">
@@ -307,7 +307,7 @@
         </div>
 
         <!-- Right Pane: Chat, Groups, Friends -->
-        <div class="profile-right-column">
+        <div class="profile-right-column" style="height: calc(100vh - 220px); overflow-y: auto; padding-right: 8px; overflow-x: hidden;">
             <!-- Sub Tabs Bar (Right Pane) -->
             <div class="community-subtabs-bar" style="display: flex; gap: 8px; width: 100%; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; flex-wrap: wrap; margin-bottom: 16px;">
               <button class="subtab-btn active" id="btnSubtabChat">ช่องแชทรวม</button>
@@ -316,8 +316,8 @@
             </div>
 
             <!-- SUBTAB 2: Global Chat View -->
-            <div id="subtabContentChat" class="subtab-content active">
-              <div class="stats-card-box" style="padding: 0; overflow: hidden; height: 480px; display: flex; flex-direction: column; justify-content: space-between; border-radius: 20px;">
+            <div id="subtabContentChat" class="subtab-content active" style="height: calc(100% - 46px);">
+              <div class="stats-card-box" style="padding: 0; overflow: hidden; height: 100%; display: flex; flex-direction: column; justify-content: space-between; border-radius: 20px;">
               <!-- Chat Messages Panel -->
               <div id="chatMessagesContainer" style="flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; background-color: #F8FAFC;">
                 <div class="leaderboard-item-loading">กำลังโหลดข้อความ...</div>
