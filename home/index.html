@@ -47,6 +47,12 @@
       color: #BD1B0B;
       box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
     }
+    
+    @media (max-width: 768px) {
+      .community-dual-pane {
+        grid-template-columns: 1fr !important;
+      }
+    }
   </style>
   <script src="vocab-data.js" defer></script>
   <script src="js/app.js" defer></script>
@@ -288,10 +294,10 @@
         </section>
 
         <!-- Two Columns Container for PC -->
-        <div style="display: flex; gap: 24px; flex-wrap: wrap; width: 100%;">
+        <div class="community-dual-pane" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; width: 100%; align-items: start;">
           
           <!-- LEFT PANE: Posts (Always Visible) -->
-          <div style="flex: 1; min-width: 320px;">
+          <div style="min-width: 0;">
             <h3 class="stats-card-title" style="margin-bottom: 12px; margin-top: 0;">โพสต์</h3>
             <!-- SUBTAB 1: Posts list & compose -->
             <div id="subtabContentPosts" style="display: block;">
@@ -310,7 +316,7 @@
           </div>
 
           <!-- RIGHT PANE: Chat, Groups, Friends -->
-          <div style="flex: 1; min-width: 320px;">
+          <div style="min-width: 0;">
             <!-- Sub Tabs Bar (Right Pane) -->
             <div class="community-subtabs-bar" style="display: flex; gap: 8px; width: 100%; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; flex-wrap: wrap; margin-bottom: 16px;">
               <button class="subtab-btn active" id="btnSubtabChat">ช่องแชทรวม</button>
