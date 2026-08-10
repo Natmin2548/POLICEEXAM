@@ -1079,6 +1079,34 @@ app.get('/api/user/profile', authenticateToken, async (req, res) => {
 });
 
 // --- Upload Profile Face Image ---
+// --- Edit Profile API ---
+app.put('/api/user/profile', authenticateToken, async (req, res) => {
+  try {
+    const { fullName } = req.body;
+    if (!fullName) return res.status(400).json({ error: 'กรุณากรอกชื่อ' });
+
+    const updatedUser = await prisma.user.update({
+      where: { id: req.user.id },
+      data: { fullName }
+    });
+
+    res.json({
+      success: true,
+      user: {
+        id: updatedUser.id,
+        username: updatedUser.username,
+        email: updatedUser.email,
+        fullName: updatedUser.fullName,
+        role: updatedUser.role,
+        faceImage: updatedUser.faceImage
+      }
+    });
+  } catch (error) {
+    console.error('Update profile error:', error);
+    res.status(500).json({ error: 'เกิดข้อผิดพลาดในการอัปเดตโปรไฟล์' });
+  }
+});
+
 app.post('/api/user/profile/upload-face', authenticateToken, async (req, res) => {
   const { faceImage } = req.body;
   try {

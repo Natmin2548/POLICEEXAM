@@ -2997,6 +2997,16 @@ window.confirmCrop = async function() {
         profileAvatarBox.style.display = 'none';
       }
       
+      const editProfileAvatarImg = document.getElementById('editProfileAvatarImg');
+      const editProfileAvatarBox = document.getElementById('editProfileAvatarBox');
+      if (editProfileAvatarImg) {
+        editProfileAvatarImg.src = base64Image;
+        editProfileAvatarImg.style.display = 'block';
+      }
+      if (editProfileAvatarBox) {
+        editProfileAvatarBox.style.display = 'none';
+      }
+      
       showCenteredAlert('อัปเดตรูปโปรไฟล์สำเร็จ');
     } else {
       showCenteredAlert('เกิดข้อผิดพลาดในการอัปโหลด');
@@ -3150,4 +3160,77 @@ window.openExamHistoryModal = function() {
 };
 window.closeExamHistoryModal = function() {
   document.getElementById('examHistoryModal').style.display = 'none';
+};
+
+// Edit Profile
+window.openEditProfileModal = function() {
+  document.getElementById('editProfileModal').style.display = 'flex';
+  const nameInput = document.getElementById('editProfileNameInput');
+  if (nameInput) nameInput.value = userProfile?.fullName || '';
+
+  const editAvatarImg = document.getElementById('editProfileAvatarImg');
+  const editAvatarBox = document.getElementById('editProfileAvatarBox');
+  if (userProfile?.faceImage) {
+    if (editAvatarImg) {
+      editAvatarImg.src = userProfile.faceImage;
+      editAvatarImg.style.display = 'block';
+    }
+    if (editAvatarBox) editAvatarBox.style.display = 'none';
+  } else {
+    if (editAvatarImg) editAvatarImg.style.display = 'none';
+    if (editAvatarBox) {
+      editAvatarBox.style.display = 'flex';
+      editAvatarBox.textContent = userProfile?.fullName ? userProfile.fullName.charAt(0) : 'ส';
+    }
+  }
+};
+window.closeEditProfileModal = function() {
+  document.getElementById('editProfileModal').style.display = 'none';
+};
+window.submitEditProfile = async function() {
+  const nameInput = document.getElementById('editProfileNameInput');
+  const newName = nameInput ? nameInput.value.trim() : '';
+  if (!newName) return showCenteredAlert('กรุณากรอกชื่อ-นามสกุล');
+
+  const btn = document.getElementById('btnSubmitEditProfile');
+  if (btn) btn.disabled = true;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/user/profile`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`
+      },
+      body: JSON.stringify({ fullName: newName })
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      // Update local storage and UI
+      userProfile.fullName = newName;
+      sessionStorage.setItem('userProfile', JSON.stringify(userProfile));
+      
+      const profileName = document.getElementById('profileName');
+      const dropdownName = document.getElementById('dropdownUserName');
+      if (profileName) profileName.textContent = newName;
+      if (dropdownName) dropdownName.textContent = newName;
+      
+      // Update avatar letter if no image
+      if (!userProfile.faceImage) {
+        const letter = newName.charAt(0);
+        document.getElementById('defaultAvatar') && (document.getElementById('defaultAvatar').textContent = letter);
+        document.getElementById('profileAvatarBox') && (document.getElementById('profileAvatarBox').textContent = letter);
+        document.getElementById('editProfileAvatarBox') && (document.getElementById('editProfileAvatarBox').textContent = letter);
+      }
+
+      showCenteredAlert('อัปเดตโปรไฟล์เรียบร้อยแล้ว');
+      closeEditProfileModal();
+    } else {
+      showCenteredAlert(data.error || 'เกิดข้อผิดพลาดในการบันทึก');
+    }
+  } catch (err) {
+    showCenteredAlert('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
 };

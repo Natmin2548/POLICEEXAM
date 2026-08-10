@@ -554,14 +554,6 @@
               <img src="" alt="Avatar" class="profile-avatar-img" id="profileAvatarImg" style="display: none;">
               <input type="file" id="profileImageInput" accept="image/*" style="display: none;"
                 onchange="handleProfileImageUpload(event)">
-              <button class="btn-avatar-camera" aria-label="Change Avatar"
-                onclick="document.getElementById('profileImageInput').click();">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                  stroke-linejoin="round">
-                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-                  <circle cx="12" cy="13" r="4" />
-                </svg>
-              </button>
             </div>
             <div class="profile-user-info">
               <h2 class="profile-user-name" id="profileName">สมชาย ใจดี</h2>
@@ -594,7 +586,7 @@
         <div class="profile-right-column">
           <!-- Menu Settings List -->
           <section class="profile-menu-container-card">
-            <div class="profile-menu-item" onclick="alert('แก้ไขโปรไฟล์จะเปิดเร็วๆ นี้');">
+            <div class="profile-menu-item" onclick="openEditProfileModal()">
               <div class="menu-item-left">
                 <svg class="menu-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                   stroke-linecap="round" stroke-linejoin="round">
@@ -1331,6 +1323,35 @@
       <div style="background: var(--bg-gray, #F8FAFC); border: 1px solid var(--border-color, #E2E8F0); border-radius: 16px; padding: 20px;">
         <div style="font-size: 36px; font-weight: 900; color: #BD1B0B; line-height: 1;" id="examHistoryCount">0</div>
         <div style="font-size: 13px; font-weight: 600; color: #94A3B8; margin-top: 4px;">ชุดแบบทดสอบ (ด่าน)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Profile Modal -->
+  <div id="editProfileModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.85); z-index: 2000; align-items: center; justify-content: center; padding: 20px;">
+    <div style="background: var(--bg-white, white); border-radius: 20px; width: 100%; max-width: 400px; padding: 24px; position: relative; color: var(--text-dark, #1E293B);">
+      <button onclick="closeEditProfileModal()" style="position: absolute; top: 16px; right: 16px; background: var(--bg-gray, #F1F5F9); border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; color: #64748B;">✖</button>
+      <h3 style="margin-top: 0; font-weight: 800; font-size: 20px; margin-bottom: 20px; text-align: center;">แก้ไขโปรไฟล์</h3>
+      
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 16px; margin-bottom: 20px;">
+        <div style="position: relative; width: 100px; height: 100px;">
+          <div class="profile-avatar-box" id="editProfileAvatarBox" style="width: 100px; height: 100px; font-size: 40px; border-radius: 50%; background: #EFF6FF; color: #3B82F6; display: flex; align-items: center; justify-content: center;">ส</div>
+          <img src="" alt="Avatar" id="editProfileAvatarImg" style="display: none; width: 100px; height: 100px; border-radius: 50%; object-fit: cover;">
+          <button onclick="document.getElementById('profileImageInput').click();" style="position: absolute; bottom: 0; right: 0; background: #BD1B0B; color: white; border: none; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+              <circle cx="12" cy="13" r="4" />
+            </svg>
+          </button>
+        </div>
+        <p style="font-size: 12px; color: #64748B; margin: 0;">คลิกที่ไอคอนกล้องเพื่อเปลี่ยนรูปโปรไฟล์</p>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <label style="font-size: 14px; font-weight: 600; color: var(--text-dark, #1E293B);">ชื่อ-นามสกุล</label>
+        <input type="text" id="editProfileNameInput" placeholder="กรอกชื่อ-นามสกุลของคุณ" style="padding: 14px; border-radius: 12px; border: 1px solid #E2E8F0; width: 100%; box-sizing: border-box; font-family: inherit;">
+        
+        <button id="btnSubmitEditProfile" onclick="submitEditProfile()" style="padding: 14px; border-radius: 12px; border: none; background: #BD1B0B; color: white; font-weight: 700; cursor: pointer; font-family: inherit; margin-top: 8px;">บันทึกข้อมูล</button>
       </div>
     </div>
   </div>
