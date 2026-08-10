@@ -3006,3 +3006,148 @@ window.confirmCrop = async function() {
     showCenteredAlert('เกิดข้อผิดพลาดในการเชื่อมต่อ');
   }
 };
+
+// ==========================================
+// Profile Menu Features (Modals & Toggles)
+// ==========================================
+
+document.addEventListener('DOMContentLoaded', () => {
+  // 1. Hide Change Password if Google Login
+  const loginProvider = sessionStorage.getItem('loginProvider');
+  if (loginProvider === 'google') {
+    const cpMenu = document.getElementById('menuChangePassword');
+    if (cpMenu) cpMenu.style.display = 'none';
+  }
+
+  // 2. Notification Toggle
+  const notifToggle = document.getElementById('notificationToggle');
+  if (notifToggle) {
+    const savedNotif = localStorage.getItem('notificationsEnabled');
+    if (savedNotif !== null) {
+      notifToggle.checked = savedNotif === 'true';
+    }
+    notifToggle.addEventListener('change', (e) => {
+      localStorage.setItem('notificationsEnabled', e.target.checked);
+      showCenteredAlert(e.target.checked ? 'เปิดการแจ้งเตือนแล้ว' : 'ปิดการแจ้งเตือนแล้ว');
+    });
+  }
+
+  // 3. Dark Mode Initialization
+  const darkModeToggle = document.getElementById('darkModeToggle');
+  const savedDark = localStorage.getItem('darkMode');
+  if (savedDark === 'true') {
+    document.body.classList.add('dark-mode');
+    if (darkModeToggle) darkModeToggle.checked = true;
+  }
+});
+
+window.toggleDarkMode = function(isDark) {
+  if (isDark) {
+    document.body.classList.add('dark-mode');
+    localStorage.setItem('darkMode', 'true');
+  } else {
+    document.body.classList.remove('dark-mode');
+    localStorage.setItem('darkMode', 'false');
+  }
+};
+
+// --- Modals Logic ---
+
+// Change Password
+window.openChangePasswordModal = function() {
+  document.getElementById('changePasswordModal').style.display = 'flex';
+};
+window.closeChangePasswordModal = function() {
+  document.getElementById('changePasswordModal').style.display = 'none';
+};
+window.submitChangePassword = function() {
+  alert('ฟีเจอร์เปลี่ยนรหัสผ่าน กำลังอยู่ในช่วงพัฒนาครับ!');
+  closeChangePasswordModal();
+};
+
+// Help / FAQ
+window.openHelpModal = function() {
+  document.getElementById('helpModal').style.display = 'flex';
+  fetchSupportTickets();
+};
+window.closeHelpModal = function() {
+  document.getElementById('helpModal').style.display = 'none';
+};
+window.submitSupportTicket = async function() {
+  const msg = document.getElementById('supportMessage').value.trim();
+  if (!msg) return showCenteredAlert('กรุณากรอกข้อความก่อนส่ง');
+  try {
+    const res = await fetch(`${API_BASE}/api/support/ticket`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`
+      },
+      body: JSON.stringify({ message: msg })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      showCenteredAlert('ส่งปัญหาเรียบร้อยแล้ว');
+      document.getElementById('supportMessage').value = '';
+      fetchSupportTickets();
+    } else {
+      showCenteredAlert(data.error || 'เกิดข้อผิดพลาด');
+    }
+  } catch (err) {
+    showCenteredAlert('ไม่สามารถเชื่อมต่อได้');
+  }
+};
+window.fetchSupportTickets = async function() {
+  const list = document.getElementById('supportTicketsList');
+  if (!list) return;
+  list.innerHTML = '<div style="text-align: center; color: #94A3B8; font-size: 14px; padding: 20px 0;">กำลังโหลด...</div>';
+  try {
+    const res = await fetch(`${API_BASE}/api/support/tickets`, {
+      headers: { 'Authorization': `Bearer ${authToken}` }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (!data.tickets || data.tickets.length === 0) {
+        list.innerHTML = '<div style="text-align: center; color: #94A3B8; font-size: 14px; padding: 20px 0;">ไม่มีประวัติการแจ้งปัญหา</div>';
+        return;
+      }
+      list.innerHTML = data.tickets.map(t => {
+        const date = new Date(t.createdAt).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
+        const statusColor = t.status === 'PENDING' ? '#F59E0B' : '#10B981';
+        const statusText = t.status === 'PENDING' ? 'รอดำเนินการ' : 'เรียบร้อยแล้ว';
+        return `<div style="background: var(--bg-gray, #F8FAFC); border: 1px solid var(--border-color, #E2E8F0); padding: 12px; border-radius: 12px; font-size: 13px;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+            <span style="color: #64748B;">${date}</span>
+            <span style="color: ${statusColor}; font-weight: 700;">${statusText}</span>
+          </div>
+          <div style="color: var(--text-dark, #1E293B); font-weight: 500;">${escapeHTML(t.message)}</div>
+        </div>`;
+      }).join('');
+    }
+  } catch (err) {
+    list.innerHTML = '<div style="text-align: center; color: #EF4444; font-size: 14px; padding: 20px 0;">โหลดข้อมูลล้มเหลว</div>';
+  }
+};
+
+// Settings
+window.openSettingsModal = function() {
+  document.getElementById('settingsModal').style.display = 'flex';
+};
+window.closeSettingsModal = function() {
+  document.getElementById('settingsModal').style.display = 'none';
+};
+
+// Exam History
+window.openExamHistoryModal = function() {
+  document.getElementById('examHistoryModal').style.display = 'flex';
+  const countEl = document.getElementById('examHistoryCount');
+  if (countEl) {
+    // Count from userProfile.stageProgress
+    const progress = userProfile?.stageProgress || [];
+    const completedStages = progress.filter(p => p.completed).length;
+    countEl.textContent = completedStages;
+  }
+};
+window.closeExamHistoryModal = function() {
+  document.getElementById('examHistoryModal').style.display = 'none';
+};

@@ -65,6 +65,7 @@ model User {
   blockedBy               Block[]              @relation("BlockedUserUsers")
   sentPrivateMessages     PrivateChatMessage[] @relation("SentPrivateMessages")
   receivedPrivateMessages PrivateChatMessage[] @relation("ReceivedPrivateMessages")
+  supportTickets          SupportTicket[]
 }
 
 model Stage {
@@ -322,4 +323,14 @@ model PrivateChatMessage {
   receiverId Int
   receiver   User     @relation("ReceivedPrivateMessages", fields: [receiverId], references: [id], onDelete: Cascade)
   createdAt  DateTime @default(now())
+}
+
+model SupportTicket {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  message   String   @db.Text
+  status    String   @default("PENDING") // PENDING, READ, RESOLVED
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

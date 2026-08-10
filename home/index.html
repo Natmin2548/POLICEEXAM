@@ -17,6 +17,95 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js" defer></script>
   <!-- External Application Script -->
   <style>
+    /* Toggle Switch */
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+    }
+    .toggle-switch input { 
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #CBD5E1;
+      transition: .4s;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .4s;
+    }
+    input:checked + .slider {
+      background-color: #10B981;
+    }
+    input:focus + .slider {
+      box-shadow: 0 0 1px #10B981;
+    }
+    input:checked + .slider:before {
+      transform: translateX(20px);
+    }
+    .slider.round {
+      border-radius: 24px;
+    }
+    .slider.round:before {
+      border-radius: 50%;
+    }
+    
+    /* Dark Mode (Basic) */
+    body.dark-mode {
+      --bg-white: #1E293B;
+      --bg-gray: #0F172A;
+      --text-dark: #F8FAFC;
+      --text-gray: #94A3B8;
+      --border-color: #334155;
+      background-color: var(--bg-gray);
+      color: var(--text-dark);
+    }
+    body.dark-mode .app-container {
+      background-color: var(--bg-gray);
+    }
+    body.dark-mode .navbar, body.dark-mode .bottom-nav {
+      background-color: var(--bg-white);
+      border-color: var(--border-color);
+    }
+    body.dark-mode .nav-item {
+      color: var(--text-gray);
+    }
+    body.dark-mode .nav-item.active {
+      color: #BD1B0B;
+    }
+    body.dark-mode .stat-card, body.dark-mode .profile-menu-container-card, body.dark-mode .hero-banner {
+      background-color: var(--bg-white);
+      border-color: var(--border-color);
+      color: var(--text-dark);
+    }
+    body.dark-mode .profile-menu-item {
+      border-bottom-color: var(--border-color);
+    }
+    body.dark-mode .profile-menu-item:hover {
+      background-color: var(--bg-gray);
+    }
+    body.dark-mode .menu-item-text, body.dark-mode .stat-value {
+      color: var(--text-dark);
+    }
+    body.dark-mode .stat-label {
+      color: var(--text-gray);
+    }
+    
     .vocab-lvl-btn {
       background: white;
       border: 2px solid #E2E8F0;
@@ -519,7 +608,7 @@
               </svg>
             </div>
 
-            <div class="profile-menu-item" onclick="alert('การแจ้งเตือนจะเปิดเร็วๆ นี้');">
+            <div class="profile-menu-item" id="menuNotifications">
               <div class="menu-item-left">
                 <svg class="menu-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                   stroke-linecap="round" stroke-linejoin="round">
@@ -527,12 +616,13 @@
                 </svg>
                 <span class="menu-item-text">การแจ้งเตือน</span>
               </div>
-              <svg class="menu-item-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
+              <label class="toggle-switch">
+                <input type="checkbox" id="notificationToggle" checked>
+                <span class="slider round"></span>
+              </label>
             </div>
 
-            <div class="profile-menu-item" onclick="alert('เปลี่ยนรหัสผ่านจะเปิดเร็วๆ นี้');">
+            <div class="profile-menu-item" id="menuChangePassword" onclick="openChangePasswordModal()">
               <div class="menu-item-left">
                 <svg class="menu-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                   stroke-linecap="round" stroke-linejoin="round">
@@ -546,7 +636,7 @@
               </svg>
             </div>
 
-            <div class="profile-menu-item" onclick="alert('ประวัติการสอบจะเปิดเร็วๆ นี้');">
+            <div class="profile-menu-item" onclick="openExamHistoryModal()">
               <div class="menu-item-left">
                 <svg class="menu-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                   stroke-linecap="round" stroke-linejoin="round">
@@ -576,7 +666,7 @@
               </svg>
             </div>
 
-            <div class="profile-menu-item" onclick="alert('ช่วยเหลือ / FAQ จะเปิดเร็วๆ นี้');">
+            <div class="profile-menu-item" onclick="openHelpModal()">
               <div class="menu-item-left">
                 <svg class="menu-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                   stroke-linecap="round" stroke-linejoin="round">
@@ -591,7 +681,7 @@
               </svg>
             </div>
 
-            <div class="profile-menu-item" onclick="alert('ตั้งค่าจะเปิดเร็วๆ นี้');">
+            <div class="profile-menu-item" onclick="openSettingsModal()">
               <div class="menu-item-left">
                 <svg class="menu-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                   stroke-linecap="round" stroke-linejoin="round">
@@ -1172,6 +1262,78 @@
     </div>
   </div>
 
+
+  <!-- Change Password Modal -->
+  <div id="changePasswordModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.85); z-index: 2000; align-items: center; justify-content: center; padding: 20px;">
+    <div style="background: var(--bg-white, white); border-radius: 20px; width: 100%; max-width: 400px; padding: 24px; position: relative; color: var(--text-dark, #1E293B);">
+      <button onclick="closeChangePasswordModal()" style="position: absolute; top: 16px; right: 16px; background: var(--bg-gray, #F1F5F9); border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; color: #64748B;">✖</button>
+      <h3 style="margin-top: 0; font-weight: 800; font-size: 20px; margin-bottom: 20px;">เปลี่ยนรหัสผ่าน</h3>
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <input type="password" id="oldPassword" placeholder="รหัสผ่านเดิม" style="padding: 14px; border-radius: 12px; border: 1px solid #E2E8F0; width: 100%; box-sizing: border-box; font-family: inherit;">
+        <input type="password" id="newPassword" placeholder="รหัสผ่านใหม่ (อย่างน้อย 8 ตัวอักษร)" style="padding: 14px; border-radius: 12px; border: 1px solid #E2E8F0; width: 100%; box-sizing: border-box; font-family: inherit;">
+        <input type="password" id="confirmNewPassword" placeholder="ยืนยันรหัสผ่านใหม่" style="padding: 14px; border-radius: 12px; border: 1px solid #E2E8F0; width: 100%; box-sizing: border-box; font-family: inherit;">
+        <button onclick="submitChangePassword()" style="padding: 14px; border-radius: 12px; border: none; background: #BD1B0B; color: white; font-weight: 700; cursor: pointer; font-family: inherit; margin-top: 8px;">อัปเดตรหัสผ่าน</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Help / FAQ Modal -->
+  <div id="helpModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.85); z-index: 2000; align-items: center; justify-content: center; padding: 20px;">
+    <div style="background: var(--bg-white, white); border-radius: 20px; width: 100%; max-width: 450px; padding: 24px; position: relative; max-height: 80vh; overflow-y: auto; color: var(--text-dark, #1E293B);">
+      <button onclick="closeHelpModal()" style="position: absolute; top: 16px; right: 16px; background: var(--bg-gray, #F1F5F9); border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; color: #64748B;">✖</button>
+      <h3 style="margin-top: 0; font-weight: 800; font-size: 20px; margin-bottom: 20px;">ช่วยเหลือ / แจ้งปัญหา</h3>
+      
+      <div style="margin-bottom: 24px;">
+        <textarea id="supportMessage" rows="4" placeholder="พิมพ์ปัญหาหรือข้อเสนอแนะของคุณที่นี่..." style="width: 100%; padding: 14px; border-radius: 12px; border: 1px solid #E2E8F0; box-sizing: border-box; font-family: inherit; resize: none;"></textarea>
+        <button onclick="submitSupportTicket()" style="width: 100%; padding: 12px; border-radius: 12px; border: none; background: #BD1B0B; color: white; font-weight: 700; cursor: pointer; font-family: inherit; margin-top: 8px;">ส่งข้อความให้แอดมิน</button>
+      </div>
+
+      <h4 style="margin-top: 0; font-weight: 700; font-size: 16px; margin-bottom: 12px;">ประวัติการแจ้งปัญหา</h4>
+      <div id="supportTicketsList" style="display: flex; flex-direction: column; gap: 10px;">
+        <!-- Tickets will be loaded here -->
+        <div style="text-align: center; color: #94A3B8; font-size: 14px; padding: 20px 0;">กำลังโหลด...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div id="settingsModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.85); z-index: 2000; align-items: center; justify-content: center; padding: 20px;">
+    <div style="background: var(--bg-white, white); border-radius: 20px; width: 100%; max-width: 350px; padding: 24px; position: relative; color: var(--text-dark, #1E293B);">
+      <button onclick="closeSettingsModal()" style="position: absolute; top: 16px; right: 16px; background: var(--bg-gray, #F1F5F9); border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; color: #64748B;">✖</button>
+      <h3 style="margin-top: 0; font-weight: 800; font-size: 20px; margin-bottom: 20px;">ตั้งค่า</h3>
+      
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border-color, #F1F5F9);">
+        <span style="font-weight: 600; color: var(--text-gray, #475569);">โหมดกลางคืน (Dark Mode)</span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="darkModeToggle" onchange="toggleDarkMode(this.checked)">
+          <span class="slider round"></span>
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Exam History Modal -->
+  <div id="examHistoryModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.85); z-index: 2000; align-items: center; justify-content: center; padding: 20px;">
+    <div style="background: var(--bg-white, white); border-radius: 20px; width: 100%; max-width: 350px; padding: 24px; position: relative; text-align: center; color: var(--text-dark, #1E293B);">
+      <button onclick="closeExamHistoryModal()" style="position: absolute; top: 16px; right: 16px; background: var(--bg-gray, #F1F5F9); border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; color: #64748B;">✖</button>
+      <div style="width: 60px; height: 60px; border-radius: 50%; background: #EFF6FF; color: #3B82F6; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+        <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+          <line x1="16" y1="13" x2="8" y2="13"></line>
+          <line x1="16" y1="17" x2="8" y2="17"></line>
+          <polyline points="10 9 9 9 8 9"></polyline>
+        </svg>
+      </div>
+      <h3 style="margin-top: 0; font-weight: 800; font-size: 20px; margin-bottom: 8px;">ประวัติการสอบ</h3>
+      <p style="color: var(--text-gray, #64748B); font-size: 14px; margin-bottom: 20px;">จำนวนชุดข้อสอบและแบบทดสอบที่คุณทำสำเร็จแล้ว</p>
+      
+      <div style="background: var(--bg-gray, #F8FAFC); border: 1px solid var(--border-color, #E2E8F0); border-radius: 16px; padding: 20px;">
+        <div style="font-size: 36px; font-weight: 900; color: #BD1B0B; line-height: 1;" id="examHistoryCount">0</div>
+        <div style="font-size: 13px; font-weight: 600; color: #94A3B8; margin-top: 4px;">ชุดแบบทดสอบ (ด่าน)</div>
+      </div>
+    </div>
+  </div>
 
 </body>
 

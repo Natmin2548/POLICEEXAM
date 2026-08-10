@@ -151,6 +151,7 @@ loginForm.addEventListener('submit', async (e) => {
     // Save JWT token and user data to sessionStorage
     sessionStorage.setItem('authToken', data.token);
     sessionStorage.setItem('userProfile', JSON.stringify(data.user));
+    sessionStorage.setItem('loginProvider', 'local');
 
     hideModal(loginModal);
     window.location.href = 'home/index.html';
@@ -313,6 +314,7 @@ async function handleGoogleCredential(response) {
 
     sessionStorage.setItem('authToken', data.token);
     sessionStorage.setItem('userProfile', JSON.stringify(data.user));
+    sessionStorage.setItem('loginProvider', 'google');
 
     hideModal(loginModal);
     hideModal(registerModal);

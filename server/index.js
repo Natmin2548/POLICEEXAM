@@ -6214,6 +6214,38 @@ async function startExamGenerationWorker() {
   }, 5000); // Check every 5 seconds
 }
 
+// --- Support Tickets API ---
+app.post('/api/support/ticket', authenticateToken, async (req, res) => {
+  try {
+    const { message } = req.body;
+    if (!message) return res.status(400).json({ error: 'กรุณากรอกข้อความปัญหา' });
+    
+    const ticket = await prisma.supportTicket.create({
+      data: {
+        userId: req.user.id,
+        message
+      }
+    });
+    res.json({ success: true, ticket });
+  } catch (error) {
+    console.error('Create support ticket error:', error);
+    res.status(500).json({ error: 'เกิดข้อผิดพลาดในการส่งปัญหา' });
+  }
+});
+
+app.get('/api/support/tickets', authenticateToken, async (req, res) => {
+  try {
+    const tickets = await prisma.supportTicket.findMany({
+      where: { userId: req.user.id },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json({ tickets });
+  } catch (error) {
+    console.error('Fetch support tickets error:', error);
+    res.status(500).json({ error: 'เกิดข้อผิดพลาดในการดึงข้อมูลประวัติปัญหา' });
+  }
+});
+
 // Start express server
 app.listen(PORT, async () => {
   console.log(`[Server] Running on http://localhost:${PORT}`);
