@@ -46,7 +46,14 @@ function showCenteredAlert(message, opts = {}) {
     const msgEl = document.getElementById('customAlertMessage');
     const btnOk = document.getElementById('btnAlertOk');
 
-    if (iconEl) iconEl.textContent = opts.icon || 'ℹ️';
+    if (iconEl) {
+      if (opts.icon) {
+        iconEl.textContent = opts.icon;
+        iconEl.style.display = 'block';
+      } else {
+        iconEl.style.display = 'none';
+      }
+    }
     if (titleEl) titleEl.textContent = opts.title || 'แจ้งเตือน';
     if (msgEl) msgEl.textContent = message;
     modal.style.display = 'flex';
