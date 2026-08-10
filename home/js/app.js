@@ -400,16 +400,31 @@ btnNotification.addEventListener('click', () => {
 
 // 3. Start Exam (calls real daily exam API)
 const btnStartExam = document.getElementById('btnStartExam');
+const examModeModal = document.getElementById('examModeModal');
+const btnCloseExamMode = document.getElementById('btnCloseExamMode');
+const btnExamModePractice = document.getElementById('btnExamModePractice');
+const btnExamModePretest = document.getElementById('btnExamModePretest');
 const progressBarFill = document.getElementById('progressBarFill');
 const progressCountText = document.getElementById('progressCountText');
 const progressPercentText = document.getElementById('progressPercentText');
 
-btnStartExam.addEventListener('click', async () => {
+btnStartExam.addEventListener('click', () => {
+  if (examModeModal) examModeModal.style.display = 'flex';
+});
+
+if (btnCloseExamMode) {
+  btnCloseExamMode.addEventListener('click', () => {
+    if (examModeModal) examModeModal.style.display = 'none';
+  });
+}
+
+async function handleStartExam(mode) {
+  if (examModeModal) examModeModal.style.display = 'none';
   btnStartExam.disabled = true;
   btnStartExam.querySelector('span').textContent = 'กำลังโหลด...';
 
   try {
-    const res = await fetch(`${API_BASE}/api/exams/daily`, {
+    const res = await fetch(`${API_BASE}/api/exams/daily?mode=${mode}`, {
       headers: { 'Authorization': `Bearer ${authToken}` }
     });
 
@@ -424,11 +439,17 @@ btnStartExam.addEventListener('click', async () => {
     console.error('Daily exam fetch error:', err);
     await showCenteredAlert('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
   }
-
   btnStartExam.disabled = false;
-  btnStartExam.querySelector('span').textContent = 'เริ่มสอบ';
-});
+  btnStartExam.querySelector('span').textContent = 'ทำข้อสอบ';
+}
 
+if (btnExamModePractice) {
+  btnExamModePractice.addEventListener('click', () => handleStartExam('practice'));
+}
+
+if (btnExamModePretest) {
+  btnExamModePretest.addEventListener('click', () => handleStartExam('pretest'));
+}
 // 4. Logout Handlers
 const btnDropdownLogout = document.getElementById('btnDropdownLogout');
 const btnProfileLogout = document.getElementById('btnProfileLogout');
