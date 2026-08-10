@@ -1031,7 +1031,7 @@ function updateCommunityTabDetails() {
   setupCommunitySubtabs();
   
   // Start with Posts feed
-  switchCommunitySubtab('chat');
+  switchCommunitySubtab('posts');
 
   // Load real active counts from DB
   loadCommunityStats();
@@ -1056,9 +1056,17 @@ async function loadCommunityStats() {
 }
 
 function setupCommunitySubtabs() {
+  const btnSubtabPosts = document.getElementById('btnSubtabPosts');
   const btnSubtabChat = document.getElementById('btnSubtabChat');
   const btnSubtabGroups = document.getElementById('btnSubtabGroups');
   const btnSubtabFriends = document.getElementById('btnSubtabFriends');
+
+  if (btnSubtabPosts) {
+    btnSubtabPosts.onclick = (e) => {
+      e.preventDefault();
+      switchCommunitySubtab('posts');
+    };
+  }
 
   if (btnSubtabChat) {
     btnSubtabChat.onclick = (e) => {
@@ -1085,20 +1093,24 @@ function setupCommunitySubtabs() {
 function switchCommunitySubtab(tab) {
   communityActiveTab = tab;
   
+  const btnSubtabPosts = document.getElementById('btnSubtabPosts');
   const btnSubtabChat = document.getElementById('btnSubtabChat');
   const btnSubtabGroups = document.getElementById('btnSubtabGroups');
   const btnSubtabFriends = document.getElementById('btnSubtabFriends');
 
+  const contentPosts = document.getElementById('subtabContentPosts');
   const contentChat = document.getElementById('subtabContentChat');
   const contentGroups = document.getElementById('subtabContentGroups');
   const contentFriends = document.getElementById('subtabContentFriends');
 
   // Toggle active class on buttons
+  if (btnSubtabPosts) btnSubtabPosts.classList.toggle('active', tab === 'posts');
   if (btnSubtabChat) btnSubtabChat.classList.toggle('active', tab === 'chat');
   if (btnSubtabGroups) btnSubtabGroups.classList.toggle('active', tab === 'groups');
   if (btnSubtabFriends) btnSubtabFriends.classList.toggle('active', tab === 'friends');
 
   // Toggle active class on content panels
+  if (contentPosts) contentPosts.classList.toggle('active', tab === 'posts');
   if (contentChat) contentChat.classList.toggle('active', tab === 'chat');
   if (contentGroups) contentGroups.classList.toggle('active', tab === 'groups');
   if (contentFriends) contentFriends.classList.toggle('active', tab === 'friends');

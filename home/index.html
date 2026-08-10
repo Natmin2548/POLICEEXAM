@@ -313,43 +313,38 @@
           <h1 class="profile-header-title">ชุมชนเตรียมสอบ</h1>
         </section>
 
-        <!-- Left Pane: Posts (Always Visible) -->
-        <div class="profile-left-column">
-          <h3 class="stats-card-title" style="margin-bottom: 12px; margin-top: 0;">โพสต์</h3>
-          <!-- SUBTAB 1: Posts list & compose -->
-          <div id="subtabContentPosts" style="display: block;">
-            <!-- Create Post Box -->
-            <div class="stats-card-box" style="padding: 16px; margin-bottom: 16px; gap: 12px;">
-              <textarea id="txtPostContent" placeholder="แบ่งปันแนวข้อสอบ หรือพูดคุยเตรียมสอบกับเพื่อนๆ..."
-                style="width: 100%; height: 80px; border: 1px solid var(--border-color); border-radius: 12px; padding: 12px; font-family: 'Kanit', sans-serif; font-size: 14px; resize: none; outline: none; transition: 0.2s;"
-                onfocus="this.style.borderColor='var(--primary-color)'"
-                onblur="this.style.borderColor='var(--border-color)'"></textarea>
-              <div style="display: flex; justify-content: flex-end;">
-                <button id="btnCreatePost" class="btn-quick-match"
-                  style="padding: 8px 20px; font-size: 13px; border-radius: 8px; box-shadow: none;">โพสต์</button>
-              </div>
-            </div>
+        <!-- Sub Tabs Bar -->
+        <div class="community-subtabs-bar"
+          style="display: flex; gap: 8px; width: 100%; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; flex-wrap: wrap; margin-bottom: 16px;">
+          <button class="subtab-btn active" id="btnSubtabPosts">โพสต์</button>
+          <button class="subtab-btn" id="btnSubtabChat">ช่องแชทรวม</button>
+          <button class="subtab-btn" id="btnSubtabGroups">กลุ่ม</button>
+          <button class="subtab-btn" id="btnSubtabFriends">เพื่อน & แชทส่วนตัว</button>
+        </div>
 
-            <!-- Posts Feed Container -->
-            <div id="postsFeedContainer" class="ai-recommendations-list"
-              style="max-height: 500px; overflow-y: auto; padding-right: 4px;">
-              <div class="leaderboard-item-loading">กำลังโหลดฟีดโพสต์...</div>
+        <!-- SUBTAB 1: Posts list & compose -->
+        <div id="subtabContentPosts" class="subtab-content active">
+          <!-- Create Post Box -->
+          <div class="stats-card-box" style="padding: 16px; margin-bottom: 16px; gap: 12px;">
+            <textarea id="txtPostContent" placeholder="แบ่งปันแนวข้อสอบ หรือพูดคุยเตรียมสอบกับเพื่อนๆ..."
+              style="width: 100%; height: 80px; border: 1px solid var(--border-color); border-radius: 12px; padding: 12px; font-family: 'Kanit', sans-serif; font-size: 14px; resize: none; outline: none; transition: 0.2s;"
+              onfocus="this.style.borderColor='var(--primary-color)'"
+              onblur="this.style.borderColor='var(--border-color)'"></textarea>
+            <div style="display: flex; justify-content: flex-end;">
+              <button id="btnCreatePost" class="btn-quick-match"
+                style="padding: 8px 20px; font-size: 13px; border-radius: 8px; box-shadow: none;">โพสต์</button>
             </div>
+          </div>
+
+          <!-- Posts Feed Container -->
+          <div id="postsFeedContainer" class="ai-recommendations-list"
+            style="max-height: 500px; overflow-y: auto; padding-right: 4px;">
+            <div class="leaderboard-item-loading">กำลังโหลดฟีดโพสต์...</div>
           </div>
         </div>
 
-        <!-- Right Pane: Chat, Groups, Friends -->
-        <div class="profile-right-column">
-          <!-- Sub Tabs Bar (Right Pane) -->
-          <div class="community-subtabs-bar"
-            style="display: flex; gap: 8px; width: 100%; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; flex-wrap: wrap; margin-bottom: 16px;">
-            <button class="subtab-btn active" id="btnSubtabChat">ช่องแชทรวม</button>
-            <button class="subtab-btn" id="btnSubtabGroups">กลุ่ม</button>
-            <button class="subtab-btn" id="btnSubtabFriends">เพื่อน & แชทส่วนตัว</button>
-          </div>
-
-          <!-- SUBTAB 2: Global Chat View -->
-          <div id="subtabContentChat" class="subtab-content active">
+        <!-- SUBTAB 2: Global Chat View -->
+        <div id="subtabContentChat" class="subtab-content">
             <div class="stats-card-box"
               style="padding: 0; overflow: hidden; height: 480px; display: flex; flex-direction: column; justify-content: space-between; border-radius: 20px;">
               <!-- Chat Messages Panel -->
@@ -533,7 +528,7 @@
             </div>
           </div>
 
-        </div> <!-- End of Right Column -->
+      </div>
 
       </div>
 
