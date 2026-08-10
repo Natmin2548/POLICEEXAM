@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="th">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -30,18 +31,22 @@
       width: 100%;
       font-family: inherit;
     }
+
     .vocab-lvl-btn:hover {
       border-color: #CBD5E1;
       transform: translateY(-2px);
       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
     }
+
     .vocab-lvl-btn:active {
       transform: translateY(0);
     }
+
     .vocab-count-btn {
       background: transparent;
       color: #64748B;
     }
+
     .vocab-count-btn.active-count {
       background: white;
       color: #BD1B0B;
@@ -51,6 +56,7 @@
   <script src="vocab-data.js" defer></script>
   <script src="js/app.js" defer></script>
 </head>
+
 <body>
 
   <!-- Top Navigation Header -->
@@ -58,8 +64,9 @@
     <div class="nav-container">
       <a href="#" class="logo">
         <svg class="logo-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M12 22C12 22 20 18 20 12V5L12 2L4 5V12C4 18 12 22 12 22Z" fill="#BD1B0B" stroke="#BD1B0B" stroke-width="2" stroke-linejoin="round"/>
-          <path d="M9 11L11 13L15 9" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M12 22C12 22 20 18 20 12V5L12 2L4 5V12C4 18 12 22 12 22Z" fill="#BD1B0B" stroke="#BD1B0B"
+            stroke-width="2" stroke-linejoin="round" />
+          <path d="M9 11L11 13L15 9" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
         </svg>
         <span class="logo-text">POLICE<span class="logo-highlight">EXAM</span></span>
       </a>
@@ -68,8 +75,9 @@
       <div class="header-actions">
         <!-- Notification Bell -->
         <button class="btn-notification" id="btnNotification" aria-label="Notifications">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0" />
           </svg>
           <span class="notification-badge" id="notifBadge"></span>
         </button>
@@ -80,7 +88,7 @@
             <img src="" alt="Google Avatar" class="header-avatar" id="headerAvatar" style="display: none;">
             <div class="default-avatar" id="defaultAvatar">ส</div>
           </button>
-          
+
           <!-- Dropdown Options -->
           <div class="profile-dropdown" id="profileDropdown">
             <div class="dropdown-header">
@@ -89,8 +97,9 @@
             </div>
             <div class="dropdown-divider"></div>
             <a href="#" class="dropdown-item" id="btnDropdownLogout">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
               </svg>
               <span>ออกจากระบบ</span>
             </a>
@@ -103,205 +112,138 @@
   <!-- Main Dashboard Content -->
   <main class="dashboard-main">
     <div class="container">
-      
+
       <div id="homeView" class="tab-view active">
         <!-- Greeting Header -->
         <section class="greeting-section">
           <span class="greeting-subtitle">สวัสดีตอนเช้า 👋</span>
           <h1 class="greeting-title" id="greetingName">สมชาย ใจดี</h1>
-        <div class="countdown-badge">
-          <!-- Small Red Clock Icon -->
-          <svg class="clock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"/>
-            <polyline points="12 6 12 12 16 14"/>
-          </svg>
-          <span>เหลืออีก 47 วันถึงวันสอบ</span>
-        </div>
-      </section>
-
-      <!-- Daily Target Red Box -->
-      <section class="target-card">
-        <div class="target-header">
-          <div class="target-text-wrapper">
-            <span class="target-subtitle">เป้าหมายวันนี้</span>
-            <h2 class="target-title">ทำข้อสอบ 50 ข้อ</h2>
-          </div>
-          <!-- Clickable Start Exam Button -->
-          <button class="btn-start-exam" id="btnStartExam">
-            <!-- Play Icon -->
-            <svg class="play-icon" viewBox="0 0 24 24" fill="currentColor">
-              <polygon points="5 3 19 12 5 21 5 3"/>
+          <div class="countdown-badge">
+            <!-- Small Red Clock Icon -->
+            <svg class="clock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
             </svg>
-            <span>เริ่มสอบ</span>
-          </button>
-        </div>
+            <span>เหลืออีก 47 วันถึงวันสอบ</span>
+          </div>
+        </section>
 
-        <!-- Target Progress Bar -->
-        <div class="target-progress-wrapper">
-          <div class="progress-bar-bg">
-            <div class="progress-bar-fill" id="progressBarFill" style="width: 62%;"></div>
-          </div>
-          <div class="progress-labels">
-            <span class="progress-count" id="progressCountText">31/50 ข้อ</span>
-            <span class="progress-percent" id="progressPercentText">62%</span>
-          </div>
-        </div>
-      </section>
-
-      <!-- Stats Grid -->
-      <section class="stats-grid">
-        <!-- Stat Card 1: Average Score -->
-        <div class="stat-card">
-          <div class="stat-icon-wrapper stat-red">
-            <!-- Trophy Icon -->
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.45 1-1 1H4v2h16v-2h-5c-.55 0-1-.45-1-1v-2.34"/>
-              <path d="M12 2a4 4 0 0 1 4 4v7c0 .55-.45 1-1 1H9c-.55 0-1-.45-1-1V6a4 4 0 0 1 4-4z"/>
-            </svg>
-          </div>
-          <div class="stat-info">
-            <span class="stat-label">คะแนนเฉลี่ย</span>
-            <span class="stat-number" id="statAvgScore">—</span>
-          </div>
-        </div>
-
-        <!-- Stat Card 2: Done Questions -->
-        <div class="stat-card">
-          <div class="stat-icon-wrapper stat-blue">
-            <!-- Document Icon -->
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-              <polyline points="14 2 14 8 20 8"/>
-              <line x1="16" y1="13" x2="8" y2="13"/>
-              <line x1="16" y1="17" x2="8" y2="17"/>
-              <polyline points="10 9 9 9 8 9"/>
-            </svg>
-          </div>
-          <div class="stat-info">
-            <span class="stat-label">พ้อยต์</span>
-            <span class="stat-number" id="statPoints">—</span>
-          </div>
-        </div>
-
-        <!-- Stat Card 3: Streak -->
-        <div class="stat-card">
-          <div class="stat-icon-wrapper stat-yellow">
-            <!-- Flame Icon -->
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>
-            </svg>
-          </div>
-          <div class="stat-info">
-            <span class="stat-label">Streak</span>
-            <span class="stat-number" id="statStreak">—</span>
-          </div>
-        </div>
-
-        <!-- Stat Card 4: Rank -->
-        <div class="stat-card">
-          <div class="stat-icon-wrapper stat-green">
-            <!-- Ribbon Icon -->
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="8" r="7"/>
-              <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/>
-            </svg>
-          </div>
-          <div class="stat-info">
-            <span class="stat-label">เลเวล</span>
-            <span class="stat-number" id="statLevel">—</span>
-          </div>
-        </div>
-      </section>
-
-      <!-- Radar Chart Section -->
-      <section class="weakness-radar-section">
-        <h3 class="section-title">ภาพรวมข้อที่ตอบผิดสะสม</h3>
-        <div class="radar-card">
-          <canvas id="radarChartCanvas"></canvas>
-          <div id="radarEmptyState" class="empty-state" style="display: none;">
-            <p>ทำข้อสอบเพิ่มเติมเพื่อสะสมสถิติจุดอ่อน</p>
-          </div>
-        </div>
-      </section>
-
-      <!-- Recent Results Section -->
-      <section class="recent-results">
-        <div class="section-header">
-          <h3 class="section-title">ผลล่าสุด</h3>
-          <a href="#" class="report-link" onclick="alert('ฟีเจอร์รายงานสรุปทั้งหมดจะเปิดในเวอร์ชันหน้าครับ');">
-            <span>ดูรายงาน</span>
-            <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="9 18 15 12 9 6"/>
-            </svg>
-          </a>
-        </div>
-
-        <div class="result-list-container">
-          <!-- Results will be populated from real API data -->
-          <div style="text-align:center;padding:24px;color:#64748B;font-size:13px;">
-            กำลังโหลดข้อมูลคะแนน...
-          </div>
-        </div>
-      </section>
-
-      <!-- Other Features Section -->
-      <section class="other-features">
-        <h3 class="section-title">ฟีเจอร์อื่นๆ</h3>
-        <div class="features-scroll-wrapper">
-          <div class="scroll-card" style="cursor: pointer;" onclick="document.getElementById('btnTabBattle').click();">
-            <div class="scroll-icon-wrapper">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#BD1B0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5"/>
-                <line x1="13" y1="19" x2="19" y2="13"/>
-              </svg>
+        <!-- Daily Target Red Box -->
+        <section class="target-card">
+          <div class="target-header">
+            <div class="target-text-wrapper">
+              <h2 class="target-title" style="margin: 0;">คลิกเพื่อทำข้อสอบ</h2>
             </div>
-            <span class="scroll-name">Battle Arena</span>
+            <!-- Clickable Start Exam Button -->
+            <button class="btn-start-exam" id="btnStartExam">
+              <!-- Play Icon -->
+              <svg class="play-icon" viewBox="0 0 24 24" fill="currentColor">
+                <polygon points="5 3 19 12 5 21 5 3" />
+              </svg>
+              <span>เริ่มสอบ</span>
+            </button>
           </div>
 
-          <div class="scroll-card" style="cursor: pointer;" onclick="openVocabArena();">
-            <div class="scroll-icon-wrapper">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#BD1B0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
-                <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
-              </svg>
+        </section>
+
+        <!-- Other Features Section -->
+        <section class="other-features">
+          <h3 class="section-title">ฟีเจอร์อื่นๆ</h3>
+          <div class="features-scroll-wrapper">
+            <div class="scroll-card" style="cursor: pointer;"
+              onclick="document.getElementById('btnTabBattle').click();">
+              <div class="scroll-icon-wrapper">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#BD1B0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5" />
+                  <line x1="13" y1="19" x2="19" y2="13" />
+                </svg>
+              </div>
+              <span class="scroll-name">Battle Arena</span>
             </div>
-            <span class="scroll-name">Vocab</span>
+
+            <div class="scroll-card" style="cursor: pointer;" onclick="openVocabArena();">
+              <div class="scroll-icon-wrapper">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#BD1B0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+                </svg>
+              </div>
+              <span class="scroll-name">Vocab</span>
+            </div>
+
+            <div class="scroll-card">
+              <div class="scroll-icon-wrapper">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#BD1B0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+                </svg>
+              </div>
+              <span class="scroll-name">Bookmark</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Radar Chart Section -->
+        <section class="weakness-radar-section">
+          <h3 class="section-title">ภาพรวมข้อที่ตอบผิดสะสม</h3>
+          <div class="radar-card">
+            <canvas id="radarChartCanvas"></canvas>
+            <div id="radarEmptyState" class="empty-state" style="display: none;">
+              <p>ทำข้อสอบเพิ่มเติมเพื่อสะสมสถิติจุดอ่อน</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Recent Results Section -->
+        <section class="recent-results">
+          <div class="section-header">
+            <h3 class="section-title">ผลล่าสุด</h3>
+            <a href="#" class="report-link" onclick="alert('ฟีเจอร์รายงานสรุปทั้งหมดจะเปิดในเวอร์ชันหน้าครับ');">
+              <span>ดูรายงาน</span>
+              <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </a>
           </div>
 
-          <div class="scroll-card">
-            <div class="scroll-icon-wrapper">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#BD1B0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
-              </svg>
+          <div class="result-list-container">
+            <!-- Results will be populated from real API data -->
+            <div style="text-align:center;padding:24px;color:#64748B;font-size:13px;">
+              กำลังโหลดข้อมูลคะแนน...
             </div>
-            <span class="scroll-name">Bookmark</span>
           </div>
-        </div>
-      </section>
+        </section>
+
+
       </div> <!-- Close homeView -->
 
       <!-- Community View Content -->
       <div id="communityView" class="tab-view">
         <!-- Header title -->
-        <section class="profile-header-title-section" style="flex-direction: column; align-items: flex-start; gap: 16px; width: 100%;">
+        <section class="profile-header-title-section"
+          style="flex-direction: column; align-items: flex-start; gap: 16px; width: 100%;">
           <h1 class="profile-header-title">ชุมชนเตรียมสอบ</h1>
         </section>
 
         <!-- Left Pane: Posts (Always Visible) -->
         <div class="profile-left-column">
-            <h3 class="stats-card-title" style="margin-bottom: 12px; margin-top: 0;">โพสต์</h3>
-            <!-- SUBTAB 1: Posts list & compose -->
-            <div id="subtabContentPosts" style="display: block;">
+          <h3 class="stats-card-title" style="margin-bottom: 12px; margin-top: 0;">โพสต์</h3>
+          <!-- SUBTAB 1: Posts list & compose -->
+          <div id="subtabContentPosts" style="display: block;">
             <!-- Create Post Box -->
             <div class="stats-card-box" style="padding: 16px; margin-bottom: 16px; gap: 12px;">
-              <textarea id="txtPostContent" placeholder="แบ่งปันแนวข้อสอบ หรือพูดคุยเตรียมสอบกับเพื่อนๆ..." style="width: 100%; height: 80px; border: 1px solid var(--border-color); border-radius: 12px; padding: 12px; font-family: 'Kanit', sans-serif; font-size: 14px; resize: none; outline: none; transition: 0.2s;" onfocus="this.style.borderColor='var(--primary-color)'" onblur="this.style.borderColor='var(--border-color)'"></textarea>
+              <textarea id="txtPostContent" placeholder="แบ่งปันแนวข้อสอบ หรือพูดคุยเตรียมสอบกับเพื่อนๆ..."
+                style="width: 100%; height: 80px; border: 1px solid var(--border-color); border-radius: 12px; padding: 12px; font-family: 'Kanit', sans-serif; font-size: 14px; resize: none; outline: none; transition: 0.2s;"
+                onfocus="this.style.borderColor='var(--primary-color)'"
+                onblur="this.style.borderColor='var(--border-color)'"></textarea>
               <div style="display: flex; justify-content: flex-end;">
-                <button id="btnCreatePost" class="btn-quick-match" style="padding: 8px 20px; font-size: 13px; border-radius: 8px; box-shadow: none;">โพสต์</button>
+                <button id="btnCreatePost" class="btn-quick-match"
+                  style="padding: 8px 20px; font-size: 13px; border-radius: 8px; box-shadow: none;">โพสต์</button>
               </div>
             </div>
 
             <!-- Posts Feed Container -->
-            <div id="postsFeedContainer" class="ai-recommendations-list" style="max-height: 500px; overflow-y: auto; padding-right: 4px;">
+            <div id="postsFeedContainer" class="ai-recommendations-list"
+              style="max-height: 500px; overflow-y: auto; padding-right: 4px;">
               <div class="leaderboard-item-loading">กำลังโหลดฟีดโพสต์...</div>
             </div>
           </div>
@@ -309,24 +251,32 @@
 
         <!-- Right Pane: Chat, Groups, Friends -->
         <div class="profile-right-column">
-            <!-- Sub Tabs Bar (Right Pane) -->
-            <div class="community-subtabs-bar" style="display: flex; gap: 8px; width: 100%; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; flex-wrap: wrap; margin-bottom: 16px;">
-              <button class="subtab-btn active" id="btnSubtabChat">ช่องแชทรวม</button>
-              <button class="subtab-btn" id="btnSubtabGroups">กลุ่ม</button>
-              <button class="subtab-btn" id="btnSubtabFriends">เพื่อน & แชทส่วนตัว</button>
-            </div>
+          <!-- Sub Tabs Bar (Right Pane) -->
+          <div class="community-subtabs-bar"
+            style="display: flex; gap: 8px; width: 100%; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; flex-wrap: wrap; margin-bottom: 16px;">
+            <button class="subtab-btn active" id="btnSubtabChat">ช่องแชทรวม</button>
+            <button class="subtab-btn" id="btnSubtabGroups">กลุ่ม</button>
+            <button class="subtab-btn" id="btnSubtabFriends">เพื่อน & แชทส่วนตัว</button>
+          </div>
 
-            <!-- SUBTAB 2: Global Chat View -->
-            <div id="subtabContentChat" class="subtab-content active">
-              <div class="stats-card-box" style="padding: 0; overflow: hidden; height: 480px; display: flex; flex-direction: column; justify-content: space-between; border-radius: 20px;">
+          <!-- SUBTAB 2: Global Chat View -->
+          <div id="subtabContentChat" class="subtab-content active">
+            <div class="stats-card-box"
+              style="padding: 0; overflow: hidden; height: 480px; display: flex; flex-direction: column; justify-content: space-between; border-radius: 20px;">
               <!-- Chat Messages Panel -->
-              <div id="chatMessagesContainer" style="flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; background-color: #F8FAFC;">
+              <div id="chatMessagesContainer"
+                style="flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; background-color: #F8FAFC;">
                 <div class="leaderboard-item-loading">กำลังโหลดข้อความ...</div>
               </div>
               <!-- Chat Input Panel -->
-              <div style="display: flex; align-items: center; padding: 12px; border-top: 1px solid var(--border-color); gap: 8px; background-color: white;">
-                <input type="text" id="txtChatInput" placeholder="พิมพ์ข้อความคุยแชทรวม..." style="flex: 1; border: 1px solid var(--border-color); border-radius: 12px; padding: 10px 14px; font-family: 'Kanit', sans-serif; font-size: 14px; outline: none;" onfocus="this.style.borderColor='var(--primary-color)'" onblur="this.style.borderColor='var(--border-color)'">
-                <button id="btnSendChat" class="btn-quick-match" style="padding: 10px 16px; border-radius: 12px; box-shadow: none; flex-shrink: 0; width: auto;">ส่ง</button>
+              <div
+                style="display: flex; align-items: center; padding: 12px; border-top: 1px solid var(--border-color); gap: 8px; background-color: white;">
+                <input type="text" id="txtChatInput" placeholder="พิมพ์ข้อความคุยแชทรวม..."
+                  style="flex: 1; border: 1px solid var(--border-color); border-radius: 12px; padding: 10px 14px; font-family: 'Kanit', sans-serif; font-size: 14px; outline: none;"
+                  onfocus="this.style.borderColor='var(--primary-color)'"
+                  onblur="this.style.borderColor='var(--border-color)'">
+                <button id="btnSendChat" class="btn-quick-match"
+                  style="padding: 10px 16px; border-radius: 12px; box-shadow: none; flex-shrink: 0; width: auto;">ส่ง</button>
               </div>
             </div>
           </div>
@@ -336,10 +286,12 @@
             <!-- Group List Main Panel -->
             <div id="groupListMainPanel">
               <div style="display: flex; gap: 12px; margin-bottom: 16px; align-items: center;">
-                <input type="text" id="txtGroupSearch" placeholder="🔍 ค้นหาชื่อกลุ่มติว..." style="flex: 1; border: 1px solid var(--border-color); border-radius: 12px; padding: 10px 14px; font-family: 'Kanit', sans-serif; font-size: 14px; outline: none;">
-                <button id="btnOpenCreateGroupModal" class="btn-quick-match" style="padding: 10px 16px; border-radius: 12px; font-size: 13px; box-shadow: none; width: auto; flex-shrink: 0;">สร้างกลุ่ม</button>
+                <input type="text" id="txtGroupSearch" placeholder="🔍 ค้นหาชื่อกลุ่มติว..."
+                  style="flex: 1; border: 1px solid var(--border-color); border-radius: 12px; padding: 10px 14px; font-family: 'Kanit', sans-serif; font-size: 14px; outline: none;">
+                <button id="btnOpenCreateGroupModal" class="btn-quick-match"
+                  style="padding: 10px 16px; border-radius: 12px; font-size: 13px; box-shadow: none; width: auto; flex-shrink: 0;">สร้างกลุ่ม</button>
               </div>
-              
+
               <!-- Dynamic list -->
               <div id="groupsListContainer" class="battle-modes-list">
                 <div class="leaderboard-item-loading">กำลังโหลดกลุ่มติว...</div>
@@ -347,39 +299,54 @@
             </div>
 
             <!-- Group Chat Screen (Initially Hidden) -->
-            <div id="groupChatScreenPanel" style="display: none; flex-direction: column; height: 480px; background-color: white; border: 1px solid var(--border-color); border-radius: 20px; overflow: hidden;">
+            <div id="groupChatScreenPanel"
+              style="display: none; flex-direction: column; height: 480px; background-color: white; border: 1px solid var(--border-color); border-radius: 20px; overflow: hidden;">
               <!-- Header -->
-              <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--border-color); background: #F8FAFC;">
+              <div
+                style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--border-color); background: #F8FAFC;">
                 <div style="display: flex; align-items: center; gap: 8px;">
-                  <button id="btnBackToGroups" style="background: none; border: none; font-size: 18px; cursor: pointer; color: var(--text-dark);">⬅️</button>
+                  <button id="btnBackToGroups"
+                    style="background: none; border: none; font-size: 18px; cursor: pointer; color: var(--text-dark);">⬅️</button>
                   <div style="text-align: left;">
-                    <span id="lblChatGroupName" style="font-weight: 600; display: block; font-size: 14px; color: var(--text-dark);">ชื่อกลุ่ม</span>
-                    <span id="lblChatGroupMeta" style="font-size: 11px; color: var(--text-light); display: block;">ID: #1 • สมาชิก 1 คน</span>
+                    <span id="lblChatGroupName"
+                      style="font-weight: 600; display: block; font-size: 14px; color: var(--text-dark);">ชื่อกลุ่ม</span>
+                    <span id="lblChatGroupMeta" style="font-size: 11px; color: var(--text-light); display: block;">ID:
+                      #1 • สมาชิก 1 คน</span>
                   </div>
                 </div>
                 <div style="display: flex; gap: 8px;">
-                  <button id="btnLeaveGroup" class="post-action-btn delete" style="font-weight: 600; font-size: 12px; border: 1px solid #EF4444; padding: 4px 10px; border-radius: 6px; background: none; margin-right: 0;">ออกจากกลุ่ม</button>
-                  <button id="btnDeleteGroup" class="post-action-btn delete" style="font-weight: 600; font-size: 12px; border: 1px solid #EF4444; padding: 4px 10px; border-radius: 6px; background: #EF4444; color: white; display: none; margin-right: 0;">ลบกลุ่ม</button>
+                  <button id="btnLeaveGroup" class="post-action-btn delete"
+                    style="font-weight: 600; font-size: 12px; border: 1px solid #EF4444; padding: 4px 10px; border-radius: 6px; background: none; margin-right: 0;">ออกจากกลุ่ม</button>
+                  <button id="btnDeleteGroup" class="post-action-btn delete"
+                    style="font-weight: 600; font-size: 12px; border: 1px solid #EF4444; padding: 4px 10px; border-radius: 6px; background: #EF4444; color: white; display: none; margin-right: 0;">ลบกลุ่ม</button>
                 </div>
               </div>
-              
+
               <!-- Requests approval panel (Creator only, dynamic display) -->
-              <div id="groupJoinRequestsPanel" style="display: none; background: #FFFBEB; border-bottom: 1px solid #FEF3C7; padding: 12px 16px; text-align: left;">
-                <span id="lblGroupJoinRequestsCount" style="font-size: 12px; font-weight: 600; color: #B45309; display: block; margin-bottom: 8px;">📬 คำขอเข้าร่วมกลุ่ม (0)</span>
-                <div id="groupJoinRequestsContainer" style="display: flex; flex-direction: column; gap: 8px; max-height: 120px; overflow-y: auto;">
+              <div id="groupJoinRequestsPanel"
+                style="display: none; background: #FFFBEB; border-bottom: 1px solid #FEF3C7; padding: 12px 16px; text-align: left;">
+                <span id="lblGroupJoinRequestsCount"
+                  style="font-size: 12px; font-weight: 600; color: #B45309; display: block; margin-bottom: 8px;">📬
+                  คำขอเข้าร่วมกลุ่ม (0)</span>
+                <div id="groupJoinRequestsContainer"
+                  style="display: flex; flex-direction: column; gap: 8px; max-height: 120px; overflow-y: auto;">
                   <!-- pending requests -->
                 </div>
               </div>
-              
+
               <!-- Message feed -->
-              <div id="groupChatMessagesContainer" style="flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; background-color: #F8FAFC;">
+              <div id="groupChatMessagesContainer"
+                style="flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; background-color: #F8FAFC;">
                 <div class="leaderboard-item-loading">กำลังโหลดข้อความ...</div>
               </div>
-              
+
               <!-- Input -->
-              <div style="display: flex; align-items: center; padding: 12px; border-top: 1px solid var(--border-color); gap: 8px; background-color: white;">
-                <input type="text" id="txtGroupChatInput" placeholder="พิมพ์ข้อความแชทคุยในกลุ่ม..." style="flex: 1; border: 1px solid var(--border-color); border-radius: 12px; padding: 10px 14px; font-family: 'Kanit', sans-serif; font-size: 14px; outline: none;">
-                <button id="btnSendGroupChat" class="btn-quick-match" style="padding: 10px 16px; border-radius: 12px; box-shadow: none; flex-shrink: 0; width: auto;">ส่ง</button>
+              <div
+                style="display: flex; align-items: center; padding: 12px; border-top: 1px solid var(--border-color); gap: 8px; background-color: white;">
+                <input type="text" id="txtGroupChatInput" placeholder="พิมพ์ข้อความแชทคุยในกลุ่ม..."
+                  style="flex: 1; border: 1px solid var(--border-color); border-radius: 12px; padding: 10px 14px; font-family: 'Kanit', sans-serif; font-size: 14px; outline: none;">
+                <button id="btnSendGroupChat" class="btn-quick-match"
+                  style="padding: 10px 16px; border-radius: 12px; box-shadow: none; flex-shrink: 0; width: auto;">ส่ง</button>
               </div>
             </div>
           </div>
@@ -389,20 +356,25 @@
             <!-- Active Chat Panel & Friends list -->
             <div id="friendsMainPanel">
               <!-- Friend Requests List -->
-              <div class="stats-card-box" id="friendRequestsPanel" style="padding: 16px; display: none; margin-bottom: 16px; background-color: #FFFBEB; border: 1px solid #FDE68A;">
-                <h3 class="stats-card-title" style="font-size: 14px; margin-bottom: 12px; color: #B45309; display: flex; justify-content: space-between; align-items: center;">
+              <div class="stats-card-box" id="friendRequestsPanel"
+                style="padding: 16px; display: none; margin-bottom: 16px; background-color: #FFFBEB; border: 1px solid #FDE68A;">
+                <h3 class="stats-card-title"
+                  style="font-size: 14px; margin-bottom: 12px; color: #B45309; display: flex; justify-content: space-between; align-items: center;">
                   <span>📬 คำขอเป็นเพื่อนใหม่</span>
                 </h3>
-                <div id="friendRequestsContainer" style="display: flex; flex-direction: column; gap: 8px; max-height: 180px; overflow-y: auto;">
+                <div id="friendRequestsContainer"
+                  style="display: flex; flex-direction: column; gap: 8px; max-height: 180px; overflow-y: auto;">
                   <!-- pending requests -->
                 </div>
               </div>
 
               <!-- Search Friends Input -->
               <div style="margin-bottom: 16px; position: relative;">
-                <input type="text" id="txtFriendUserSearch" placeholder="🔍 ค้นหาชื่อเพื่อเพิ่มเพื่อน..." style="width: 100%; border: 1px solid var(--border-color); border-radius: 12px; padding: 10px 14px; font-family: 'Kanit', sans-serif; font-size: 14px; outline: none;">
+                <input type="text" id="txtFriendUserSearch" placeholder="🔍 ค้นหาชื่อเพื่อเพิ่มเพื่อน..."
+                  style="width: 100%; border: 1px solid var(--border-color); border-radius: 12px; padding: 10px 14px; font-family: 'Kanit', sans-serif; font-size: 14px; outline: none;">
                 <!-- Search results list -->
-                <div id="friendUserSearchResultsContainer" style="position: absolute; left: 0; right: 0; top: 100%; margin-top: 4px; max-height: 180px; overflow-y: auto; display: none; background: white; border: 1px solid var(--border-color); border-radius: 12px; box-shadow: var(--shadow-sm); z-index: 50; padding: 6px 0;">
+                <div id="friendUserSearchResultsContainer"
+                  style="position: absolute; left: 0; right: 0; top: 100%; margin-top: 4px; max-height: 180px; overflow-y: auto; display: none; background: white; border: 1px solid var(--border-color); border-radius: 12px; box-shadow: var(--shadow-sm); z-index: 50; padding: 6px 0;">
                   <!-- results -->
                 </div>
               </div>
@@ -410,21 +382,26 @@
               <div style="display: flex; flex-direction: column; gap: 16px;">
                 <!-- Friends List -->
                 <div class="stats-card-box" style="padding: 16px;">
-                  <h3 class="stats-card-title" style="font-size: 14px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+                  <h3 class="stats-card-title"
+                    style="font-size: 14px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
                     <span>👥 รายชื่อเพื่อนของคุณ (คลิกเพื่อแชทส่วนตัว)</span>
-                    <span id="lblFriendsCount" style="font-size: 11px; font-weight: normal; color: var(--text-light);">0 คน</span>
+                    <span id="lblFriendsCount" style="font-size: 11px; font-weight: normal; color: var(--text-light);">0
+                      คน</span>
                   </h3>
-                  <div id="friendsListContainer" style="display: flex; flex-direction: column; gap: 8px; max-height: 250px; overflow-y: auto;">
+                  <div id="friendsListContainer"
+                    style="display: flex; flex-direction: column; gap: 8px; max-height: 250px; overflow-y: auto;">
                     <div class="leaderboard-item-loading" style="font-size: 12px;">กำลังโหลดรายชื่อเพื่อน...</div>
                   </div>
                 </div>
 
                 <!-- Blocked List -->
                 <div class="stats-card-box" style="padding: 16px;">
-                  <h3 class="stats-card-title" style="font-size: 14px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+                  <h3 class="stats-card-title"
+                    style="font-size: 14px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
                     <span>🚫 รายชื่อที่คุณบล็อก</span>
                   </h3>
-                  <div id="blockedUsersListContainer" style="display: flex; flex-direction: column; gap: 8px; max-height: 150px; overflow-y: auto;">
+                  <div id="blockedUsersListContainer"
+                    style="display: flex; flex-direction: column; gap: 8px; max-height: 150px; overflow-y: auto;">
                     <div class="leaderboard-item-loading" style="font-size: 12px;">ไม่มีรายชื่อที่บล็อก</div>
                   </div>
                 </div>
@@ -432,28 +409,37 @@
             </div>
 
             <!-- Direct Message Chat Panel (Initially Hidden) -->
-            <div id="dmChatScreenPanel" style="display: none; flex-direction: column; height: 480px; background-color: white; border: 1px solid var(--border-color); border-radius: 20px; overflow: hidden;">
+            <div id="dmChatScreenPanel"
+              style="display: none; flex-direction: column; height: 480px; background-color: white; border: 1px solid var(--border-color); border-radius: 20px; overflow: hidden;">
               <!-- Header -->
-              <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--border-color); background: #F8FAFC;">
+              <div
+                style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--border-color); background: #F8FAFC;">
                 <div style="display: flex; align-items: center; gap: 8px;">
-                  <button id="btnBackToFriends" style="background: none; border: none; font-size: 18px; cursor: pointer; color: var(--text-dark);">⬅️</button>
+                  <button id="btnBackToFriends"
+                    style="background: none; border: none; font-size: 18px; cursor: pointer; color: var(--text-dark);">⬅️</button>
                   <div style="text-align: left;">
-                    <span id="lblDmChatFriendName" style="font-weight: 600; display: block; font-size: 14px; color: var(--text-dark);">ชื่อเพื่อน</span>
+                    <span id="lblDmChatFriendName"
+                      style="font-weight: 600; display: block; font-size: 14px; color: var(--text-dark);">ชื่อเพื่อน</span>
                     <span style="font-size: 11px; color: var(--text-light); display: block;">แชทส่วนตัว</span>
                   </div>
                 </div>
-                <button id="btnBlockCurrentFriend" class="post-action-btn delete" style="font-weight: 600; font-size: 12px; border: 1px solid #EF4444; padding: 4px 10px; border-radius: 6px; background: none; margin-right: 0;">บล็อก</button>
+                <button id="btnBlockCurrentFriend" class="post-action-btn delete"
+                  style="font-weight: 600; font-size: 12px; border: 1px solid #EF4444; padding: 4px 10px; border-radius: 6px; background: none; margin-right: 0;">บล็อก</button>
               </div>
-              
+
               <!-- Message panel -->
-              <div id="dmChatMessagesContainer" style="flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; background-color: #F8FAFC;">
+              <div id="dmChatMessagesContainer"
+                style="flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; background-color: #F8FAFC;">
                 <div class="leaderboard-item-loading">กำลังโหลดข้อความ...</div>
               </div>
-              
+
               <!-- Input panel -->
-              <div style="display: flex; align-items: center; padding: 12px; border-top: 1px solid var(--border-color); gap: 8px; background-color: white;">
-                <input type="text" id="txtDmChatInput" placeholder="พิมพ์ข้อความคุยแชทส่วนตัว..." style="flex: 1; border: 1px solid var(--border-color); border-radius: 12px; padding: 10px 14px; font-family: 'Kanit', sans-serif; font-size: 14px; outline: none;">
-                <button id="btnSendDmChat" class="btn-quick-match" style="padding: 10px 16px; border-radius: 12px; box-shadow: none; flex-shrink: 0; width: auto;">ส่ง</button>
+              <div
+                style="display: flex; align-items: center; padding: 12px; border-top: 1px solid var(--border-color); gap: 8px; background-color: white;">
+                <input type="text" id="txtDmChatInput" placeholder="พิมพ์ข้อความคุยแชทส่วนตัว..."
+                  style="flex: 1; border: 1px solid var(--border-color); border-radius: 12px; padding: 10px 14px; font-family: 'Kanit', sans-serif; font-size: 14px; outline: none;">
+                <button id="btnSendDmChat" class="btn-quick-match"
+                  style="padding: 10px 16px; border-radius: 12px; box-shadow: none; flex-shrink: 0; width: auto;">ส่ง</button>
               </div>
             </div>
           </div>
@@ -477,11 +463,14 @@
             <div class="profile-avatar-container">
               <div class="profile-avatar-box" id="profileAvatarBox">ส</div>
               <img src="" alt="Avatar" class="profile-avatar-img" id="profileAvatarImg" style="display: none;">
-              <input type="file" id="profileImageInput" accept="image/*" style="display: none;" onchange="handleProfileImageUpload(event)">
-              <button class="btn-avatar-camera" aria-label="Change Avatar" onclick="document.getElementById('profileImageInput').click();">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-                  <circle cx="12" cy="13" r="4"/>
+              <input type="file" id="profileImageInput" accept="image/*" style="display: none;"
+                onchange="handleProfileImageUpload(event)">
+              <button class="btn-avatar-camera" aria-label="Change Avatar"
+                onclick="document.getElementById('profileImageInput').click();">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                  <circle cx="12" cy="13" r="4" />
                 </svg>
               </button>
             </div>
@@ -518,102 +507,111 @@
           <section class="profile-menu-container-card">
             <div class="profile-menu-item" onclick="alert('แก้ไขโปรไฟล์จะเปิดเร็วๆ นี้');">
               <div class="menu-item-left">
-                <svg class="menu-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                  <circle cx="12" cy="7" r="4"/>
+                <svg class="menu-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                  <circle cx="12" cy="7" r="4" />
                 </svg>
                 <span class="menu-item-text">แก้ไขโปรไฟล์</span>
               </div>
               <svg class="menu-item-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="9 18 15 12 9 6"/>
+                <polyline points="9 18 15 12 9 6" />
               </svg>
             </div>
 
             <div class="profile-menu-item" onclick="alert('การแจ้งเตือนจะเปิดเร็วๆ นี้');">
               <div class="menu-item-left">
-                <svg class="menu-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/>
+                <svg class="menu-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0" />
                 </svg>
                 <span class="menu-item-text">การแจ้งเตือน</span>
               </div>
               <svg class="menu-item-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="9 18 15 12 9 6"/>
+                <polyline points="9 18 15 12 9 6" />
               </svg>
             </div>
 
             <div class="profile-menu-item" onclick="alert('เปลี่ยนรหัสผ่านจะเปิดเร็วๆ นี้');">
               <div class="menu-item-left">
-                <svg class="menu-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                <svg class="menu-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                 </svg>
                 <span class="menu-item-text">เปลี่ยนรหัสผ่าน</span>
               </div>
               <svg class="menu-item-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="9 18 15 12 9 6"/>
+                <polyline points="9 18 15 12 9 6" />
               </svg>
             </div>
 
             <div class="profile-menu-item" onclick="alert('ประวัติการสอบจะเปิดเร็วๆ นี้');">
               <div class="menu-item-left">
-                <svg class="menu-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                  <polyline points="14 2 14 8 20 8"/>
-                  <line x1="16" y1="13" x2="8" y2="13"/>
-                  <line x1="16" y1="17" x2="8" y2="17"/>
-                  <polyline points="10 9 9 9 8 9"/>
+                <svg class="menu-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                  <line x1="16" y1="13" x2="8" y2="13" />
+                  <line x1="16" y1="17" x2="8" y2="17" />
+                  <polyline points="10 9 9 9 8 9" />
                 </svg>
                 <span class="menu-item-text">ประวัติการสอบ</span>
               </div>
               <svg class="menu-item-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="9 18 15 12 9 6"/>
+                <polyline points="9 18 15 12 9 6" />
               </svg>
             </div>
 
             <div class="profile-menu-item" onclick="alert('ข้อสอบที่บันทึกจะเปิดเร็วๆ นี้');">
               <div class="menu-item-left">
-                <svg class="menu-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+                <svg class="menu-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
                 </svg>
                 <span class="menu-item-text">ข้อสอบที่บันทึก</span>
               </div>
               <svg class="menu-item-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="9 18 15 12 9 6"/>
+                <polyline points="9 18 15 12 9 6" />
               </svg>
             </div>
 
             <div class="profile-menu-item" onclick="alert('ช่วยเหลือ / FAQ จะเปิดเร็วๆ นี้');">
               <div class="menu-item-left">
-                <svg class="menu-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="12" cy="12" r="10"/>
-                  <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
-                  <line x1="12" y1="17" x2="12.01" y2="17"/>
+                <svg class="menu-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                  <line x1="12" y1="17" x2="12.01" y2="17" />
                 </svg>
                 <span class="menu-item-text">ช่วยเหลือ / FAQ</span>
               </div>
               <svg class="menu-item-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="9 18 15 12 9 6"/>
+                <polyline points="9 18 15 12 9 6" />
               </svg>
             </div>
 
             <div class="profile-menu-item" onclick="alert('ตั้งค่าจะเปิดเร็วๆ นี้');">
               <div class="menu-item-left">
-                <svg class="menu-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="12" cy="12" r="3"/>
-                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                <svg class="menu-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="3" />
+                  <path
+                    d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
                 </svg>
                 <span class="menu-item-text">ตั้งค่า</span>
               </div>
               <svg class="menu-item-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="9 18 15 12 9 6"/>
+                <polyline points="9 18 15 12 9 6" />
               </svg>
             </div>
           </section>
 
           <!-- Logout Button -->
           <button class="btn-profile-logout" id="btnProfileLogout">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
             </svg>
             <span>ออกจากระบบ</span>
           </button>
@@ -625,12 +623,13 @@
         <!-- Header title -->
         <section class="profile-header-title-section">
           <h1 class="profile-header-title">Battle Arena</h1>
-          <svg class="header-trophy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: #BD1B0B; width: 24px; height: 24px;">
-            <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
-            <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
-            <path d="M4 22h16"/>
-            <path d="M10 14.66V17c0 .55-.45 1-1 1H4v2h16v-2h-5c-.55 0-1-.45-1-1v-2.34"/>
-            <path d="M12 2a6 6 0 0 1 6 6v1H6V8a6 6 0 0 1 6-6z"/>
+          <svg class="header-trophy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            style="color: #BD1B0B; width: 24px; height: 24px;">
+            <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
+            <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
+            <path d="M4 22h16" />
+            <path d="M10 14.66V17c0 .55-.45 1-1 1H4v2h16v-2h-5c-.55 0-1-.45-1-1v-2.34" />
+            <path d="M12 2a6 6 0 0 1 6 6v1H6V8a6 6 0 0 1 6-6z" />
           </svg>
         </section>
 
@@ -651,7 +650,7 @@
             <!-- Quick Match Button -->
             <button class="btn-quick-match" id="btnQuickMatch">
               <svg viewBox="0 0 24 24" fill="currentColor">
-                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
               </svg>
               <span>Quick Match</span>
             </button>
@@ -664,10 +663,10 @@
               <div class="mode-item-left">
                 <div class="mode-icon-wrapper ranked-icon">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                    <circle cx="9" cy="7" r="4"/>
-                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
                   </svg>
                 </div>
                 <div class="mode-info">
@@ -679,7 +678,7 @@
                 </div>
               </div>
               <svg class="menu-item-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="9 18 15 12 9 6"/>
+                <polyline points="9 18 15 12 9 6" />
               </svg>
             </div>
 
@@ -688,11 +687,11 @@
               <div class="mode-item-left">
                 <div class="mode-icon-wrapper tournament-icon">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
-                    <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
-                    <path d="M4 22h16"/>
-                    <path d="M10 14.66V17c0 .55-.45 1-1 1H4v2h16v-2h-5c-.55 0-1-.45-1-1v-2.34"/>
-                    <path d="M12 2a6 6 0 0 1 6 6v1H6V8a6 6 0 0 1 6-6z"/>
+                    <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
+                    <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
+                    <path d="M4 22h16" />
+                    <path d="M10 14.66V17c0 .55-.45 1-1 1H4v2h16v-2h-5c-.55 0-1-.45-1-1v-2.34" />
+                    <path d="M12 2a6 6 0 0 1 6 6v1H6V8a6 6 0 0 1 6-6z" />
                   </svg>
                 </div>
                 <div class="mode-info">
@@ -704,7 +703,7 @@
                 </div>
               </div>
               <svg class="menu-item-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="9 18 15 12 9 6"/>
+                <polyline points="9 18 15 12 9 6" />
               </svg>
             </div>
 
@@ -713,7 +712,7 @@
               <div class="mode-item-left">
                 <div class="mode-icon-wrapper challenge-icon">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+                    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
                   </svg>
                 </div>
                 <div class="mode-info">
@@ -722,7 +721,7 @@
                 </div>
               </div>
               <svg class="menu-item-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="9 18 15 12 9 6"/>
+                <polyline points="9 18 15 12 9 6" />
               </svg>
             </div>
           </section>
@@ -745,7 +744,8 @@
         <!-- Header title -->
         <section class="profile-header-title-section">
           <h1 class="profile-header-title">รายงานจุดอ่อน</h1>
-          <span style="font-size: 12px; color: var(--text-light); text-align: right;" id="statsLastUpdateText">อัปเดต วันนี้</span>
+          <span style="font-size: 12px; color: var(--text-light); text-align: right;" id="statsLastUpdateText">อัปเดต
+            วันนี้</span>
         </section>
 
         <!-- Left Column Wrapper -->
@@ -765,10 +765,14 @@
               <canvas id="statsBarChartCanvas"></canvas>
             </div>
             <!-- Legend -->
-            <div class="bar-chart-legend" style="display: flex; justify-content: center; gap: 16px; margin-top: 12px; font-size: 12px;">
-              <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 12px; height: 12px; border-radius: 3px; background-color: #10B981;"></span>ดีมาก</span>
-              <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 12px; height: 12px; border-radius: 3px; background-color: #F59E0B;"></span>พอใช้</span>
-              <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 12px; height: 12px; border-radius: 3px; background-color: #EF4444;"></span>ปรับปรุง</span>
+            <div class="bar-chart-legend"
+              style="display: flex; justify-content: center; gap: 16px; margin-top: 12px; font-size: 12px;">
+              <span style="display: flex; align-items: center; gap: 6px;"><span
+                  style="width: 12px; height: 12px; border-radius: 3px; background-color: #10B981;"></span>ดีมาก</span>
+              <span style="display: flex; align-items: center; gap: 6px;"><span
+                  style="width: 12px; height: 12px; border-radius: 3px; background-color: #F59E0B;"></span>พอใช้</span>
+              <span style="display: flex; align-items: center; gap: 6px;"><span
+                  style="width: 12px; height: 12px; border-radius: 3px; background-color: #EF4444;"></span>ปรับปรุง</span>
             </div>
           </section>
         </div>
@@ -805,44 +809,44 @@
     <div class="bottom-nav-container">
       <a href="#" class="nav-tab active">
         <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-          <polyline points="9 22 9 12 15 12 15 22"/>
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+          <polyline points="9 22 9 12 15 12 15 22" />
         </svg>
         <span class="tab-label">หน้าแรก</span>
       </a>
 
       <a href="#" class="nav-tab" id="btnTabCommunity">
         <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-          <circle cx="9" cy="7" r="4"/>
-          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+          <circle cx="9" cy="7" r="4" />
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+          <path d="M16 3.13a4 4 0 0 1 0 7.75" />
         </svg>
         <span class="tab-label">ชุมชน</span>
       </a>
 
       <a href="#" class="nav-tab" id="btnTabBattle">
         <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5"/>
-          <line x1="13" y1="19" x2="19" y2="13"/>
-          <line x1="16" y1="20" x2="20" y2="16"/>
+          <polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5" />
+          <line x1="13" y1="19" x2="19" y2="13" />
+          <line x1="16" y1="20" x2="20" y2="16" />
         </svg>
         <span class="tab-label">Battle</span>
       </a>
 
       <a href="#" class="nav-tab" id="btnTabStats">
         <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <line x1="18" y1="20" x2="18" y2="10"/>
-          <line x1="12" y1="20" x2="12" y2="4"/>
-          <line x1="6" y1="20" x2="6" y2="14"/>
+          <line x1="18" y1="20" x2="18" y2="10" />
+          <line x1="12" y1="20" x2="12" y2="4" />
+          <line x1="6" y1="20" x2="6" y2="14" />
         </svg>
         <span class="tab-label">สถิติ</span>
       </a>
 
       <a href="#" class="nav-tab" id="btnTabProfile">
         <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-          <circle cx="12" cy="7" r="4"/>
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+          <circle cx="12" cy="7" r="4" />
         </svg>
         <span class="tab-label">โปรไฟล์</span>
       </a>
@@ -850,70 +854,79 @@
   </nav>
 
   <!-- Create Group Modal -->
-  <div class="modal-overlay" id="createGroupModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.4); align-items: center; justify-content: center; z-index: 100;">
-    <div class="modal-card" style="background: white; max-width: 400px; width: 90%; padding: 24px; border-radius: 20px; text-align: left; box-shadow: var(--shadow-lg);">
+  <div class="modal-overlay" id="createGroupModal"
+    style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.4); align-items: center; justify-content: center; z-index: 100;">
+    <div class="modal-card"
+      style="background: white; max-width: 400px; width: 90%; padding: 24px; border-radius: 20px; text-align: left; box-shadow: var(--shadow-lg);">
       <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 16px; color: #1E293B;">สร้างกลุ่มติวใหม่</h3>
       <div style="display: flex; flex-direction: column; gap: 12px;">
         <div>
-          <label style="font-size: 13px; font-weight: 500; color: #64748B; display: block; margin-bottom: 4px;">ชื่อกลุ่ม</label>
-          <input type="text" id="txtCreateGroupName" placeholder="เช่น ตะลุยโจทย์อังกฤษ นายสิบตำรวจ" style="width: 100%; border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 12px; font-family: 'Kanit'; font-size: 14px; outline: none;">
+          <label
+            style="font-size: 13px; font-weight: 500; color: #64748B; display: block; margin-bottom: 4px;">ชื่อกลุ่ม</label>
+          <input type="text" id="txtCreateGroupName" placeholder="เช่น ตะลุยโจทย์อังกฤษ นายสิบตำรวจ"
+            style="width: 100%; border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 12px; font-family: 'Kanit'; font-size: 14px; outline: none;">
         </div>
         <div>
-          <label style="font-size: 13px; font-weight: 500; color: #64748B; display: block; margin-bottom: 4px;">รายละเอียดกลุ่ม (ไม่บังคับ)</label>
-          <textarea id="txtCreateGroupDesc" placeholder="อธิบายวัตถุประสงค์ หรือแนวข้อสอบในกลุ่ม..." style="width: 100%; height: 60px; border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 12px; font-family: 'Kanit'; font-size: 14px; outline: none; resize: none;"></textarea>
+          <label
+            style="font-size: 13px; font-weight: 500; color: #64748B; display: block; margin-bottom: 4px;">รายละเอียดกลุ่ม
+            (ไม่บังคับ)</label>
+          <textarea id="txtCreateGroupDesc" placeholder="อธิบายวัตถุประสงค์ หรือแนวข้อสอบในกลุ่ม..."
+            style="width: 100%; height: 60px; border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 12px; font-family: 'Kanit'; font-size: 14px; outline: none; resize: none;"></textarea>
         </div>
         <div>
-          <label style="font-size: 13px; font-weight: 500; color: #64748B; display: block; margin-bottom: 4px;">ประเภทกลุ่ม</label>
+          <label
+            style="font-size: 13px; font-weight: 500; color: #64748B; display: block; margin-bottom: 4px;">ประเภทกลุ่ม</label>
           <div style="display: flex; gap: 16px; margin-top: 4px;">
-            <label style="display: flex; align-items: center; gap: 6px; font-size: 14px; cursor: pointer; color: var(--text-dark);">
-              <input type="radio" name="optGroupPrivacy" value="public" checked style="accent-color: var(--primary-color);"> 🔓 สาธารณะ (Public)
+            <label
+              style="display: flex; align-items: center; gap: 6px; font-size: 14px; cursor: pointer; color: var(--text-dark);">
+              <input type="radio" name="optGroupPrivacy" value="public" checked
+                style="accent-color: var(--primary-color);"> 🔓 สาธารณะ (Public)
             </label>
-            <label style="display: flex; align-items: center; gap: 6px; font-size: 14px; cursor: pointer; color: var(--text-dark);">
-              <input type="radio" name="optGroupPrivacy" value="private" style="accent-color: var(--primary-color);"> 🔒 ส่วนตัว (Private)
+            <label
+              style="display: flex; align-items: center; gap: 6px; font-size: 14px; cursor: pointer; color: var(--text-dark);">
+              <input type="radio" name="optGroupPrivacy" value="private" style="accent-color: var(--primary-color);"> 🔒
+              ส่วนตัว (Private)
             </label>
           </div>
         </div>
       </div>
       <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px;">
-        <button id="btnCancelCreateGroup" style="background: #F1F5F9; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer;">ยกเลิก</button>
-        <button id="btnSubmitCreateGroup" style="background: var(--primary-color); color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer;">สร้างกลุ่ม</button>
+        <button id="btnCancelCreateGroup"
+          style="background: #F1F5F9; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer;">ยกเลิก</button>
+        <button id="btnSubmitCreateGroup"
+          style="background: var(--primary-color); color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer;">สร้างกลุ่ม</button>
       </div>
     </div>
   </div>
 
   <!-- User Profile Modal -->
-  <div class="modal-overlay" id="userProfileModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.4); align-items: center; justify-content: center; z-index: 120;">
-    <div class="modal-card" style="background: white; max-width: 420px; width: 92%; padding: 24px; border-radius: 20px; text-align: center; box-shadow: var(--shadow-lg); position: relative; max-height: 85vh; overflow-y: auto;">
+  <div class="modal-overlay" id="userProfileModal"
+    style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.4); align-items: center; justify-content: center; z-index: 120;">
+    <div class="modal-card"
+      style="background: white; max-width: 420px; width: 92%; padding: 24px; border-radius: 20px; text-align: center; box-shadow: var(--shadow-lg); position: relative; max-height: 85vh; overflow-y: auto;">
       <!-- Close btn -->
-      <button id="btnCloseUserProfileModal" style="position: absolute; right: 16px; top: 16px; background: none; border: none; font-size: 16px; cursor: pointer; color: var(--text-light);">❌</button>
-      
+      <button id="btnCloseUserProfileModal"
+        style="position: absolute; right: 16px; top: 16px; background: none; border: none; font-size: 16px; cursor: pointer; color: var(--text-light);">❌</button>
+
       <!-- Avatar -->
-      <div id="userProfileModalAvatar" style="width: 72px; height: 72px; border-radius: 50%; background-color: var(--primary-color); color: white; display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 700; margin: 12px auto;">ส</div>
-      
+      <div id="userProfileModalAvatar"
+        style="width: 72px; height: 72px; border-radius: 50%; background-color: var(--primary-color); color: white; display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 700; margin: 12px auto;">
+        ส</div>
+
       <!-- Names -->
-      <h3 id="lblUserProfileModalFullName" style="font-size: 18px; font-weight: 600; color: #1E293B; margin-bottom: 2px;">ชื่อผู้ใช้</h3>
-      <span id="lblUserProfileModalUsername" style="font-size: 13px; color: var(--text-light); display: block; margin-bottom: 16px;">@username</span>
-      
+      <h3 id="lblUserProfileModalFullName"
+        style="font-size: 18px; font-weight: 600; color: #1E293B; margin-bottom: 2px;">ชื่อผู้ใช้</h3>
+      <span id="lblUserProfileModalUsername"
+        style="font-size: 13px; color: var(--text-light); display: block; margin-bottom: 16px;">@username</span>
+
       <!-- Stats grid -->
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px;">
-        <div style="background-color: #F8FAFC; padding: 10px; border-radius: 12px;">
-          <span style="font-size: 11px; color: #64748B; display: block;">เลเวล</span>
-          <span id="lblUserProfileModalLevel" style="font-size: 15px; font-weight: 700; color: var(--primary-color);">Lv.1</span>
-        </div>
-        <div style="background-color: #F8FAFC; padding: 10px; border-radius: 12px;">
-          <span style="font-size: 11px; color: #64748B; display: block;">คะแนนรวม</span>
-          <span id="lblUserProfileModalPoints" style="font-size: 15px; font-weight: 700; color: #10B981;">0 พ้อยต์</span>
-        </div>
-        <div style="background-color: #F8FAFC; padding: 10px; border-radius: 12px;">
-          <span style="font-size: 11px; color: #64748B; display: block;">Streak วัน</span>
-          <span id="lblUserProfileModalStreak" style="font-size: 15px; font-weight: 700; color: #F59E0B;">0 วัน</span>
-        </div>
+      <div style="display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: 20px;">
         <div style="background-color: #F8FAFC; padding: 10px; border-radius: 12px;">
           <span style="font-size: 11px; color: #64748B; display: block;">ชนะศึก Battle</span>
           <span id="lblUserProfileModalWins" style="font-size: 15px; font-weight: 700; color: #6366F1;">0 ครั้ง</span>
         </div>
       </div>
-      
+
       <!-- Action buttons -->
       <div id="userProfileModalActions" style="display: flex; flex-direction: column; gap: 8px;">
         <!-- dynamic action buttons -->
@@ -922,41 +935,55 @@
       <!-- Post History Section -->
       <div style="margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 16px; text-align: left;">
         <h4 style="font-size: 14px; font-weight: 600; color: #1E293B; margin-bottom: 12px;">📝 ประวัติการโพสต์</h4>
-        <div id="userProfileModalPostsContainer" style="display: flex; flex-direction: column; gap: 10px; max-height: 300px; overflow-y: auto;">
-          <div style="text-align: center; color: var(--text-light); font-size: 12px; padding: 12px 0;">กำลังโหลด...</div>
+        <div id="userProfileModalPostsContainer"
+          style="display: flex; flex-direction: column; gap: 10px; max-height: 300px; overflow-y: auto;">
+          <div style="text-align: center; color: var(--text-light); font-size: 12px; padding: 12px 0;">กำลังโหลด...
+          </div>
         </div>
       </div>
     </div>
   </div>
 
   <!-- Custom Confirm Modal (Centered) -->
-  <div id="customConfirmModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
-    <div style="background: white; border-radius: 16px; padding: 28px 24px; max-width: 340px; width: 90%; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.3); animation: modalPop 0.2s ease;">
+  <div id="customConfirmModal"
+    style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
+    <div
+      style="background: white; border-radius: 16px; padding: 28px 24px; max-width: 340px; width: 90%; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.3); animation: modalPop 0.2s ease;">
       <div id="customConfirmIcon" style="font-size: 36px; margin-bottom: 12px;">⚠️</div>
-      <h3 id="customConfirmTitle" style="font-size: 16px; font-weight: 600; color: #1E293B; margin-bottom: 8px;">ยืนยัน</h3>
+      <h3 id="customConfirmTitle" style="font-size: 16px; font-weight: 600; color: #1E293B; margin-bottom: 8px;">ยืนยัน
+      </h3>
       <p id="customConfirmMessage" style="font-size: 13px; color: #64748B; margin-bottom: 20px; line-height: 1.5;"></p>
       <div style="display: flex; gap: 10px;">
-        <button id="btnConfirmCancel" style="flex: 1; padding: 12px; border-radius: 10px; border: 1px solid #E2E8F0; background: #F8FAFC; color: #64748B; font-size: 14px; font-weight: 600; cursor: pointer;">ยกเลิก</button>
-        <button id="btnConfirmOk" style="flex: 1; padding: 12px; border-radius: 10px; border: none; background: #EF4444; color: white; font-size: 14px; font-weight: 600; cursor: pointer;">ยืนยัน</button>
+        <button id="btnConfirmCancel"
+          style="flex: 1; padding: 12px; border-radius: 10px; border: 1px solid #E2E8F0; background: #F8FAFC; color: #64748B; font-size: 14px; font-weight: 600; cursor: pointer;">ยกเลิก</button>
+        <button id="btnConfirmOk"
+          style="flex: 1; padding: 12px; border-radius: 10px; border: none; background: #EF4444; color: white; font-size: 14px; font-weight: 600; cursor: pointer;">ยืนยัน</button>
       </div>
     </div>
   </div>
 
   <!-- Custom Alert Modal (Centered) -->
-  <div id="customAlertModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
-    <div style="background: white; border-radius: 16px; padding: 28px 24px; max-width: 340px; width: 90%; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.3); animation: modalPop 0.2s ease;">
+  <div id="customAlertModal"
+    style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
+    <div
+      style="background: white; border-radius: 16px; padding: 28px 24px; max-width: 340px; width: 90%; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.3); animation: modalPop 0.2s ease;">
       <div id="customAlertIcon" style="font-size: 36px; margin-bottom: 12px;">ℹ️</div>
-      <h3 id="customAlertTitle" style="font-size: 16px; font-weight: 600; color: #1E293B; margin-bottom: 8px;">แจ้งเตือน</h3>
+      <h3 id="customAlertTitle" style="font-size: 16px; font-weight: 600; color: #1E293B; margin-bottom: 8px;">แจ้งเตือน
+      </h3>
       <p id="customAlertMessage" style="font-size: 13px; color: #64748B; margin-bottom: 20px; line-height: 1.5;"></p>
-      <button id="btnAlertOk" style="width: 100%; padding: 12px; border-radius: 10px; border: none; background: var(--primary-color); color: white; font-size: 14px; font-weight: 600; cursor: pointer;">ตกลง</button>
+      <button id="btnAlertOk"
+        style="width: 100%; padding: 12px; border-radius: 10px; border: none; background: var(--primary-color); color: white; font-size: 14px; font-weight: 600; cursor: pointer;">ตกลง</button>
     </div>
   </div>
 
   <!-- Vocab Game Modal -->
-  <div id="vocabArenaModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(8px); z-index: 1000; align-items: center; justify-content: center;">
-    <div class="modal-card" style="background: #F8FAFC; max-width: 440px; width: 94%; padding: 24px; border-radius: 24px; text-align: center; box-shadow: var(--shadow-xl); position: relative; animation: modalPop 0.25s ease;">
+  <div id="vocabArenaModal"
+    style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(8px); z-index: 1000; align-items: center; justify-content: center;">
+    <div class="modal-card"
+      style="background: #F8FAFC; max-width: 440px; width: 94%; padding: 24px; border-radius: 24px; text-align: center; box-shadow: var(--shadow-xl); position: relative; animation: modalPop 0.25s ease;">
       <!-- Close button -->
-      <button id="btnCloseVocabArena" style="position: absolute; right: 20px; top: 20px; background: #E2E8F0; border: none; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; cursor: pointer; color: var(--text-dark); transition: all 0.2s;">❌</button>
+      <button id="btnCloseVocabArena"
+        style="position: absolute; right: 20px; top: 20px; background: #E2E8F0; border: none; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; cursor: pointer; color: var(--text-dark); transition: all 0.2s;">❌</button>
 
       <!-- Title / Header -->
       <div style="margin-bottom: 20px;">
@@ -969,55 +996,79 @@
       <div id="vocabLevelSelection" style="display: block; margin-top: 10px;">
         <!-- Question Count Selector -->
         <div style="margin-bottom: 20px; text-align: left;">
-          <p style="font-size: 13px; color: #64748B; font-weight: 600; margin-bottom: 8px;">จำนวนคำศัพท์ที่ต้องการฝึกฝน</p>
+          <p style="font-size: 13px; color: #64748B; font-weight: 600; margin-bottom: 8px;">จำนวนคำศัพท์ที่ต้องการฝึกฝน
+          </p>
           <div style="display: flex; background: #E2E8F0; border-radius: 12px; padding: 4px; gap: 4px;">
-            <button onclick="setVocabWordCount(10)" id="btnVocabCount10" class="vocab-count-btn active-count" style="flex: 1; border: none; padding: 8px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; font-family: inherit;">10 คำ</button>
-            <button onclick="setVocabWordCount(20)" id="btnVocabCount20" class="vocab-count-btn" style="flex: 1; border: none; padding: 8px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; font-family: inherit;">20 คำ</button>
-            <button onclick="setVocabWordCount(30)" id="btnVocabCount30" class="vocab-count-btn" style="flex: 1; border: none; padding: 8px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; font-family: inherit;">30 คำ</button>
+            <button onclick="setVocabWordCount(10)" id="btnVocabCount10" class="vocab-count-btn active-count"
+              style="flex: 1; border: none; padding: 8px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; font-family: inherit;">10
+              คำ</button>
+            <button onclick="setVocabWordCount(20)" id="btnVocabCount20" class="vocab-count-btn"
+              style="flex: 1; border: none; padding: 8px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; font-family: inherit;">20
+              คำ</button>
+            <button onclick="setVocabWordCount(30)" id="btnVocabCount30" class="vocab-count-btn"
+              style="flex: 1; border: none; padding: 8px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; font-family: inherit;">30
+              คำ</button>
           </div>
         </div>
 
-        <p style="font-size: 13px; color: #64748B; font-weight: 600; margin-bottom: 16px; text-align: left;">เลือกความยากของคำศัพท์ภาษาอังกฤษ (CEFR)</p>
-        <div style="display: flex; flex-direction: column; gap: 10px; max-height: 260px; overflow-y: auto; padding-right: 4px;">
+        <p style="font-size: 13px; color: #64748B; font-weight: 600; margin-bottom: 16px; text-align: left;">
+          เลือกความยากของคำศัพท์ภาษาอังกฤษ (CEFR)</p>
+        <div
+          style="display: flex; flex-direction: column; gap: 10px; max-height: 260px; overflow-y: auto; padding-right: 4px;">
           <button onclick="startVocabSession('A1')" class="vocab-lvl-btn">
-            <span style="font-size: 24px; padding: 8px; background: #ECFDF5; border-radius: 12px; color: #22C55E; display: flex; align-items: center; justify-content: center; width: 42px; height: 42px;">🌱</span>
+            <span
+              style="font-size: 24px; padding: 8px; background: #ECFDF5; border-radius: 12px; color: #22C55E; display: flex; align-items: center; justify-content: center; width: 42px; height: 42px;">🌱</span>
             <div style="flex: 1;">
               <div style="font-weight: 800; color: #1E293B; font-size: 14px;">A1 — เบื้องต้น</div>
               <div style="font-size: 11px; color: #64748B; font-weight: 500;">คำศัพท์พื้นฐานที่ใช้ในชีวิตประจำวัน</div>
             </div>
-            <span style="background: #F1F5F9; color: #475569; font-size: 10px; font-weight: 700; padding: 4px 8px; border-radius: 10px; white-space: nowrap;">600 คำ</span>
+            <span
+              style="background: #F1F5F9; color: #475569; font-size: 10px; font-weight: 700; padding: 4px 8px; border-radius: 10px; white-space: nowrap;">600
+              คำ</span>
           </button>
           <button onclick="startVocabSession('A2')" class="vocab-lvl-btn">
-            <span style="font-size: 24px; padding: 8px; background: #EFF6FF; border-radius: 12px; color: #3B82F6; display: flex; align-items: center; justify-content: center; width: 42px; height: 42px;">📗</span>
+            <span
+              style="font-size: 24px; padding: 8px; background: #EFF6FF; border-radius: 12px; color: #3B82F6; display: flex; align-items: center; justify-content: center; width: 42px; height: 42px;">📗</span>
             <div style="flex: 1;">
               <div style="font-weight: 800; color: #1E293B; font-size: 14px;">A2 — ก่อนกลาง</div>
               <div style="font-size: 11px; color: #64748B; font-weight: 500;">คำศัพท์ที่ใช้สื่อสารทั่วไป</div>
             </div>
-            <span style="background: #F1F5F9; color: #475569; font-size: 10px; font-weight: 700; padding: 4px 8px; border-radius: 10px; white-space: nowrap;">600 คำ</span>
+            <span
+              style="background: #F1F5F9; color: #475569; font-size: 10px; font-weight: 700; padding: 4px 8px; border-radius: 10px; white-space: nowrap;">600
+              คำ</span>
           </button>
           <button onclick="startVocabSession('B1')" class="vocab-lvl-btn">
-            <span style="font-size: 24px; padding: 8px; background: #FFFBEB; border-radius: 12px; color: #F59E0B; display: flex; align-items: center; justify-content: center; width: 42px; height: 42px;">📘</span>
+            <span
+              style="font-size: 24px; padding: 8px; background: #FFFBEB; border-radius: 12px; color: #F59E0B; display: flex; align-items: center; justify-content: center; width: 42px; height: 42px;">📘</span>
             <div style="flex: 1;">
               <div style="font-weight: 800; color: #1E293B; font-size: 14px;">B1 — กลาง</div>
               <div style="font-size: 11px; color: #64748B; font-weight: 500;">คำศัพท์เชิงวิชาการและธุรกิจ</div>
             </div>
-            <span style="background: #F1F5F9; color: #475569; font-size: 10px; font-weight: 700; padding: 4px 8px; border-radius: 10px; white-space: nowrap;">600 คำ</span>
+            <span
+              style="background: #F1F5F9; color: #475569; font-size: 10px; font-weight: 700; padding: 4px 8px; border-radius: 10px; white-space: nowrap;">600
+              คำ</span>
           </button>
           <button onclick="startVocabSession('B2')" class="vocab-lvl-btn">
-            <span style="font-size: 24px; padding: 8px; background: #FEF2F2; border-radius: 12px; color: #EF4444; display: flex; align-items: center; justify-content: center; width: 42px; height: 42px;">📕</span>
+            <span
+              style="font-size: 24px; padding: 8px; background: #FEF2F2; border-radius: 12px; color: #EF4444; display: flex; align-items: center; justify-content: center; width: 42px; height: 42px;">📕</span>
             <div style="flex: 1;">
               <div style="font-weight: 800; color: #1E293B; font-size: 14px;">B2 — สูงกว่ากลาง</div>
               <div style="font-size: 11px; color: #64748B; font-weight: 500;">คำศัพท์ขั้นสูงสำหรับข้อสอบ</div>
             </div>
-            <span style="background: #F1F5F9; color: #475569; font-size: 10px; font-weight: 700; padding: 4px 8px; border-radius: 10px; white-space: nowrap;">600 คำ</span>
+            <span
+              style="background: #F1F5F9; color: #475569; font-size: 10px; font-weight: 700; padding: 4px 8px; border-radius: 10px; white-space: nowrap;">600
+              คำ</span>
           </button>
           <button onclick="startVocabSession('C1')" class="vocab-lvl-btn">
-            <span style="font-size: 24px; padding: 8px; background: #F5F3FF; border-radius: 12px; color: #8B5CF6; display: flex; align-items: center; justify-content: center; width: 42px; height: 42px;">🎓</span>
+            <span
+              style="font-size: 24px; padding: 8px; background: #F5F3FF; border-radius: 12px; color: #8B5CF6; display: flex; align-items: center; justify-content: center; width: 42px; height: 42px;">🎓</span>
             <div style="flex: 1;">
               <div style="font-weight: 800; color: #1E293B; font-size: 14px;">C1 — ขั้นสูง</div>
               <div style="font-size: 11px; color: #64748B; font-weight: 500;">คำศัพท์ระดับผู้เชี่ยวชาญ</div>
             </div>
-            <span style="background: #F1F5F9; color: #475569; font-size: 10px; font-weight: 700; padding: 4px 8px; border-radius: 10px; white-space: nowrap;">600 คำ</span>
+            <span
+              style="background: #F1F5F9; color: #475569; font-size: 10px; font-weight: 700; padding: 4px 8px; border-radius: 10px; white-space: nowrap;">600
+              คำ</span>
           </button>
         </div>
       </div>
@@ -1025,7 +1076,8 @@
       <!-- Gameplay Section -->
       <div id="vocabGameplaySection" style="display: none;">
         <!-- Stats row -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; background: white; padding: 14px 10px; border-radius: 16px; border: 1px solid #E2E8F0; margin-bottom: 20px; box-shadow: var(--shadow-sm);">
+        <div
+          style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; background: white; padding: 14px 10px; border-radius: 16px; border: 1px solid #E2E8F0; margin-bottom: 20px; box-shadow: var(--shadow-sm);">
           <div style="text-align: center;">
             <p id="vocabGameScore" style="font-size: 18px; font-weight: 800; color: #BD1B0B; margin: 0;">0</p>
             <p style="font-size: 10px; color: #94A3B8; margin: 2px 0 0 0; font-weight: 600;">ทำถูก</p>
@@ -1041,29 +1093,37 @@
         </div>
 
         <!-- Word display card -->
-        <div id="vocabWordCard" style="background: white; border-radius: 20px; border: 2px solid #E2E8F0; padding: 32px 16px; margin-bottom: 20px; transition: all 0.2s; position: relative;">
-          <div id="vocabStreakAlert" style="display: none; position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: #F59E0B; color: white; padding: 4px 12px; border-radius: 20px; font-size: 10px; font-weight: 800; box-shadow: var(--shadow-sm); animation: bounce 1s infinite;">
+        <div id="vocabWordCard"
+          style="background: white; border-radius: 20px; border: 2px solid #E2E8F0; padding: 32px 16px; margin-bottom: 20px; transition: all 0.2s; position: relative;">
+          <div id="vocabStreakAlert"
+            style="display: none; position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: #F59E0B; color: white; padding: 4px 12px; border-radius: 20px; font-size: 10px; font-weight: 800; box-shadow: var(--shadow-sm); animation: bounce 1s infinite;">
             🔥 <span id="vocabStreakCount">0</span> STREAK!
           </div>
-          <p id="lblVocabWord" style="font-size: 32px; font-weight: 900; color: #1E293B; margin: 0 0 6px 0; letter-spacing: -0.5px;"></p>
+          <p id="lblVocabWord"
+            style="font-size: 32px; font-weight: 900; color: #1E293B; margin: 0 0 6px 0; letter-spacing: -0.5px;"></p>
           <p style="font-size: 12px; color: #94A3B8; margin: 0; font-weight: 500;">เลือกคำแปลภาษาไทยที่ถูกต้อง</p>
-          
+
           <!-- Feedback placeholder -->
-          <div id="vocabFeedbackMessage" style="margin-top: 14px; font-size: 13px; font-weight: 700; display: none;"></div>
+          <div id="vocabFeedbackMessage" style="margin-top: 14px; font-size: 13px; font-weight: 700; display: none;">
+          </div>
         </div>
 
         <!-- Choices 2x2 grid -->
-        <div id="vocabChoicesGrid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 10px;">
+        <div id="vocabChoicesGrid"
+          style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 10px;">
           <!-- Dynamic options -->
         </div>
       </div>
 
       <!-- Summary Section -->
       <div id="vocabSummarySection" style="display: none; text-align: left; margin-top: 10px;">
-        <h3 style="font-size: 16px; font-weight: 800; color: #1E293B; margin: 0 0 4px 0; text-align: center;">📊 สรุปผลการฝึกฝน</h3>
-        <p style="font-size: 12px; color: #64748B; margin: 0 0 16px 0; text-align: center;" id="lblVocabSummaryMeta">ระดับ A2 | 10 คำ</p>
-        
-        <div style="background: white; border-radius: 16px; border: 1px solid #E2E8F0; padding: 16px; margin-bottom: 20px; box-shadow: var(--shadow-sm); display: grid; grid-template-columns: 1fr 1fr; gap: 12px; text-align: center;">
+        <h3 style="font-size: 16px; font-weight: 800; color: #1E293B; margin: 0 0 4px 0; text-align: center;">📊
+          สรุปผลการฝึกฝน</h3>
+        <p style="font-size: 12px; color: #64748B; margin: 0 0 16px 0; text-align: center;" id="lblVocabSummaryMeta">
+          ระดับ A2 | 10 คำ</p>
+
+        <div
+          style="background: white; border-radius: 16px; border: 1px solid #E2E8F0; padding: 16px; margin-bottom: 20px; box-shadow: var(--shadow-sm); display: grid; grid-template-columns: 1fr 1fr; gap: 12px; text-align: center;">
           <div>
             <span style="font-size: 20px; font-weight: 800; color: #BD1B0B;" id="vocabSummaryScore">0</span>
             <p style="font-size: 10px; color: #94A3B8; margin: 2px 0 0 0; font-weight: 600;">ทำถูก</p>
@@ -1076,14 +1136,17 @@
 
         <div id="vocabWrongAnswersContainer" style="display: block; margin-bottom: 20px;">
           <p style="font-size: 12px; color: #E11D48; font-weight: 700; margin-bottom: 8px;">❌ คำศัพท์ที่ตอบผิด:</p>
-          <div id="vocabWrongAnswersList" style="max-height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 4px;">
+          <div id="vocabWrongAnswersList"
+            style="max-height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 4px;">
             <!-- Wrong answers list -->
           </div>
         </div>
 
         <div style="display: flex; gap: 10px; margin-top: 15px;">
-          <button onclick="openVocabArena()" style="flex: 1; padding: 12px; border-radius: 14px; border: none; background: #BD1B0B; color: white; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s; font-family: inherit;">เล่นอีกครั้ง</button>
-          <button onclick="closeVocabArena()" style="flex: 1; padding: 12px; border-radius: 14px; border: 1px solid #E2E8F0; background: white; color: #475569; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s; font-family: inherit;">ปิด</button>
+          <button onclick="openVocabArena()"
+            style="flex: 1; padding: 12px; border-radius: 14px; border: none; background: #BD1B0B; color: white; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s; font-family: inherit;">เล่นอีกครั้ง</button>
+          <button onclick="closeVocabArena()"
+            style="flex: 1; padding: 12px; border-radius: 14px; border: 1px solid #E2E8F0; background: white; color: #475569; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s; font-family: inherit;">ปิด</button>
         </div>
       </div>
     </div>
@@ -1091,19 +1154,25 @@
 
 
   <!-- Image Crop Modal -->
-  <div id="cropModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.85); z-index: 2000; align-items: center; justify-content: center;">
-    <div style="background: white; border-radius: 20px; width: 90%; max-width: 500px; padding: 20px; text-align: center;">
+  <div id="cropModal"
+    style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.85); z-index: 2000; align-items: center; justify-content: center;">
+    <div
+      style="background: white; border-radius: 20px; width: 90%; max-width: 500px; padding: 20px; text-align: center;">
       <h3 style="margin-top: 0; color: #1E293B; font-weight: 700;">ครอบตัดรูปโปรไฟล์</h3>
-      <div style="width: 100%; max-height: 400px; margin-bottom: 20px; overflow: hidden; background: #f8fafc; border-radius: 10px;">
+      <div
+        style="width: 100%; max-height: 400px; margin-bottom: 20px; overflow: hidden; background: #f8fafc; border-radius: 10px;">
         <img id="imageToCrop" src="" style="max-width: 100%; display: block;" alt="Image to crop">
       </div>
       <div style="display: flex; gap: 10px;">
-        <button onclick="confirmCrop()" style="flex: 1; padding: 12px; border-radius: 10px; background: #10B981; color: white; border: none; font-weight: 700; cursor: pointer;">ยืนยัน</button>
-        <button onclick="cancelCrop()" style="flex: 1; padding: 12px; border-radius: 10px; background: #EF4444; color: white; border: none; font-weight: 700; cursor: pointer;">ยกเลิก</button>
+        <button onclick="confirmCrop()"
+          style="flex: 1; padding: 12px; border-radius: 10px; background: #10B981; color: white; border: none; font-weight: 700; cursor: pointer;">ยืนยัน</button>
+        <button onclick="cancelCrop()"
+          style="flex: 1; padding: 12px; border-radius: 10px; background: #EF4444; color: white; border: none; font-weight: 700; cursor: pointer;">ยกเลิก</button>
       </div>
     </div>
   </div>
 
 
 </body>
+
 </html>
