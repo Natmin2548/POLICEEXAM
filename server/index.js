@@ -1086,7 +1086,7 @@ app.put('/api/user/profile', authenticateToken, async (req, res) => {
     if (!fullName) return res.status(400).json({ error: 'กรุณากรอกชื่อ' });
 
     const updatedUser = await prisma.user.update({
-      where: { id: req.user.id },
+      where: { id: req.user.userId },
       data: { fullName }
     });
 

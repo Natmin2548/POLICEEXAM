@@ -1,0 +1,1 @@
+const { PrismaClient } = require('@prisma/client'); const prisma = new PrismaClient({ datasources: { db: { url: 'postgresql://postgres.fwigijxqyabcnblnqkec:Natse2005%40A4@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1' } } }); prisma.user.findFirst().then(console.log).catch(console.error).finally(() => prisma.$disconnect());
