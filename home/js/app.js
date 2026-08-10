@@ -550,6 +550,41 @@ if (profileTabBtn) {
   });
 }
 
+function updateAllMyAvatars(faceImage, fullName) {
+  const imgIds = ['defaultAvatarImg', 'profileAvatarImg', 'editProfileAvatarImg', 'composePostAvatarImg', 'chatInputAvatarImg', 'groupChatInputAvatarImg', 'dmChatInputAvatarImg'];
+  const boxIds = ['defaultAvatar', 'profileAvatarBox', 'editProfileAvatarBox', 'composePostAvatarBox', 'chatInputAvatarBox', 'groupChatInputAvatarBox', 'dmChatInputAvatarBox'];
+  
+  const displayName = fullName || (window.userProfile && (window.userProfile.fullName || window.userProfile.username)) || 'ผู้ใช้งาน';
+  const letter = displayName.charAt(0);
+  
+  if (faceImage) {
+    imgIds.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) { el.src = faceImage; el.style.display = 'block'; }
+    });
+    boxIds.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = 'none';
+    });
+    // For default avatar in header (it has a text box defaultAvatar, but wait, does it have an img element? Let's assume headerAvatar is the img)
+    const headerAvatar = document.getElementById('headerAvatar');
+    if (headerAvatar) { headerAvatar.src = faceImage; headerAvatar.style.display = 'block'; }
+    const defaultAvatar = document.getElementById('defaultAvatar');
+    if (defaultAvatar) defaultAvatar.style.display = 'none';
+  } else {
+    imgIds.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = 'none';
+    });
+    boxIds.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) { el.textContent = letter; el.style.display = 'flex'; }
+    });
+    const headerAvatar = document.getElementById('headerAvatar');
+    if (headerAvatar) headerAvatar.style.display = 'none';
+  }
+}
+
 function updateProfileTabDetails() {
   if (!userProfile) return;
   
@@ -590,19 +625,7 @@ function updateProfileTabDetails() {
   const formattedDate = `สมาชิกตั้งแต่ ${months[createdAt.getMonth()]} ${createdAt.getFullYear() + 543}`;
   if (profileJoinDate) profileJoinDate.textContent = formattedDate;
 
-  if (userProfile.faceImage) {
-    if (profileAvatarImg) {
-      profileAvatarImg.src = userProfile.faceImage;
-      profileAvatarImg.style.display = 'block';
-    }
-    if (profileAvatarBox) profileAvatarBox.style.display = 'none';
-  } else {
-    if (profileAvatarBox) {
-      profileAvatarBox.textContent = displayName.charAt(0);
-      profileAvatarBox.style.display = 'flex';
-    }
-    if (profileAvatarImg) profileAvatarImg.style.display = 'none';
-  }
+  updateAllMyAvatars(userProfile.faceImage, displayName);
 
   // Set real stats
   // Calculate average score
@@ -1583,7 +1606,7 @@ async function loadGroupsList(searchVal = '') {
       if (g.membershipStatus === 'ACCEPTED') {
         actionBtnHtml = `
           <div style="display: flex; flex-direction: column; gap: 6px; align-items: flex-end;">
-            <button class="btn-quick-match" style="padding: 6px 14px; font-size: 12px; border-radius: 8px; width: auto; box-shadow: none; display: block;" onclick="enterGroupChat(${g.id}, '${escapeHTML(g.name)}', ${g.memberCount}, ${g.createdById})">แชทกลุ่ม</button>
+            <button class="btn-quick-match" style="padding: 6px 14px; font-size: 12px; border-radius: 8px; width: auto; box-shadow: none; display: block;" onclick="enterGroupChat(${g.id}, '${escapeHTML(g.name)}', ${g.memberCount}, ${g.createdById}, '${g.image || ''}')">แชทกลุ่ม</button>
             ${isCreator ? '' : `<button class="post-action-btn delete" style="font-size: 11px; margin-right: 0;" onclick="leaveGroup(${g.id})">ออกจากกลุ่ม</button>`}
           </div>
         `;
@@ -1605,7 +1628,10 @@ async function loadGroupsList(searchVal = '') {
       html += `
         <div class="battle-mode-item" style="cursor: default; padding: 14px 18px; margin-bottom: 12px;">
           <div class="mode-item-left" style="text-align: left;">
-            <div class="mode-icon-wrapper ranked-icon" style="background-color: #F1F5F9; color: var(--text-dark); font-size: 18px;">👮</div>
+            ${g.image 
+              ? `<img src="${g.image}" style="width: 44px; height: 44px; border-radius: 12px; object-fit: cover; margin-right: 14px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">` 
+              : `<div class="mode-icon-wrapper ranked-icon" style="background-color: #F1F5F9; color: var(--text-dark); font-size: 18px;">👮</div>`
+            }
             <div class="mode-info">
               <span class="mode-title" style="font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; color: var(--text-dark); flex-wrap: wrap;">
                 ${escapeHTML(g.name)}
@@ -1644,14 +1670,43 @@ if (btnOpenCreateGroupModal && createGroupModal) {
     createGroupModal.style.display = 'flex';
     document.getElementById('txtCreateGroupName').value = '';
     document.getElementById('txtCreateGroupDesc').value = '';
+    const fileInput = document.getElementById('fileCreateGroupImage');
+    if (fileInput) fileInput.value = '';
+    const imgPreview = document.getElementById('createGroupImagePreview');
+    if (imgPreview) imgPreview.style.display = 'none';
     const publicRadio = document.querySelector('input[name="optGroupPrivacy"][value="public"]');
     if (publicRadio) publicRadio.checked = true;
+  };
+}
+
+const fileCreateGroupImage = document.getElementById('fileCreateGroupImage');
+const createGroupImagePreview = document.getElementById('createGroupImagePreview');
+let pendingGroupImageBase64 = null;
+
+if (fileCreateGroupImage) {
+  fileCreateGroupImage.onchange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        pendingGroupImageBase64 = e.target.result;
+        if (createGroupImagePreview) {
+          createGroupImagePreview.src = pendingGroupImageBase64;
+          createGroupImagePreview.style.display = 'block';
+        }
+      };
+      reader.readAsDataURL(file);
+    } else {
+      pendingGroupImageBase64 = null;
+      if (createGroupImagePreview) createGroupImagePreview.style.display = 'none';
+    }
   };
 }
 
 if (btnCancelCreateGroup && createGroupModal) {
   btnCancelCreateGroup.onclick = () => {
     createGroupModal.style.display = 'none';
+    pendingGroupImageBase64 = null;
   };
 }
 
@@ -1679,7 +1734,7 @@ if (btnSubmitCreateGroup && createGroupModal) {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${authToken}`
         },
-        body: JSON.stringify({ name, description, isPrivate })
+        body: JSON.stringify({ name, description, isPrivate, image: pendingGroupImageBase64 })
       });
 
       if (!res.ok) {
@@ -1766,7 +1821,7 @@ window.deleteGroup = async function(groupId) {
 };
 
 // --- Group Chat View Handlers ---
-window.enterGroupChat = function(groupId, groupName, memberCount, createdById) {
+window.enterGroupChat = function(groupId, groupName, memberCount, createdById, groupImage) {
   activeGroupId = groupId;
   document.getElementById('groupListMainPanel').style.display = 'none';
   
@@ -1775,6 +1830,16 @@ window.enterGroupChat = function(groupId, groupName, memberCount, createdById) {
 
   document.getElementById('lblChatGroupName').textContent = groupName;
   document.getElementById('lblChatGroupMeta').textContent = `ID: #${groupId} • สมาชิก ${memberCount} คน`;
+
+  const headerImg = document.getElementById('groupChatHeaderImage');
+  if (headerImg) {
+    if (groupImage && groupImage !== 'undefined') {
+      headerImg.src = groupImage;
+      headerImg.style.display = 'block';
+    } else {
+      headerImg.style.display = 'none';
+    }
+  }
 
   // Creator options inside header
   const isCreator = userProfile && createdById === userProfile.id;
@@ -3000,31 +3065,8 @@ window.confirmCrop = async function() {
       userProfile.faceImage = base64Image;
       sessionStorage.setItem('userProfile', JSON.stringify(userProfile));
       
-      const headerAvatar = document.getElementById('headerAvatar');
-      const profileAvatarImg = document.getElementById('profileAvatarImg');
-      const profileAvatarBox = document.getElementById('profileAvatarBox');
-      
-      if (headerAvatar) {
-        headerAvatar.src = base64Image;
-        headerAvatar.style.display = 'block';
-      }
-      if (profileAvatarImg) {
-        profileAvatarImg.src = base64Image;
-        profileAvatarImg.style.display = 'block';
-      }
-      if (profileAvatarBox) {
-        profileAvatarBox.style.display = 'none';
-      }
-      
-      const editProfileAvatarImg = document.getElementById('editProfileAvatarImg');
-      const editProfileAvatarBox = document.getElementById('editProfileAvatarBox');
-      if (editProfileAvatarImg) {
-        editProfileAvatarImg.src = base64Image;
-        editProfileAvatarImg.style.display = 'block';
-      }
-      if (editProfileAvatarBox) {
-        editProfileAvatarBox.style.display = 'none';
-      }
+      updateAllMyAvatars(base64Image, userProfile.fullName);
+
       
       showCenteredAlert('อัปเดตรูปโปรไฟล์สำเร็จ');
     } else {
@@ -3236,10 +3278,7 @@ window.submitEditProfile = async function() {
       
       // Update avatar letter if no image
       if (!userProfile.faceImage) {
-        const letter = newName.charAt(0);
-        document.getElementById('defaultAvatar') && (document.getElementById('defaultAvatar').textContent = letter);
-        document.getElementById('profileAvatarBox') && (document.getElementById('profileAvatarBox').textContent = letter);
-        document.getElementById('editProfileAvatarBox') && (document.getElementById('editProfileAvatarBox').textContent = letter);
+        updateAllMyAvatars(null, newName);
       }
 
       showCenteredAlert('อัปเดตโปรไฟล์เรียบร้อยแล้ว');

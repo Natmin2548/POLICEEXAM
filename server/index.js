@@ -3817,7 +3817,7 @@ app.get('/api/community/stats', authenticateToken, async (req, res) => {
 
 // Create a new study group
 app.post('/api/community/groups', authenticateToken, async (req, res) => {
-  const { name, description, isPrivate } = req.body;
+  const { name, description, isPrivate, image } = req.body;
   if (!name || !name.trim()) {
     return res.status(400).json({ error: 'กรุณากรอกชื่อกลุ่ม' });
   }
@@ -3828,6 +3828,7 @@ app.post('/api/community/groups', authenticateToken, async (req, res) => {
         data: {
           name: name.trim(),
           description: description ? description.trim() : '',
+          image: image ? image : null,
           isPrivate: !!isPrivate,
           createdById: req.user.userId
         }
@@ -3879,6 +3880,7 @@ app.get('/api/community/groups', authenticateToken, async (req, res) => {
         id: g.id,
         name: g.name,
         description: g.description,
+        image: g.image,
         isPrivate: g.isPrivate,
         createdAt: g.createdAt,
         createdById: g.createdById,
