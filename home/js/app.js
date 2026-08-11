@@ -17,7 +17,7 @@ function showCenteredConfirm(title, message, opts = {}) {
     const btnOk = document.getElementById('btnConfirmOk');
     const btnCancel = document.getElementById('btnConfirmCancel');
 
-    if (iconEl) iconEl.textContent = opts.icon || '⚠️';
+    if (iconEl) iconEl.textContent = opts.icon || '';
     if (titleEl) titleEl.textContent = title;
     if (msgEl) msgEl.textContent = message;
     if (btnOk) btnOk.textContent = opts.okText || 'ยืนยัน';
@@ -119,9 +119,9 @@ function initializeDashboard() {
   const hour = new Date().getHours();
   const greetingSub = document.querySelector('.greeting-subtitle');
   if (greetingSub) {
-    if (hour < 12) greetingSub.textContent = 'สวัสดีตอนเช้า 👋';
-    else if (hour < 17) greetingSub.textContent = 'สวัสดีตอนบ่าย ☀️';
-    else greetingSub.textContent = 'สวัสดีตอนเย็น 🌙';
+    if (hour < 12) greetingSub.textContent = 'สวัสดีตอนเช้า ';
+    else if (hour < 17) greetingSub.textContent = 'สวัสดีตอนบ่าย ';
+    else greetingSub.textContent = 'สวัสดีตอนเย็น ';
   }
 }
 
@@ -313,9 +313,9 @@ function updateStatsFromProfile(user) {
     if (diffDays > 0) {
       countdownTextEl.textContent = `เหลืออีก ${diffDays} วันถึงวันสอบ`;
     } else if (diffDays === 0) {
-      countdownTextEl.textContent = `วันนี้คือวันสอบ! 📝`;
+      countdownTextEl.textContent = `วันนี้คือวันสอบ! `;
     } else {
-      countdownTextEl.textContent = `การสอบเสร็จสิ้นแล้ว 🎉`;
+      countdownTextEl.textContent = `การสอบเสร็จสิ้นแล้ว `;
     }
   }
 
@@ -431,7 +431,7 @@ async function handleStartExam(mode) {
     if (res.ok) {
       const data = await res.json();
       const questionCount = data.questions ? data.questions.length : 0;
-      await showCenteredAlert(`📝 พร้อมทำข้อสอบ! มีทั้งหมด ${questionCount} ข้อ\n\n(ฟีเจอร์ทำข้อสอบเต็มรูปแบบจะเปิดในเวอร์ชันหน้า)`);
+      await showCenteredAlert(` พร้อมทำข้อสอบ! มีทั้งหมด ${questionCount} ข้อ\n\n(ฟีเจอร์ทำข้อสอบเต็มรูปแบบจะเปิดในเวอร์ชันหน้า)`);
     } else {
       await showCenteredAlert('ไม่สามารถโหลดข้อสอบได้ กรุณาลองใหม่');
     }
@@ -716,9 +716,9 @@ async function loadLeaderboard() {
       const initial = displayName.charAt(0);
       
       let rankDisplay = `<span class="leaderboard-rank">${rank}</span>`;
-      if (rank === 1) rankDisplay = '<span class="leaderboard-medal">🥇</span>';
-      else if (rank === 2) rankDisplay = '<span class="leaderboard-medal">🥈</span>';
-      else if (rank === 3) rankDisplay = '<span class="leaderboard-medal">🥉</span>';
+      if (rank === 1) rankDisplay = '<span class="leaderboard-medal"></span>';
+      else if (rank === 2) rankDisplay = '<span class="leaderboard-medal"></span>';
+      else if (rank === 3) rankDisplay = '<span class="leaderboard-medal"></span>';
 
       const isMe = userProfile && u.id === userProfile.id;
       
@@ -812,7 +812,7 @@ if (btnQuickMatch) {
       
       const modalContent = modal.querySelector('div');
       modalContent.innerHTML = `
-        <div style="font-size: 50px; margin-bottom: 20px;">⚡</div>
+        <div style="font-size: 50px; margin-bottom: 20px;"></div>
         <h3 style="font-size: 20px; font-weight: 600; margin-bottom: 10px; color: #1E293B;">พบคู่ต่อสู้แล้ว!</h3>
         <div style="display: flex; justify-content: space-around; align-items: center; margin: 24px 0; background: #F8FAFC; padding: 15px; border-radius: 16px;">
           <div>
@@ -1206,7 +1206,7 @@ async function loadCommunityPosts() {
     if (posts.length === 0) {
       container.innerHTML = `
         <div style="background-color: var(--bg-card); border: 1px dashed var(--border-color); border-radius: 20px; padding: 40px; text-align: center; color: var(--text-light); font-size: 14px; width: 100%;">
-          <span style="font-size: 32px; display: block; margin-bottom: 8px;">📝</span>
+          <span style="font-size: 32px; display: block; margin-bottom: 8px;"></span>
           ยังไม่มีโพสต์พูดคุยในขณะนี้<br>
           <span style="font-size: 11px; opacity: 0.7;">เขียนโพสต์ด้านบนเพื่อเริ่มแชร์ข้อมูลคนแรก!</span>
         </div>
@@ -1388,7 +1388,7 @@ async function loadChatMessages() {
     if (messages.length === 0) {
       container.innerHTML = `
         <div style="text-align: center; color: var(--text-light); font-size: 13px; padding-top: 40px;">
-          💬 เริ่มพิมพ์ข้อความแชทเพื่อพูดคุยในกลุ่มแชทรวมวันนี้
+           เริ่มพิมพ์ข้อความแชทเพื่อพูดคุยในกลุ่มแชทรวมวันนี้
         </div>
       `;
       return;
@@ -1611,7 +1611,7 @@ async function loadGroupsList(searchVal = '') {
     if (groups.length === 0) {
       container.innerHTML = `
         <div style="background-color: var(--bg-card); border: 1px dashed var(--border-color); border-radius: 20px; padding: 40px; text-align: center; color: var(--text-light); font-size: 14px; grid-column: 1 / 3; width: 100%;">
-          <span style="font-size: 32px; display: block; margin-bottom: 8px;">👥</span>
+          <span style="font-size: 32px; display: block; margin-bottom: 8px;"></span>
           ไม่พบกลุ่มติวที่ค้นหา<br>
           <span style="font-size: 11px; opacity: 0.7;">คลิก "สร้างกลุ่ม" ขวาบนเพื่อตั้งกลุ่มแรกของคุณ!</span>
         </div>
@@ -1651,14 +1651,14 @@ async function loadGroupsList(searchVal = '') {
           <div class="mode-item-left" style="text-align: left;">
             ${g.image 
               ? `<img src="${g.image}" style="width: 44px; height: 44px; border-radius: 12px; object-fit: cover; margin-right: 14px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">` 
-              : `<div class="mode-icon-wrapper ranked-icon" style="background-color: #F1F5F9; color: var(--text-dark); font-size: 18px;">👮</div>`
+              : `<div class="mode-icon-wrapper ranked-icon" style="background-color: #F1F5F9; color: var(--text-dark); font-size: 18px;"></div>`
             }
             <div class="mode-info">
               <span class="mode-title" style="font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; color: var(--text-dark); flex-wrap: wrap;">
                 ${escapeHTML(g.name)}
                 <span style="font-size: 10px; background-color: #E2E8F0; color: #64748B; padding: 2px 6px; border-radius: 4px;">ID: #${g.id}</span>
                 <span style="font-size: 10px; background-color: ${g.isPrivate ? '#FEE2E2' : '#D1FAE5'}; color: ${g.isPrivate ? '#991B1B' : '#065F46'}; padding: 2px 6px; border-radius: 4px;">
-                  ${g.isPrivate ? '🔒 ส่วนตัว' : '🔓 สาธารณะ'}
+                  ${g.isPrivate ? ' ส่วนตัว' : ' สาธารณะ'}
                 </span>
               </span>
               <span class="mode-subtitle" style="font-size: 12px; display: block; margin-top: 4px;">
@@ -1936,7 +1936,7 @@ async function loadJoinRequests(groupId) {
       return;
     }
 
-    if (countEl) countEl.textContent = `📬 คำขอเข้าร่วมกลุ่ม (${requests.length})`;
+    if (countEl) countEl.textContent = ` คำขอเข้าร่วมกลุ่ม (${requests.length})`;
 
     let html = '';
     requests.forEach(r => {
@@ -2010,7 +2010,7 @@ async function loadGroupChatMessages(groupId) {
     if (messages.length === 0) {
       container.innerHTML = `
         <div style="text-align: center; color: var(--text-light); font-size: 13px; padding-top: 40px;">
-          💬 เริ่มพิมพ์ข้อความแชทเพื่อพูดคุยในกลุ่มติววันนี้
+           เริ่มพิมพ์ข้อความแชทเพื่อพูดคุยในกลุ่มติววันนี้
         </div>
       `;
       return;
@@ -2478,8 +2478,8 @@ window.showUserProfile = async function(userId) {
     } else {
       if (u.relationStatus === 'ACCEPTED') {
         buttonsHtml = `
-          <button class="btn-quick-match" style="width: 100%; box-shadow: none;" onclick="enterDmChat(${u.id}, '${escapeHTML(nameStr)}'); closeUserProfileModal();">💬 ส่งข้อความส่วนตัว</button>
-          <button class="post-action-btn delete" style="width: 100%; border: 1px solid #EF4444; border-radius: 8px; padding: 10px; font-size: 13px; font-weight: 600; background: none; margin-right: 0;" onclick="unfriend(${u.id}); closeUserProfileModal();">👥 ลบเพื่อน</button>
+          <button class="btn-quick-match" style="width: 100%; box-shadow: none;" onclick="enterDmChat(${u.id}, '${escapeHTML(nameStr)}'); closeUserProfileModal();"> ส่งข้อความส่วนตัว</button>
+          <button class="post-action-btn delete" style="width: 100%; border: 1px solid #EF4444; border-radius: 8px; padding: 10px; font-size: 13px; font-weight: 600; background: none; margin-right: 0;" onclick="unfriend(${u.id}); closeUserProfileModal();"> ลบเพื่อน</button>
         `;
       } else if (u.relationStatus === 'PENDING_SENT') {
         buttonsHtml = `
@@ -2487,7 +2487,7 @@ window.showUserProfile = async function(userId) {
         `;
       } else if (u.relationStatus === 'PENDING_RECEIVED') {
         buttonsHtml = `
-          <button class="btn-quick-match" style="width: 100%; box-shadow: none; background-color: #10B981;" onclick="acceptFriendRequest(${u.id}); closeUserProfileModal();">👥 ยอมรับเป็นเพื่อน</button>
+          <button class="btn-quick-match" style="width: 100%; box-shadow: none; background-color: #10B981;" onclick="acceptFriendRequest(${u.id}); closeUserProfileModal();"> ยอมรับเป็นเพื่อน</button>
           <button class="post-action-btn delete" style="width: 100%; border: 1px solid #EF4444; border-radius: 8px; padding: 10px; font-size: 13px; font-weight: 600; background: none; margin-right: 0;" onclick="declineFriendRequest(${u.id}); closeUserProfileModal();">ปฏิเสธคำขอ</button>
         `;
       } else if (u.relationStatus === 'BLOCKED') {
@@ -2496,13 +2496,13 @@ window.showUserProfile = async function(userId) {
         `;
       } else {
         buttonsHtml = `
-          <button class="btn-quick-match" style="width: 100%; box-shadow: none;" onclick="addFriend(${u.id}); closeUserProfileModal();">👥 เพิ่มเพื่อน</button>
+          <button class="btn-quick-match" style="width: 100%; box-shadow: none;" onclick="addFriend(${u.id}); closeUserProfileModal();"> เพิ่มเพื่อน</button>
         `;
       }
 
       if (u.relationStatus !== 'BLOCKED') {
         buttonsHtml += `
-          <button class="post-action-btn delete" style="width: 100%; border: 1px solid #EF4444; border-radius: 8px; padding: 10px; font-size: 13px; font-weight: 600; background: none; margin-right: 0; margin-top: 4px;" onclick="blockUser(${u.id}); closeUserProfileModal();">🚫 บล็อกผู้ใช้งาน</button>
+          <button class="post-action-btn delete" style="width: 100%; border: 1px solid #EF4444; border-radius: 8px; padding: 10px; font-size: 13px; font-weight: 600; background: none; margin-right: 0; margin-top: 4px;" onclick="blockUser(${u.id}); closeUserProfileModal();"> บล็อกผู้ใช้งาน</button>
         `;
       }
     }
@@ -2558,7 +2558,7 @@ async function loadUserPostHistory(userId) {
           <p style="font-size: 13px; color: var(--text-dark); margin: 0 0 6px 0; line-height: 1.5; word-break: break-word;">${escapeHTML(p.content)}</p>
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <span style="font-size: 10px; color: var(--text-light);">${timeStr}</span>
-            <span style="font-size: 10px; color: var(--text-light);">💬 ${commentCount} ความคิดเห็น</span>
+            <span style="font-size: 10px; color: var(--text-light);"> ${commentCount} ความคิดเห็น</span>
           </div>
         </div>
       `;
@@ -2628,7 +2628,7 @@ async function loadDmChatMessages(friendId) {
     if (messages.length === 0) {
       container.innerHTML = `
         <div style="text-align: center; color: var(--text-light); font-size: 13px; padding-top: 40px;">
-          💬 เริ่มพิมพ์ข้อความแชทส่วนตัวกับเพื่อนได้แล้ววันนี้
+           เริ่มพิมพ์ข้อความแชทส่วนตัวกับเพื่อนได้แล้ววันนี้
         </div>
       `;
       return;
@@ -2841,7 +2841,7 @@ function renderVocabQuestion() {
 
   // UI elements
   document.getElementById('vocabGameScore').textContent = `${window.vocabCorrectCount || 0}/${vocabSessionWordCount}`;
-  document.getElementById('vocabGameStreak').textContent = `${vocabStreak} 🔥`;
+  document.getElementById('vocabGameStreak').textContent = `${vocabStreak} `;
   document.getElementById('vocabGameCount').textContent = `${vocabCompletedInRound + 1}/${vocabSessionWordCount}`;
 
   const streakAlert = document.getElementById('vocabStreakAlert');
@@ -2908,7 +2908,7 @@ async function handleVocabAnswer(selectedOpt, btnElement) {
     wordCard.style.borderColor = '#34D399';
     wordCard.style.backgroundColor = '#ECFDF5';
 
-    feedbackEl.textContent = '✓ ถูกต้อง! ยอดเยี่ยมมาก';
+    feedbackEl.textContent = ' ถูกต้อง! ยอดเยี่ยมมาก';
     feedbackEl.style.color = '#059669';
     feedbackEl.style.display = 'block';
 
@@ -2938,7 +2938,7 @@ async function handleVocabAnswer(selectedOpt, btnElement) {
       }
     });
 
-    feedbackEl.textContent = `✗ ผิด — คำแปลที่ถูกต้องคือ: ${wordObj.meaning}`;
+    feedbackEl.textContent = ` ผิด — คำแปลที่ถูกต้องคือ: ${wordObj.meaning}`;
     feedbackEl.style.color = '#DC2626';
     feedbackEl.style.display = 'block';
   }
@@ -2979,7 +2979,7 @@ async function completeVocabSession() {
       
       const successDiv = document.createElement('div');
       successDiv.style.cssText = 'text-align: center; color: #10B981; font-weight: 700; font-size: 14px; padding: 20px 0;';
-      successDiv.innerHTML = '🎉 ยอดเยี่ยมมาก! คุณตอบถูกทุกข้อ';
+      successDiv.innerHTML = ' ยอดเยี่ยมมาก! คุณตอบถูกทุกข้อ';
       container.appendChild(successDiv);
       wrongContainer.style.display = 'block';
     } else {
