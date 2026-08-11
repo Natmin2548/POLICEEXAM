@@ -402,7 +402,7 @@ btnNotification.addEventListener('click', () => {
 const btnStartExam = document.getElementById('btnStartExam');
 const examModeModal = document.getElementById('examModeModal');
 const btnCloseExamMode = document.getElementById('btnCloseExamMode');
-const btnExamModePractice = document.getElementById('btnExamModePractice');
+const btnExamModeBank = document.getElementById('btnExamModeBank');
 const btnExamModePretest = document.getElementById('btnExamModePretest');
 const progressBarFill = document.getElementById('progressBarFill');
 const progressCountText = document.getElementById('progressCountText');
@@ -443,9 +443,30 @@ async function handleStartExam(mode) {
   btnStartExam.querySelector('span').textContent = 'ทำข้อสอบ';
 }
 
-if (btnExamModePractice) {
-  btnExamModePractice.addEventListener('click', () => handleStartExam('practice'));
+if (btnExamModeBank) {
+  btnExamModeBank.addEventListener('click', () => {
+    if (examModeModal) examModeModal.style.display = 'none';
+    
+    // Hide other views
+    if (homeView) homeView.classList.remove('active');
+    if (communityView) communityView.classList.remove('active');
+    if (battleView) battleView.classList.remove('active');
+    if (statsView) statsView.classList.remove('active');
+    if (profileView) profileView.classList.remove('active');
+    if (questionBankView) questionBankView.classList.remove('active');
+    
+    // Show Question Bank view
+    if (questionBankView) questionBankView.classList.add('active');
+    
+    // Deselect bottom tabs
+    navTabs.forEach(t => t.classList.remove('active'));
+  });
 }
+
+// Handle subject selection from Question Bank
+window.startBankSubject = function(subjectName) {
+  showCenteredAlert(`เลือกทำข้อสอบวิชา: ${subjectName}\n\n(ระบบคลังข้อสอบกำลังพัฒนา)`);
+};
 
 if (btnExamModePretest) {
   btnExamModePretest.addEventListener('click', () => handleStartExam('pretest'));
@@ -489,6 +510,18 @@ const communityView = document.getElementById('communityView');
 const battleView = document.getElementById('battleView');
 const statsView = document.getElementById('statsView');
 const profileView = document.getElementById('profileView');
+const questionBankView = document.getElementById('questionBankView');
+const btnBackFromBank = document.getElementById('btnBackFromBank');
+
+if (btnBackFromBank) {
+  btnBackFromBank.addEventListener('click', () => {
+    if (questionBankView) questionBankView.classList.remove('active');
+    if (homeView) homeView.classList.add('active');
+    
+    navTabs.forEach(t => t.classList.remove('active'));
+    if (homeTabBtn) homeTabBtn.classList.add('active');
+  });
+}
 
 if (homeTabBtn) {
   homeTabBtn.addEventListener('click', (e) => {
@@ -501,6 +534,7 @@ if (homeTabBtn) {
     if (battleView) battleView.classList.remove('active');
     if (statsView) statsView.classList.remove('active');
     if (profileView) profileView.classList.remove('active');
+    if (questionBankView) questionBankView.classList.remove('active');
     loadRealProfile(); // Refresh profile values on navigate
     loadRadarChart();
   });
@@ -517,6 +551,7 @@ if (communityTabBtn) {
     if (battleView) battleView.classList.remove('active');
     if (statsView) statsView.classList.remove('active');
     if (profileView) profileView.classList.remove('active');
+    if (questionBankView) questionBankView.classList.remove('active');
     
     updateCommunityTabDetails();
   });
@@ -533,6 +568,7 @@ if (battleTabBtn) {
     if (communityView) communityView.classList.remove('active');
     if (statsView) statsView.classList.remove('active');
     if (profileView) profileView.classList.remove('active');
+    if (questionBankView) questionBankView.classList.remove('active');
     
     updateBattleTabDetails();
   });
@@ -549,6 +585,7 @@ if (statsTabBtn) {
     if (communityView) communityView.classList.remove('active');
     if (battleView) battleView.classList.remove('active');
     if (profileView) profileView.classList.remove('active');
+    if (questionBankView) questionBankView.classList.remove('active');
     
     updateStatsTabDetails();
   });
