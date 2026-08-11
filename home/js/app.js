@@ -149,6 +149,12 @@ async function loadRealProfile() {
       sessionStorage.setItem('userProfile', JSON.stringify(userProfile));
       initializeDashboard();
       updateStatsFromProfile(data.user);
+      
+      // Admin Panel Check
+      const btnAdminPanel = document.getElementById('btnAdminPanel');
+      if (btnAdminPanel && (userProfile.role === 'ADMIN' || userProfile.role === 'OWNER')) {
+        btnAdminPanel.style.display = 'flex';
+      }
     }
   } catch (err) {
     console.error('Failed to load profile:', err);
