@@ -3,7 +3,7 @@ const API_BASE = window.location.hostname === 'localhost' || window.location.hos
   ? 'http://localhost:3000' 
   : 'https://police-exam-t090.onrender.com';
 
-const authToken = sessionStorage.getItem('token');
+const authToken = sessionStorage.getItem('authToken');
 let currentUser = null;
 
 // Initialization
