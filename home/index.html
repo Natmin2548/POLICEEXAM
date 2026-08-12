@@ -151,14 +151,10 @@
   <!-- Top Navigation Header -->
   <header class="navbar">
     <div class="nav-container">
-      <a href="#" class="logo">
-        <svg class="logo-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M12 22C12 22 20 18 20 12V5L12 2L4 5V12C4 18 12 22 12 22Z" fill="#BD1B0B" stroke="#BD1B0B"
-            stroke-width="2" stroke-linejoin="round" />
-          <path d="M9 11L11 13L15 9" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-        </svg>
-        <span class="logo-text">POLICE<span class="logo-highlight">EXAM</span></span>
-      </a>
+      <div class="nav-greeting" style="display: flex; flex-direction: column;">
+        <span class="greeting-subtitle" style="font-size: 13px; color: var(--text-gray); font-weight: 500;">สวัสดี 👋</span>
+        <h1 class="greeting-title" id="greetingName" style="font-size: 18px; font-weight: 700; color: var(--text-dark); margin: 0;">สมชาย ใจดี</h1>
+      </div>
 
       <!-- Right Header Actions -->
       <div class="header-actions">
@@ -209,62 +205,93 @@
     <div class="container">
 
       <div id="homeView" class="tab-view active">
-        <!-- Greeting Header -->
-        <section class="greeting-section">
-          <span class="greeting-subtitle">สวัสดีตอนเช้า </span>
-          <h1 class="greeting-title" id="greetingName">สมชาย ใจดี</h1>
-          <div class="countdown-badge">
-            <!-- Small Red Clock Icon -->
-            <svg class="clock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10" />
-              <polyline points="12 6 12 12 16 14" />
+        <!-- Search Bar -->
+        <div class="search-bar-container" style="margin-bottom: 24px; margin-top: 8px;">
+          <div style="position: relative;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position: absolute; left: 16px; top: 12px; width: 18px; height: 18px;">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
-            <span>เหลืออีก 47 วันถึงวันสอบ</span>
+            <input type="text" placeholder="ค้นหาข้อสอบ วิชา หรือเพื่อน..." style="width: 100%; padding: 12px 16px 12px 42px; border-radius: 999px; border: 1px solid #E2E8F0; background: #F8FAFC; font-family: inherit; font-size: 14px; outline: none; box-sizing: border-box; color: #1E293B;">
           </div>
-        </section>
+        </div>
 
-        <!-- Daily Target Red Box -->
-        <section class="target-card">
-          <div class="target-header">
-            <div class="target-text-wrapper">
-              <h2 class="target-title" style="margin: 0;">คลิกเพื่อทำข้อสอบ</h2>
-            </div>
-            <!-- Clickable Start Exam Button -->
-            <button class="btn-start-exam" id="btnStartExam">
-              <!-- Play Icon -->
-              <svg class="play-icon" viewBox="0 0 24 24" fill="currentColor">
-                <polygon points="5 3 19 12 5 21 5 3" />
+        <!-- Red Streak Card -->
+        <section class="target-card" style="background: linear-gradient(135deg, #CE1B28 0%, #A90D17 100%); border-radius: 20px; padding: 20px; color: white; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 25px -5px rgba(206, 27, 40, 0.4); border: none; margin-bottom: 24px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="background: rgba(255,255,255,0.15); width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px;">
+                <path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 11-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 002.5 2.5z"></path>
               </svg>
-              <span>เริ่มสอบ</span>
-            </button>
+            </div>
+            <div>
+              <h2 style="margin: 0; font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 6px;">3 วันติดต่อกัน! 🔥</h2>
+              <span style="font-size: 12px; opacity: 0.9; margin-top: 2px; display: block;">ทำข้อสอบวันนี้เพื่อรักษา streak</span>
+            </div>
           </div>
-
+          <button id="btnStartExam" style="background: white; color: #CE1B28; border: none; padding: 10px 20px; border-radius: 999px; font-weight: 700; font-family: inherit; font-size: 13px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">ทำเลย</button>
         </section>
 
-        <!-- Other Features Section -->
-        <section class="other-features">
-          <h3 class="section-title">ฟีเจอร์อื่นๆ</h3>
-          <div class="features-scroll-wrapper">
-            <div class="scroll-card" style="cursor: pointer;"
-              onclick="document.getElementById('btnTabBattle').click();">
-              <div class="scroll-icon-wrapper" style="font-size: 18px;">
-                ⚔️
+        <!-- Action Grid (4 Buttons) -->
+        <section class="action-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 32px;">
+          <!-- Exam -->
+          <button onclick="document.getElementById('btnStartExam').click()" style="background: #FFF0F2; border: none; border-radius: 16px; padding: 16px 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; cursor: pointer;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#CE1B28" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 24px; height: 24px;"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+            <span style="font-size: 12px; font-weight: 600; color: #CE1B28; font-family: inherit;">ทำข้อสอบ</span>
+          </button>
+          <!-- Bank -->
+          <button onclick="document.getElementById('btnTabBank').click()" style="background: #F0F7FF; border: none; border-radius: 16px; padding: 16px 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; cursor: pointer;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 24px; height: 24px;"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+            <span style="font-size: 12px; font-weight: 600; color: #2563EB; font-family: inherit;">คลังข้อสอบ</span>
+          </button>
+          <!-- Battle -->
+          <button onclick="document.getElementById('btnTabBattle').click()" style="background: #F5F3FF; border: none; border-radius: 16px; padding: 16px 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; cursor: pointer;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 24px; height: 24px;"><path d="M14.5 17.5L3 6V3h3l11.5 11.5"></path><path d="M13 19l6-6"></path><path d="M16 16l4 4"></path><path d="M19 21l2-2"></path><path d="M6.5 4.5L5.5 5.5"></path><path d="M9.5 7.5L8.5 8.5"></path><path d="M17.5 14.5L14 11l-2.5 2.5 3.5 3.5"></path></svg>
+            <span style="font-size: 12px; font-weight: 600; color: #7C3AED; font-family: inherit;">แบทเทิล</span>
+          </button>
+          <!-- Rank -->
+          <button onclick="document.getElementById('btnTabStats').click()" style="background: #F0FDF4; border: none; border-radius: 16px; padding: 16px 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; cursor: pointer;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 24px; height: 24px;"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+            <span style="font-size: 12px; font-weight: 600; color: #16A34A; font-family: inherit;">อันดับ</span>
+          </button>
+        </section>
+
+        <!-- Subject Progress -->
+        <section class="subject-progress" style="margin-bottom: 24px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h3 style="margin: 0; font-size: 18px; font-weight: 800; color: var(--text-dark);">วิชาที่กำลังเรียน</h3>
+            <a href="#" style="font-size: 13px; font-weight: 600; color: #CE1B28; text-decoration: none; display: flex; align-items: center; gap: 4px;">ดูทั้งหมด <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;"><polyline points="9 18 15 12 9 6"></polyline></svg></a>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            <!-- Law -->
+            <div style="background: white; border-radius: 20px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); display: flex; align-items: center; gap: 16px;">
+              <div style="width: 48px; height: 48px; border-radius: 50%; background: #FFF0F2; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0;">⚖️</div>
+              <div style="flex: 1;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                  <span style="font-weight: 700; font-size: 15px; color: var(--text-dark);">กฎหมาย</span>
+                  <span style="font-weight: 700; font-size: 13px; color: #CE1B28;">65%</span>
+                </div>
+                <div style="width: 100%; background: #F1F5F9; height: 6px; border-radius: 999px; margin-bottom: 8px;">
+                  <div style="background: #CE1B28; height: 6px; border-radius: 999px; width: 65%;"></div>
+                </div>
+                <div style="font-size: 12px; color: var(--text-light); text-align: center;">ทำแล้ว 78 ข้อ</div>
               </div>
-              <span class="scroll-name">Battle Arena</span>
             </div>
 
-            <div class="scroll-card" style="cursor: pointer;" onclick="openVocabArena();">
-              <div class="scroll-icon-wrapper" style="font-size: 18px;">
-                🗣️
+            <!-- Thai -->
+            <div style="background: white; border-radius: 20px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); display: flex; align-items: center; gap: 16px;">
+              <div style="width: 48px; height: 48px; border-radius: 50%; background: #F0F7FF; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0;">📚</div>
+              <div style="flex: 1;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                  <span style="font-weight: 700; font-size: 15px; color: var(--text-dark);">ภาษาไทย</span>
+                  <span style="font-weight: 700; font-size: 13px; color: #2563EB;">42%</span>
+                </div>
+                <div style="width: 100%; background: #F1F5F9; height: 6px; border-radius: 999px; margin-bottom: 8px;">
+                  <div style="background: #2563EB; height: 6px; border-radius: 999px; width: 42%;"></div>
+                </div>
+                <div style="font-size: 12px; color: var(--text-light); text-align: center;">ทำแล้ว 50 ข้อ</div>
               </div>
-              <span class="scroll-name">Vocab</span>
-            </div>
-
-            <div class="scroll-card">
-              <div class="scroll-icon-wrapper" style="font-size: 18px;">
-                🔖
-              </div>
-              <span class="scroll-name">Bookmark</span>
             </div>
           </div>
         </section>
@@ -959,7 +986,23 @@
           <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
           <polyline points="9 22 9 12 15 12 15 22" />
         </svg>
-        <span class="tab-label">หน้าแรก</span>
+        <span class="tab-label">หน้าหลัก</span>
+      </a>
+
+      <a href="#" class="nav-tab" id="btnTabBank">
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+        </svg>
+        <span class="tab-label">คลัง</span>
+      </a>
+
+      <a href="#" class="nav-tab nav-tab-action" id="btnTabBattle">
+        <div class="action-btn-wrapper">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14.5 17.5L3 6V3h3l11.5 11.5"></path><path d="M13 19l6-6"></path><path d="M16 16l4 4"></path><path d="M19 21l2-2"></path><path d="M6.5 4.5L5.5 5.5"></path><path d="M9.5 7.5L8.5 8.5"></path><path d="M17.5 14.5L14 11l-2.5 2.5 3.5 3.5"></path>
+          </svg>
+        </div>
+        <span class="tab-label">แบทเทิล</span>
       </a>
 
       <a href="#" class="nav-tab" id="btnTabCommunity">
@@ -970,24 +1013,6 @@
           <path d="M16 3.13a4 4 0 0 1 0 7.75" />
         </svg>
         <span class="tab-label">ชุมชน</span>
-      </a>
-
-      <a href="#" class="nav-tab" id="btnTabBattle">
-        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5" />
-          <line x1="13" y1="19" x2="19" y2="13" />
-          <line x1="16" y1="20" x2="20" y2="16" />
-        </svg>
-        <span class="tab-label">Battle</span>
-      </a>
-
-      <a href="#" class="nav-tab" id="btnTabStats">
-        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <line x1="18" y1="20" x2="18" y2="10" />
-          <line x1="12" y1="20" x2="12" y2="4" />
-          <line x1="6" y1="20" x2="6" y2="14" />
-        </svg>
-        <span class="tab-label">สถิติ</span>
       </a>
 
       <a href="#" class="nav-tab" id="btnTabProfile">

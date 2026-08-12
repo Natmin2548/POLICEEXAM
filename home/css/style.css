@@ -758,6 +758,34 @@ button {
   font-weight: 500;
 }
 
+.nav-tab-action {
+  color: var(--primary-color);
+  transform: translateY(-8px);
+}
+
+.nav-tab-action:hover {
+  transform: translateY(-10px);
+}
+
+.action-btn-wrapper {
+  background-color: #CE1B28; /* Same shade of red */
+  color: white;
+  width: 52px;
+  height: 52px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 20px rgba(206, 27, 40, 0.4);
+  margin-bottom: 4px;
+}
+
+.nav-tab-action .tab-icon {
+  width: 28px;
+  height: 28px;
+  color: white;
+}
+
 /* ==========================================
    Keyframes
    ========================================== */
