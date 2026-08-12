@@ -1038,8 +1038,7 @@ const requireAdmin = async (req, res, next) => {
   });
 };
 
-// --- Get User Profile Route ---
-app.get('/api/user/profile', authenticateToken, async (req, res) => {
+app.get(['/api/user', '/api/user/profile'], authenticateToken, async (req, res) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.user.userId }
