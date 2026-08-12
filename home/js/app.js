@@ -152,8 +152,11 @@ async function loadRealProfile() {
       
       // Admin Panel Check
       const btnAdminPanel = document.getElementById('btnAdminPanel');
-      if (btnAdminPanel && (userProfile.role === 'ADMIN' || userProfile.role === 'OWNER')) {
-        btnAdminPanel.style.display = 'flex';
+      const dropdownAdminPanel = document.getElementById('dropdownAdminPanel');
+      
+      if (userProfile.role === 'ADMIN' || userProfile.role === 'OWNER') {
+        if (btnAdminPanel) btnAdminPanel.style.display = 'flex';
+        if (dropdownAdminPanel) dropdownAdminPanel.style.display = 'flex';
       }
     }
   } catch (err) {
