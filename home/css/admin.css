@@ -1,8 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 :root {
-  --primary-color: #0F172A;
-  --secondary-color: #3B82F6;
+  --primary-color: #BD1B0B;
+  --secondary-color: #EF4444;
   --bg-color: #F8FAFC;
   --surface-color: #FFFFFF;
   --text-primary: #1E293B;
@@ -240,7 +240,7 @@ tr:last-child td {
   font-size: 12px;
   font-weight: 600;
 }
-.badge-admin { background: #EEF2FF; color: #4F46E5; }
+.badge-admin { background: #FEF2F2; color: #BD1B0B; }
 .badge-user { background: #F1F5F9; color: #64748B; }
 
 /* Buttons */
@@ -258,7 +258,7 @@ tr:last-child td {
   background: var(--secondary-color);
   color: white;
 }
-.btn-primary:hover { background: #2563EB; }
+.btn-primary:hover { background: #991b1b; }
 
 .btn-danger {
   background: #FEF2F2;

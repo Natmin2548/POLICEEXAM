@@ -15,7 +15,7 @@ async function initAdmin() {
 
   try {
     // Verify user role
-    const res = await fetch(`${API_BASE}/api/user`, {
+    const res = await fetch(`${API_BASE}/api/user/profile`, {
       headers: { 'Authorization': `Bearer ${authToken}` }
     });
     if (!res.ok) throw new Error('Unauthorized');
