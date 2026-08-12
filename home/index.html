@@ -269,36 +269,7 @@
           </div>
         </section>
 
-        <!-- Radar Chart Section -->
-        <section class="weakness-radar-section">
-          <h3 class="section-title">ภาพรวมข้อที่ตอบผิดสะสม</h3>
-          <div class="radar-card">
-            <canvas id="radarChartCanvas"></canvas>
-            <div id="radarEmptyState" class="empty-state" style="display: none;">
-              <p>ทำข้อสอบเพิ่มเติมเพื่อสะสมสถิติจุดอ่อน</p>
-            </div>
-          </div>
-        </section>
 
-        <!-- Recent Results Section -->
-        <section class="recent-results">
-          <div class="section-header">
-            <h3 class="section-title">ผลล่าสุด</h3>
-            <a href="#" class="report-link" onclick="alert('ฟีเจอร์รายงานสรุปทั้งหมดจะเปิดในเวอร์ชันหน้าครับ');">
-              <span>ดูรายงาน</span>
-              <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
-            </a>
-          </div>
-
-          <div class="result-list-container">
-            <!-- Results will be populated from real API data -->
-            <div style="text-align:center;padding:24px;color:#64748B;font-size:13px;">
-              กำลังโหลดข้อมูลคะแนน...
-            </div>
-          </div>
-        </section>
 
 
       </div> <!-- Close homeView -->
@@ -843,6 +814,17 @@
 
         <!-- Left Column Wrapper -->
         <div class="profile-left-column">
+          <!-- Radar Chart Section -->
+          <section class="weakness-radar-section">
+            <h3 class="section-title">ภาพรวมข้อที่ตอบผิดสะสม</h3>
+            <div class="radar-card">
+              <canvas id="radarChartCanvas"></canvas>
+              <div id="radarEmptyState" class="empty-state" style="display: none;">
+                <p>ทำข้อสอบเพิ่มเติมเพื่อสะสมสถิติจุดอ่อน</p>
+              </div>
+            </div>
+          </section>
+          
           <!-- Card 1: Radar Chart -->
           <section class="stats-card-box">
             <h3 class="stats-card-title">ภาพรวมรายวิชา</h3>
@@ -872,6 +854,26 @@
 
         <!-- Right Column Wrapper -->
         <div class="profile-right-column">
+          <!-- Recent Results Section -->
+          <section class="recent-results" style="margin-bottom: 20px;">
+            <div class="section-header">
+              <h3 class="section-title">ผลล่าสุด</h3>
+              <a href="#" class="report-link" onclick="alert('ฟีเจอร์รายงานสรุปทั้งหมดจะเปิดในเวอร์ชันหน้าครับ');">
+                <span>ดูรายงาน</span>
+                <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </a>
+            </div>
+
+            <div class="result-list-container">
+              <!-- Results will be populated from real API data -->
+              <div style="text-align:center;padding:24px;color:#64748B;font-size:13px;">
+                กำลังโหลดข้อมูลคะแนน...
+              </div>
+            </div>
+          </section>
+
           <!-- Card 3: Line Chart (8-Week Progress) -->
           <section class="stats-card-box">
             <h3 class="stats-card-title">พัฒนาการ 8 สัปดาห์</h3>
