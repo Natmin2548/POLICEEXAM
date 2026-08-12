@@ -9,6 +9,7 @@ let currentUser = null;
 // Initialization
 async function initAdmin() {
   if (!authToken) {
+    alert('ไม่พบ Token สำหรับยืนยันตัวตน (Session ว่างเปล่า) กรุณาล็อกอินใหม่');
     window.location.href = '../index.html';
     return;
   }
