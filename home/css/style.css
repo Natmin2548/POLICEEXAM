@@ -783,6 +783,24 @@ button {
 }
 
 /* ==========================================
+   Custom Scrollbar
+   ========================================== */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-light);
+}
+
+/* ==========================================
    PC/Tablet Breakpoints
    ========================================== */
 @media (min-width: 768px) {
@@ -1174,8 +1192,7 @@ button {
 @media (min-width: 768px) {
   #profileView.active,
   #battleView.active,
-  #statsView.active,
-  #communityView.active {
+  #statsView.active {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 24px;
