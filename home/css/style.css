@@ -830,6 +830,7 @@ button {
    ========================================== */
 .tab-view {
   display: none;
+  padding-bottom: 90px; /* Fix for bottom nav overlap */
 }
 .tab-view.active {
   display: block;
