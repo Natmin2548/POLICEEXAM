@@ -1222,7 +1222,7 @@ button {
 @media (min-width: 768px) {
   #profileView.active,
   #battleView.active,
-  #statsView.active {
+  .home-stats-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 24px;
