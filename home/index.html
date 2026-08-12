@@ -185,7 +185,7 @@
               <span class="dropdown-user-email" id="dropdownUserEmail">somchai@email.com</span>
             </div>
             <div class="dropdown-divider"></div>
-            <a href="admin.html" class="dropdown-item" id="dropdownAdminPanel" style="display: none; color: #BD1B0B;">
+            <a href="#" onclick="window.location.href='admin.html?t=' + Date.now(); return false;" class="dropdown-item" id="dropdownAdminPanel" style="display: none; color: #BD1B0B;">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
               </svg>
@@ -702,7 +702,7 @@
           </section>
 
           <!-- Admin Panel Button (Hidden by default) -->
-          <button class="btn-profile-logout" id="btnAdminPanel" style="display: none; background: var(--surface-color); color: #BD1B0B; border: 1px solid #BD1B0B; margin-bottom: 12px;" onclick="window.location.href='admin.html'">
+          <button class="btn-profile-logout" id="btnAdminPanel" style="display: none; background: var(--surface-color); color: #BD1B0B; border: 1px solid #BD1B0B; margin-bottom: 12px;" onclick="window.location.href='admin.html?t=' + Date.now()">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
             </svg>
