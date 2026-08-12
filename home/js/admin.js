@@ -15,17 +15,35 @@ async function initAdmin() {
 
   try {
     // Verify user role
-    const res = await fetch(`${API_BASE}/api/user/profile`, {
-      headers: { 'Authorization': `Bearer ${authToken}` }
-    });
-    if (!res.ok) throw new Error('Unauthorized');
-    const data = await res.json();
-    if (data.user.role !== 'ADMIN' && data.user.role !== 'OWNER') {
-      window.location.href = 'index.html'; // Kick out
+    let currentUserProfile = null;
+    try {
+      const res = await fetch(`${API_BASE}/api/user/profile`, {
+        headers: { 'Authorization': `Bearer ${authToken}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        currentUserProfile = data.user;
+        sessionStorage.setItem('userProfile', JSON.stringify(currentUserProfile));
+      }
+    } catch (fetchErr) {
+      console.warn('Backend fetch failed, falling back to cached profile:', fetchErr);
+    }
+
+    // Fallback to cache if API failed
+    if (!currentUserProfile) {
+      const cachedProfileStr = sessionStorage.getItem('userProfile');
+      if (cachedProfileStr) {
+        currentUserProfile = JSON.parse(cachedProfileStr);
+      }
+    }
+
+    if (!currentUserProfile || (currentUserProfile.role !== 'ADMIN' && currentUserProfile.role !== 'OWNER')) {
+      alert('คุณไม่มีสิทธิเข้าถึงหน้านี้ หรือไม่พบข้อมูลโปรไฟล์');
+      window.location.href = 'index.html'; // Kick out to dashboard
       return;
     }
     
-    currentUser = data.user;
+    currentUser = currentUserProfile;
     document.getElementById('adminUserInfo').textContent = `Admin: ${currentUser.username}`;
     
     // Setup Navigation
