@@ -36,7 +36,8 @@ async function initAdmin() {
     
   } catch (err) {
     console.error('Init Admin error:', err);
-    window.location.href = '../index.html';
+    alert('เกิดข้อผิดพลาดในการตรวจสอบสิทธิ: ' + err.message + '\nกรุณาล็อกเอาท์และล็อกอินใหม่');
+    window.location.href = 'index.html';
   }
 }
 
