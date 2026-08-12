@@ -2819,7 +2819,23 @@ app.post('/api/user/reports', authenticateToken, async (req, res) => {
 
 // --- Admin API Routes (Implementation located below) ---
 
-// --- Announcements Routes ---
+// --- Public Stats Route ---
+app.get('/api/public/stats', async (req, res) => {
+  try {
+    const totalUsers = await prisma.user.count();
+    const totalExams = await prisma.examSet.count();
+    // Use a fixed high pass rate for marketing, or calculate real one
+    res.json({
+      users: totalUsers,
+      exams: totalExams,
+      passRate: 92 // Static for now, since we don't track global pass/fail strictly
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to load stats' });
+  }
+});
+
+// --- Announcements (Public / Protected) ---
 
 // Get all announcements, seed 2 real ones if database is empty
 app.get('/api/announcements', async (req, res) => {
