@@ -894,6 +894,11 @@ let statsLineChartInstance = null;
 
 function updateStatsTabDetails() {
   if (!userProfile) return;
+  if (typeof Chart === 'undefined') {
+    console.warn('Waiting for Chart.js to load for updateStatsTabDetails...');
+    setTimeout(updateStatsTabDetails, 300);
+    return;
+  }
 
   // 1. Set update date
   const statsLastUpdateText = document.getElementById('statsLastUpdateText');
