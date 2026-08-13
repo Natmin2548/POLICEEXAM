@@ -143,6 +143,7 @@
     }
   </style>
   <script src="vocab-data.js" defer></script>
+  <script src="js/vocab.js" defer></script>
   <script src="js/app.js?v=4" defer></script>
 </head>
 
@@ -249,10 +250,10 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 24px; height: 24px;"><path d="M14.5 17.5L3 6V3h3l11.5 11.5"></path><path d="M13 19l6-6"></path><path d="M16 16l4 4"></path><path d="M19 21l2-2"></path><path d="M6.5 4.5L5.5 5.5"></path><path d="M9.5 7.5L8.5 8.5"></path><path d="M17.5 14.5L14 11l-2.5 2.5 3.5 3.5"></path></svg>
             <span style="font-size: 12px; font-weight: 600; color: #7C3AED; font-family: inherit;">แบทเทิล</span>
           </button>
-          <!-- Rank -->
-          <button onclick="document.getElementById('btnTabStats').click()" style="background: #F0FDF4; border: none; border-radius: 16px; padding: 16px 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; cursor: pointer;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 24px; height: 24px;"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
-            <span style="font-size: 12px; font-weight: 600; color: #16A34A; font-family: inherit;">อันดับ</span>
+          <!-- Vocab -->
+          <button onclick="openVocabArena()" style="background: #FFFBEB; border: none; border-radius: 16px; padding: 16px 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; cursor: pointer;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 24px; height: 24px;"><path d="M4 7V4h16v3"></path><path d="M9 20h6"></path><path d="M12 4v16"></path></svg>
+            <span style="font-size: 12px; font-weight: 600; color: #D97706; font-family: inherit;">คำศัพท์</span>
           </button>
         </section>
 
