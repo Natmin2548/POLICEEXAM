@@ -246,7 +246,7 @@
             <span style="font-size: 12px; font-weight: 600; color: #2563EB; font-family: inherit;">คลังข้อสอบ</span>
           </button>
           <!-- Battle -->
-          <button onclick="document.getElementById('btnTabBattle').click()" style="background: #F5F3FF; border: none; border-radius: 16px; padding: 16px 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; cursor: pointer;">
+          <button onclick="document.getElementById('btnTabBattle').click(); setTimeout(() => document.getElementById('btnQuickMatch').click(), 150);" style="background: #F5F3FF; border: none; border-radius: 16px; padding: 16px 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; cursor: pointer;">
             <svg viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 24px; height: 24px;"><path d="M14.5 17.5L3 6V3h3l11.5 11.5"></path><path d="M13 19l6-6"></path><path d="M16 16l4 4"></path><path d="M19 21l2-2"></path><path d="M6.5 4.5L5.5 5.5"></path><path d="M9.5 7.5L8.5 8.5"></path><path d="M17.5 14.5L14 11l-2.5 2.5 3.5 3.5"></path></svg>
             <span style="font-size: 12px; font-weight: 600; color: #7C3AED; font-family: inherit;">แบทเทิล</span>
           </button>
@@ -295,12 +295,58 @@
               </div>
             </div>
           </div>
-        </section>
+          </section>
 
+          <!-- Stats Section -->
+          <section class="stats-section" style="margin-top: 32px; margin-bottom: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+              <h3 style="margin: 0; font-size: 18px; font-weight: 800; color: var(--text-dark);">รายงานจุดอ่อน</h3>
+              <span style="font-size: 12px; color: var(--text-light);" id="statsLastUpdateText">อัปเดต วันนี้</span>
+            </div>
+            
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+              <!-- Card 1: Radar Chart -->
+              <div style="background: white; border-radius: 20px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
+                <h4 style="margin: 0 0 16px 0; font-size: 15px; font-weight: 700; color: var(--text-dark);">ภาพรวมรายวิชา</h4>
+                <div style="position: relative; height: 260px;">
+                  <canvas id="statsRadarChartCanvas"></canvas>
+                </div>
+              </div>
+  
+              <!-- Card 2: Bar Chart -->
+              <div style="background: white; border-radius: 20px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
+                <h4 style="margin: 0 0 16px 0; font-size: 15px; font-weight: 700; color: var(--text-dark);">คะแนนแยกวิชา</h4>
+                <div style="position: relative; height: 240px;">
+                  <canvas id="statsBarChartCanvas"></canvas>
+                </div>
+                <div style="display: flex; justify-content: center; gap: 16px; margin-top: 16px; font-size: 12px; font-weight: 600; color: var(--text-light);">
+                  <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 10px; height: 10px; border-radius: 3px; background-color: #10B981;"></span>ดีมาก</span>
+                  <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 10px; height: 10px; border-radius: 3px; background-color: #F59E0B;"></span>พอใช้</span>
+                  <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 10px; height: 10px; border-radius: 3px; background-color: #EF4444;"></span>ปรับปรุง</span>
+                </div>
+              </div>
+  
+              <!-- Card 3: Line Chart (8-Week Progress) -->
+              <div style="background: white; border-radius: 20px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
+                <h4 style="margin: 0 0 16px 0; font-size: 15px; font-weight: 700; color: var(--text-dark);">พัฒนาการ 8 สัปดาห์</h4>
+                <div style="position: relative; height: 200px;">
+                  <canvas id="statsLineChartCanvas"></canvas>
+                </div>
+              </div>
+  
+              <!-- Card 4: AI Recommendations -->
+              <div style="background: white; border-radius: 20px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
+                <h4 style="margin: 0 0 16px 0; font-size: 15px; font-weight: 700; color: var(--text-dark); display: flex; align-items: center; gap: 8px;">
+                  <span style="font-size: 18px;">🧠</span> คำแนะนำจาก AI
+                </h4>
+                <div id="aiRecsListContainer">
+                  <div style="color: var(--text-light); font-size: 13px; text-align: center; padding: 12px;">กำลังวิเคราะห์คะแนน...</div>
+                </div>
+              </div>
+            </div>
+          </section>
 
-
-
-      </div> <!-- Close homeView -->
+        </div> <!-- Close homeView -->
 
       <!-- Community View Content -->
       <div id="communityView" class="tab-view">

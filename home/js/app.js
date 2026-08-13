@@ -88,6 +88,7 @@ async function checkSession() {
   initializeDashboard();
   loadRealProfile();
   loadRadarChart();
+  updateStatsTabDetails();
 }
 
 function initializeDashboard() {
@@ -546,6 +547,7 @@ if (homeTabBtn) {
     if (questionBankView) questionBankView.classList.remove('active');
     loadRealProfile(); // Refresh profile values on navigate
     loadRadarChart();
+    updateStatsTabDetails();
   });
 }
 
