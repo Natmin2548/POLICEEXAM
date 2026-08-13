@@ -386,27 +386,32 @@ checkSession();
 const btnProfileMenu = document.getElementById('btnProfileMenu');
 const profileDropdown = document.getElementById('profileDropdown');
 
-btnProfileMenu.addEventListener('click', (e) => {
-  e.stopPropagation();
-  profileDropdown.classList.toggle('active');
-});
+if (btnProfileMenu && profileDropdown) {
+  btnProfileMenu.addEventListener('click', (e) => {
+    e.stopPropagation();
+    profileDropdown.classList.toggle('active');
+  });
 
-document.addEventListener('click', () => {
-  profileDropdown.classList.remove('active');
-});
+  document.addEventListener('click', () => {
+    profileDropdown.classList.remove('active');
+  });
+}
 
 // 2. Notifications Bell Toggle
 const btnNotification = document.getElementById('btnNotification');
 const notifBadge = document.getElementById('notifBadge');
-notifBadge.classList.add('active');
 
-btnNotification.addEventListener('click', () => {
-  if (notifBadge.classList.contains('active')) {
-    notifBadge.classList.remove('active');
-  } else {
-    notifBadge.classList.add('active');
-  }
-});
+if (btnNotification && notifBadge) {
+  notifBadge.classList.add('active');
+  
+  btnNotification.addEventListener('click', () => {
+    if (notifBadge.classList.contains('active')) {
+      notifBadge.classList.remove('active');
+    } else {
+      notifBadge.classList.add('active');
+    }
+  });
+}
 
 // 3. Start Exam (calls real daily exam API)
 const btnStartExam = document.getElementById('btnStartExam');
@@ -418,9 +423,11 @@ const progressBarFill = document.getElementById('progressBarFill');
 const progressCountText = document.getElementById('progressCountText');
 const progressPercentText = document.getElementById('progressPercentText');
 
-btnStartExam.addEventListener('click', () => {
-  if (examModeModal) examModeModal.style.display = 'flex';
-});
+if (btnStartExam) {
+  btnStartExam.addEventListener('click', () => {
+    if (examModeModal) examModeModal.style.display = 'flex';
+  });
+}
 
 if (btnCloseExamMode) {
   btnCloseExamMode.addEventListener('click', () => {
