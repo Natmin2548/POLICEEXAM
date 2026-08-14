@@ -3763,6 +3763,8 @@ function compressImage(img, originalSize) {
   // Step 2: Iterative Compression
   let quality = 0.9;
   
+  const originalSizeMB = originalSize / 1024 / 1024;
+
   function attemptCompression() {
     canvas.toBlob((blob) => {
       const sizeMB = blob.size / 1024 / 1024;
@@ -3771,12 +3773,27 @@ function compressImage(img, originalSize) {
         quality -= 0.1;
         attemptCompression(); // Try again with lower quality
       } else {
+        // If compressed is larger than original AND original is already < 1MB, just use original
+        let finalBlob = blob;
+        let finalSizeMB = sizeMB;
+        
+        if (sizeMB > originalSizeMB && originalSizeMB < TARGET_SIZE_MB) {
+            // We can't easily turn the original 'file' into the blob here unless we pass it,
+            // but we can just tell the user it doesn't need compression.
+            document.getElementById('compressNewSize').textContent = 'เล็กอยู่แล้ว ไม่ต้องบีบอัด';
+            document.getElementById('btnDownloadCompressed').style.display = 'none';
+            // Show preview anyway
+            const url = URL.createObjectURL(blob);
+            document.getElementById('compressPreviewImage').src = url;
+            return;
+        }
+
         // Success
-        compressedImageBlob = blob;
-        document.getElementById('compressNewSize').textContent = sizeMB.toFixed(2) + ' MB';
+        compressedImageBlob = finalBlob;
+        document.getElementById('compressNewSize').textContent = finalSizeMB.toFixed(2) + ' MB';
         
         // Show Preview
-        const url = URL.createObjectURL(blob);
+        const url = URL.createObjectURL(finalBlob);
         document.getElementById('compressPreviewImage').src = url;
         
         // Setup Download
@@ -3794,6 +3811,5 @@ function compressImage(img, originalSize) {
       }
     }, 'image/jpeg', quality);
   }
-  
   attemptCompression();
 }
