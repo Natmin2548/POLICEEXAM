@@ -3696,3 +3696,104 @@ if (btnSubmitEditGroup && editGroupModal) {
     }
   };
 }
+
+
+// ==========================================
+// IMAGE COMPRESSOR SYSTEM
+// ==========================================
+let compressedImageBlob = null;
+let originalFileName = 'compressed_image.jpg';
+
+window.openImageCompressorModal = function() {
+  document.getElementById('imageCompressorModal').style.display = 'flex';
+  document.getElementById('compressImageInput').value = '';
+  document.getElementById('compressorResultContainer').style.display = 'none';
+  document.getElementById('btnDownloadCompressed').style.display = 'none';
+};
+
+window.handleImageCompressSelect = function(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  originalFileName = file.name;
+  
+  // Show original size
+  document.getElementById('compressOriginalSize').textContent = (file.size / 1024 / 1024).toFixed(2) + ' MB';
+  document.getElementById('compressNewSize').textContent = 'กำลังประมวลผล...';
+  document.getElementById('compressorResultContainer').style.display = 'block';
+  document.getElementById('btnDownloadCompressed').style.display = 'none';
+  
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = new Image();
+    img.onload = function() {
+      compressImage(img, file.size);
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+};
+
+function compressImage(img, originalSize) {
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  
+  let width = img.width;
+  let height = img.height;
+  
+  // Calculate Target MB
+  const TARGET_SIZE_MB = 0.95; // slightly under 1MB
+  const MAX_DIMENSION = 1920;
+  
+  // Step 1: Resize if too large
+  if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
+    if (width > height) {
+      height = Math.round(height * (MAX_DIMENSION / width));
+      width = MAX_DIMENSION;
+    } else {
+      width = Math.round(width * (MAX_DIMENSION / height));
+      height = MAX_DIMENSION;
+    }
+  }
+  
+  canvas.width = width;
+  canvas.height = height;
+  ctx.drawImage(img, 0, 0, width, height);
+  
+  // Step 2: Iterative Compression
+  let quality = 0.9;
+  
+  function attemptCompression() {
+    canvas.toBlob((blob) => {
+      const sizeMB = blob.size / 1024 / 1024;
+      
+      if (sizeMB > TARGET_SIZE_MB && quality > 0.1) {
+        quality -= 0.1;
+        attemptCompression(); // Try again with lower quality
+      } else {
+        // Success
+        compressedImageBlob = blob;
+        document.getElementById('compressNewSize').textContent = sizeMB.toFixed(2) + ' MB';
+        
+        // Show Preview
+        const url = URL.createObjectURL(blob);
+        document.getElementById('compressPreviewImage').src = url;
+        
+        // Setup Download
+        const btn = document.getElementById('btnDownloadCompressed');
+        btn.style.display = 'block';
+        btn.onclick = () => {
+          const a = document.createElement('a');
+          a.href = url;
+          // create a safe filename
+          const nameParts = originalFileName.split('.');
+          nameParts.pop(); // remove extension
+          a.download = nameParts.join('.') + '_compressed.jpg';
+          a.click();
+        };
+      }
+    }, 'image/jpeg', quality);
+  }
+  
+  attemptCompression();
+}

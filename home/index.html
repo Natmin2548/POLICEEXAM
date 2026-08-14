@@ -144,7 +144,7 @@
     }
   </style>
   <script src="/home/vocab-data.js" defer></script>
-  <script src="/home/js/app.js?v=17" defer></script>
+  <script src="/home/js/app.js?v=18" defer></script>
 </head>
 
 <body>
@@ -1473,6 +1473,43 @@
       </div>
       <div id="groupMembersContainer" style="padding: 16px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 12px; background-color: white;">
         <!-- Members injected here -->
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Image Compressor Modal -->
+  <div class="modal-overlay" id="imageCompressorModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.4); align-items: center; justify-content: center; z-index: 100;">
+    <div class="modal-card" style="background: white; max-width: 500px; width: 90%; padding: 24px; border-radius: 20px; max-height: 90vh; overflow-y: auto;">
+      <h3 style="font-size: 18px; margin-bottom: 8px;">🖼️ เมนูพิเศษ: บีบอัดรูปภาพ</h3>
+      <p style="font-size: 13px; color: var(--text-light); margin-bottom: 16px;">บีบอัดขนาดไฟล์ภาพให้ต่ำกว่า 1MB เพื่อนำไปใช้งานต่อ โดยไม่ต้องพึ่งแอปอื่น</p>
+      
+      <div style="border: 2px dashed var(--border-color); border-radius: 12px; padding: 24px; text-align: center; margin-bottom: 16px;">
+        <input type="file" id="compressImageInput" accept="image/jpeg, image/png, image/webp" style="display: none;" onchange="handleImageCompressSelect(event)">
+        <button class="btn-primary" onclick="document.getElementById('compressImageInput').click()" style="padding: 10px 20px;">อัปโหลดรูปภาพ</button>
+        <p style="font-size: 12px; color: var(--text-light); margin-top: 8px;">รองรับ JPG, PNG, WEBP</p>
+      </div>
+      
+      <div id="compressorResultContainer" style="display: none;">
+        <div style="display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;">
+          <div style="flex: 1; min-width: 150px; background: #F8FAFC; padding: 12px; border-radius: 8px; text-align: center;">
+            <p style="font-size: 12px; color: var(--text-light); margin-bottom: 4px;">ขนาดต้นฉบับ</p>
+            <p id="compressOriginalSize" style="font-weight: 600; color: #475569;">-</p>
+          </div>
+          <div style="flex: 1; min-width: 150px; background: #ECFDF5; padding: 12px; border-radius: 8px; text-align: center;">
+            <p style="font-size: 12px; color: var(--text-light); margin-bottom: 4px;">หลังบีบอัด</p>
+            <p id="compressNewSize" style="font-weight: 600; color: #10B981;">-</p>
+          </div>
+        </div>
+        
+        <div style="margin-bottom: 16px; text-align: center;">
+          <img id="compressPreviewImage" style="max-width: 100%; max-height: 200px; border-radius: 8px; border: 1px solid var(--border-color);" />
+        </div>
+      </div>
+      
+      <div style="display: flex; justify-content: flex-end; gap: 12px;">
+        <button onclick="document.getElementById('imageCompressorModal').style.display='none'" style="background: none; border: none; cursor: pointer; color: var(--text-light);">ปิด</button>
+        <button class="btn-primary" id="btnDownloadCompressed" style="display: none; padding: 8px 16px; background: #10B981;">💾 ดาวน์โหลดรูป</button>
       </div>
     </div>
   </div>
