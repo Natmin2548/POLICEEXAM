@@ -3570,3 +3570,128 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 });
+
+
+// ==========================================
+// Edit Group Management
+// ==========================================
+let pendingEditGroupImageBase64 = null;
+let currentEditingGroupId = null;
+
+const editGroupModal = document.getElementById('editGroupModal');
+const btnCancelEditGroup = document.getElementById('btnCancelEditGroup');
+const btnSubmitEditGroup = document.getElementById('btnSubmitEditGroup');
+const fileEditGroupImage = document.getElementById('fileEditGroupImage');
+const editGroupImagePreview = document.getElementById('editGroupImagePreview');
+const txtEditGroupName = document.getElementById('txtEditGroupName');
+const txtEditGroupDesc = document.getElementById('txtEditGroupDesc');
+
+if (fileEditGroupImage) {
+  fileEditGroupImage.onchange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      alert('ขนาดไฟล์ต้องไม่เกิน 5MB');
+      e.target.value = '';
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      pendingEditGroupImageBase64 = ev.target.result;
+      if (editGroupImagePreview) {
+        editGroupImagePreview.src = pendingEditGroupImageBase64;
+        editGroupImagePreview.style.display = 'block';
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+}
+
+if (btnCancelEditGroup && editGroupModal) {
+  btnCancelEditGroup.onclick = () => {
+    editGroupModal.style.display = 'none';
+  };
+}
+
+window.openEditGroupModal = async function(groupId) {
+  currentEditingGroupId = groupId;
+  if (!editGroupModal) return;
+  
+  // Try to find group data from feed if available
+  try {
+    const res = await fetch(`${API_BASE}/api/community/groups`, {
+      headers: { 'Authorization': `Bearer ${authToken}` }
+    });
+    const groups = await res.json();
+    const g = groups.find(x => x.id === groupId);
+    if (g) {
+      txtEditGroupName.value = g.name || '';
+      txtEditGroupDesc.value = g.description || '';
+      if (g.isPrivate) {
+        document.querySelector('input[name="optEditGroupPrivacy"][value="private"]').checked = true;
+      } else {
+        document.querySelector('input[name="optEditGroupPrivacy"][value="public"]').checked = true;
+      }
+      if (g.image) {
+        editGroupImagePreview.src = g.image;
+        editGroupImagePreview.style.display = 'block';
+        pendingEditGroupImageBase64 = g.image; // Keep the same image by default
+      } else {
+        editGroupImagePreview.style.display = 'none';
+        pendingEditGroupImageBase64 = null;
+      }
+    }
+    editGroupModal.style.display = 'flex';
+  } catch(err) {
+    console.error(err);
+    alert('โหลดข้อมูลกลุ่มไม่สำเร็จ');
+  }
+};
+
+if (btnSubmitEditGroup && editGroupModal) {
+  btnSubmitEditGroup.onclick = async () => {
+    const name = txtEditGroupName.value.trim();
+    const description = txtEditGroupDesc.value.trim();
+    const optPrivacy = document.querySelector('input[name="optEditGroupPrivacy"]:checked');
+    const isPrivate = optPrivacy ? optPrivacy.value === 'private' : false;
+
+    if (!name) {
+      alert('กรุณากรอกชื่อกลุ่ม');
+      return;
+    }
+
+    btnSubmitEditGroup.disabled = true;
+    btnSubmitEditGroup.textContent = 'กำลังบันทึก...';
+
+    try {
+      const res = await fetch(`${API_BASE}/api/community/groups/${currentEditingGroupId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: JSON.stringify({ name, description, isPrivate, image: pendingEditGroupImageBase64 })
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Failed to update group');
+      }
+
+      editGroupModal.style.display = 'none';
+      alert('บันทึกการตั้งค่ากลุ่มเรียบร้อย');
+      loadGroupsList(); // Reload feed
+      
+      // Update chat header if currently inside this chat
+      if (currentChatType === 'group' && currentChatTargetId === currentEditingGroupId) {
+         document.getElementById('lblChatModalTitle').textContent = name;
+      }
+    } catch (err) {
+      console.error('Update group error:', err);
+      alert(err.message);
+    } finally {
+      btnSubmitEditGroup.disabled = false;
+      btnSubmitEditGroup.textContent = 'บันทึกการเปลี่ยนแปลง';
+    }
+  };
+}

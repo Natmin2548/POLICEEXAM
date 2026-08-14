@@ -3847,6 +3847,44 @@ app.get('/api/community/stats', authenticateToken, async (req, res) => {
 // --- Study Groups API Routes ---
 
 // Create a new study group
+
+// Update group details
+app.put('/api/community/groups/:groupId', authenticateToken, async (req, res) => {
+  const groupId = parseInt(req.params.groupId);
+  const { name, description, isPrivate, image } = req.body;
+
+  if (!name || !name.trim()) {
+    return res.status(400).json({ error: 'กรุณากรอกชื่อกลุ่ม' });
+  }
+
+  try {
+    // Check if current user is ADMIN or CREATOR
+    const currentMember = await prisma.groupMember.findUnique({
+      where: { groupId_userId: { groupId, userId: req.user.userId } },
+      include: { group: true }
+    });
+
+    if (!currentMember || (currentMember.role !== 'ADMIN' && currentMember.group.createdById !== req.user.userId)) {
+      return res.status(403).json({ error: 'คุณไม่มีสิทธิ์แก้ไขการตั้งค่ากลุ่มนี้' });
+    }
+
+    const updatedGroup = await prisma.group.update({
+      where: { id: groupId },
+      data: {
+        name: name.trim(),
+        description: description ? description.trim() : null,
+        isPrivate: !!isPrivate,
+        ...(image !== undefined && { image })
+      }
+    });
+
+    res.json(updatedGroup);
+  } catch (err) {
+    console.error('Update group error:', err);
+    res.status(500).json({ error: 'ไม่สามารถอัปเดตข้อมูลกลุ่มได้' });
+  }
+});
+
 app.post('/api/community/groups', authenticateToken, async (req, res) => {
   const { name, description, isPrivate, image } = req.body;
   if (!name || !name.trim()) {
