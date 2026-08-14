@@ -911,9 +911,9 @@ if (btnQuickMatch) {
   });
 }
 
-let statsRadarChartInstance = null;
-let statsBarChartInstance = null;
-let statsLineChartInstance = null;
+  var statsRadarChartInstance = null;
+  var statsBarChartInstance = null;
+  var statsLineChartInstance = null;
 
 function updateStatsTabDetails() {
   if (!userProfile) return;
