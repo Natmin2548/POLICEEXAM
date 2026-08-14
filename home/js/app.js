@@ -80,7 +80,7 @@ async function checkSession() {
 
   if (!authToken || !sessionData) {
     await showCenteredAlert('กรุณาเข้าสู่ระบบก่อนใช้งานแดชบอร์ด');
-    window.location.href = '../index.html';
+    window.location.href = '/';
     return;
   }
 
@@ -138,7 +138,7 @@ async function loadRealProfile() {
     if (!res.ok) {
       if (res.status === 401 || res.status === 403) {
         sessionStorage.clear();
-        window.location.href = '../index.html';
+        window.location.href = '/';
         return;
       }
       throw new Error('Profile fetch failed');
@@ -496,7 +496,7 @@ async function handleLogout() {
   const confirmLog = await showCenteredConfirm('ยืนยันการออกจากระบบ', 'คุณต้องการออกจากระบบใช่หรือไม่?', { okText: 'ออกจากระบบ', okColor: '#EF4444' });
   if (confirmLog) {
     sessionStorage.clear();
-    window.location.href = '../index.html';
+    window.location.href = '/';
   }
 }
 
