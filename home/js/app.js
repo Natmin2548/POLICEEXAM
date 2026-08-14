@@ -1169,7 +1169,8 @@ function updateStatsTabDetails() {
       `;
     });
 
-    recsContainer.innerHTML = recsHtml;
+    // recsContainer.innerHTML = recsHtml;
+    recsContainer.innerHTML = '<div style="text-align: center; color: var(--text-light); padding: 20px; font-size: 13px;">คำแนะนำกำลังจะมาในเร็วๆ นี้...</div>';
   }
 }
 
