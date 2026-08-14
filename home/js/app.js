@@ -26,15 +26,15 @@ function showCenteredConfirm(title, message, opts = {}) {
     modal.style.display = 'flex';
 
     function cleanup() {
-      modal.style.display = 'none';
-      btnOk.removeEventListener('click', onOk);
-      btnCancel.removeEventListener('click', onCancel);
+      if (modal) modal.style.display = 'none';
+      if (btnOk) btnOk.removeEventListener('click', onOk);
+      if (btnCancel) btnCancel.removeEventListener('click', onCancel);
     }
     function onOk() { cleanup(); resolve(true); }
     function onCancel() { cleanup(); resolve(false); }
 
-    btnOk.addEventListener('click', onOk);
-    btnCancel.addEventListener('click', onCancel);
+    if (btnOk) btnOk.addEventListener('click', onOk);
+    if (btnCancel) btnCancel.addEventListener('click', onCancel);
   });
 }
 
@@ -59,12 +59,12 @@ function showCenteredAlert(message, opts = {}) {
     modal.style.display = 'flex';
 
     function cleanup() {
-      modal.style.display = 'none';
-      btnOk.removeEventListener('click', onOk);
+      if (modal) modal.style.display = 'none';
+      if (btnOk) btnOk.removeEventListener('click', onOk);
     }
     function onOk() { cleanup(); resolve(); }
 
-    btnOk.addEventListener('click', onOk);
+    if (btnOk) btnOk.addEventListener('click', onOk);
   });
 }
 
@@ -517,6 +517,7 @@ if (btnProfileLogout) {
 // 5. Bottom nav tab state switcher
 const navTabs = document.querySelectorAll('.bottom-nav .nav-tab');
 const homeTabBtn = navTabs[0]; // first tab
+const bankTabBtn = document.getElementById('btnTabBank'); // bank tab
 const communityTabBtn = document.getElementById('btnTabCommunity'); // community tab
 const battleTabBtn = document.getElementById('btnTabBattle'); // battle tab
 const statsTabBtn = document.getElementById('btnTabStats'); // stats tab
