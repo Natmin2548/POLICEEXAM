@@ -912,7 +912,7 @@ button {
    Profile View Styles
    ========================================== */
 .profile-header-title-section {
-  padding: 24px 0 16px 0;
+  padding: 24px 16px 16px 16px;
   display: flex;
   justify-content: space-between;
   align-items: center;
