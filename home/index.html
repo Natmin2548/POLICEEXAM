@@ -9,9 +9,9 @@
   <!-- Google Fonts: Kanit -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <!-- Stylesheet -->
-  <link rel="stylesheet" href="/home/css/style.css?v=3">
+  <link rel="stylesheet" href="/home/css/style.css?v=4">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
   <!-- Cropper.js -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
@@ -843,14 +843,15 @@
       <!-- Question Bank View Content -->
       <div id="questionBankView" class="tab-view">
         <!-- Header title -->
-        <section class="profile-header-title-section" style="display: flex; align-items: center; justify-content: space-between;">
+<section class="profile-header-title-section" style="display: flex; align-items: center; justify-content: space-between;">
           <h1 class="profile-header-title">คลังข้อสอบ</h1>
           <button id="btnBackFromBank" style="background: none; border: none; cursor: pointer; color: var(--primary-color); font-weight: 700; font-size: 16px; font-family: inherit;">กลับหน้าหลัก</button>
         </section>
 
         <!-- Subjects List -->
-        <div id="questionBankSubjectsList">
-          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 16px; margin-top: 20px;">
+        <div id="questionBankSubjectsList" style="background: white; border-radius: 20px; padding: 24px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-top: 16px;">
+          <p style="color: var(--text-light); font-size: 14px; margin-bottom: 24px; text-align: center;">เลือกวิชาที่ต้องการฝึกฝนเพื่อทำข้อสอบแบบเจาะลึกเฉพาะหมวดหมู่</p>
+          <div class="bank-subjects-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 16px;">
             <button class="subject-card" onclick="startBankSubject('งานสารบรรณ')" style="background: white; border: 1px solid #E2E8F0; border-radius: 16px; padding: 20px 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); transition: all 0.2s; font-family: inherit;">
               <div style="font-size: 20px; font-weight: 800; color: #3B82F6; margin-bottom: 12px; background: #EFF6FF; width: 56px; height: 56px; border-radius: 16px; display: flex; align-items: center; justify-content: center;">สบ</div>
               <span style="font-weight: 700; color: #1E293B; font-size: 14px; text-align: center;">งานสารบรรณ</span>
