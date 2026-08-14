@@ -1,4 +1,12 @@
 
+function formatMessageContent(content) {
+  if (!content) return '';
+  if (content.startsWith('data:image/') || content.match(/^https?:\/\/.*\.(gif|png|jpg|jpeg|webp)(\?.*)?$/i)) {
+    return `<img src="${content}" style="max-width: 250px; width: 100%; border-radius: 8px; margin-top: 4px;">`;
+  }
+  return escapeHTML(content);
+}
+
 function renderAvatarHtml(user, classNames, inlineStyles = '', defaultBgColor = '#64748B') {
   if (!user) return '';
   const name = user.fullName || user.username || 'ผู้ใช้งาน';
@@ -102,6 +110,23 @@ async function checkSession() {
 }
 
 function initializeDashboard() {
+  
+  const greetingStreakTitle = document.getElementById('greetingStreakTitle');
+  const greetingStreakSubtitle = document.getElementById('greetingStreakSubtitle');
+  
+  if (userProfile) {
+    if (greetingStreakTitle) {
+      greetingStreakTitle.innerHTML = `${userProfile.streak || 0} วันติดต่อกัน! 🔥`;
+    }
+    if (greetingStreakSubtitle) {
+      if ((userProfile.streak || 0) > 0) {
+        greetingStreakSubtitle.textContent = 'ทำข้อสอบวันนี้เพื่อรักษา streak';
+      } else {
+        greetingStreakSubtitle.textContent = 'เริ่มทำข้อสอบเพื่อสะสม streak เลย!';
+      }
+    }
+  }
+  
   const greetingName = document.getElementById('greetingName');
   const dropdownUserName = document.getElementById('dropdownUserName');
   const dropdownUserEmail = document.getElementById('dropdownUserEmail');
@@ -653,8 +678,8 @@ if (profileTabBtn) {
 }
 
 function updateAllMyAvatars(faceImage, fullName) {
-  const imgIds = ['defaultAvatarImg', 'profileAvatarImg', 'editProfileAvatarImg', 'composePostAvatarImg', 'chatInputAvatarImg', 'groupChatInputAvatarImg', 'dmChatInputAvatarImg'];
-  const boxIds = ['defaultAvatar', 'profileAvatarBox', 'editProfileAvatarBox', 'composePostAvatarBox', 'chatInputAvatarBox', 'groupChatInputAvatarBox', 'dmChatInputAvatarBox'];
+  const imgIds = ['defaultAvatarImg', 'profileAvatarImg', 'editProfileAvatarImg', 'composePostAvatarImg', ];
+  const boxIds = ['defaultAvatar', 'profileAvatarBox', 'editProfileAvatarBox', 'composePostAvatarBox', ];
   
   const displayName = fullName || (window.userProfile && (window.userProfile.fullName || window.userProfile.username)) || 'ผู้ใช้งาน';
   const letter = displayName.charAt(0);
@@ -1330,7 +1355,7 @@ async function loadCommunityPosts() {
               ${renderAvatarHtml(c.user, 'comment-avatar', '', '#94A3B8')}
               <div class="comment-content-box">
                 <span class="comment-author-name">${cName}</span>
-                <span class="comment-text">${escapeHTML(c.content)}</span>
+                <span class="comment-text">${formatMessageContent(c.content)}</span>
                 <span class="comment-time">${formatPostTime(cDate)}</span>
               </div>
             </div>
@@ -1351,7 +1376,7 @@ async function loadCommunityPosts() {
               </div>
             </div>
           </div>
-          <p class="post-body" id="postBodyText-${p.id}">${escapeHTML(p.content)}</p>
+          <p class="post-body" id="postBodyText-${p.id}">${formatMessageContent(p.content)}</p>
           
           <!-- Comments List Area -->
           ${commentsHtml}
@@ -1492,7 +1517,7 @@ async function loadChatMessages() {
           <div class="chat-bubble ${isMe ? 'me' : ''}" style="margin: 0;">
             <span class="chat-sender" onclick="showUserProfile(${m.userId})" style="cursor: pointer; font-weight: 600;">${isMe ? 'คุณ' : displayName}</span>
             <div class="chat-message-box">
-              ${escapeHTML(m.content)}
+              ${formatMessageContent(m.content)}
             </div>
             <span class="chat-timestamp">${timeStr}</span>
           </div>
@@ -2110,7 +2135,7 @@ async function loadGroupChatMessages(groupId) {
           <div class="chat-bubble ${isMe ? 'me' : ''}" style="margin: 0;">
             <span class="chat-sender" onclick="showUserProfile(${m.userId})" style="cursor: pointer; font-weight: 600;">${isMe ? 'คุณ' : displayName}</span>
             <div class="chat-message-box">
-              ${escapeHTML(m.content)}
+              ${formatMessageContent(m.content)}
             </div>
             <span class="chat-timestamp">${timeStr}</span>
           </div>
@@ -2630,7 +2655,7 @@ async function loadUserPostHistory(userId) {
 
       html += `
         <div style="background: #F8FAFC; border: 1px solid var(--border-color); border-radius: 12px; padding: 12px;">
-          <p style="font-size: 13px; color: var(--text-dark); margin: 0 0 6px 0; line-height: 1.5; word-break: break-word;">${escapeHTML(p.content)}</p>
+          <p style="font-size: 13px; color: var(--text-dark); margin: 0 0 6px 0; line-height: 1.5; word-break: break-word;">${formatMessageContent(p.content)}</p>
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <span style="font-size: 10px; color: var(--text-light);">${timeStr}</span>
             <span style="font-size: 10px; color: var(--text-light);"> ${commentCount} ความคิดเห็น</span>
@@ -2717,7 +2742,7 @@ async function loadDmChatMessages(friendId) {
       html += `
         <div class="chat-bubble ${isMe ? 'me' : ''}">
           <div class="chat-message-box">
-            ${escapeHTML(m.content)}
+            ${formatMessageContent(m.content)}
           </div>
           <span class="chat-timestamp">${timeStr}</span>
         </div>
@@ -3388,3 +3413,42 @@ window.submitEditProfile = async function() {
     if (btn) btn.disabled = false;
   }
 };
+
+// Handle Image Uploads for Chats
+function handleChatImageUpload(e, apiEndpoint) {
+  const file = e.target.files[0];
+  if (!file) return;
+  e.target.value = ''; // Reset
+  
+  if (file.size > 5 * 1024 * 1024) {
+    showCenteredAlert('ไฟล์ภาพมีขนาดใหญ่เกินไป (จำกัด 5MB)');
+    return;
+  }
+  
+  const reader = new FileReader();
+  reader.onload = async (ev) => {
+    const base64 = ev.target.result;
+    let url = apiEndpoint;
+    // Replace dynamic parts if needed, like groupId or dmUserId
+    if (url.includes(':groupId')) url = url.replace(':groupId', window.activeGroupId);
+    if (url.includes(':friendId')) url = url.replace(':friendId', window.activeDmFriendId);
+    
+    try {
+      const res = await fetch(`${API_BASE}${url}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
+        body: JSON.stringify({ content: base64 })
+      });
+      if (!res.ok) throw new Error('Failed to send image');
+      
+      // Reload chat based on endpoint
+      if (url.includes('/chat') && !url.includes('/groups/') && !url.includes('/dm/')) loadChatMessages();
+      else if (url.includes('/groups/')) loadGroupChatMessages(window.activeGroupId);
+      else if (url.includes('/dm/')) loadDmChatMessages(window.activeDmFriendId);
+    } catch (err) {
+      console.error('Upload image error:', err);
+      showCenteredAlert('ไม่สามารถส่งรูปภาพได้');
+    }
+  };
+  reader.readAsDataURL(file);
+}

@@ -2656,7 +2656,23 @@ app.post('/api/user/simulate-exam', authenticateToken, async (req, res) => {
     }
 
     // Update streak if completed exam today
-    const newStreak = currentUser.streak === 0 ? 1 : currentUser.streak; // simple streak increment placeholder or retain
+    const now = new Date();
+    const lastActive = new Date(currentUser.updatedAt);
+    let newStreak = currentUser.streak;
+    
+    const diffHours = (now - lastActive) / (1000 * 60 * 60);
+    const isSameDay = now.toDateString() === lastActive.toDateString();
+    
+    if (diffHours > 24) {
+      // If they somehow skipped verify and it's > 24h, reset and add 1
+      newStreak = 1;
+    } else if (!isSameDay) {
+      // Different day, within 24 hours -> increment streak
+      newStreak += 1;
+    } else if (newStreak === 0) {
+      // First time doing an exam or just reset to 0
+      newStreak = 1;
+    } // simple streak increment placeholder or retain
 
     const updatedUser = await prisma.user.update({
       where: { id: req.user.userId },

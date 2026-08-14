@@ -144,7 +144,7 @@
     }
   </style>
   <script src="/home/vocab-data.js" defer></script>
-  <script src="/home/js/app.js?v=11" defer></script>
+  <script src="/home/js/app.js?v=13" defer></script>
 </head>
 
 <body>
@@ -226,8 +226,8 @@
               </svg>
             </div>
             <div>
-              <h2 style="margin: 0; font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 6px;">3 วันติดต่อกัน! 🔥</h2>
-              <span style="font-size: 12px; opacity: 0.9; margin-top: 2px; display: block;">ทำข้อสอบวันนี้เพื่อรักษา streak</span>
+              <h2 id="greetingStreakTitle" style="margin: 0; font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 6px;">0 วันติดต่อกัน! 🔥</h2>
+              <span id="greetingStreakSubtitle" style="font-size: 12px; opacity: 0.9; margin-top: 2px; display: block;">ทำข้อสอบวันนี้เพื่อรักษา streak</span>
             </div>
           </div>
           <button id="btnStartExam" style="background: white; color: #CE1B28; border: none; padding: 10px 20px; border-radius: 999px; font-weight: 700; font-family: inherit; font-size: 13px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">ทำเลย</button>
@@ -363,8 +363,12 @@
               <!-- Chat Input Panel -->
               <div
                 style="display: flex; align-items: center; padding: 12px; border-top: 1px solid var(--border-color); gap: 8px; background-color: white;">
-                <img src="" id="chatInputAvatarImg" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; display: none;">
-                <div class="profile-avatar-box" id="chatInputAvatarBox" style="width: 32px; height: 32px; font-size: 14px; flex-shrink: 0;">?</div>
+                
+<label style="cursor: pointer; display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; background: #F8FAFC; color: #64748B; border: 1px solid #E2E8F0; flex-shrink: 0;" title="ส่งรูปภาพ/GIF">
+  <input type="file" accept="image/*" style="display: none;" onchange="handleChatImageUpload(event, '/api/community/chat')">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+</label>
+
                 <input type="text" id="txtChatInput" placeholder="พิมพ์ข้อความคุยแชทรวม..."
                   style="flex: 1; border: 1px solid var(--border-color); border-radius: 12px; padding: 10px 14px; font-family: 'Kanit', sans-serif; font-size: 14px; outline: none;"
                   onfocus="this.style.borderColor='var(--primary-color)'"
@@ -438,8 +442,12 @@
               <!-- Input -->
               <div
                 style="display: flex; align-items: center; padding: 12px; border-top: 1px solid var(--border-color); gap: 8px; background-color: white;">
-                <img src="" id="groupChatInputAvatarImg" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; display: none;">
-                <div class="profile-avatar-box" id="groupChatInputAvatarBox" style="width: 32px; height: 32px; font-size: 14px; flex-shrink: 0;">?</div>
+                
+<label style="cursor: pointer; display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; background: #F8FAFC; color: #64748B; border: 1px solid #E2E8F0; flex-shrink: 0;" title="ส่งรูปภาพ/GIF">
+  <input type="file" accept="image/*" style="display: none;" onchange="handleChatImageUpload(event, '/api/community/groups/:groupId/chat')">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+</label>
+
                 <input type="text" id="txtGroupChatInput" placeholder="พิมพ์ข้อความแชทคุยในกลุ่ม..."
                   style="flex: 1; border: 1px solid var(--border-color); border-radius: 12px; padding: 10px 14px; font-family: 'Kanit', sans-serif; font-size: 14px; outline: none;">
                 <button id="btnSendGroupChat" class="btn-quick-match"
@@ -533,8 +541,12 @@
               <!-- Input panel -->
               <div
                 style="display: flex; align-items: center; padding: 12px; border-top: 1px solid var(--border-color); gap: 8px; background-color: white;">
-                <img src="" id="dmChatInputAvatarImg" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; display: none;">
-                <div class="profile-avatar-box" id="dmChatInputAvatarBox" style="width: 32px; height: 32px; font-size: 14px; flex-shrink: 0;">?</div>
+                
+<label style="cursor: pointer; display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; background: #F8FAFC; color: #64748B; border: 1px solid #E2E8F0; flex-shrink: 0;" title="ส่งรูปภาพ/GIF">
+  <input type="file" accept="image/*" style="display: none;" onchange="handleChatImageUpload(event, '/api/community/dm/:friendId')">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+</label>
+
                 <input type="text" id="txtDmChatInput" placeholder="พิมพ์ข้อความคุยแชทส่วนตัว..."
                   style="flex: 1; border: 1px solid var(--border-color); border-radius: 12px; padding: 10px 14px; font-family: 'Kanit', sans-serif; font-size: 14px; outline: none;">
                 <button id="btnSendDmChat" class="btn-quick-match"
