@@ -1019,21 +1019,22 @@
       
       <button id="btnCloseExamMode" style="position: absolute; right: 16px; top: 16px; background: none; border: none; font-size: 20px; color: #94A3B8; cursor: pointer;">&times;</button>
 
-      <div style="font-size: 40px; margin-bottom: 12px;"></div>
-      <h3 style="font-size: 20px; font-weight: 700; color: #1E293B; margin-bottom: 8px;">เลือกโหมดทำข้อสอบ</h3>
-      <p style="font-size: 14px; color: #64748B; margin-bottom: 24px;">กรุณาเลือกรูปแบบที่คุณต้องการสำหรับการทำข้อสอบครั้งนี้</p>
-
-      <div style="display: flex; flex-direction: column; gap: 12px;">
-        <button id="btnExamModeBank" style="background: #F8FAFC; border: 2px solid #E2E8F0; border-radius: 16px; padding: 16px; text-align: left; cursor: pointer; transition: all 0.2s;">
-          <div style="font-weight: 700; color: #0F172A; font-size: 16px; margin-bottom: 4px;">คลังข้อสอบ (Question Bank)</div>
-          <div style="font-size: 12px; color: #64748B;">เลือกวิชาที่ต้องการฝึกฝนจากคลังข้อสอบทั้งหมด</div>
-        </button>
-
-        <button id="btnExamModePretest" style="background: #F8FAFC; border: 2px solid #E2E8F0; border-radius: 16px; padding: 16px; text-align: left; cursor: pointer; transition: all 0.2s;">
-          <div style="font-weight: 700; color: #BD1B0B; font-size: 16px; margin-bottom: 4px;">⏱ Pretest จำลองสอบจริง</div>
-          <div style="font-size: 12px; color: #64748B;">จับเวลาและสรุปคะแนนตอนท้ายเท่านั้น เหมือนอยู่ในห้องสอบ</div>
-        </button>
+      <div style="font-size: 48px; margin-bottom: 16px;">⚠️</div>
+      <h3 style="font-size: 20px; font-weight: 700; color: #CE1B28; margin-bottom: 12px;">เตรียมตัวให้พร้อมก่อนสอบ</h3>
+      
+      <div style="background: #FFF0F2; border: 1px solid #FECDD3; border-radius: 12px; padding: 16px; text-align: left; margin-bottom: 24px;">
+        <ul style="font-size: 13px; color: #881337; margin: 0; padding-left: 20px; line-height: 1.8;">
+          <li>ระหว่างทำข้อสอบ คุณ <strong>ไม่อนุญาตให้กดออก</strong> หรือปิดหน้าจอ</li>
+          <li>ห้าม <strong>สลับหน้าจอ</strong> ไปยังแอปพลิเคชันอื่นเด็ดขาด</li>
+          <li>ห้าม <strong>แคปหน้าจอ</strong> (ระบบจำลองการตรวจจับ)</li>
+          <li>ระบบจะจับเวลา <strong>3 ชั่วโมง</strong> ในการทำข้อสอบ (150 ข้อ)</li>
+        </ul>
+        <p style="font-size: 12px; color: #CE1B28; margin-top: 12px; text-align: center; font-weight: 600;">หากทำผิดกฎ ระบบจะตัดสิทธิ์และบันทึกคะแนนเป็น 0 ทันที!</p>
       </div>
+
+      <button id="btnExamModePretest" style="background: #CE1B28; color: white; border: none; border-radius: 999px; padding: 14px 24px; width: 100%; font-weight: 700; font-size: 16px; font-family: inherit; cursor: pointer; box-shadow: 0 4px 12px rgba(206, 27, 40, 0.3);">
+        เริ่มทำข้อสอบ
+      </button>
     </div>
   </div>
 
