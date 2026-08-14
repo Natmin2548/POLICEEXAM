@@ -1,3 +1,13 @@
+
+function renderAvatarHtml(user, classNames, inlineStyles = '', defaultBgColor = '#64748B') {
+  if (!user) return '';
+  const name = user.fullName || user.username || 'ผู้ใช้งาน';
+  const initial = typeof escapeHTML === 'function' ? escapeHTML(name.charAt(0)) : name.charAt(0);
+  if (user.faceImage) {
+    return `<div class="${classNames}" style="${inlineStyles}; background-color: transparent; overflow: hidden; padding: 0; display: flex; align-items: center; justify-content: center;"><img src="${user.faceImage}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;"></div>`;
+  }
+  return `<div class="${classNames}" style="${inlineStyles}; background-color: ${defaultBgColor}; display: flex; align-items: center; justify-content: center; color: white;">${initial}</div>`;
+}
 // ==========================================
 // Configuration
 // ==========================================
@@ -1317,7 +1327,7 @@ async function loadCommunityPosts() {
           const cDate = new Date(c.createdAt);
           commentsHtml += `
             <div class="comment-item">
-              <div class="comment-avatar">${cInitial}</div>
+              ${renderAvatarHtml(c.user, 'comment-avatar', '', '#94A3B8')}
               <div class="comment-content-box">
                 <span class="comment-author-name">${cName}</span>
                 <span class="comment-text">${escapeHTML(c.content)}</span>
@@ -1333,7 +1343,7 @@ async function loadCommunityPosts() {
         <div class="post-card" style="margin-bottom: 16px;">
           <div class="post-header">
             <div class="post-author-info">
-              <div class="post-author-avatar">${initial}</div>
+              ${renderAvatarHtml(p.user, 'post-author-avatar', '', '#CBD5E1')}
               <div>
                 <span class="post-author-name" style="display: block;">${displayName}</span>
                 <span class="post-time">${timeStr}</span>
@@ -1474,11 +1484,7 @@ async function loadChatMessages() {
       const timeStr = new Date(m.createdAt).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
       const initial = displayName.charAt(0);
 
-      const avatarHtml = `
-        <div onclick="showUserProfile(${m.userId})" class="friend-user-avatar" style="width: 32px; height: 32px; font-size: 13px; cursor: pointer; flex-shrink: 0; background-color: ${isMe ? 'var(--primary-color)' : '#BD1B0B'}; display: flex; align-items: center; justify-content: center; color: white; border-radius: 50%; font-weight: 600; margin-right: 8px;">
-          ${escapeHTML(initial)}
-        </div>
-      `;
+      const avatarHtml = renderAvatarHtml(m.user, 'friend-user-avatar', 'width: 32px; height: 32px; font-size: 13px; cursor: pointer; flex-shrink: 0; border-radius: 50%; font-weight: 600; margin-right: 8px;', isMe ? 'var(--primary-color)' : '#BD1B0B').replace('<div ', '<div onclick="showUserProfile(${m.userId})" ');
 
       html += `
         <div style="display: flex; align-items: flex-start; margin-bottom: 12px; justify-content: ${isMe ? 'flex-end' : 'flex-start'};">
@@ -2096,11 +2102,7 @@ async function loadGroupChatMessages(groupId) {
       const timeStr = new Date(m.createdAt).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
       const initial = displayName.charAt(0);
 
-      const avatarHtml = `
-        <div onclick="showUserProfile(${m.userId})" class="friend-user-avatar" style="width: 32px; height: 32px; font-size: 13px; cursor: pointer; flex-shrink: 0; background-color: ${isMe ? 'var(--primary-color)' : '#BD1B0B'}; display: flex; align-items: center; justify-content: center; color: white; border-radius: 50%; font-weight: 600; margin-right: 8px;">
-          ${escapeHTML(initial)}
-        </div>
-      `;
+      const avatarHtml = renderAvatarHtml(m.user, 'friend-user-avatar', 'width: 32px; height: 32px; font-size: 13px; cursor: pointer; flex-shrink: 0; border-radius: 50%; font-weight: 600; margin-right: 8px;', isMe ? 'var(--primary-color)' : '#BD1B0B').replace('<div ', '<div onclick="showUserProfile(${m.userId})" ');
 
       html += `
         <div style="display: flex; align-items: flex-start; margin-bottom: 12px; justify-content: ${isMe ? 'flex-end' : 'flex-start'};">
