@@ -541,6 +541,21 @@ if (btnBackFromBank) {
   });
 }
 
+if (bankTabBtn) {
+  bankTabBtn.addEventListener('click', (e) => {
+    if (e) e.preventDefault();
+    navTabs.forEach(t => t.classList.remove('active'));
+    bankTabBtn.classList.add('active');
+    
+    if (questionBankView) questionBankView.classList.add('active');
+    if (homeView) homeView.classList.remove('active');
+    if (communityView) communityView.classList.remove('active');
+    if (battleView) battleView.classList.remove('active');
+    if (statsView) statsView.classList.remove('active');
+    if (profileView) profileView.classList.remove('active');
+  });
+}
+
 if (homeTabBtn) {
   homeTabBtn.addEventListener('click', (e) => {
     e.preventDefault();
