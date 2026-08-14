@@ -852,11 +852,10 @@ button {
     max-width: 960px;
   }
 
-  .greeting-section {
-    grid-column: 1 / 3;
-  }
-
-  .target-card {
+  .greeting-section,
+  .target-card,
+  .action-grid,
+  .stats-section {
     grid-column: 1 / 3;
   }
 
