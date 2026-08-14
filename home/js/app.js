@@ -902,11 +902,6 @@ let statsLineChartInstance = null;
 
 function updateStatsTabDetails() {
   if (!userProfile) return;
-  if (typeof Chart === 'undefined') {
-    console.warn('Waiting for Chart.js to load for updateStatsTabDetails...');
-    setTimeout(updateStatsTabDetails, 300);
-    return;
-  }
 
   // 1. Set update date
   const statsLastUpdateText = document.getElementById('statsLastUpdateText');
@@ -931,9 +926,10 @@ function updateStatsTabDetails() {
   const scores = subjectsData.map(s => s.score);
 
   // 3. Render Radar Chart
-  const radarCtx = document.getElementById('statsRadarChartCanvas').getContext('2d');
-  if (statsRadarChartInstance) statsRadarChartInstance.destroy();
-  statsRadarChartInstance = new Chart(radarCtx, {
+  if (typeof Chart !== 'undefined') {
+    const radarCtx = document.getElementById('statsRadarChartCanvas').getContext('2d');
+    if (statsRadarChartInstance) statsRadarChartInstance.destroy();
+    statsRadarChartInstance = new Chart(radarCtx, {
     type: 'radar',
     data: {
       labels: labels,
@@ -1077,6 +1073,7 @@ function updateStatsTabDetails() {
       }
     }
   });
+  } // End of Chart check
 
   // 6. Generate AI Recommendations (Pick 3 subjects with lowest scores)
   const recsContainer = document.getElementById('aiRecsListContainer');
