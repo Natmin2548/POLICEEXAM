@@ -357,3 +357,133 @@ document.getElementById('btnConfirmDelete').addEventListener('click', async () =
 
 // Run Init
 window.addEventListener('DOMContentLoaded', initAdmin);
+
+
+// ==========================================
+// KNOWLEDGE BASE (AI GENERATOR)
+// ==========================================
+
+async function loadKnowledgeDocs() {
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/knowledge`, {
+      headers: { 'Authorization': `Bearer ${adminAuthToken}` }
+    });
+    if (!res.ok) throw new Error('Failed to fetch knowledge docs');
+    const docs = await res.json();
+    
+    const tbody = document.getElementById('knowledgeTableBody');
+    if (!tbody) return;
+    
+    let html = '';
+    docs.forEach(d => {
+      const dateStr = new Date(d.createdAt).toLocaleString('th-TH');
+      html += `
+        <tr style="border-bottom: 1px solid #E2E8F0;">
+          <td style="padding: 12px;">${d.id}</td>
+          <td style="padding: 12px; font-weight: 500;">${d.title}</td>
+          <td style="padding: 12px;">${d.category}</td>
+          <td style="padding: 12px;">${dateStr}</td>
+          <td style="padding: 12px; display: flex; gap: 8px;">
+            <button onclick="openAiGenerateModal(${d.id}, '${d.title}')" style="background: #8B5CF6; color: white; border: none; border-radius: 6px; padding: 6px 12px; font-size: 12px; cursor: pointer;">✨ ให้ AI ออกข้อสอบ</button>
+            <button onclick="deleteKnowledgeDoc(${d.id})" style="background: #EF4444; color: white; border: none; border-radius: 6px; padding: 6px 12px; font-size: 12px; cursor: pointer;">ลบ</button>
+          </td>
+        </tr>
+      `;
+    });
+    tbody.innerHTML = html || '<tr><td colspan="5" style="text-align:center; padding: 20px;">ยังไม่มีข้อมูลคลังความรู้</td></tr>';
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+window.openAddKnowledgeModal = function() {
+  document.getElementById('txtKnowledgeTitle').value = '';
+  document.getElementById('txtKnowledgeCategory').value = '';
+  document.getElementById('txtKnowledgeContent').value = '';
+  document.getElementById('addKnowledgeModal').style.display = 'flex';
+};
+
+window.submitKnowledge = async function() {
+  const title = document.getElementById('txtKnowledgeTitle').value.trim();
+  const category = document.getElementById('txtKnowledgeCategory').value.trim();
+  const content = document.getElementById('txtKnowledgeContent').value.trim();
+  
+  if (!title || !content) return alert('กรุณากรอกชื่อและเนื้อหาเอกสาร');
+  
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/knowledge`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${adminAuthToken}`
+      },
+      body: JSON.stringify({ title, category, content })
+    });
+    
+    if (res.ok) {
+      document.getElementById('addKnowledgeModal').style.display = 'none';
+      loadKnowledgeDocs();
+    } else {
+      alert('Failed to save document');
+    }
+  } catch (err) {
+    alert(err.message);
+  }
+};
+
+window.deleteKnowledgeDoc = async function(id) {
+  if (!confirm('ยืนยันการลบเอกสารนี้?')) return;
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/knowledge/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${adminAuthToken}` }
+    });
+    if (res.ok) loadKnowledgeDocs();
+  } catch (err) {
+    alert(err.message);
+  }
+};
+
+window.openAiGenerateModal = function(id, title) {
+  document.getElementById('hdnGenerateDocId').value = id;
+  document.getElementById('txtGenerateTitle').value = `แบบทดสอบ: ${title}`;
+  document.getElementById('numGenerateCount').value = 10;
+  document.getElementById('generateAiExamModal').style.display = 'flex';
+};
+
+window.submitAiGenerate = async function() {
+  const id = document.getElementById('hdnGenerateDocId').value;
+  const examTitle = document.getElementById('txtGenerateTitle').value;
+  const questionCount = parseInt(document.getElementById('numGenerateCount').value);
+  
+  const btnSubmit = document.getElementById('btnSubmitGenerate');
+  const btnCancel = document.getElementById('btnCancelGenerate');
+  
+  btnSubmit.disabled = true;
+  btnCancel.disabled = true;
+  btnSubmit.textContent = '⏳ กำลังให้ AI ประมวลผลและสร้างข้อสอบ... (อาจใช้เวลา 10-30 วินาที)';
+  
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/knowledge/${id}/generate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${adminAuthToken}`
+      },
+      body: JSON.stringify({ examTitle, questionCount })
+    });
+    
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to generate');
+    
+    alert(`✨ สร้างข้อสอบสำเร็จแล้ว! จำนวน ${data.count} ข้อ ไปดูได้ที่แท็บ 'จัดการข้อสอบ'`);
+    document.getElementById('generateAiExamModal').style.display = 'none';
+    loadExamsList(); // refresh exams list
+  } catch (err) {
+    alert('Error: ' + err.message);
+  } finally {
+    btnSubmit.disabled = false;
+    btnCancel.disabled = false;
+    btnSubmit.textContent = '✨ สร้างข้อสอบด้วย AI';
+  }
+};

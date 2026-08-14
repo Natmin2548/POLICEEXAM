@@ -19,6 +19,8 @@ dotenv.config({ path: path.join(__dirname, '.env') });
 
 const app = express();
 const prisma = new PrismaClient();
+const { GoogleGenerativeAI } = require('@google/generative-ai');
+const genAI = process.env.GEMINI_API_KEY ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY) : null;
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-key';
 

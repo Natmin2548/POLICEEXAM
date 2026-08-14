@@ -199,5 +199,45 @@
     </div>
   </div>
 
+
+  <!-- Add Knowledge Modal -->
+  <div class="modal-overlay" id="addKnowledgeModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.4); align-items: center; justify-content: center; z-index: 100;">
+    <div class="modal-card" style="background: white; max-width: 600px; width: 90%; padding: 24px; border-radius: 20px;">
+      <h3 style="font-size: 18px; margin-bottom: 16px;">เพิ่มเนื้อหาคลังความรู้ใหม่</h3>
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <input type="text" id="txtKnowledgeTitle" placeholder="ชื่อเอกสาร (เช่น พ.ร.บ.ตำรวจแห่งชาติ หมวด 1)" style="padding: 8px; border-radius: 8px; border: 1px solid #CBD5E1;">
+        <input type="text" id="txtKnowledgeCategory" placeholder="หมวดหมู่ (เช่น กฎหมาย)" style="padding: 8px; border-radius: 8px; border: 1px solid #CBD5E1;">
+        <textarea id="txtKnowledgeContent" placeholder="วางเนื้อหา (Text) ที่ต้องการให้ AI อ่านเพื่อออกข้อสอบ..." style="padding: 8px; border-radius: 8px; border: 1px solid #CBD5E1; height: 200px; resize: none;"></textarea>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px;">
+        <button onclick="document.getElementById('addKnowledgeModal').style.display='none'" style="background: none; border: none; cursor: pointer; color: #64748B;">ยกเลิก</button>
+        <button class="btn-primary" onclick="submitKnowledge()" style="padding: 8px 16px;">บันทึกเนื้อหา</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Generate AI Exam Modal -->
+  <div class="modal-overlay" id="generateAiExamModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.4); align-items: center; justify-content: center; z-index: 100;">
+    <div class="modal-card" style="background: white; max-width: 400px; width: 90%; padding: 24px; border-radius: 20px;">
+      <h3 style="font-size: 18px; margin-bottom: 16px;">🤖 สั่ง AI สร้างข้อสอบ</h3>
+      <p style="font-size: 13px; color: #64748B; margin-bottom: 16px;">AI จะอ่านเอกสารนี้และสร้างข้อสอบปรนัย (4 ตัวเลือก) ให้โดยอัตโนมัติ</p>
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <input type="hidden" id="hdnGenerateDocId">
+        <div>
+          <label style="font-size: 13px;">ชื่อชุดข้อสอบ (จะถูกบันทึกเป็นชุดข้อสอบใหม่):</label>
+          <input type="text" id="txtGenerateTitle" placeholder="เช่น แบบทดสอบกฎหมาย AI" style="width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #CBD5E1;">
+        </div>
+        <div>
+          <label style="font-size: 13px;">จำนวนข้อที่ต้องการ (แนะนำ 5-20 ข้อ):</label>
+          <input type="number" id="numGenerateCount" value="10" min="1" max="50" style="width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #CBD5E1;">
+        </div>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px;">
+        <button onclick="document.getElementById('generateAiExamModal').style.display='none'" style="background: none; border: none; cursor: pointer; color: #64748B;" id="btnCancelGenerate">ยกเลิก</button>
+        <button class="btn-primary" onclick="submitAiGenerate()" id="btnSubmitGenerate" style="padding: 8px 16px; background-color: #8B5CF6;">✨ สร้างข้อสอบด้วย AI</button>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>
