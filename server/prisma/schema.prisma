@@ -281,6 +281,7 @@ model GroupMember {
   userId    Int
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   status    String   @default("ACCEPTED")
+    role      String   @default("MEMBER")
   createdAt DateTime @default(now())
   @@unique([groupId, userId])
 }

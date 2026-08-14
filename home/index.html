@@ -144,7 +144,7 @@
     }
   </style>
   <script src="/home/vocab-data.js" defer></script>
-  <script src="/home/js/app.js?v=13" defer></script>
+  <script src="/home/js/app.js?v=14" defer></script>
 </head>
 
 <body>
@@ -1409,6 +1409,22 @@
         <input type="text" id="editProfileNameInput" placeholder="กรอกชื่อ-นามสกุลของคุณ" style="padding: 14px; border-radius: 12px; border: 1px solid #E2E8F0; width: 100%; box-sizing: border-box; font-family: inherit;">
         
         <button id="btnSubmitEditProfile" onclick="submitEditProfile()" style="padding: 14px; border-radius: 12px; border: none; background: #BD1B0B; color: white; font-weight: 700; cursor: pointer; font-family: inherit; margin-top: 8px;">บันทึกข้อมูล</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Group Members Modal -->
+  <div class="modal-overlay" id="groupMembersModal"
+    style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); align-items: center; justify-content: center; z-index: 1000; padding: 20px;">
+    <div class="modal-card"
+      style="background: white; max-width: 480px; width: 100%; border-radius: 20px; overflow: hidden; display: flex; flex-direction: column; max-height: 80vh;">
+      <div style="padding: 20px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background-color: #F8FAFC;">
+        <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: var(--text-dark);">รายชื่อสมาชิกกลุ่ม</h3>
+        <button id="btnCloseGroupMembersModal" style="background: none; border: none; font-size: 20px; color: var(--text-light); cursor: pointer;">&times;</button>
+      </div>
+      <div id="groupMembersContainer" style="padding: 16px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 12px; background-color: white;">
+        <!-- Members injected here -->
       </div>
     </div>
   </div>

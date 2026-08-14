@@ -1,29 +1,9 @@
-
-function formatMessageContent(content) {
-  if (!content) return '';
-  if (content.startsWith('data:image/') || content.match(/^https?:\/\/.*\.(gif|png|jpg|jpeg|webp)(\?.*)?$/i)) {
-    return `<img src="${content}" style="max-width: 250px; width: 100%; border-radius: 8px; margin-top: 4px;">`;
-  }
-  return escapeHTML(content);
-}
-
-function renderAvatarHtml(user, classNames, inlineStyles = '', defaultBgColor = '#64748B') {
-  if (!user) return '';
-  const name = user.fullName || user.username || 'ผู้ใช้งาน';
-  const initial = typeof escapeHTML === 'function' ? escapeHTML(name.charAt(0)) : name.charAt(0);
-  const clickAction = user.id ? `onclick="event.stopPropagation(); if(window.showUserProfileModal) showUserProfileModal(${user.id});" style="cursor: pointer;"` : '';
-  
-  if (user.faceImage) {
-    return `<div class="${classNames}" ${clickAction} style="${inlineStyles}; background-color: transparent; overflow: hidden; padding: 0; display: flex; align-items: center; justify-content: center;"><img src="${user.faceImage}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;"></div>`;
-  }
-  return `<div class="${classNames}" ${clickAction} style="${inlineStyles}; background-color: ${defaultBgColor}; display: flex; align-items: center; justify-content: center; color: white;">${initial}</div>`;
-}
-// ==========================================
+﻿// ==========================================
 // Configuration
 // ==========================================
 const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
   ? 'http://localhost:3000' 
-  : 'https://police-exam-backend.onrender.com';
+  : 'https://police-exam-t090.onrender.com';
 
 // ==========================================
 // Custom Centered Dialogs
@@ -37,24 +17,24 @@ function showCenteredConfirm(title, message, opts = {}) {
     const btnOk = document.getElementById('btnConfirmOk');
     const btnCancel = document.getElementById('btnConfirmCancel');
 
-    if (iconEl) iconEl.textContent = opts.icon || '';
+    if (iconEl) iconEl.textContent = opts.icon || 'โ ๏ธ';
     if (titleEl) titleEl.textContent = title;
     if (msgEl) msgEl.textContent = message;
-    if (btnOk) btnOk.textContent = opts.okText || 'ยืนยัน';
+    if (btnOk) btnOk.textContent = opts.okText || 'เธขเธทเธเธขเธฑเธ';
     if (btnOk && opts.okColor) btnOk.style.background = opts.okColor;
     else if (btnOk) btnOk.style.background = '#EF4444';
     modal.style.display = 'flex';
 
     function cleanup() {
-      if (modal) modal.style.display = 'none';
-      if (btnOk) btnOk.removeEventListener('click', onOk);
-      if (btnCancel) btnCancel.removeEventListener('click', onCancel);
+      modal.style.display = 'none';
+      btnOk.removeEventListener('click', onOk);
+      btnCancel.removeEventListener('click', onCancel);
     }
     function onOk() { cleanup(); resolve(true); }
     function onCancel() { cleanup(); resolve(false); }
 
-    if (btnOk) btnOk.addEventListener('click', onOk);
-    if (btnCancel) btnCancel.addEventListener('click', onCancel);
+    btnOk.addEventListener('click', onOk);
+    btnCancel.addEventListener('click', onCancel);
   });
 }
 
@@ -66,25 +46,18 @@ function showCenteredAlert(message, opts = {}) {
     const msgEl = document.getElementById('customAlertMessage');
     const btnOk = document.getElementById('btnAlertOk');
 
-    if (iconEl) {
-      if (opts.icon) {
-        iconEl.textContent = opts.icon;
-        iconEl.style.display = 'block';
-      } else {
-        iconEl.style.display = 'none';
-      }
-    }
-    if (titleEl) titleEl.textContent = opts.title || 'แจ้งเตือน';
+    if (iconEl) iconEl.textContent = opts.icon || 'โน๏ธ';
+    if (titleEl) titleEl.textContent = opts.title || 'เนเธเนเธเน€เธ•เธทเธญเธ';
     if (msgEl) msgEl.textContent = message;
     modal.style.display = 'flex';
 
     function cleanup() {
-      if (modal) modal.style.display = 'none';
-      if (btnOk) btnOk.removeEventListener('click', onOk);
+      modal.style.display = 'none';
+      btnOk.removeEventListener('click', onOk);
     }
     function onOk() { cleanup(); resolve(); }
 
-    if (btnOk) btnOk.addEventListener('click', onOk);
+    btnOk.addEventListener('click', onOk);
   });
 }
 
@@ -99,8 +72,8 @@ async function checkSession() {
   const sessionData = sessionStorage.getItem('userProfile');
 
   if (!authToken || !sessionData) {
-    await showCenteredAlert('กรุณาเข้าสู่ระบบก่อนใช้งานแดชบอร์ด');
-    window.location.href = '/';
+    await showCenteredAlert('เธเธฃเธธเธ“เธฒเน€เธเนเธฒเธชเธนเนเธฃเธฐเธเธเธเนเธญเธเนเธเนเธเธฒเธเนเธ”เธเธเธญเธฃเนเธ”');
+    window.location.href = '../index.html';
     return;
   }
 
@@ -108,27 +81,9 @@ async function checkSession() {
   initializeDashboard();
   loadRealProfile();
   loadRadarChart();
-  updateStatsTabDetails();
 }
 
 function initializeDashboard() {
-  
-  const greetingStreakTitle = document.getElementById('greetingStreakTitle');
-  const greetingStreakSubtitle = document.getElementById('greetingStreakSubtitle');
-  
-  if (userProfile) {
-    if (greetingStreakTitle) {
-      greetingStreakTitle.innerHTML = `${userProfile.streak || 0} วันติดต่อกัน! 🔥`;
-    }
-    if (greetingStreakSubtitle) {
-      if ((userProfile.streak || 0) > 0) {
-        greetingStreakSubtitle.textContent = 'ทำข้อสอบวันนี้เพื่อรักษา streak';
-      } else {
-        greetingStreakSubtitle.textContent = 'เริ่มทำข้อสอบเพื่อสะสม streak เลย!';
-      }
-    }
-  }
-  
   const greetingName = document.getElementById('greetingName');
   const dropdownUserName = document.getElementById('dropdownUserName');
   const dropdownUserEmail = document.getElementById('dropdownUserEmail');
@@ -136,7 +91,7 @@ function initializeDashboard() {
   const defaultAvatar = document.getElementById('defaultAvatar');
 
   if (userProfile) {
-    const displayName = userProfile.fullName || userProfile.name || userProfile.username || 'ผู้ใช้งาน';
+    const displayName = userProfile.fullName || userProfile.name || userProfile.username || 'เธเธนเนเนเธเนเธเธฒเธ';
     greetingName.textContent = displayName;
     dropdownUserName.textContent = displayName;
     dropdownUserEmail.textContent = userProfile.email || '';
@@ -157,9 +112,9 @@ function initializeDashboard() {
   const hour = new Date().getHours();
   const greetingSub = document.querySelector('.greeting-subtitle');
   if (greetingSub) {
-    if (hour < 12) greetingSub.textContent = 'สวัสดีตอนเช้า ';
-    else if (hour < 17) greetingSub.textContent = 'สวัสดีตอนบ่าย ';
-    else greetingSub.textContent = 'สวัสดีตอนเย็น ';
+    if (hour < 12) greetingSub.textContent = 'เธชเธงเธฑเธชเธ”เธตเธ•เธญเธเน€เธเนเธฒ ๐‘';
+    else if (hour < 17) greetingSub.textContent = 'เธชเธงเธฑเธชเธ”เธตเธ•เธญเธเธเนเธฒเธข โ€๏ธ';
+    else greetingSub.textContent = 'เธชเธงเธฑเธชเธ”เธตเธ•เธญเธเน€เธขเนเธ ๐';
   }
 }
 
@@ -175,7 +130,7 @@ async function loadRealProfile() {
     if (!res.ok) {
       if (res.status === 401 || res.status === 403) {
         sessionStorage.clear();
-        window.location.href = '/';
+        window.location.href = '../index.html';
         return;
       }
       throw new Error('Profile fetch failed');
@@ -187,15 +142,6 @@ async function loadRealProfile() {
       sessionStorage.setItem('userProfile', JSON.stringify(userProfile));
       initializeDashboard();
       updateStatsFromProfile(data.user);
-      
-      // Admin Panel Check
-      const btnAdminPanel = document.getElementById('btnAdminPanel');
-      const dropdownAdminPanel = document.getElementById('dropdownAdminPanel');
-      
-      if (userProfile.role === 'ADMIN' || userProfile.role === 'OWNER') {
-        if (btnAdminPanel) btnAdminPanel.style.display = 'flex';
-        if (dropdownAdminPanel) dropdownAdminPanel.style.display = 'flex';
-      }
     }
   } catch (err) {
     console.error('Failed to load profile:', err);
@@ -217,13 +163,13 @@ async function loadRadarChart() {
     const data = await res.json();
 
     const categories = {
-      law: 'กฎหมาย',
-      thai: 'ภาษาไทย',
-      general: 'ความรู้ทั่วไป',
-      english: 'ภาษาอังกฤษ',
-      computer: 'คอมพิวเตอร์',
-      social: 'สังคม/จริยธรรม',
-      secretariat: 'งานสารบรรณ'
+      law: 'เธเธเธซเธกเธฒเธข',
+      thai: 'เธ เธฒเธฉเธฒเนเธ—เธข',
+      general: 'เธเธงเธฒเธกเธฃเธนเนเธ—เธฑเนเธงเนเธ',
+      english: 'เธ เธฒเธฉเธฒเธญเธฑเธเธเธคเธฉ',
+      computer: 'เธเธญเธกเธเธดเธงเน€เธ•เธญเธฃเน',
+      social: 'เธชเธฑเธเธเธก/เธเธฃเธดเธขเธเธฃเธฃเธก',
+      secretariat: 'เธเธฒเธเธชเธฒเธฃเธเธฃเธฃเธ“'
     };
 
     const labels = Object.values(categories);
@@ -265,7 +211,7 @@ async function loadRadarChart() {
       data: {
         labels: labels,
         datasets: [{
-          label: 'ข้อที่ตอบผิดสะสม',
+          label: 'เธเนเธญเธ—เธตเนเธ•เธญเธเธเธดเธ”เธชเธฐเธชเธก',
           data: values,
           backgroundColor: 'rgba(189, 27, 11, 0.15)',
           borderColor: '#BD1B0B',
@@ -343,7 +289,7 @@ function updateStatsFromProfile(user) {
   const pointsEl = document.getElementById('statPoints');
 
   if (avgScoreEl) avgScoreEl.textContent = avgScore;
-  if (streakEl) streakEl.textContent = `${user.streak || 0} วัน`;
+  if (streakEl) streakEl.textContent = `${user.streak || 0} เธงเธฑเธ`;
   if (levelEl) levelEl.textContent = `Lv.${user.level || 1}`;
   if (pointsEl) pointsEl.textContent = (user.points || 0).toLocaleString();
 
@@ -358,11 +304,11 @@ function updateStatsFromProfile(user) {
   const countdownTextEl = document.querySelector('.countdown-badge span');
   if (countdownTextEl) {
     if (diffDays > 0) {
-      countdownTextEl.textContent = `เหลืออีก ${diffDays} วันถึงวันสอบ`;
+      countdownTextEl.textContent = `เน€เธซเธฅเธทเธญเธญเธตเธ ${diffDays} เธงเธฑเธเธ–เธถเธเธงเธฑเธเธชเธญเธ`;
     } else if (diffDays === 0) {
-      countdownTextEl.textContent = `วันนี้คือวันสอบ! `;
+      countdownTextEl.textContent = `เธงเธฑเธเธเธตเนเธเธทเธญเธงเธฑเธเธชเธญเธ! ๐“`;
     } else {
-      countdownTextEl.textContent = `การสอบเสร็จสิ้นแล้ว `;
+      countdownTextEl.textContent = `เธเธฒเธฃเธชเธญเธเน€เธชเธฃเนเธเธชเธดเนเธเนเธฅเนเธง ๐`;
     }
   }
 
@@ -376,7 +322,7 @@ function updateStatsFromProfile(user) {
   const progressPercentText = document.getElementById('progressPercentText');
   
   if (progressBarFill) progressBarFill.style.width = `${percent}%`;
-  if (progressCountText) progressCountText.textContent = `${answered}/${target} ข้อ`;
+  if (progressCountText) progressCountText.textContent = `${answered}/${target} เธเนเธญ`;
   if (progressPercentText) progressPercentText.textContent = `${percent}%`;
 
   // Update recent results with real scores
@@ -386,13 +332,12 @@ function updateStatsFromProfile(user) {
 function updateRecentResults(user) {
   const resultItems = document.querySelectorAll('.result-item');
   const subjectScores = [
-    { name: 'กฎหมาย', score: user.scoreLaw || 0 },
-    { name: 'ภาษาไทย', score: user.scoreThai || 0 },
-    { name: 'ความรู้ทั่วไป', score: user.scoreGeneral || 0 },
-    { name: 'ภาษาอังกฤษ', score: user.scoreEnglish || 0 },
-    { name: 'คอมพิวเตอร์', score: user.scoreComputer || 0 },
-    { name: 'สังคม/จริยธรรม', score: user.scoreSocial || 0 },
-    { name: 'งานสารบรรณ', score: user.scoreSecretariat || 0 }
+    { name: 'เธเธเธซเธกเธฒเธข', score: user.scoreLaw || 0 },
+    { name: 'เธ เธฒเธฉเธฒเนเธ—เธข', score: user.scoreThai || 0 },
+    { name: 'เธเธงเธฒเธกเธฃเธนเนเธ—เธฑเนเธงเนเธ', score: user.scoreGeneral || 0 },
+    { name: 'เธ เธฒเธฉเธฒเธญเธฑเธเธเธคเธฉ', score: user.scoreEnglish || 0 },
+    { name: 'เธเธญเธกเธเธดเธงเน€เธ•เธญเธฃเน', score: user.scoreComputer || 0 },
+    { name: 'เธชเธฑเธเธเธก/เธเธฃเธดเธขเธเธฃเธฃเธก', score: user.scoreSocial || 0 },
   ];
 
   // Update result list container
@@ -423,117 +368,68 @@ checkSession();
 const btnProfileMenu = document.getElementById('btnProfileMenu');
 const profileDropdown = document.getElementById('profileDropdown');
 
-if (btnProfileMenu && profileDropdown) {
-  btnProfileMenu.addEventListener('click', (e) => {
-    e.stopPropagation();
-    profileDropdown.classList.toggle('active');
-  });
+btnProfileMenu.addEventListener('click', (e) => {
+  e.stopPropagation();
+  profileDropdown.classList.toggle('active');
+});
 
-  document.addEventListener('click', () => {
-    profileDropdown.classList.remove('active');
-  });
-}
+document.addEventListener('click', () => {
+  profileDropdown.classList.remove('active');
+});
 
 // 2. Notifications Bell Toggle
 const btnNotification = document.getElementById('btnNotification');
 const notifBadge = document.getElementById('notifBadge');
+notifBadge.classList.add('active');
 
-if (btnNotification && notifBadge) {
-  notifBadge.classList.add('active');
-  
-  btnNotification.addEventListener('click', () => {
-    if (notifBadge.classList.contains('active')) {
-      notifBadge.classList.remove('active');
-    } else {
-      notifBadge.classList.add('active');
-    }
-  });
-}
+btnNotification.addEventListener('click', () => {
+  if (notifBadge.classList.contains('active')) {
+    notifBadge.classList.remove('active');
+  } else {
+    notifBadge.classList.add('active');
+  }
+});
 
 // 3. Start Exam (calls real daily exam API)
 const btnStartExam = document.getElementById('btnStartExam');
-const examModeModal = document.getElementById('examModeModal');
-const btnCloseExamMode = document.getElementById('btnCloseExamMode');
-const btnExamModeBank = document.getElementById('btnExamModeBank');
-const btnExamModePretest = document.getElementById('btnExamModePretest');
 const progressBarFill = document.getElementById('progressBarFill');
 const progressCountText = document.getElementById('progressCountText');
 const progressPercentText = document.getElementById('progressPercentText');
 
-if (btnStartExam) {
-  btnStartExam.addEventListener('click', () => {
-    if (examModeModal) examModeModal.style.display = 'flex';
-  });
-}
-
-if (btnCloseExamMode) {
-  btnCloseExamMode.addEventListener('click', () => {
-    if (examModeModal) examModeModal.style.display = 'none';
-  });
-}
-
-async function handleStartExam(mode) {
-  if (examModeModal) examModeModal.style.display = 'none';
+btnStartExam.addEventListener('click', async () => {
   btnStartExam.disabled = true;
-  btnStartExam.querySelector('span').textContent = 'กำลังโหลด...';
+  btnStartExam.querySelector('span').textContent = 'เธเธณเธฅเธฑเธเนเธซเธฅเธ”...';
 
   try {
-    const res = await fetch(`${API_BASE}/api/exams/daily?mode=${mode}`, {
+    const res = await fetch(`${API_BASE}/api/exams/daily`, {
       headers: { 'Authorization': `Bearer ${authToken}` }
     });
 
     if (res.ok) {
       const data = await res.json();
       const questionCount = data.questions ? data.questions.length : 0;
-      await showCenteredAlert(` พร้อมทำข้อสอบ! มีทั้งหมด ${questionCount} ข้อ\n\n(ฟีเจอร์ทำข้อสอบเต็มรูปแบบจะเปิดในเวอร์ชันหน้า)`);
+      await showCenteredAlert(`๐“ เธเธฃเนเธญเธกเธ—เธณเธเนเธญเธชเธญเธ! เธกเธตเธ—เธฑเนเธเธซเธกเธ” ${questionCount} เธเนเธญ\n\n(เธเธตเน€เธเธญเธฃเนเธ—เธณเธเนเธญเธชเธญเธเน€เธ•เนเธกเธฃเธนเธเนเธเธเธเธฐเน€เธเธดเธ”เนเธเน€เธงเธญเธฃเนเธเธฑเธเธซเธเนเธฒ)`);
     } else {
-      await showCenteredAlert('ไม่สามารถโหลดข้อสอบได้ กรุณาลองใหม่');
+      await showCenteredAlert('เนเธกเนเธชเธฒเธกเธฒเธฃเธ–เนเธซเธฅเธ”เธเนเธญเธชเธญเธเนเธ”เน เธเธฃเธธเธ“เธฒเธฅเธญเธเนเธซเธกเน');
     }
   } catch (err) {
     console.error('Daily exam fetch error:', err);
-    await showCenteredAlert('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
+    await showCenteredAlert('เนเธกเนเธชเธฒเธกเธฒเธฃเธ–เน€เธเธทเนเธญเธกเธ•เนเธญเน€เธเธดเธฃเนเธเน€เธงเธญเธฃเนเนเธ”เน');
   }
+
   btnStartExam.disabled = false;
-  btnStartExam.querySelector('span').textContent = 'ทำข้อสอบ';
-}
+  btnStartExam.querySelector('span').textContent = 'เน€เธฃเธดเนเธกเธชเธญเธ';
+});
 
-if (btnExamModeBank) {
-  btnExamModeBank.addEventListener('click', () => {
-    if (examModeModal) examModeModal.style.display = 'none';
-    
-    // Hide other views
-    if (homeView) homeView.classList.remove('active');
-    if (communityView) communityView.classList.remove('active');
-    if (battleView) battleView.classList.remove('active');
-    if (statsView) statsView.classList.remove('active');
-    if (profileView) profileView.classList.remove('active');
-    if (questionBankView) questionBankView.classList.remove('active');
-    
-    // Show Question Bank view
-    if (questionBankView) questionBankView.classList.add('active');
-    
-    // Deselect bottom tabs
-    navTabs.forEach(t => t.classList.remove('active'));
-  });
-}
-
-// Handle subject selection from Question Bank
-window.startBankSubject = function(subjectName) {
-  showCenteredAlert(`เลือกทำข้อสอบวิชา: ${subjectName}\n\n(ระบบคลังข้อสอบกำลังพัฒนา)`);
-};
-
-if (btnExamModePretest) {
-  btnExamModePretest.addEventListener('click', () => handleStartExam('pretest'));
-}
 // 4. Logout Handlers
 const btnDropdownLogout = document.getElementById('btnDropdownLogout');
 const btnProfileLogout = document.getElementById('btnProfileLogout');
 
 async function handleLogout() {
-  const confirmLog = await showCenteredConfirm('ยืนยันการออกจากระบบ', 'คุณต้องการออกจากระบบใช่หรือไม่?', { okText: 'ออกจากระบบ', okColor: '#EF4444' });
+  const confirmLog = await showCenteredConfirm('เธขเธทเธเธขเธฑเธเธเธฒเธฃเธญเธญเธเธเธฒเธเธฃเธฐเธเธ', 'เธเธธเธ“เธ•เนเธญเธเธเธฒเธฃเธญเธญเธเธเธฒเธเธฃเธฐเธเธเนเธเนเธซเธฃเธทเธญเนเธกเน?', { okText: 'เธญเธญเธเธเธฒเธเธฃเธฐเธเธ', okColor: '#EF4444' });
   if (confirmLog) {
     sessionStorage.clear();
-    window.location.href = '/';
+    window.location.href = '../index.html';
   }
 }
 
@@ -554,7 +450,6 @@ if (btnProfileLogout) {
 // 5. Bottom nav tab state switcher
 const navTabs = document.querySelectorAll('.bottom-nav .nav-tab');
 const homeTabBtn = navTabs[0]; // first tab
-const bankTabBtn = document.getElementById('btnTabBank'); // bank tab
 const communityTabBtn = document.getElementById('btnTabCommunity'); // community tab
 const battleTabBtn = document.getElementById('btnTabBattle'); // battle tab
 const statsTabBtn = document.getElementById('btnTabStats'); // stats tab
@@ -565,33 +460,6 @@ const communityView = document.getElementById('communityView');
 const battleView = document.getElementById('battleView');
 const statsView = document.getElementById('statsView');
 const profileView = document.getElementById('profileView');
-const questionBankView = document.getElementById('questionBankView');
-const btnBackFromBank = document.getElementById('btnBackFromBank');
-
-if (btnBackFromBank) {
-  btnBackFromBank.addEventListener('click', () => {
-    if (questionBankView) questionBankView.classList.remove('active');
-    if (homeView) homeView.classList.add('active');
-    
-    navTabs.forEach(t => t.classList.remove('active'));
-    if (homeTabBtn) homeTabBtn.classList.add('active');
-  });
-}
-
-if (bankTabBtn) {
-  bankTabBtn.addEventListener('click', (e) => {
-    if (e) e.preventDefault();
-    navTabs.forEach(t => t.classList.remove('active'));
-    bankTabBtn.classList.add('active');
-    
-    if (questionBankView) questionBankView.classList.add('active');
-    if (homeView) homeView.classList.remove('active');
-    if (communityView) communityView.classList.remove('active');
-    if (battleView) battleView.classList.remove('active');
-    if (statsView) statsView.classList.remove('active');
-    if (profileView) profileView.classList.remove('active');
-  });
-}
 
 if (homeTabBtn) {
   homeTabBtn.addEventListener('click', (e) => {
@@ -604,10 +472,8 @@ if (homeTabBtn) {
     if (battleView) battleView.classList.remove('active');
     if (statsView) statsView.classList.remove('active');
     if (profileView) profileView.classList.remove('active');
-    if (questionBankView) questionBankView.classList.remove('active');
     loadRealProfile(); // Refresh profile values on navigate
     loadRadarChart();
-    updateStatsTabDetails();
   });
 }
 
@@ -622,7 +488,6 @@ if (communityTabBtn) {
     if (battleView) battleView.classList.remove('active');
     if (statsView) statsView.classList.remove('active');
     if (profileView) profileView.classList.remove('active');
-    if (questionBankView) questionBankView.classList.remove('active');
     
     updateCommunityTabDetails();
   });
@@ -639,7 +504,6 @@ if (battleTabBtn) {
     if (communityView) communityView.classList.remove('active');
     if (statsView) statsView.classList.remove('active');
     if (profileView) profileView.classList.remove('active');
-    if (questionBankView) questionBankView.classList.remove('active');
     
     updateBattleTabDetails();
   });
@@ -656,7 +520,6 @@ if (statsTabBtn) {
     if (communityView) communityView.classList.remove('active');
     if (battleView) battleView.classList.remove('active');
     if (profileView) profileView.classList.remove('active');
-    if (questionBankView) questionBankView.classList.remove('active');
     
     updateStatsTabDetails();
   });
@@ -679,41 +542,6 @@ if (profileTabBtn) {
   });
 }
 
-function updateAllMyAvatars(faceImage, fullName) {
-  const imgIds = ['defaultAvatarImg', 'profileAvatarImg', 'editProfileAvatarImg', 'composePostAvatarImg', ];
-  const boxIds = ['defaultAvatar', 'profileAvatarBox', 'editProfileAvatarBox', 'composePostAvatarBox', ];
-  
-  const displayName = fullName || (window.userProfile && (window.userProfile.fullName || window.userProfile.username)) || 'ผู้ใช้งาน';
-  const letter = displayName.charAt(0);
-  
-  if (faceImage) {
-    imgIds.forEach(id => {
-      const el = document.getElementById(id);
-      if (el) { el.src = faceImage; el.style.display = 'block'; }
-    });
-    boxIds.forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.style.display = 'none';
-    });
-    // For default avatar in header (it has a text box defaultAvatar, but wait, does it have an img element? Let's assume headerAvatar is the img)
-    const headerAvatar = document.getElementById('headerAvatar');
-    if (headerAvatar) { headerAvatar.src = faceImage; headerAvatar.style.display = 'block'; }
-    const defaultAvatar = document.getElementById('defaultAvatar');
-    if (defaultAvatar) defaultAvatar.style.display = 'none';
-  } else {
-    imgIds.forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.style.display = 'none';
-    });
-    boxIds.forEach(id => {
-      const el = document.getElementById(id);
-      if (el) { el.textContent = letter; el.style.display = 'flex'; }
-    });
-    const headerAvatar = document.getElementById('headerAvatar');
-    if (headerAvatar) headerAvatar.style.display = 'none';
-  }
-}
-
 function updateProfileTabDetails() {
   if (!userProfile) return;
   
@@ -727,7 +555,7 @@ function updateProfileTabDetails() {
   const profileAvgScore = document.getElementById('profileAvgScore');
   const profileStreakCount = document.getElementById('profileStreakCount');
 
-  const displayName = userProfile.fullName || userProfile.name || userProfile.username || 'ผู้ใช้งาน';
+  const displayName = userProfile.fullName || userProfile.name || userProfile.username || 'เธเธนเนเนเธเนเธเธฒเธ';
   
   if (profileName) profileName.textContent = displayName;
   if (profileEmail) profileEmail.textContent = userProfile.email || '';
@@ -750,11 +578,23 @@ function updateProfileTabDetails() {
     }
   }
   
-  const months = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
-  const formattedDate = `สมาชิกตั้งแต่ ${months[createdAt.getMonth()]} ${createdAt.getFullYear() + 543}`;
+  const months = ['เธก.เธ.', 'เธ.เธ.', 'เธกเธต.เธ.', 'เน€เธก.เธข.', 'เธ.เธ.', 'เธกเธด.เธข.', 'เธ.เธ.', 'เธช.เธ.', 'เธ.เธข.', 'เธ•.เธ.', 'เธ.เธข.', 'เธ.เธ.'];
+  const formattedDate = `เธชเธกเธฒเธเธดเธเธ•เธฑเนเธเนเธ•เน ${months[createdAt.getMonth()]} ${createdAt.getFullYear() + 543}`;
   if (profileJoinDate) profileJoinDate.textContent = formattedDate;
 
-  updateAllMyAvatars(userProfile.faceImage, displayName);
+  if (userProfile.faceImage) {
+    if (profileAvatarImg) {
+      profileAvatarImg.src = userProfile.faceImage;
+      profileAvatarImg.style.display = 'block';
+    }
+    if (profileAvatarBox) profileAvatarBox.style.display = 'none';
+  } else {
+    if (profileAvatarBox) {
+      profileAvatarBox.textContent = displayName.charAt(0);
+      profileAvatarBox.style.display = 'flex';
+    }
+    if (profileAvatarImg) profileAvatarImg.style.display = 'none';
+  }
 
   // Set real stats
   // Calculate average score
@@ -773,7 +613,7 @@ function updateProfileTabDetails() {
     : '0.0';
 
   if (profileAvgScore) profileAvgScore.textContent = `${avgScore}%`;
-  if (profileStreakCount) profileStreakCount.textContent = `${userProfile.streak || 0} วัน`;
+  if (profileStreakCount) profileStreakCount.textContent = `${userProfile.streak || 0} เธงเธฑเธ`;
   
   // Display actual answered questions count from database
   const answeredCount = userProfile.answeredQuestionsCount || 0;
@@ -806,9 +646,9 @@ async function loadLeaderboard() {
     if (topUsers.length === 0) {
       container.innerHTML = `
         <div class="leaderboard-item-loading" style="padding: 40px 0; text-align: center; color: var(--text-light); font-size: 13px; line-height: 1.6;">
-          <span style="font-size: 28px; display: block; margin-bottom: 8px;">⏳</span>
-          ยังไม่มีการประลองในสัปดาห์นี้<br>
-          <span style="font-size: 11px; opacity: 0.7; display: block; margin-top: 4px;">กด Quick Match เพื่อเข้าสู่ตารางอันดับเป็นคนแรก!</span>
+          <span style="font-size: 28px; display: block; margin-bottom: 8px;">โณ</span>
+          เธขเธฑเธเนเธกเนเธกเธตเธเธฒเธฃเธเธฃเธฐเธฅเธญเธเนเธเธชเธฑเธเธ”เธฒเธซเนเธเธตเน<br>
+          <span style="font-size: 11px; opacity: 0.7; display: block; margin-top: 4px;">เธเธ” Quick Match เน€เธเธทเนเธญเน€เธเนเธฒเธชเธนเนเธ•เธฒเธฃเธฒเธเธญเธฑเธเธ”เธฑเธเน€เธเนเธเธเธเนเธฃเธ!</span>
         </div>
       `;
       return;
@@ -820,13 +660,13 @@ async function loadLeaderboard() {
     topUsers.forEach((u, index) => {
       const rank = index + 1;
       const elo = 1000 + (u.points || 0);
-      const displayName = u.fullName || u.username || 'ผู้ใช้งาน';
+      const displayName = u.fullName || u.username || 'เธเธนเนเนเธเนเธเธฒเธ';
       const initial = displayName.charAt(0);
       
       let rankDisplay = `<span class="leaderboard-rank">${rank}</span>`;
-      if (rank === 1) rankDisplay = '<span class="leaderboard-medal"></span>';
-      else if (rank === 2) rankDisplay = '<span class="leaderboard-medal"></span>';
-      else if (rank === 3) rankDisplay = '<span class="leaderboard-medal"></span>';
+      if (rank === 1) rankDisplay = '<span class="leaderboard-medal">๐ฅ</span>';
+      else if (rank === 2) rankDisplay = '<span class="leaderboard-medal">๐ฅ</span>';
+      else if (rank === 3) rankDisplay = '<span class="leaderboard-medal">๐ฅ</span>';
 
       const isMe = userProfile && u.id === userProfile.id;
       
@@ -835,7 +675,7 @@ async function loadLeaderboard() {
           <div class="leaderboard-item-left">
             ${rankDisplay}
             <div class="leaderboard-avatar">${initial}</div>
-            <span class="leaderboard-name">${displayName}${isMe ? ' (คุณ)' : ''}</span>
+            <span class="leaderboard-name">${displayName}${isMe ? ' (เธเธธเธ“)' : ''}</span>
           </div>
           <span class="leaderboard-elo">${elo.toLocaleString()}</span>
         </div>
@@ -846,7 +686,7 @@ async function loadLeaderboard() {
     if (myRank && myRank.rank > 20 && myRank.user.battleWins > 0) {
       const myUser = myRank.user;
       const elo = 1000 + (myUser.points || 0);
-      const displayName = myUser.fullName || myUser.username || 'ผู้ใช้งาน';
+      const displayName = myUser.fullName || myUser.username || 'เธเธนเนเนเธเนเธเธฒเธ';
       const initial = displayName.charAt(0);
       
       html += `
@@ -854,7 +694,7 @@ async function loadLeaderboard() {
           <div class="leaderboard-item-left">
             <span class="leaderboard-rank">#${myRank.rank}</span>
             <div class="leaderboard-avatar">${initial}</div>
-            <span class="leaderboard-name">${displayName} (คุณ)</span>
+            <span class="leaderboard-name">${displayName} (เธเธธเธ“)</span>
           </div>
           <span class="leaderboard-elo">${elo.toLocaleString()}</span>
         </div>
@@ -865,7 +705,7 @@ async function loadLeaderboard() {
 
   } catch (err) {
     console.error('Error loading leaderboard:', err);
-    container.innerHTML = '<div class="leaderboard-item-loading">ไม่สามารถดึงข้อมูลอันดับได้</div>';
+    container.innerHTML = '<div class="leaderboard-item-loading">เนเธกเนเธชเธฒเธกเธฒเธฃเธ–เธ”เธถเธเธเนเธญเธกเธนเธฅเธญเธฑเธเธ”เธฑเธเนเธ”เน</div>';
   }
 }
 
@@ -893,8 +733,8 @@ if (btnQuickMatch) {
     modal.innerHTML = `
       <div style="background: white; padding: 30px; border-radius: 24px; text-align: center; max-width: 400px; width: 90%; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);">
         <div class="searching-spinner" style="width: 60px; height: 60px; border: 5px solid #F1F5F9; border-top-color: #BD1B0B; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px auto;"></div>
-        <h3 style="font-size: 20px; font-weight: 600; margin-bottom: 10px; color: #1E293B;">กำลังค้นหาคู่ประลอง...</h3>
-        <p style="font-size: 14px; color: #64748B; margin-bottom: 0;" id="matchmakingTimer">จับคู่ ELO ใกล้เคียงกัน (0s)</p>
+        <h3 style="font-size: 20px; font-weight: 600; margin-bottom: 10px; color: #1E293B;">เธเธณเธฅเธฑเธเธเนเธเธซเธฒเธเธนเนเธเธฃเธฐเธฅเธญเธ...</h3>
+        <p style="font-size: 14px; color: #64748B; margin-bottom: 0;" id="matchmakingTimer">เธเธฑเธเธเธนเน ELO เนเธเธฅเนเน€เธเธตเธขเธเธเธฑเธ (0s)</p>
       </div>
     `;
     
@@ -912,7 +752,7 @@ if (btnQuickMatch) {
     const timerInterval = setInterval(() => {
       seconds++;
       const timerEl = document.getElementById('matchmakingTimer');
-      if (timerEl) timerEl.textContent = `จับคู่ ELO ใกล้เคียงกัน (${seconds}s)`;
+      if (timerEl) timerEl.textContent = `เธเธฑเธเธเธนเน ELO เนเธเธฅเนเน€เธเธตเธขเธเธเธฑเธ (${seconds}s)`;
     }, 1000);
     
     setTimeout(() => {
@@ -920,37 +760,37 @@ if (btnQuickMatch) {
       
       const modalContent = modal.querySelector('div');
       modalContent.innerHTML = `
-        <div style="font-size: 50px; margin-bottom: 20px;"></div>
-        <h3 style="font-size: 20px; font-weight: 600; margin-bottom: 10px; color: #1E293B;">พบคู่ต่อสู้แล้ว!</h3>
+        <div style="font-size: 50px; margin-bottom: 20px;">โก</div>
+        <h3 style="font-size: 20px; font-weight: 600; margin-bottom: 10px; color: #1E293B;">เธเธเธเธนเนเธ•เนเธญเธชเธนเนเนเธฅเนเธง!</h3>
         <div style="display: flex; justify-content: space-around; align-items: center; margin: 24px 0; background: #F8FAFC; padding: 15px; border-radius: 16px;">
           <div>
-            <div style="width: 48px; height: 48px; border-radius: 50%; background: #BD1B0B; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; margin: 0 auto 8px auto; font-size: 16px;">${userProfile.fullName ? userProfile.fullName.charAt(0) : 'ค'}</div>
-            <span style="font-size: 14px; font-weight: 600; color: #334155; display: block;">คุณ</span>
+            <div style="width: 48px; height: 48px; border-radius: 50%; background: #BD1B0B; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; margin: 0 auto 8px auto; font-size: 16px;">${userProfile.fullName ? userProfile.fullName.charAt(0) : 'เธ'}</div>
+            <span style="font-size: 14px; font-weight: 600; color: #334155; display: block;">เธเธธเธ“</span>
             <span style="font-size: 12px; color: #64748B;">ELO ${(1000 + (userProfile.points || 0)).toLocaleString()}</span>
           </div>
           <div style="font-size: 18px; font-weight: 700; color: #BD1B0B;">VS</div>
           <div>
-            <div style="width: 48px; height: 48px; border-radius: 50%; background: #D97706; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; margin: 0 auto 8px auto; font-size: 16px;">ป</div>
-            <span style="font-size: 14px; font-weight: 600; color: #334155; display: block;">ประสิทธิ์ สมร</span>
+            <div style="width: 48px; height: 48px; border-radius: 50%; background: #D97706; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; margin: 0 auto 8px auto; font-size: 16px;">เธ</div>
+            <span style="font-size: 14px; font-weight: 600; color: #334155; display: block;">เธเธฃเธฐเธชเธดเธ—เธเธดเน เธชเธกเธฃ</span>
             <span style="font-size: 12px; color: #64748B;">ELO 2,840</span>
           </div>
         </div>
-        <button id="btnStartBattleArena" style="background: #BD1B0B; color: white; border: none; padding: 12px 24px; border-radius: 12px; font-weight: 600; width: 100%; cursor: pointer; transition: 0.2s;">เริ่มประลอง</button>
+        <button id="btnStartBattleArena" style="background: #BD1B0B; color: white; border: none; padding: 12px 24px; border-radius: 12px; font-weight: 600; width: 100%; cursor: pointer; transition: 0.2s;">เน€เธฃเธดเนเธกเธเธฃเธฐเธฅเธญเธ</button>
       `;
       
       const btnStart = document.getElementById('btnStartBattleArena');
       btnStart.addEventListener('click', async () => {
         modal.remove();
-        await showCenteredAlert('ระบบประลอง Arena กำลังอยู่ในการพัฒนาร่วมกับ AI เจนเนอเรเตอร์คำถาม จะเปิดใช้งานเต็มรูปแบบเร็วๆ นี้!', { title: 'ประลอง Arena' });
+        await showCenteredAlert('เธฃเธฐเธเธเธเธฃเธฐเธฅเธญเธ Arena เธเธณเธฅเธฑเธเธญเธขเธนเนเนเธเธเธฒเธฃเธเธฑเธ’เธเธฒเธฃเนเธงเธกเธเธฑเธ AI เน€เธเธเน€เธเธญเน€เธฃเน€เธ•เธญเธฃเนเธเธณเธ–เธฒเธก เธเธฐเน€เธเธดเธ”เนเธเนเธเธฒเธเน€เธ•เนเธกเธฃเธนเธเนเธเธเน€เธฃเนเธงเน เธเธตเน!', { title: 'เธเธฃเธฐเธฅเธญเธ Arena' });
       });
       
     }, 3000);
   });
 }
 
-  var statsRadarChartInstance = null;
-  var statsBarChartInstance = null;
-  var statsLineChartInstance = null;
+let statsRadarChartInstance = null;
+let statsBarChartInstance = null;
+let statsLineChartInstance = null;
 
 function updateStatsTabDetails() {
   if (!userProfile) return;
@@ -959,34 +799,32 @@ function updateStatsTabDetails() {
   const statsLastUpdateText = document.getElementById('statsLastUpdateText');
   if (statsLastUpdateText) {
     const today = new Date();
-    const months = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
-    statsLastUpdateText.textContent = `อัปเดต วันนี้ (${today.getDate()} ${months[today.getMonth()]})`;
+    const months = ['เธก.เธ.', 'เธ.เธ.', 'เธกเธต.เธ.', 'เน€เธก.เธข.', 'เธ.เธ.', 'เธกเธด.เธข.', 'เธ.เธ.', 'เธช.เธ.', 'เธ.เธข.', 'เธ•.เธ.', 'เธ.เธข.', 'เธ.เธ.'];
+    statsLastUpdateText.textContent = `เธญเธฑเธเน€เธ”เธ• เธงเธฑเธเธเธตเน (${today.getDate()} ${months[today.getMonth()]})`;
   }
 
   // 2. Scores Mapping (Match subjects to database fields)
   const subjectsData = [
-    { key: 'law', label: 'กฎหมาย', score: userProfile.scoreLaw || 0, rec: 'ควรจดจำมาตราสำคัญในกฎหมายอาญาและวิแพ่ง ทบทวนสัปดาห์ละ 2 ครั้ง' },
-    { key: 'thai', label: 'ภาษาไทย', score: userProfile.scoreThai || 0, rec: 'เน้นทบทวนการสะกดคำ การเรียงประโยค และหลักภาษาไทยเบื้องต้น' },
-    { key: 'general', label: 'คณิต', score: userProfile.scoreGeneral || 0, rec: 'เน้นทบทวนสมการและโจทย์ปัญหา เพิ่มการฝึก 30 นาที/วัน' },
-    { key: 'english', label: 'อังกฤษ', score: userProfile.scoreEnglish || 0, rec: 'จุดอ่อนหลัก: Tense และ Grammar ฝึก Vocab 20 คำ/วัน' },
-    { key: 'social', label: 'ทั่วไป', score: userProfile.scoreSocial || 0, rec: 'ติดตามข่าวสารเหตุการณ์ปัจจุบัน และหลักธรรมจริยธรรมของข้าราชการตำรวจ' },
-    { key: 'computer', label: 'วิทยา', score: userProfile.scoreComputer || 0, rec: 'เน้นชีววิทยาพื้นฐานและฟิสิกส์เบื้องต้น ช่วยเพิ่ม 8-12 คะแนน' },
-    { key: 'secretariat', label: 'งานสารบรรณ', score: userProfile.scoreSecretariat || 0, rec: 'ทบทวนระเบียบงานสารบรรณตำรวจ และชนิดของหนังสือราชการเป็นประจำ' }
+    { key: 'law', label: 'เธเธเธซเธกเธฒเธข', score: userProfile.scoreLaw || 0, rec: 'เธเธงเธฃเธเธ”เธเธณเธกเธฒเธ•เธฃเธฒเธชเธณเธเธฑเธเนเธเธเธเธซเธกเธฒเธขเธญเธฒเธเธฒเนเธฅเธฐเธงเธดเนเธเนเธ เธ—เธเธ—เธงเธเธชเธฑเธเธ”เธฒเธซเนเธฅเธฐ 2 เธเธฃเธฑเนเธ' },
+    { key: 'thai', label: 'เธ เธฒเธฉเธฒเนเธ—เธข', score: userProfile.scoreThai || 0, rec: 'เน€เธเนเธเธ—เธเธ—เธงเธเธเธฒเธฃเธชเธฐเธเธ”เธเธณ เธเธฒเธฃเน€เธฃเธตเธขเธเธเธฃเธฐเนเธขเธ เนเธฅเธฐเธซเธฅเธฑเธเธ เธฒเธฉเธฒเนเธ—เธขเน€เธเธทเนเธญเธเธ•เนเธ' },
+    { key: 'general', label: 'เธเธ“เธดเธ•', score: userProfile.scoreGeneral || 0, rec: 'เน€เธเนเธเธ—เธเธ—เธงเธเธชเธกเธเธฒเธฃเนเธฅเธฐเนเธเธ—เธขเนเธเธฑเธเธซเธฒ เน€เธเธดเนเธกเธเธฒเธฃเธเธถเธ 30 เธเธฒเธ—เธต/เธงเธฑเธ' },
+    { key: 'english', label: 'เธญเธฑเธเธเธคเธฉ', score: userProfile.scoreEnglish || 0, rec: 'เธเธธเธ”เธญเนเธญเธเธซเธฅเธฑเธ: Tense เนเธฅเธฐ Grammar เธเธถเธ Vocab Arena 20 เธเธณ/เธงเธฑเธ' },
+    { key: 'social', label: 'เธ—เธฑเนเธงเนเธ', score: userProfile.scoreSocial || 0, rec: 'เธ•เธดเธ”เธ•เธฒเธกเธเนเธฒเธงเธชเธฒเธฃเน€เธซเธ•เธธเธเธฒเธฃเธ“เนเธเธฑเธเธเธธเธเธฑเธ เนเธฅเธฐเธซเธฅเธฑเธเธเธฃเธฃเธกเธเธฃเธดเธขเธเธฃเธฃเธกเธเธญเธเธเนเธฒเธฃเธฒเธเธเธฒเธฃเธ•เธณเธฃเธงเธ' },
+    { key: 'computer', label: 'เธงเธดเธ—เธขเธฒ', score: userProfile.scoreComputer || 0, rec: 'เน€เธเนเธเธเธตเธงเธงเธดเธ—เธขเธฒเธเธทเนเธเธเธฒเธเนเธฅเธฐเธเธดเธชเธดเธเธชเนเน€เธเธทเนเธญเธเธ•เนเธ เธเนเธงเธขเน€เธเธดเนเธก 8-12 เธเธฐเนเธเธ' }
   ];
 
   const labels = subjectsData.map(s => s.label);
   const scores = subjectsData.map(s => s.score);
 
   // 3. Render Radar Chart
-  if (typeof Chart !== 'undefined') {
-    const radarCtx = document.getElementById('statsRadarChartCanvas').getContext('2d');
-    if (statsRadarChartInstance) statsRadarChartInstance.destroy();
-    statsRadarChartInstance = new Chart(radarCtx, {
+  const radarCtx = document.getElementById('statsRadarChartCanvas').getContext('2d');
+  if (statsRadarChartInstance) statsRadarChartInstance.destroy();
+  statsRadarChartInstance = new Chart(radarCtx, {
     type: 'radar',
     data: {
       labels: labels,
       datasets: [{
-        label: 'คะแนนการทำข้อสอบ (%)',
+        label: 'เธเธฐเนเธเธเธเธฒเธฃเธ—เธณเธเนเธญเธชเธญเธ (%)',
         data: scores,
         backgroundColor: 'rgba(189, 27, 11, 0.15)',
         borderColor: '#BD1B0B',
@@ -1021,9 +859,9 @@ function updateStatsTabDetails() {
   
   // Determine color for each bar based on score
   const barColors = scores.map(score => {
-    if (score >= 80) return '#10B981'; // Green (ดีมาก)
-    if (score >= 60) return '#F59E0B'; // Orange (พอใช้)
-    return '#EF4444'; // Red (ปรับปรุง)
+    if (score >= 80) return '#10B981'; // Green (เธ”เธตเธกเธฒเธ)
+    if (score >= 60) return '#F59E0B'; // Orange (เธเธญเนเธเน)
+    return '#EF4444'; // Red (เธเธฃเธฑเธเธเธฃเธธเธ)
   });
 
   if (statsBarChartInstance) statsBarChartInstance.destroy();
@@ -1090,7 +928,7 @@ function updateStatsTabDetails() {
   statsLineChartInstance = new Chart(lineCtx, {
     type: 'line',
     data: {
-      labels: ['ส.1', 'ส.2', 'ส.3', 'ส.4', 'ส.5', 'ส.6', 'ส.7', 'ส.8'],
+      labels: ['เธช.1', 'เธช.2', 'เธช.3', 'เธช.4', 'เธช.5', 'เธช.6', 'เธช.7', 'เธช.8'],
       datasets: [{
         data: lineData,
         borderColor: '#BD1B0B',
@@ -1125,7 +963,6 @@ function updateStatsTabDetails() {
       }
     }
   });
-  } // End of Chart check
 
   // 6. Generate AI Recommendations (Pick 3 subjects with lowest scores)
   const recsContainer = document.getElementById('aiRecsListContainer');
@@ -1137,23 +974,23 @@ function updateStatsTabDetails() {
     let recsHtml = '';
     lowestThree.forEach(sub => {
       let ratingClass = 'needs-improvement';
-      let ratingText = 'ปรับปรุง';
+      let ratingText = 'เธเธฃเธฑเธเธเธฃเธธเธ';
       
       if (sub.score >= 80) {
         ratingClass = 'good';
-        ratingText = 'ดีมาก';
+        ratingText = 'เธ”เธตเธกเธฒเธ';
       } else if (sub.score >= 60) {
         ratingClass = 'average';
-        ratingText = 'พอใช้';
+        ratingText = 'เธเธญเนเธเน';
       }
 
       // Format subject display name to full name
       let fullSubName = sub.label;
-      if (sub.label === 'คณิต') fullSubName = 'คณิตศาสตร์';
-      else if (sub.label === 'อังกฤษ') fullSubName = 'ภาษาอังกฤษ';
-      else if (sub.label === 'วิทยา') fullSubName = 'เทคโนโลยีและวิทยาศาสตร์';
-      else if (sub.label === 'ทั่วไป') fullSubName = 'สังคมและจริยธรรม';
-      else if (sub.label === 'กฎหมาย') fullSubName = 'กฎหมายที่ประชาชนควรรู้';
+      if (sub.label === 'เธเธ“เธดเธ•') fullSubName = 'เธเธ“เธดเธ•เธจเธฒเธชเธ•เธฃเน';
+      else if (sub.label === 'เธญเธฑเธเธเธคเธฉ') fullSubName = 'เธ เธฒเธฉเธฒเธญเธฑเธเธเธคเธฉ';
+      else if (sub.label === 'เธงเธดเธ—เธขเธฒ') fullSubName = 'เน€เธ—เธเนเธเนเธฅเธขเธตเนเธฅเธฐเธงเธดเธ—เธขเธฒเธจเธฒเธชเธ•เธฃเน';
+      else if (sub.label === 'เธ—เธฑเนเธงเนเธ') fullSubName = 'เธชเธฑเธเธเธกเนเธฅเธฐเธเธฃเธดเธขเธเธฃเธฃเธก';
+      else if (sub.label === 'เธเธเธซเธกเธฒเธข') fullSubName = 'เธเธเธซเธกเธฒเธขเธ—เธตเนเธเธฃเธฐเธเธฒเธเธเธเธงเธฃเธฃเธนเน';
 
       recsHtml += `
         <div class="ai-rec-item ${ratingClass}">
@@ -1316,9 +1153,9 @@ async function loadCommunityPosts() {
     if (posts.length === 0) {
       container.innerHTML = `
         <div style="background-color: var(--bg-card); border: 1px dashed var(--border-color); border-radius: 20px; padding: 40px; text-align: center; color: var(--text-light); font-size: 14px; width: 100%;">
-          <span style="font-size: 32px; display: block; margin-bottom: 8px;"></span>
-          ยังไม่มีโพสต์พูดคุยในขณะนี้<br>
-          <span style="font-size: 11px; opacity: 0.7;">เขียนโพสต์ด้านบนเพื่อเริ่มแชร์ข้อมูลคนแรก!</span>
+          <span style="font-size: 32px; display: block; margin-bottom: 8px;">๐“</span>
+          เธขเธฑเธเนเธกเนเธกเธตเนเธเธชเธ•เนเธเธนเธ”เธเธธเธขเนเธเธเธ“เธฐเธเธตเน<br>
+          <span style="font-size: 11px; opacity: 0.7;">เน€เธเธตเธขเธเนเธเธชเธ•เนเธ”เนเธฒเธเธเธเน€เธเธทเนเธญเน€เธฃเธดเนเธกเนเธเธฃเนเธเนเธญเธกเธนเธฅเธเธเนเธฃเธ!</span>
         </div>
       `;
       return;
@@ -1326,7 +1163,7 @@ async function loadCommunityPosts() {
 
     let html = '';
     posts.forEach(p => {
-      const displayName = p.user.fullName || p.user.username || 'ผู้ใช้งาน';
+      const displayName = p.user.fullName || p.user.username || 'เธเธนเนเนเธเนเธเธฒเธ';
       const initial = displayName.charAt(0);
       const postDate = new Date(p.createdAt);
       
@@ -1338,8 +1175,8 @@ async function loadCommunityPosts() {
       if (isMyPost) {
         actionsHtml = `
           <div style="display: flex; gap: 8px; margin-top: 4px;">
-            <span class="post-action-btn edit" onclick="startEditPost(${p.id})">แก้ไข</span>
-            <span class="post-action-btn delete" onclick="deletePost(${p.id})">ลบ</span>
+            <span class="post-action-btn edit" onclick="startEditPost(${p.id})">เนเธเนเนเธ</span>
+            <span class="post-action-btn delete" onclick="deletePost(${p.id})">เธฅเธ</span>
           </div>
         `;
       }
@@ -1349,15 +1186,15 @@ async function loadCommunityPosts() {
       if (p.comments && p.comments.length > 0) {
         commentsHtml += `<div class="comments-section">`;
         p.comments.forEach(c => {
-          const cName = c.user.fullName || c.user.username || 'ผู้ใช้งาน';
+          const cName = c.user.fullName || c.user.username || 'เธเธนเนเนเธเนเธเธฒเธ';
           const cInitial = cName.charAt(0);
           const cDate = new Date(c.createdAt);
           commentsHtml += `
             <div class="comment-item">
-              ${renderAvatarHtml(c.user, 'comment-avatar', '', '#94A3B8')}
+              <div class="comment-avatar">${cInitial}</div>
               <div class="comment-content-box">
                 <span class="comment-author-name">${cName}</span>
-                <span class="comment-text">${formatMessageContent(c.content)}</span>
+                <span class="comment-text">${escapeHTML(c.content)}</span>
                 <span class="comment-time">${formatPostTime(cDate)}</span>
               </div>
             </div>
@@ -1370,7 +1207,7 @@ async function loadCommunityPosts() {
         <div class="post-card" style="margin-bottom: 16px;">
           <div class="post-header">
             <div class="post-author-info">
-              ${renderAvatarHtml(p.user, 'post-author-avatar', '', '#CBD5E1')}
+              <div class="post-author-avatar">${initial}</div>
               <div>
                 <span class="post-author-name" style="display: block;">${displayName}</span>
                 <span class="post-time">${timeStr}</span>
@@ -1378,15 +1215,15 @@ async function loadCommunityPosts() {
               </div>
             </div>
           </div>
-          <p class="post-body" id="postBodyText-${p.id}">${formatMessageContent(p.content)}</p>
+          <p class="post-body" id="postBodyText-${p.id}">${escapeHTML(p.content)}</p>
           
           <!-- Comments List Area -->
           ${commentsHtml}
 
           <!-- Add Comment Input Area -->
           <div class="comment-input-row">
-            <input type="text" placeholder="เขียนความคิดเห็น..." class="txt-comment-input" id="txtCommentForPost-${p.id}">
-            <button class="btn-submit-comment" onclick="submitComment(${p.id})">ส่ง</button>
+            <input type="text" placeholder="เน€เธเธตเธขเธเธเธงเธฒเธกเธเธดเธ”เน€เธซเนเธ..." class="txt-comment-input" id="txtCommentForPost-${p.id}">
+            <button class="btn-submit-comment" onclick="submitComment(${p.id})">เธชเนเธ</button>
           </div>
         </div>
       `;
@@ -1396,7 +1233,7 @@ async function loadCommunityPosts() {
 
   } catch (err) {
     console.error('Load posts error:', err);
-    container.innerHTML = '<div class="leaderboard-item-loading">ไม่สามารถโหลดฟีดโพสต์ได้</div>';
+    container.innerHTML = '<div class="leaderboard-item-loading">เนเธกเนเธชเธฒเธกเธฒเธฃเธ–เนเธซเธฅเธ”เธเธตเธ”เนเธเธชเธ•เนเนเธ”เน</div>';
   }
 }
 
@@ -1410,12 +1247,12 @@ if (btnCreatePost) {
 
     const content = txtPostContent.value.trim();
     if (!content) {
-      await showCenteredAlert('กรุณากรอกข้อความโพสต์');
+      await showCenteredAlert('เธเธฃเธธเธ“เธฒเธเธฃเธญเธเธเนเธญเธเธงเธฒเธกเนเธเธชเธ•เน');
       return;
     }
 
     btnCreatePost.disabled = true;
-    btnCreatePost.textContent = 'กำลังโพสต์...';
+    btnCreatePost.textContent = 'เธเธณเธฅเธฑเธเนเธเธชเธ•เน...';
 
     try {
       const res = await fetch(`${API_BASE}/api/community/posts`, {
@@ -1439,7 +1276,7 @@ if (btnCreatePost) {
       await showCenteredAlert(err.message);
     } finally {
       btnCreatePost.disabled = false;
-      btnCreatePost.textContent = 'โพสต์';
+      btnCreatePost.textContent = 'เนเธเธชเธ•เน';
     }
   };
 }
@@ -1451,7 +1288,7 @@ async function submitComment(postId) {
 
   const content = input.value.trim();
   if (!content) {
-    await showCenteredAlert('กรุณากรอกความคิดเห็น');
+    await showCenteredAlert('เธเธฃเธธเธ“เธฒเธเธฃเธญเธเธเธงเธฒเธกเธเธดเธ”เน€เธซเนเธ');
     return;
   }
 
@@ -1498,7 +1335,7 @@ async function loadChatMessages() {
     if (messages.length === 0) {
       container.innerHTML = `
         <div style="text-align: center; color: var(--text-light); font-size: 13px; padding-top: 40px;">
-           เริ่มพิมพ์ข้อความแชทเพื่อพูดคุยในกลุ่มแชทรวมวันนี้
+          ๐’ฌ เน€เธฃเธดเนเธกเธเธดเธกเธเนเธเนเธญเธเธงเธฒเธกเนเธเธ—เน€เธเธทเนเธญเธเธนเธ”เธเธธเธขเนเธเธเธฅเธธเนเธกเนเธเธ—เธฃเธงเธกเธงเธฑเธเธเธตเน
         </div>
       `;
       return;
@@ -1507,19 +1344,23 @@ async function loadChatMessages() {
     let html = '';
     messages.forEach(m => {
       const isMe = userProfile && m.userId === userProfile.id;
-      const displayName = m.user.fullName || m.user.username || 'ผู้ใช้งาน';
+      const displayName = m.user.fullName || m.user.username || 'เธเธนเนเนเธเนเธเธฒเธ';
       const timeStr = new Date(m.createdAt).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
       const initial = displayName.charAt(0);
 
-      const avatarHtml = renderAvatarHtml(m.user, 'friend-user-avatar', 'width: 32px; height: 32px; font-size: 13px; cursor: pointer; flex-shrink: 0; border-radius: 50%; font-weight: 600; margin-right: 8px;', isMe ? 'var(--primary-color)' : '#BD1B0B').replace('<div ', '<div onclick="showUserProfile(${m.userId})" ');
+      const avatarHtml = `
+        <div onclick="showUserProfile(${m.userId})" class="friend-user-avatar" style="width: 32px; height: 32px; font-size: 13px; cursor: pointer; flex-shrink: 0; background-color: ${isMe ? 'var(--primary-color)' : '#BD1B0B'}; display: flex; align-items: center; justify-content: center; color: white; border-radius: 50%; font-weight: 600; margin-right: 8px;">
+          ${escapeHTML(initial)}
+        </div>
+      `;
 
       html += `
         <div style="display: flex; align-items: flex-start; margin-bottom: 12px; justify-content: ${isMe ? 'flex-end' : 'flex-start'};">
           ${isMe ? '' : avatarHtml}
           <div class="chat-bubble ${isMe ? 'me' : ''}" style="margin: 0;">
-            <span class="chat-sender" onclick="showUserProfile(${m.userId})" style="cursor: pointer; font-weight: 600;">${isMe ? 'คุณ' : displayName}</span>
+            <span class="chat-sender" onclick="showUserProfile(${m.userId})" style="cursor: pointer; font-weight: 600;">${isMe ? 'เธเธธเธ“' : displayName}</span>
             <div class="chat-message-box">
-              ${formatMessageContent(m.content)}
+              ${escapeHTML(m.content)}
             </div>
             <span class="chat-timestamp">${timeStr}</span>
           </div>
@@ -1595,12 +1436,12 @@ function formatPostTime(date) {
   const diffMin = Math.floor(diffMs / (1000 * 60));
   const diffHr = Math.floor(diffMs / (1000 * 60 * 60));
   
-  if (diffMin < 1) return 'เมื่อสักครู่';
-  if (diffMin < 60) return `${diffMin} นาทีที่แล้ว`;
-  if (diffHr < 24) return `${diffHr} ชั่วโมงที่แล้ว`;
+  if (diffMin < 1) return 'เน€เธกเธทเนเธญเธชเธฑเธเธเธฃเธนเน';
+  if (diffMin < 60) return `${diffMin} เธเธฒเธ—เธตเธ—เธตเนเนเธฅเนเธง`;
+  if (diffHr < 24) return `${diffHr} เธเธฑเนเธงเนเธกเธเธ—เธตเนเนเธฅเนเธง`;
   
-  const days = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.'];
-  const months = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+  const days = ['เธญเธฒ.', 'เธ.', 'เธญ.', 'เธ.', 'เธเธค.', 'เธจ.', 'เธช.'];
+  const months = ['เธก.เธ.', 'เธ.เธ.', 'เธกเธต.เธ.', 'เน€เธก.เธข.', 'เธ.เธ.', 'เธกเธด.เธข.', 'เธ.เธ.', 'เธช.เธ.', 'เธ.เธข.', 'เธ•.เธ.', 'เธ.เธข.', 'เธ.เธ.'];
   return `${date.getDate()} ${months[date.getMonth()]} (${days[date.getDay()]})`;
 }
 
@@ -1629,8 +1470,8 @@ window.startEditPost = function(postId) {
     <div style="display: flex; flex-direction: column; gap: 8px; width: 100%; margin-top: 8px;">
       <textarea id="txtEditPostContent-${postId}" style="width: 100%; height: 70px; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; font-family: 'Kanit', sans-serif; font-size: 13px; resize: none; outline: none; background-color: white;" onfocus="this.style.borderColor='var(--primary-color)'" onblur="this.style.borderColor='var(--border-color)'">${currentContent}</textarea>
       <div style="display: flex; gap: 8px; justify-content: flex-end;">
-        <button class="btn-submit-comment" style="background-color: #F1F5F9; color: var(--text-dark);" onclick="cancelEditPost(${postId})">ยกเลิก</button>
-        <button class="btn-submit-comment" style="background-color: var(--primary-color); color: white;" onclick="saveEditPost(${postId})">บันทึก</button>
+        <button class="btn-submit-comment" style="background-color: #F1F5F9; color: var(--text-dark);" onclick="cancelEditPost(${postId})">เธขเธเน€เธฅเธดเธ</button>
+        <button class="btn-submit-comment" style="background-color: var(--primary-color); color: white;" onclick="saveEditPost(${postId})">เธเธฑเธเธ—เธถเธ</button>
       </div>
     </div>
   `;
@@ -1649,7 +1490,7 @@ window.saveEditPost = async function(postId) {
 
   const content = input.value.trim();
   if (!content) {
-    await showCenteredAlert('กรุณากรอกข้อความโพสต์');
+    await showCenteredAlert('เธเธฃเธธเธ“เธฒเธเธฃเธญเธเธเนเธญเธเธงเธฒเธกเนเธเธชเธ•เน');
     return;
   }
 
@@ -1677,7 +1518,7 @@ window.saveEditPost = async function(postId) {
 
 // Delete a post (only owner)
 window.deletePost = async function(postId) {
-  const confirmed = await showCenteredConfirm('ยืนยันการลบ', 'คุณต้องการลบโพสต์นี้หรือไม่?');
+  const confirmed = await showCenteredConfirm('เธขเธทเธเธขเธฑเธเธเธฒเธฃเธฅเธ', 'เธเธธเธ“เธ•เนเธญเธเธเธฒเธฃเธฅเธเนเธเธชเธ•เนเธเธตเนเธซเธฃเธทเธญเนเธกเน?');
   if (!confirmed) return;
 
   try {
@@ -1717,9 +1558,9 @@ async function loadGroupsList(searchVal = '') {
     if (groups.length === 0) {
       container.innerHTML = `
         <div style="background-color: var(--bg-card); border: 1px dashed var(--border-color); border-radius: 20px; padding: 40px; text-align: center; color: var(--text-light); font-size: 14px; grid-column: 1 / 3; width: 100%;">
-          <span style="font-size: 32px; display: block; margin-bottom: 8px;"></span>
-          ไม่พบกลุ่มติวที่ค้นหา<br>
-          <span style="font-size: 11px; opacity: 0.7;">คลิก "สร้างกลุ่ม" ขวาบนเพื่อตั้งกลุ่มแรกของคุณ!</span>
+          <span style="font-size: 32px; display: block; margin-bottom: 8px;">๐‘ฅ</span>
+          เนเธกเนเธเธเธเธฅเธธเนเธกเธ•เธดเธงเธ—เธตเนเธเนเธเธซเธฒ<br>
+          <span style="font-size: 11px; opacity: 0.7;">เธเธฅเธดเธ "เธชเธฃเนเธฒเธเธเธฅเธธเนเธก" เธเธงเธฒเธเธเน€เธเธทเนเธญเธ•เธฑเนเธเธเธฅเธธเนเธกเนเธฃเธเธเธญเธเธเธธเธ“!</span>
         </div>
       `;
       return;
@@ -1733,42 +1574,39 @@ async function loadGroupsList(searchVal = '') {
       if (g.membershipStatus === 'ACCEPTED') {
         actionBtnHtml = `
           <div style="display: flex; flex-direction: column; gap: 6px; align-items: flex-end;">
-            <button class="btn-quick-match" style="padding: 6px 14px; font-size: 12px; border-radius: 8px; width: auto; box-shadow: none; display: block;" onclick="enterGroupChat(${g.id}, '${escapeHTML(g.name)}', ${g.memberCount}, ${g.createdById}, '${g.image || ''}')">แชทกลุ่ม</button>
-            ${isCreator ? '' : `<button class="post-action-btn delete" style="font-size: 11px; margin-right: 0;" onclick="leaveGroup(${g.id})">ออกจากกลุ่ม</button>`}
+            <button class="btn-quick-match" style="padding: 6px 14px; font-size: 12px; border-radius: 8px; width: auto; box-shadow: none; display: block;" onclick="enterGroupChat(${g.id}, '${escapeHTML(g.name)}', ${g.memberCount}, ${g.createdById})">เนเธเธ—เธเธฅเธธเนเธก</button>
+            ${isCreator ? '' : `<button class="post-action-btn delete" style="font-size: 11px; margin-right: 0;" onclick="leaveGroup(${g.id})">เธญเธญเธเธเธฒเธเธเธฅเธธเนเธก</button>`}
           </div>
         `;
       } else if (g.membershipStatus === 'PENDING') {
         actionBtnHtml = `
-          <button class="btn-quick-match" style="padding: 6px 14px; font-size: 12px; border-radius: 8px; width: auto; box-shadow: none; background-color: #64748B; cursor: not-allowed;" disabled>รออนุมัติ</button>
+          <button class="btn-quick-match" style="padding: 6px 14px; font-size: 12px; border-radius: 8px; width: auto; box-shadow: none; background-color: #64748B; cursor: not-allowed;" disabled>เธฃเธญเธญเธเธธเธกเธฑเธ•เธด</button>
         `;
       } else {
         actionBtnHtml = `
-          <button class="btn-quick-match" style="padding: 6px 14px; font-size: 12px; border-radius: 8px; width: auto; box-shadow: none;" onclick="joinGroup(${g.id})">เข้าร่วม</button>
+          <button class="btn-quick-match" style="padding: 6px 14px; font-size: 12px; border-radius: 8px; width: auto; box-shadow: none;" onclick="joinGroup(${g.id})">เน€เธเนเธฒเธฃเนเธงเธก</button>
         `;
       }
 
       let deleteBtnHtml = '';
       if (isCreator) {
-        deleteBtnHtml = `<span class="post-action-btn delete" style="font-size: 11px; margin-left: 8px;" onclick="deleteGroup(${g.id})">ลบกลุ่ม</span>`;
+        deleteBtnHtml = `<span class="post-action-btn delete" style="font-size: 11px; margin-left: 8px;" onclick="deleteGroup(${g.id})">เธฅเธเธเธฅเธธเนเธก</span>`;
       }
 
       html += `
         <div class="battle-mode-item" style="cursor: default; padding: 14px 18px; margin-bottom: 12px;">
           <div class="mode-item-left" style="text-align: left;">
-            ${g.image 
-              ? `<img src="${g.image}" style="width: 44px; height: 44px; border-radius: 12px; object-fit: cover; margin-right: 14px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">` 
-              : `<div class="mode-icon-wrapper ranked-icon" style="background-color: #F1F5F9; color: var(--text-dark); font-size: 18px;"></div>`
-            }
+            <div class="mode-icon-wrapper ranked-icon" style="background-color: #F1F5F9; color: var(--text-dark); font-size: 18px;">๐‘ฎ</div>
             <div class="mode-info">
               <span class="mode-title" style="font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; color: var(--text-dark); flex-wrap: wrap;">
                 ${escapeHTML(g.name)}
                 <span style="font-size: 10px; background-color: #E2E8F0; color: #64748B; padding: 2px 6px; border-radius: 4px;">ID: #${g.id}</span>
                 <span style="font-size: 10px; background-color: ${g.isPrivate ? '#FEE2E2' : '#D1FAE5'}; color: ${g.isPrivate ? '#991B1B' : '#065F46'}; padding: 2px 6px; border-radius: 4px;">
-                  ${g.isPrivate ? ' ส่วนตัว' : ' สาธารณะ'}
+                  ${g.isPrivate ? '๐”’ เธชเนเธงเธเธ•เธฑเธง' : '๐”“ เธชเธฒเธเธฒเธฃเธ“เธฐ'}
                 </span>
               </span>
               <span class="mode-subtitle" style="font-size: 12px; display: block; margin-top: 4px;">
-                สมาชิก ${g.memberCount} คน • สร้างโดย ${escapeHTML(g.creatorName)} ${deleteBtnHtml}
+                เธชเธกเธฒเธเธดเธ ${g.memberCount} เธเธ โ€ข เธชเธฃเนเธฒเธเนเธ”เธข ${escapeHTML(g.creatorName)} ${deleteBtnHtml}
               </span>
               ${g.description ? `<p style="font-size: 12px; color: var(--text-light); margin: 6px 0 0 0; line-height: 1.4;">${escapeHTML(g.description)}</p>` : ''}
             </div>
@@ -1782,7 +1620,7 @@ async function loadGroupsList(searchVal = '') {
 
   } catch (err) {
     console.error('Load groups error:', err);
-    container.innerHTML = '<div class="leaderboard-item-loading">ไม่สามารถโหลดกลุ่มได้</div>';
+    container.innerHTML = '<div class="leaderboard-item-loading">เนเธกเนเธชเธฒเธกเธฒเธฃเธ–เนเธซเธฅเธ”เธเธฅเธธเนเธกเนเธ”เน</div>';
   }
 }
 
@@ -1797,43 +1635,14 @@ if (btnOpenCreateGroupModal && createGroupModal) {
     createGroupModal.style.display = 'flex';
     document.getElementById('txtCreateGroupName').value = '';
     document.getElementById('txtCreateGroupDesc').value = '';
-    const fileInput = document.getElementById('fileCreateGroupImage');
-    if (fileInput) fileInput.value = '';
-    const imgPreview = document.getElementById('createGroupImagePreview');
-    if (imgPreview) imgPreview.style.display = 'none';
     const publicRadio = document.querySelector('input[name="optGroupPrivacy"][value="public"]');
     if (publicRadio) publicRadio.checked = true;
-  };
-}
-
-const fileCreateGroupImage = document.getElementById('fileCreateGroupImage');
-const createGroupImagePreview = document.getElementById('createGroupImagePreview');
-let pendingGroupImageBase64 = null;
-
-if (fileCreateGroupImage) {
-  fileCreateGroupImage.onchange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        pendingGroupImageBase64 = e.target.result;
-        if (createGroupImagePreview) {
-          createGroupImagePreview.src = pendingGroupImageBase64;
-          createGroupImagePreview.style.display = 'block';
-        }
-      };
-      reader.readAsDataURL(file);
-    } else {
-      pendingGroupImageBase64 = null;
-      if (createGroupImagePreview) createGroupImagePreview.style.display = 'none';
-    }
   };
 }
 
 if (btnCancelCreateGroup && createGroupModal) {
   btnCancelCreateGroup.onclick = () => {
     createGroupModal.style.display = 'none';
-    pendingGroupImageBase64 = null;
   };
 }
 
@@ -1847,12 +1656,12 @@ if (btnSubmitCreateGroup && createGroupModal) {
     const isPrivate = optPrivacy ? optPrivacy.value === 'private' : false;
 
     if (!name) {
-      await showCenteredAlert('กรุณากรอกชื่อกลุ่ม');
+      await showCenteredAlert('เธเธฃเธธเธ“เธฒเธเธฃเธญเธเธเธทเนเธญเธเธฅเธธเนเธก');
       return;
     }
 
     btnSubmitCreateGroup.disabled = true;
-    btnSubmitCreateGroup.textContent = 'กำลังสร้าง...';
+    btnSubmitCreateGroup.textContent = 'เธเธณเธฅเธฑเธเธชเธฃเนเธฒเธ...';
 
     try {
       const res = await fetch(`${API_BASE}/api/community/groups`, {
@@ -1861,7 +1670,7 @@ if (btnSubmitCreateGroup && createGroupModal) {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${authToken}`
         },
-        body: JSON.stringify({ name, description, isPrivate, image: pendingGroupImageBase64 })
+        body: JSON.stringify({ name, description, isPrivate })
       });
 
       if (!res.ok) {
@@ -1876,7 +1685,7 @@ if (btnSubmitCreateGroup && createGroupModal) {
       await showCenteredAlert(err.message);
     } finally {
       btnSubmitCreateGroup.disabled = false;
-      btnSubmitCreateGroup.textContent = 'สร้างกลุ่ม';
+      btnSubmitCreateGroup.textContent = 'เธชเธฃเนเธฒเธเธเธฅเธธเนเธก';
     }
   };
 }
@@ -1908,13 +1717,13 @@ window.joinGroup = async function(groupId) {
     await showCenteredAlert(data.message);
     loadGroupsList(txtGroupSearch ? txtGroupSearch.value.trim() : '');
   } catch (err) {
-    await showCenteredAlert(err.message || 'ไม่สามารถเข้าร่วมกลุ่มได้');
+    await showCenteredAlert(err.message || 'เนเธกเนเธชเธฒเธกเธฒเธฃเธ–เน€เธเนเธฒเธฃเนเธงเธกเธเธฅเธธเนเธกเนเธ”เน');
   }
 };
 
 // Leave Group action
 window.leaveGroup = async function(groupId) {
-  const confirmed = await showCenteredConfirm('ออกจากกลุ่ม', 'คุณแน่ใจว่าต้องการออกจากกลุ่มนี้ใช่หรือไม่?', { okText: 'ออกจากกลุ่ม', okColor: '#EF4444' });
+  const confirmed = await showCenteredConfirm('เธญเธญเธเธเธฒเธเธเธฅเธธเนเธก', 'เธเธธเธ“เนเธเนเนเธเธงเนเธฒเธ•เนเธญเธเธเธฒเธฃเธญเธญเธเธเธฒเธเธเธฅเธธเนเธกเธเธตเนเนเธเนเธซเธฃเธทเธญเนเธกเน?', { okText: 'เธญเธญเธเธเธฒเธเธเธฅเธธเนเธก', okColor: '#EF4444' });
   if (!confirmed) return;
   try {
     const res = await fetch(`${API_BASE}/api/community/groups/${groupId}/leave`, {
@@ -1924,13 +1733,13 @@ window.leaveGroup = async function(groupId) {
     if (!res.ok) throw new Error('Leave failed');
     loadGroupsList(txtGroupSearch ? txtGroupSearch.value.trim() : '');
   } catch (err) {
-    await showCenteredAlert('ไม่สามารถออกจากกลุ่มได้');
+    await showCenteredAlert('เนเธกเนเธชเธฒเธกเธฒเธฃเธ–เธญเธญเธเธเธฒเธเธเธฅเธธเนเธกเนเธ”เน');
   }
 };
 
 // Delete Group action
 window.deleteGroup = async function(groupId) {
-  const confirmed = await showCenteredConfirm('ลบกลุ่มติว', 'คุณต้องการลบกลุ่มติวนี้ใช่หรือไม่? ข้อมูลสมาชิกและข้อความทั้งหมดจะถูกลบถาวร', { okText: 'ลบกลุ่ม', okColor: '#EF4444' });
+  const confirmed = await showCenteredConfirm('เธฅเธเธเธฅเธธเนเธกเธ•เธดเธง', 'เธเธธเธ“เธ•เนเธญเธเธเธฒเธฃเธฅเธเธเธฅเธธเนเธกเธ•เธดเธงเธเธตเนเนเธเนเธซเธฃเธทเธญเนเธกเน? เธเนเธญเธกเธนเธฅเธชเธกเธฒเธเธดเธเนเธฅเธฐเธเนเธญเธเธงเธฒเธกเธ—เธฑเนเธเธซเธกเธ”เธเธฐเธ–เธนเธเธฅเธเธ–เธฒเธงเธฃ', { okText: 'เธฅเธเธเธฅเธธเนเธก', okColor: '#EF4444' });
   if (!confirmed) return;
   try {
     const res = await fetch(`${API_BASE}/api/community/groups/${groupId}`, {
@@ -1943,12 +1752,12 @@ window.deleteGroup = async function(groupId) {
     }
     loadGroupsList(txtGroupSearch ? txtGroupSearch.value.trim() : '');
   } catch (err) {
-    await showCenteredAlert(err.message || 'ไม่สามารถลบกลุ่มได้');
+    await showCenteredAlert(err.message || 'เนเธกเนเธชเธฒเธกเธฒเธฃเธ–เธฅเธเธเธฅเธธเนเธกเนเธ”เน');
   }
 };
 
 // --- Group Chat View Handlers ---
-window.enterGroupChat = function(groupId, groupName, memberCount, createdById, groupImage) {
+window.enterGroupChat = function(groupId, groupName, memberCount, createdById) {
   activeGroupId = groupId;
   document.getElementById('groupListMainPanel').style.display = 'none';
   
@@ -1956,17 +1765,7 @@ window.enterGroupChat = function(groupId, groupName, memberCount, createdById, g
   screen.style.display = 'flex';
 
   document.getElementById('lblChatGroupName').textContent = groupName;
-  document.getElementById('lblChatGroupMeta').textContent = `ID: #${groupId} • สมาชิก ${memberCount} คน`;
-
-  const headerImg = document.getElementById('groupChatHeaderImage');
-  if (headerImg) {
-    if (groupImage && groupImage !== 'undefined') {
-      headerImg.src = groupImage;
-      headerImg.style.display = 'block';
-    } else {
-      headerImg.style.display = 'none';
-    }
-  }
+  document.getElementById('lblChatGroupMeta').textContent = `ID: #${groupId} โ€ข เธชเธกเธฒเธเธดเธ ${memberCount} เธเธ`;
 
   // Creator options inside header
   const isCreator = userProfile && createdById === userProfile.id;
@@ -2042,7 +1841,7 @@ async function loadJoinRequests(groupId) {
       return;
     }
 
-    if (countEl) countEl.textContent = ` คำขอเข้าร่วมกลุ่ม (${requests.length})`;
+    if (countEl) countEl.textContent = `๐“ฌ เธเธณเธเธญเน€เธเนเธฒเธฃเนเธงเธกเธเธฅเธธเนเธก (${requests.length})`;
 
     let html = '';
     requests.forEach(r => {
@@ -2051,8 +1850,8 @@ async function loadJoinRequests(groupId) {
         <div style="display: flex; justify-content: space-between; align-items: center; background: white; padding: 8px 12px; border-radius: 8px; border: 1px solid #FDE68A;">
           <span style="font-size: 13px; font-weight: 500; color: var(--text-dark);">${escapeHTML(displayName)} (@${escapeHTML(r.user.username)})</span>
           <div style="display: flex; gap: 6px;">
-            <button onclick="approveJoinRequest(${groupId}, ${r.user.id})" class="btn-quick-match" style="padding: 4px 10px; font-size: 11px; border-radius: 6px; width: auto; box-shadow: none; background-color: #10B981; color: white;">อนุมัติ</button>
-            <button onclick="declineJoinRequest(${groupId}, ${r.user.id})" class="post-action-btn delete" style="font-size: 11px; border: 1px solid #EF4444; border-radius: 6px; padding: 4px 10px; background: none; margin-right: 0;">ปฏิเสธ</button>
+            <button onclick="approveJoinRequest(${groupId}, ${r.user.id})" class="btn-quick-match" style="padding: 4px 10px; font-size: 11px; border-radius: 6px; width: auto; box-shadow: none; background-color: #10B981; color: white;">เธญเธเธธเธกเธฑเธ•เธด</button>
+            <button onclick="declineJoinRequest(${groupId}, ${r.user.id})" class="post-action-btn delete" style="font-size: 11px; border: 1px solid #EF4444; border-radius: 6px; padding: 4px 10px; background: none; margin-right: 0;">เธเธเธดเน€เธชเธ</button>
           </div>
         </div>
       `;
@@ -2076,12 +1875,12 @@ window.approveJoinRequest = async function(groupId, userId) {
     loadJoinRequests(groupId);
     loadGroupsList(txtGroupSearch ? txtGroupSearch.value.trim() : '');
   } catch (err) {
-    await showCenteredAlert('ไม่สามารถอนุมัติคำขอได้');
+    await showCenteredAlert('เนเธกเนเธชเธฒเธกเธฒเธฃเธ–เธญเธเธธเธกเธฑเธ•เธดเธเธณเธเธญเนเธ”เน');
   }
 };
 
 window.declineJoinRequest = async function(groupId, userId) {
-  const confirmed = await showCenteredConfirm('ปฏิเสธคำขอ', 'ปฏิเสธคำขอเข้าร่วมกลุ่มของบุคคลนี้ใช่หรือไม่?', { okText: 'ปฏิเสธ', okColor: '#EF4444' });
+  const confirmed = await showCenteredConfirm('เธเธเธดเน€เธชเธเธเธณเธเธญ', 'เธเธเธดเน€เธชเธเธเธณเธเธญเน€เธเนเธฒเธฃเนเธงเธกเธเธฅเธธเนเธกเธเธญเธเธเธธเธเธเธฅเธเธตเนเนเธเนเธซเธฃเธทเธญเนเธกเน?', { okText: 'เธเธเธดเน€เธชเธ', okColor: '#EF4444' });
   if (!confirmed) return;
   try {
     const res = await fetch(`${API_BASE}/api/community/groups/${groupId}/requests/${userId}/decline`, {
@@ -2091,7 +1890,7 @@ window.declineJoinRequest = async function(groupId, userId) {
     if (!res.ok) throw new Error();
     loadJoinRequests(groupId);
   } catch (err) {
-    await showCenteredAlert('ไม่สามารถปฏิเสธคำขอได้');
+    await showCenteredAlert('เนเธกเนเธชเธฒเธกเธฒเธฃเธ–เธเธเธดเน€เธชเธเธเธณเธเธญเนเธ”เน');
   }
 };
 
@@ -2116,7 +1915,7 @@ async function loadGroupChatMessages(groupId) {
     if (messages.length === 0) {
       container.innerHTML = `
         <div style="text-align: center; color: var(--text-light); font-size: 13px; padding-top: 40px;">
-           เริ่มพิมพ์ข้อความแชทเพื่อพูดคุยในกลุ่มติววันนี้
+          ๐’ฌ เน€เธฃเธดเนเธกเธเธดเธกเธเนเธเนเธญเธเธงเธฒเธกเนเธเธ—เน€เธเธทเนเธญเธเธนเธ”เธเธธเธขเนเธเธเธฅเธธเนเธกเธ•เธดเธงเธงเธฑเธเธเธตเน
         </div>
       `;
       return;
@@ -2125,19 +1924,23 @@ async function loadGroupChatMessages(groupId) {
     let html = '';
     messages.forEach(m => {
       const isMe = userProfile && m.userId === userProfile.id;
-      const displayName = m.user.fullName || m.user.username || 'ผู้ใช้งาน';
+      const displayName = m.user.fullName || m.user.username || 'เธเธนเนเนเธเนเธเธฒเธ';
       const timeStr = new Date(m.createdAt).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
       const initial = displayName.charAt(0);
 
-      const avatarHtml = renderAvatarHtml(m.user, 'friend-user-avatar', 'width: 32px; height: 32px; font-size: 13px; cursor: pointer; flex-shrink: 0; border-radius: 50%; font-weight: 600; margin-right: 8px;', isMe ? 'var(--primary-color)' : '#BD1B0B').replace('<div ', '<div onclick="showUserProfile(${m.userId})" ');
+      const avatarHtml = `
+        <div onclick="showUserProfile(${m.userId})" class="friend-user-avatar" style="width: 32px; height: 32px; font-size: 13px; cursor: pointer; flex-shrink: 0; background-color: ${isMe ? 'var(--primary-color)' : '#BD1B0B'}; display: flex; align-items: center; justify-content: center; color: white; border-radius: 50%; font-weight: 600; margin-right: 8px;">
+          ${escapeHTML(initial)}
+        </div>
+      `;
 
       html += `
         <div style="display: flex; align-items: flex-start; margin-bottom: 12px; justify-content: ${isMe ? 'flex-end' : 'flex-start'};">
           ${isMe ? '' : avatarHtml}
           <div class="chat-bubble ${isMe ? 'me' : ''}" style="margin: 0;">
-            <span class="chat-sender" onclick="showUserProfile(${m.userId})" style="cursor: pointer; font-weight: 600;">${isMe ? 'คุณ' : displayName}</span>
+            <span class="chat-sender" onclick="showUserProfile(${m.userId})" style="cursor: pointer; font-weight: 600;">${isMe ? 'เธเธธเธ“' : displayName}</span>
             <div class="chat-message-box">
-              ${formatMessageContent(m.content)}
+              ${escapeHTML(m.content)}
             </div>
             <span class="chat-timestamp">${timeStr}</span>
           </div>
@@ -2227,7 +2030,7 @@ if (txtFriendUserSearch && friendUserSearchResultsContainer) {
       const users = await res.json();
 
       if (users.length === 0) {
-        friendUserSearchResultsContainer.innerHTML = '<div style="padding: 10px 16px; font-size: 13px; color: var(--text-light); text-align: center;">ไม่พบผู้ใช้งาน</div>';
+        friendUserSearchResultsContainer.innerHTML = '<div style="padding: 10px 16px; font-size: 13px; color: var(--text-light); text-align: center;">เนเธกเนเธเธเธเธนเนเนเธเนเธเธฒเธ</div>';
         friendUserSearchResultsContainer.style.display = 'block';
         return;
       }
@@ -2236,13 +2039,13 @@ if (txtFriendUserSearch && friendUserSearchResultsContainer) {
       users.forEach(u => {
         let actionBtn = '';
         if (u.friendStatus === 'NONE') {
-          actionBtn = `<button class="btn-quick-match" style="padding: 4px 10px; font-size: 11px; border-radius: 6px; width: auto; box-shadow: none;" onclick="addFriend(${u.id})">เพิ่มเพื่อน</button>`;
+          actionBtn = `<button class="btn-quick-match" style="padding: 4px 10px; font-size: 11px; border-radius: 6px; width: auto; box-shadow: none;" onclick="addFriend(${u.id})">เน€เธเธดเนเธกเน€เธเธทเนเธญเธ</button>`;
         } else if (u.friendStatus === 'ACCEPTED') {
-          actionBtn = `<span style="font-size: 11px; color: #10B981; font-weight: 500;">เป็นเพื่อนแล้ว</span>`;
+          actionBtn = `<span style="font-size: 11px; color: #10B981; font-weight: 500;">เน€เธเนเธเน€เธเธทเนเธญเธเนเธฅเนเธง</span>`;
         } else if (u.friendStatus === 'PENDING_SENT') {
-          actionBtn = `<span style="font-size: 11px; color: #64748B; font-weight: 500;">รอรับแอด</span>`;
+          actionBtn = `<span style="font-size: 11px; color: #64748B; font-weight: 500;">เธฃเธญเธฃเธฑเธเนเธญเธ”</span>`;
         } else if (u.friendStatus === 'PENDING_RECEIVED') {
-          actionBtn = `<button class="btn-quick-match" style="padding: 4px 10px; font-size: 11px; border-radius: 6px; width: auto; box-shadow: none; background-color: #10B981;" onclick="acceptFriendRequest(${u.id})">รับแอด</button>`;
+          actionBtn = `<button class="btn-quick-match" style="padding: 4px 10px; font-size: 11px; border-radius: 6px; width: auto; box-shadow: none; background-color: #10B981;" onclick="acceptFriendRequest(${u.id})">เธฃเธฑเธเนเธญเธ”</button>`;
         }
 
         html += `
@@ -2256,7 +2059,7 @@ if (txtFriendUserSearch && friendUserSearchResultsContainer) {
             </div>
             <div style="display: flex; align-items: center; gap: 8px;" onclick="event.stopPropagation()">
               ${actionBtn}
-              <span class="post-action-btn delete" style="font-size: 11px; margin-right: 0;" onclick="blockUser(${u.id})">บล็อก</span>
+              <span class="post-action-btn delete" style="font-size: 11px; margin-right: 0;" onclick="blockUser(${u.id})">เธเธฅเนเธญเธ</span>
             </div>
           </div>
         `;
@@ -2293,13 +2096,13 @@ window.addFriend = async function(friendId) {
     
     loadFriendsList();
   } catch (err) {
-    await showCenteredAlert(err.message || 'ไม่สามารถเพิ่มเพื่อนได้');
+    await showCenteredAlert(err.message || 'เนเธกเนเธชเธฒเธกเธฒเธฃเธ–เน€เธเธดเนเธกเน€เธเธทเนเธญเธเนเธ”เน');
   }
 };
 
 // Block User action
 window.blockUser = async function(blockedId) {
-  const confirmed = await showCenteredConfirm('บล็อกผู้ใช้งาน', 'คุณแน่ใจว่าต้องการบล็อกผู้ใช้งานรายนี้ใช่หรือไม่? ความสัมพันธ์ความเป็นเพื่อนและแชททั้งหมดจะถูกซ่อนไว้', { okText: 'บล็อก', okColor: '#EF4444' });
+  const confirmed = await showCenteredConfirm('เธเธฅเนเธญเธเธเธนเนเนเธเนเธเธฒเธ', 'เธเธธเธ“เนเธเนเนเธเธงเนเธฒเธ•เนเธญเธเธเธฒเธฃเธเธฅเนเธญเธเธเธนเนเนเธเนเธเธฒเธเธฃเธฒเธขเธเธตเนเนเธเนเธซเธฃเธทเธญเนเธกเน? เธเธงเธฒเธกเธชเธฑเธกเธเธฑเธเธเนเธเธงเธฒเธกเน€เธเนเธเน€เธเธทเนเธญเธเนเธฅเธฐเนเธเธ—เธ—เธฑเนเธเธซเธกเธ”เธเธฐเธ–เธนเธเธเนเธญเธเนเธงเน', { okText: 'เธเธฅเนเธญเธ', okColor: '#EF4444' });
   if (!confirmed) return;
   try {
     const res = await fetch(`${API_BASE}/api/friends/block`, {
@@ -2318,7 +2121,7 @@ window.blockUser = async function(blockedId) {
     loadFriendsList();
     loadBlockedList();
   } catch (err) {
-    await showCenteredAlert('ไม่สามารถบล็อกผู้ใช้งานได้');
+    await showCenteredAlert('เนเธกเนเธชเธฒเธกเธฒเธฃเธ–เธเธฅเนเธญเธเธเธนเนเนเธเนเธเธฒเธเนเธ”เน');
   }
 };
 
@@ -2335,13 +2138,13 @@ async function loadFriendsList() {
     if (!res.ok) throw new Error();
     const friends = await res.json();
 
-    if (countEl) countEl.textContent = `${friends.length} คน`;
+    if (countEl) countEl.textContent = `${friends.length} เธเธ`;
 
     if (friends.length === 0) {
       container.innerHTML = `
         <div style="text-align: center; color: var(--text-light); font-size: 12px; padding: 20px 0; width: 100%;">
-          ยังไม่มีเพื่อนในขณะนี้<br>
-          <span style="font-size: 10px; opacity: 0.7;">พิมพ์ค้นหาชื่อเพื่อนด้านบนเพื่อกดเพิ่มเพื่อน</span>
+          เธขเธฑเธเนเธกเนเธกเธตเน€เธเธทเนเธญเธเนเธเธเธ“เธฐเธเธตเน<br>
+          <span style="font-size: 10px; opacity: 0.7;">เธเธดเธกเธเนเธเนเธเธซเธฒเธเธทเนเธญเน€เธเธทเนเธญเธเธ”เนเธฒเธเธเธเน€เธเธทเนเธญเธเธ”เน€เธเธดเนเธกเน€เธเธทเนเธญเธ</span>
         </div>
       `;
       return;
@@ -2358,12 +2161,12 @@ async function loadFriendsList() {
             <div class="friend-user-avatar" style="background-color: #BD1B0B;">${initial}</div>
             <div style="text-align: left;">
               <span class="friend-user-name" style="display: block;">${escapeHTML(displayName)}</span>
-              <span style="font-size: 11px; color: var(--text-light);">แชทส่วนตัว</span>
+              <span style="font-size: 11px; color: var(--text-light);">เนเธเธ—เธชเนเธงเธเธ•เธฑเธง</span>
             </div>
           </div>
           <div style="display: flex; gap: 8px;">
-            <button class="btn-quick-match" style="padding: 6px 12px; font-size: 11px; border-radius: 8px; width: auto; box-shadow: none;" onclick="enterDmChat(${f.id}, '${escapeHTML(displayName)}')">แชท</button>
-            <button class="post-action-btn delete" style="border: 1px solid #EF4444; border-radius: 8px; padding: 6px 12px; font-size: 11px; font-weight: 600; background: none; margin-right: 0;" onclick="unfriend(${f.id})">ลบเพื่อน</button>
+            <button class="btn-quick-match" style="padding: 6px 12px; font-size: 11px; border-radius: 8px; width: auto; box-shadow: none;" onclick="enterDmChat(${f.id}, '${escapeHTML(displayName)}')">เนเธเธ—</button>
+            <button class="post-action-btn delete" style="border: 1px solid #EF4444; border-radius: 8px; padding: 6px 12px; font-size: 11px; font-weight: 600; background: none; margin-right: 0;" onclick="unfriend(${f.id})">เธฅเธเน€เธเธทเนเธญเธ</button>
           </div>
         </div>
       `;
@@ -2390,7 +2193,7 @@ async function loadBlockedList() {
     if (blocked.length === 0) {
       container.innerHTML = `
         <div style="text-align: center; color: var(--text-light); font-size: 12px; padding: 10px 0; width: 100%;">
-          ไม่มีรายชื่อที่บล็อก
+          เนเธกเนเธกเธตเธฃเธฒเธขเธเธทเนเธญเธ—เธตเนเธเธฅเนเธญเธ
         </div>
       `;
       return;
@@ -2408,7 +2211,7 @@ async function loadBlockedList() {
               <span style="font-size: 9px; color: var(--text-light);">@${escapeHTML(u.username)}</span>
             </div>
           </div>
-          <button class="post-action-btn edit" style="font-size: 11px; margin-right: 0;" onclick="unblockUser(${u.id})">ปลดบล็อก</button>
+          <button class="post-action-btn edit" style="font-size: 11px; margin-right: 0;" onclick="unblockUser(${u.id})">เธเธฅเธ”เธเธฅเนเธญเธ</button>
         </div>
       `;
     });
@@ -2435,7 +2238,7 @@ window.unblockUser = async function(blockedId) {
     loadBlockedList();
     loadFriendsList();
   } catch (err) {
-    await showCenteredAlert('ไม่สามารถปลดบล็อกผู้ใช้งานได้');
+    await showCenteredAlert('เนเธกเนเธชเธฒเธกเธฒเธฃเธ–เธเธฅเธ”เธเธฅเนเธญเธเธเธนเนเนเธเนเธเธฒเธเนเธ”เน');
   }
 };
 
@@ -2470,8 +2273,8 @@ async function loadFriendRequests() {
             </div>
           </div>
           <div style="display: flex; gap: 6px;">
-            <button onclick="acceptFriendRequest(${r.senderId})" class="btn-quick-match" style="padding: 4px 10px; font-size: 11px; border-radius: 6px; width: auto; box-shadow: none; background-color: #10B981; color: white;">รับแอด</button>
-            <button onclick="declineFriendRequest(${r.senderId})" class="post-action-btn delete" style="font-size: 11px; border: 1px solid #EF4444; border-radius: 6px; padding: 4px 10px; background: none; margin-right: 0;">ปฏิเสธ</button>
+            <button onclick="acceptFriendRequest(${r.senderId})" class="btn-quick-match" style="padding: 4px 10px; font-size: 11px; border-radius: 6px; width: auto; box-shadow: none; background-color: #10B981; color: white;">เธฃเธฑเธเนเธญเธ”</button>
+            <button onclick="declineFriendRequest(${r.senderId})" class="post-action-btn delete" style="font-size: 11px; border: 1px solid #EF4444; border-radius: 6px; padding: 4px 10px; background: none; margin-right: 0;">เธเธเธดเน€เธชเธ</button>
           </div>
         </div>
       `;
@@ -2495,7 +2298,7 @@ window.acceptFriendRequest = async function(friendId) {
     loadFriendRequests();
     loadFriendsList();
   } catch (err) {
-    await showCenteredAlert('ไม่สามารถตอบรับเป็นเพื่อนได้');
+    await showCenteredAlert('เนเธกเนเธชเธฒเธกเธฒเธฃเธ–เธ•เธญเธเธฃเธฑเธเน€เธเนเธเน€เธเธทเนเธญเธเนเธ”เน');
   }
 };
 
@@ -2508,12 +2311,12 @@ window.declineFriendRequest = async function(friendId) {
     if (!res.ok) throw new Error();
     loadFriendRequests();
   } catch (err) {
-    await showCenteredAlert('ไม่สามารถปฏิเสธคำขอได้');
+    await showCenteredAlert('เนเธกเนเธชเธฒเธกเธฒเธฃเธ–เธเธเธดเน€เธชเธเธเธณเธเธญเนเธ”เน');
   }
 };
 
 window.unfriend = async function(friendId) {
-  const confirmed = await showCenteredConfirm('ลบเพื่อน', 'คุณต้องการลบเพื่อนคนนี้ใช่หรือไม่? แชทส่วนตัวจะถูกปิดตัวลง', { okText: 'ลบเพื่อน', okColor: '#EF4444' });
+  const confirmed = await showCenteredConfirm('เธฅเธเน€เธเธทเนเธญเธ', 'เธเธธเธ“เธ•เนเธญเธเธเธฒเธฃเธฅเธเน€เธเธทเนเธญเธเธเธเธเธตเนเนเธเนเธซเธฃเธทเธญเนเธกเน? เนเธเธ—เธชเนเธงเธเธ•เธฑเธงเธเธฐเธ–เธนเธเธเธดเธ”เธ•เธฑเธงเธฅเธ', { okText: 'เธฅเธเน€เธเธทเนเธญเธ', okColor: '#EF4444' });
   if (!confirmed) return;
   try {
     const res = await fetch(`${API_BASE}/api/friends/${friendId}`, {
@@ -2523,7 +2326,7 @@ window.unfriend = async function(friendId) {
     if (!res.ok) throw new Error();
     loadFriendsList();
   } catch (err) {
-    await showCenteredAlert('ไม่สามารถลบเพื่อนได้');
+    await showCenteredAlert('เนเธกเนเธชเธฒเธกเธฒเธฃเธ–เธฅเธเน€เธเธทเนเธญเธเนเธ”เน');
   }
 };
 
@@ -2543,7 +2346,7 @@ window.showUserProfile = async function(userId) {
 
   // Render loading state
   if (avatar) avatar.textContent = '...';
-  if (fullName) fullName.textContent = 'กำลังโหลดโปรไฟล์...';
+  if (fullName) fullName.textContent = 'เธเธณเธฅเธฑเธเนเธซเธฅเธ”เนเธเธฃเนเธเธฅเน...';
   if (username) username.textContent = '';
   if (level) level.textContent = '-';
   if (points) points.textContent = '-';
@@ -2565,9 +2368,9 @@ window.showUserProfile = async function(userId) {
     if (fullName) fullName.textContent = nameStr;
     if (username) username.textContent = `@${u.username}`;
     if (level) level.textContent = `Lv.${u.level || 1}`;
-    if (points) points.textContent = `${u.points || 0} พ้อยต์`;
-    if (streak) streak.textContent = `${u.streak || 0} วัน`;
-    if (wins) wins.textContent = `${u.battleWins || 0} ครั้ง`;
+    if (points) points.textContent = `${u.points || 0} เธเนเธญเธขเธ•เน`;
+    if (streak) streak.textContent = `${u.streak || 0} เธงเธฑเธ`;
+    if (wins) wins.textContent = `${u.battleWins || 0} เธเธฃเธฑเนเธ`;
 
     // Render action buttons based on relationStatus
     let buttonsHtml = '';
@@ -2575,36 +2378,36 @@ window.showUserProfile = async function(userId) {
 
     if (isMe) {
       buttonsHtml = `
-        <button class="btn-quick-match" style="width: 100%; box-shadow: none; background-color: #64748B;" onclick="closeUserProfileModal()">นี่คือโปรไฟล์ของคุณ</button>
+        <button class="btn-quick-match" style="width: 100%; box-shadow: none; background-color: #64748B;" onclick="closeUserProfileModal()">เธเธตเนเธเธทเธญเนเธเธฃเนเธเธฅเนเธเธญเธเธเธธเธ“</button>
       `;
     } else {
       if (u.relationStatus === 'ACCEPTED') {
         buttonsHtml = `
-          <button class="btn-quick-match" style="width: 100%; box-shadow: none;" onclick="enterDmChat(${u.id}, '${escapeHTML(nameStr)}'); closeUserProfileModal();"> ส่งข้อความส่วนตัว</button>
-          <button class="post-action-btn delete" style="width: 100%; border: 1px solid #EF4444; border-radius: 8px; padding: 10px; font-size: 13px; font-weight: 600; background: none; margin-right: 0;" onclick="unfriend(${u.id}); closeUserProfileModal();"> ลบเพื่อน</button>
+          <button class="btn-quick-match" style="width: 100%; box-shadow: none;" onclick="enterDmChat(${u.id}, '${escapeHTML(nameStr)}'); closeUserProfileModal();">๐’ฌ เธชเนเธเธเนเธญเธเธงเธฒเธกเธชเนเธงเธเธ•เธฑเธง</button>
+          <button class="post-action-btn delete" style="width: 100%; border: 1px solid #EF4444; border-radius: 8px; padding: 10px; font-size: 13px; font-weight: 600; background: none; margin-right: 0;" onclick="unfriend(${u.id}); closeUserProfileModal();">๐‘ฅ เธฅเธเน€เธเธทเนเธญเธ</button>
         `;
       } else if (u.relationStatus === 'PENDING_SENT') {
         buttonsHtml = `
-          <button class="btn-quick-match" style="width: 100%; box-shadow: none; background-color: #64748B; cursor: not-allowed;" disabled>รอการตอบรับคำขอเพื่อน</button>
+          <button class="btn-quick-match" style="width: 100%; box-shadow: none; background-color: #64748B; cursor: not-allowed;" disabled>เธฃเธญเธเธฒเธฃเธ•เธญเธเธฃเธฑเธเธเธณเธเธญเน€เธเธทเนเธญเธ</button>
         `;
       } else if (u.relationStatus === 'PENDING_RECEIVED') {
         buttonsHtml = `
-          <button class="btn-quick-match" style="width: 100%; box-shadow: none; background-color: #10B981;" onclick="acceptFriendRequest(${u.id}); closeUserProfileModal();"> ยอมรับเป็นเพื่อน</button>
-          <button class="post-action-btn delete" style="width: 100%; border: 1px solid #EF4444; border-radius: 8px; padding: 10px; font-size: 13px; font-weight: 600; background: none; margin-right: 0;" onclick="declineFriendRequest(${u.id}); closeUserProfileModal();">ปฏิเสธคำขอ</button>
+          <button class="btn-quick-match" style="width: 100%; box-shadow: none; background-color: #10B981;" onclick="acceptFriendRequest(${u.id}); closeUserProfileModal();">๐‘ฅ เธขเธญเธกเธฃเธฑเธเน€เธเนเธเน€เธเธทเนเธญเธ</button>
+          <button class="post-action-btn delete" style="width: 100%; border: 1px solid #EF4444; border-radius: 8px; padding: 10px; font-size: 13px; font-weight: 600; background: none; margin-right: 0;" onclick="declineFriendRequest(${u.id}); closeUserProfileModal();">เธเธเธดเน€เธชเธเธเธณเธเธญ</button>
         `;
       } else if (u.relationStatus === 'BLOCKED') {
         buttonsHtml = `
-          <button class="btn-quick-match" style="width: 100%; box-shadow: none; background-color: #EF4444;" onclick="unblockUser(${u.id}); closeUserProfileModal();">ปลดบล็อก</button>
+          <button class="btn-quick-match" style="width: 100%; box-shadow: none; background-color: #EF4444;" onclick="unblockUser(${u.id}); closeUserProfileModal();">เธเธฅเธ”เธเธฅเนเธญเธ</button>
         `;
       } else {
         buttonsHtml = `
-          <button class="btn-quick-match" style="width: 100%; box-shadow: none;" onclick="addFriend(${u.id}); closeUserProfileModal();"> เพิ่มเพื่อน</button>
+          <button class="btn-quick-match" style="width: 100%; box-shadow: none;" onclick="addFriend(${u.id}); closeUserProfileModal();">๐‘ฅ เน€เธเธดเนเธกเน€เธเธทเนเธญเธ</button>
         `;
       }
 
       if (u.relationStatus !== 'BLOCKED') {
         buttonsHtml += `
-          <button class="post-action-btn delete" style="width: 100%; border: 1px solid #EF4444; border-radius: 8px; padding: 10px; font-size: 13px; font-weight: 600; background: none; margin-right: 0; margin-top: 4px;" onclick="blockUser(${u.id}); closeUserProfileModal();"> บล็อกผู้ใช้งาน</button>
+          <button class="post-action-btn delete" style="width: 100%; border: 1px solid #EF4444; border-radius: 8px; padding: 10px; font-size: 13px; font-weight: 600; background: none; margin-right: 0; margin-top: 4px;" onclick="blockUser(${u.id}); closeUserProfileModal();">๐ซ เธเธฅเนเธญเธเธเธนเนเนเธเนเธเธฒเธ</button>
         `;
       }
     }
@@ -2616,7 +2419,7 @@ window.showUserProfile = async function(userId) {
 
   } catch (err) {
     console.error('Load public profile error:', err);
-    if (fullName) fullName.textContent = 'โหลดโปรไฟล์ล้มเหลว';
+    if (fullName) fullName.textContent = 'เนเธซเธฅเธ”เนเธเธฃเนเธเธฅเนเธฅเนเธกเน€เธซเธฅเธง';
   }
 };
 
@@ -2636,7 +2439,7 @@ async function loadUserPostHistory(userId) {
   const container = document.getElementById('userProfileModalPostsContainer');
   if (!container) return;
 
-  container.innerHTML = '<div style="text-align: center; color: var(--text-light); font-size: 12px; padding: 12px 0;">กำลังโหลดโพสต์...</div>';
+  container.innerHTML = '<div style="text-align: center; color: var(--text-light); font-size: 12px; padding: 12px 0;">เธเธณเธฅเธฑเธเนเธซเธฅเธ”เนเธเธชเธ•เน...</div>';
 
   try {
     const res = await fetch(`${API_BASE}/api/user/${userId}/posts`, {
@@ -2646,7 +2449,7 @@ async function loadUserPostHistory(userId) {
     const posts = await res.json();
 
     if (posts.length === 0) {
-      container.innerHTML = '<div style="text-align: center; color: var(--text-light); font-size: 12px; padding: 12px 0;">ยังไม่มีโพสต์</div>';
+      container.innerHTML = '<div style="text-align: center; color: var(--text-light); font-size: 12px; padding: 12px 0;">เธขเธฑเธเนเธกเนเธกเธตเนเธเธชเธ•เน</div>';
       return;
     }
 
@@ -2657,10 +2460,10 @@ async function loadUserPostHistory(userId) {
 
       html += `
         <div style="background: #F8FAFC; border: 1px solid var(--border-color); border-radius: 12px; padding: 12px;">
-          <p style="font-size: 13px; color: var(--text-dark); margin: 0 0 6px 0; line-height: 1.5; word-break: break-word;">${formatMessageContent(p.content)}</p>
+          <p style="font-size: 13px; color: var(--text-dark); margin: 0 0 6px 0; line-height: 1.5; word-break: break-word;">${escapeHTML(p.content)}</p>
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <span style="font-size: 10px; color: var(--text-light);">${timeStr}</span>
-            <span style="font-size: 10px; color: var(--text-light);"> ${commentCount} ความคิดเห็น</span>
+            <span style="font-size: 10px; color: var(--text-light);">๐’ฌ ${commentCount} เธเธงเธฒเธกเธเธดเธ”เน€เธซเนเธ</span>
           </div>
         </div>
       `;
@@ -2669,7 +2472,7 @@ async function loadUserPostHistory(userId) {
     container.innerHTML = html;
   } catch (err) {
     console.error('Load user posts error:', err);
-    container.innerHTML = '<div style="text-align: center; color: var(--text-light); font-size: 12px; padding: 12px 0;">ไม่สามารถโหลดโพสต์ได้</div>';
+    container.innerHTML = '<div style="text-align: center; color: var(--text-light); font-size: 12px; padding: 12px 0;">เนเธกเนเธชเธฒเธกเธฒเธฃเธ–เนเธซเธฅเธ”เนเธเธชเธ•เนเนเธ”เน</div>';
   }
 }
 
@@ -2730,7 +2533,7 @@ async function loadDmChatMessages(friendId) {
     if (messages.length === 0) {
       container.innerHTML = `
         <div style="text-align: center; color: var(--text-light); font-size: 13px; padding-top: 40px;">
-           เริ่มพิมพ์ข้อความแชทส่วนตัวกับเพื่อนได้แล้ววันนี้
+          ๐’ฌ เน€เธฃเธดเนเธกเธเธดเธกเธเนเธเนเธญเธเธงเธฒเธกเนเธเธ—เธชเนเธงเธเธ•เธฑเธงเธเธฑเธเน€เธเธทเนเธญเธเนเธ”เนเนเธฅเนเธงเธงเธฑเธเธเธตเน
         </div>
       `;
       return;
@@ -2744,7 +2547,7 @@ async function loadDmChatMessages(friendId) {
       html += `
         <div class="chat-bubble ${isMe ? 'me' : ''}">
           <div class="chat-message-box">
-            ${formatMessageContent(m.content)}
+            ${escapeHTML(m.content)}
           </div>
           <span class="chat-timestamp">${timeStr}</span>
         </div>
@@ -2810,12 +2613,35 @@ if (btnSendDmChat && txtDmChatInput) {
 }
 
 // ==========================================
-// Vocab Mini-Game Logic
+// Vocab Arena Mini-Game Logic
 // ==========================================
-let currentLevel = 'B1';
-let currentSessionQuestions = [];
-let vocabSessionWordCount = 10;
-let wrongAnswers = [];
+const vocabWords = [
+  { word: "Jurisdiction", meaning: "เน€เธเธ•เธญเธณเธเธฒเธเธจเธฒเธฅ", options: ["เน€เธเธ•เธญเธณเธเธฒเธเธจเธฒเธฅ", "เธเธฒเธฃเธเธฑเธเธเธธเธก", "เธซเธฅเธฑเธเธเธฒเธ", "เธเธฒเธฃเธเธดเธเธฒเธเธฉเธฒ"] },
+  { word: "Apprehend", meaning: "เธเธฑเธเธเธธเธก", options: ["เธเธฅเนเธญเธขเธ•เธฑเธง", "เธเธฑเธเธเธธเธก", "เธชเธทเธเธชเธงเธ", "เธเนเธญเธเธฃเนเธญเธ"] },
+  { word: "Interrogate", meaning: "เธชเธญเธเธชเธงเธ", options: ["เธ•เธฑเธ”เธชเธดเธ", "เธเธงเธเธเธธเธกเธ•เธฑเธง", "เธชเธญเธเธชเธงเธ", "เนเธเนเธเธเนเธญเธซเธฒ"] },
+  { word: "Surveillance", meaning: "เธเธฒเธฃเน€เธเนเธฒเธฃเธฐเธงเธฑเธ", options: ["เธเธฒเธฃเธเนเธญเธเธเธฑเธ", "เธเธฒเธฃเธชเธทเธเธชเธงเธ", "เธเธฒเธฃเน€เธเนเธฒเธฃเธฐเธงเธฑเธ", "เธเธฒเธฃเธชเธทเนเธญเธชเธฒเธฃ"] },
+  { word: "Defendant", meaning: "เธเธณเน€เธฅเธข", options: ["เนเธเธ—เธเน", "เธเธขเธฒเธ", "เธเธณเน€เธฅเธข", "เธเธนเนเธเธดเธเธฒเธเธฉเธฒ"] },
+  { word: "Prosecute", meaning: "เธเนเธญเธเธฃเนเธญเธ", options: ["เนเธเนเธ•เนเธฒเธ", "เธชเธทเธเธเธขเธฒเธ", "เธเนเธญเธเธฃเนเธญเธ", "เธ–เธญเธเธเนเธญเธ"] },
+  { word: "Evidence", meaning: "เธซเธฅเธฑเธเธเธฒเธ", options: ["เธซเธฅเธฑเธเธเธฒเธ", "เธเนเธญเธ•เธเธฅเธ", "เธเธณเธชเธฒเธฃเธ เธฒเธ", "เธเธขเธฒเธเธเธธเธเธเธฅ"] },
+  { word: "Alibi", meaning: "เธเนเธญเธญเนเธฒเธเธ—เธตเนเธญเธขเธนเนเธเธ“เธฐเน€เธเธดเธ”เน€เธซเธ•เธธ", options: ["เธเธณเนเธซเนเธเธฒเธฃ", "เธเนเธญเธญเนเธฒเธเธ—เธตเนเธญเธขเธนเนเธเธ“เธฐเน€เธเธดเธ”เน€เธซเธ•เธธ", "เนเธฃเธเธเธนเธเนเธ", "เธเธฒเธฃเธเธนเนเธเธฃเธฃเนเธเธ"] },
+  { word: "Warrant", meaning: "เธซเธกเธฒเธขเธจเธฒเธฅ/เธซเธกเธฒเธขเธเธฑเธ", options: ["เนเธเธฃเธฑเธเธฃเธญเธ", "เธชเธฑเธเธเธฒ", "เธซเธกเธฒเธขเธจเธฒเธฅ/เธซเธกเธฒเธขเธเธฑเธ", "เธเธณเธชเธฑเนเธเธเธฑเธเธเธฑเธ"] },
+  { word: "Custody", meaning: "เธเธฒเธฃเธเธงเธเธเธธเธกเธ•เธฑเธง", options: ["เธเธฒเธฃเธเธฅเนเธญเธขเธ•เธฑเธงเธเธฑเนเธงเธเธฃเธฒเธง", "เธเธฒเธฃเธเธงเธเธเธธเธกเธ•เธฑเธง", "เธเธฒเธฃเธ—เธฑเธ“เธ‘เนเธเธ", "เธเธฒเธฃเธชเธทเธเธชเธงเธ"] },
+  { word: "Conspiracy", meaning: "เธเธฒเธฃเธชเธกเธเธเธเธดเธ”", options: ["เธเธฒเธฃเธเนเธญเธเธเธ", "เธเธฒเธฃเธ—เธฃเธขเธจ", "เธเธฒเธฃเธชเธกเธเธเธเธดเธ”", "เธเธฒเธฃเธชเธกเธฃเธนเนเธฃเนเธงเธกเธเธดเธ”"] },
+  { word: "Assault", meaning: "เธเธฒเธฃเธ—เธณเธฃเนเธฒเธขเธฃเนเธฒเธเธเธฒเธข", options: ["เธเธฒเธฃเธฅเธฑเธเธ—เธฃเธฑเธเธขเน", "เธเธฒเธฃเธ—เธณเธฃเนเธฒเธขเธฃเนเธฒเธเธเธฒเธข", "เธเธฒเธฃเธเนเธกเธเธนเน", "เธเธฒเธฃเธเธธเธเธฃเธธเธ"] },
+  { word: "Bail", meaning: "เธเธฒเธฃเธเธฃเธฐเธเธฑเธเธ•เธฑเธง", options: ["เธเธฒเธฃเธเธฃเธฑเธ", "เธเธฒเธฃเธเธฃเธฐเธเธฑเธเธ•เธฑเธง", "เธเธฒเธฃเธเธธเธกเธเธฃเธฐเธเธคเธ•เธด", "เธเธฒเธฃเธฃเธญเธฅเธเธญเธฒเธเธฒ"] },
+  { word: "Verdict", meaning: "เธเธณเธเธดเธเธฒเธเธฉเธฒเธเธญเธเธฅเธนเธเธเธธเธ", options: ["เธเนเธญเธซเธฒ", "เธเธณเนเธซเนเธเธฒเธฃ", "เธเธณเธเธดเธเธฒเธเธฉเธฒเธเธญเธเธฅเธนเธเธเธธเธ", "เธเนเธญเนเธ•เนเนเธขเนเธ"] },
+  { word: "Testimony", meaning: "เธเธณเนเธซเนเธเธฒเธฃเธเธญเธเธเธขเธฒเธ", options: ["เธเนเธญเธ•เธเธฅเธ", "เน€เธญเธเธชเธฒเธฃเธญเนเธฒเธเธญเธดเธ", "เธเธณเนเธซเนเธเธฒเธฃเธเธญเธเธเธขเธฒเธ", "เธฃเธฒเธขเธเธฒเธเธเธฑเธเธชเธนเธ•เธฃ"] },
+  { word: "Investigation", meaning: "เธเธฒเธฃเธชเธทเธเธชเธงเธเธชเธญเธเธชเธงเธ", options: ["เธเธฒเธฃเธฅเธเนเธ—เธฉ", "เธเธฒเธฃเธชเธทเธเธชเธงเธเธชเธญเธเธชเธงเธ", "เธเธฒเธฃเนเธเธฅเนเน€เธเธฅเธตเนเธข", "เธเธฒเธฃเธ•เธฃเธงเธเธชเธญเธ"] },
+  { word: "Bribery", meaning: "เธเธฒเธฃเธ•เธดเธ”เธชเธดเธเธเธ", options: ["เธเธฒเธฃเธขเธฑเธเธขเธญเธ", "เธเธฒเธฃเธ•เธดเธ”เธชเธดเธเธเธ", "เธเธฒเธฃเธเธฃเธฃเนเธเธเธ—เธฃเธฑเธเธขเน", "เธเธฒเธฃเธเธญเธเน€เธเธดเธ"] },
+  { word: "Homicide", meaning: "เธเธฒเธฃเธเธฒเธ•เธเธฃเธฃเธก", options: ["เธเธฒเธฃเธเธฒเธ•เธเธฃเธฃเธก", "เธเธฒเธฃเธ—เธณเธฃเนเธฒเธขเธฃเนเธฒเธเธเธฒเธข", "เธเธฒเธฃเธฅเธฑเธเธเธฒเธ•เธฑเธง", "เธเธฒเธฃเนเธเธฃเธเธฃเธฃเธก"] },
+  { word: "Kidnapping", meaning: "เธเธฒเธฃเธฅเธฑเธเธเธฒเธ•เธฑเธง", options: ["เธเธฒเธฃเธเธฅเนเธเธ—เธฃเธฑเธเธขเน", "เธเธฒเธฃเธเธฑเธเธเธฑเธเธซเธเนเธงเธเน€เธซเธเธตเนเธขเธง", "เธเธฒเธฃเธฅเธฑเธเธเธฒเธ•เธฑเธง", "เธเธฒเธฃเธ—เธณเธฅเธฒเธขเธ—เธฃเธฑเธเธขเนเธชเธดเธ"] },
+  { word: "Vandalism", meaning: "เธเธฒเธฃเธ—เธณเธฅเธฒเธขเธ—เธฃเธฑเธเธขเนเธชเธดเธเธชเธฒเธเธฒเธฃเธ“เธฐ", options: ["เธเธฒเธฃเธงเธฒเธเน€เธเธฅเธดเธ", "เธเธฒเธฃเธ—เธณเธฅเธฒเธขเธ—เธฃเธฑเธเธขเนเธชเธดเธเธชเธฒเธเธฒเธฃเธ“เธฐ", "เธเธฒเธฃเธฅเธญเธเธงเธฒเธเธฃเธฐเน€เธเธดเธ”", "เธเธฒเธฃเธเธธเธเธฃเธธเธ"] },
+  { word: "Larceny", meaning: "เธเธฒเธฃเธฅเธฑเธเธ—เธฃเธฑเธเธขเน", options: ["เธเธฒเธฃเธเธดเธเธ—เธฃเธฑเธเธขเน", "เธเธฒเธฃเธฅเธฑเธเธ—เธฃเธฑเธเธขเน", "เธเธฒเธฃเธงเธดเนเธเธฃเธฒเธงเธ—เธฃเธฑเธเธขเน", "เธเธฒเธฃเธเนเธญเนเธเธ"] },
+  { word: "Burglary", meaning: "เธเธฒเธฃเธฅเธฑเธเธฅเธญเธเธเธธเธเธฃเธธเธเน€เธเนเธฒเนเธเธฅเธฑเธเธ—เธฃเธฑเธเธขเน", options: ["เธเธฒเธฃเธเธธเธเธฃเธธเธ", "เธเธฒเธฃเธฅเธฑเธเธฅเธญเธเธเธธเธเธฃเธธเธเน€เธเนเธฒเนเธเธฅเธฑเธเธ—เธฃเธฑเธเธขเน", "เธเธฒเธฃเนเธเธฃเธเธฃเธฃเธกเธฃเธ–เธขเธเธ•เน", "เธเธฒเธฃเธเธฅเนเธเธชเธฐเธ”เธก"] },
+  { word: "Fraud", meaning: "เธเธฒเธฃเธเนเธญเนเธเธ", options: ["เธเธฒเธฃเธเธฅเธญเธกเนเธเธฅเธ", "เธเธฒเธฃเธ•เธดเธ”เธชเธดเธเธเธ", "เธเธฒเธฃเธเนเธญเนเธเธ", "เธเธฒเธฃเธเธญเธเน€เธเธดเธ"] },
+  { word: "Arson", meaning: "เธเธฒเธฃเธงเธฒเธเน€เธเธฅเธดเธ", options: ["เธเธฒเธฃเธงเธฒเธเน€เธเธฅเธดเธ", "เธเธฒเธฃเธฃเธฐเน€เธเธดเธ”", "เธเธฒเธฃเธเนเธญเธงเธดเธเธฒเธจเธเธฃเธฃเธก", "เธเธฒเธฃเธ—เธณเธฃเนเธฒเธขเธฃเนเธฒเธเธเธฒเธข"] },
+  { word: "Embezzlement", meaning: "เธเธฒเธฃเธขเธฑเธเธขเธญเธเธ—เธฃเธฑเธเธขเน", options: ["เธเธฒเธฃเธ•เธดเธ”เธชเธดเธเธเธ", "เธเธฒเธฃเธเนเธญเนเธเธ", "เธเธฒเธฃเธขเธฑเธเธขเธญเธเธ—เธฃเธฑเธเธขเน", "เธเธฒเธฃเธเธฃเธฃเนเธเธเธ—เธฃเธฑเธเธขเน"] }
+];
 
 let vocabIdx = 0;
 let vocabScore = 0;
@@ -2824,20 +2650,16 @@ let vocabCompletedInRound = 0;
 let isVocabFeedbackActive = false;
 
 window.openVocabArena = function() {
+  vocabIdx = 0;
+  vocabScore = 0;
+  vocabStreak = 0;
+  vocabCompletedInRound = 0;
+  isVocabFeedbackActive = false;
+  
   const modal = document.getElementById('vocabArenaModal');
   if (modal) {
-    // Show level selection screen, hide gameplay and summary
-    const lvlSelection = document.getElementById('vocabLevelSelection');
-    const gameplaySec = document.getElementById('vocabGameplaySection');
-    const summarySec = document.getElementById('vocabSummarySection');
-    if (lvlSelection) lvlSelection.style.display = 'block';
-    if (gameplaySec) gameplaySec.style.display = 'none';
-    if (summarySec) summarySec.style.display = 'none';
-
-    // Synchronize UI active-count class with current setting
-    window.setVocabWordCount(vocabSessionWordCount);
-
     modal.style.display = 'flex';
+    renderVocabQuestion();
   }
 };
 
@@ -2856,95 +2678,19 @@ if (btnCloseVocabArena) {
   };
 }
 
-window.setVocabWordCount = function(count) {
-  vocabSessionWordCount = count;
-  
-  // Update active classes on buttons
-  document.querySelectorAll('.vocab-count-btn').forEach(btn => {
-    btn.classList.remove('active-count');
-  });
-  
-  const activeBtn = document.getElementById(`btnVocabCount${count}`);
-  if (activeBtn) {
-    activeBtn.classList.add('active-count');
-  }
-};
-
-window.startVocabSession = function(level) {
-  currentLevel = level;
-  vocabIdx = 0;
-  vocabScore = 0;
-  window.vocabCorrectCount = 0;
-  vocabStreak = 0;
-  vocabCompletedInRound = 0;
-  isVocabFeedbackActive = false;
-  wrongAnswers = [];
-
-  const allWords = (window.VOCAB_DATA && window.VOCAB_DATA[level]) || [];
-  if (allWords.length < vocabSessionWordCount) {
-    showCenteredAlert('ข้อมูลคำศัพท์ไม่เพียงพอ');
-    return;
-  }
-
-  // Pick N unique random indices
-  const selectedIndices = new Set();
-  while (selectedIndices.size < vocabSessionWordCount) {
-    selectedIndices.add(Math.floor(Math.random() * allWords.length));
-  }
-
-  currentSessionQuestions = Array.from(selectedIndices).map(idx => {
-    const wObj = allWords[idx];
-    
-    // Pick 3 random distractor meanings from same level
-    const otherMeanings = allWords
-      .filter(w => w.word !== wObj.word)
-      .map(w => w.meaning);
-    
-    const shuffledOthers = otherMeanings.sort(() => 0.5 - Math.random());
-    const distractors = shuffledOthers.slice(0, 3);
-    
-    const options = [wObj.meaning, ...distractors].sort(() => 0.5 - Math.random());
-    
-    return {
-      word: wObj.word,
-      meaning: wObj.meaning,
-      options: options
-    };
-  });
-
-  // Switch display sections
-  const lvlSelection = document.getElementById('vocabLevelSelection');
-  const gameplaySec = document.getElementById('vocabGameplaySection');
-  const summarySec = document.getElementById('vocabSummarySection');
-  if (lvlSelection) lvlSelection.style.display = 'none';
-  if (gameplaySec) gameplaySec.style.display = 'block';
-  if (summarySec) summarySec.style.display = 'none';
-
-  renderVocabQuestion();
-};
-
-window.playVocabAudio = function(text) {
-  if ('speechSynthesis' in window) {
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'en-US';
-    window.speechSynthesis.speak(utterance);
-  }
-};
-
 function renderVocabQuestion() {
-  if (vocabCompletedInRound >= vocabSessionWordCount) {
+  if (vocabCompletedInRound >= 5) {
     completeVocabSession();
     return;
   }
 
   isVocabFeedbackActive = false;
-  const wordObj = currentSessionQuestions[vocabCompletedInRound];
+  const wordObj = vocabWords[vocabIdx % vocabWords.length];
 
   // UI elements
-  document.getElementById('vocabGameScore').textContent = `${window.vocabCorrectCount || 0}/${vocabSessionWordCount}`;
-  document.getElementById('vocabGameStreak').textContent = `${vocabStreak} `;
-  document.getElementById('vocabGameCount').textContent = `${vocabCompletedInRound + 1}/${vocabSessionWordCount}`;
+  document.getElementById('vocabGameScore').textContent = vocabScore;
+  document.getElementById('vocabGameStreak').textContent = `${vocabStreak} ๐”ฅ`;
+  document.getElementById('vocabGameCount').textContent = `${vocabCompletedInRound + 1}/5`;
 
   const streakAlert = document.getElementById('vocabStreakAlert');
   const streakCount = document.getElementById('vocabStreakCount');
@@ -2960,10 +2706,6 @@ function renderVocabQuestion() {
   wordCard.style.backgroundColor = 'white';
 
   document.getElementById('lblVocabWord').textContent = wordObj.word;
-  
-  if (typeof window.playVocabAudio === 'function') {
-    window.playVocabAudio(wordObj.word);
-  }
 
   const feedbackEl = document.getElementById('vocabFeedbackMessage');
   feedbackEl.style.display = 'none';
@@ -2985,7 +2727,7 @@ async function handleVocabAnswer(selectedOpt, btnElement) {
   if (isVocabFeedbackActive) return;
   isVocabFeedbackActive = true;
 
-  const wordObj = currentSessionQuestions[vocabCompletedInRound];
+  const wordObj = vocabWords[vocabIdx % vocabWords.length];
   const wordCard = document.getElementById('vocabWordCard');
   const feedbackEl = document.getElementById('vocabFeedbackMessage');
   
@@ -2998,7 +2740,6 @@ async function handleVocabAnswer(selectedOpt, btnElement) {
 
   const isCorrect = selectedOpt === wordObj.meaning;
   if (isCorrect) {
-    window.vocabCorrectCount++;
     vocabScore += (10 + vocabStreak * 2);
     vocabStreak++;
     vocabCompletedInRound++;
@@ -3010,17 +2751,11 @@ async function handleVocabAnswer(selectedOpt, btnElement) {
     wordCard.style.borderColor = '#34D399';
     wordCard.style.backgroundColor = '#ECFDF5';
 
-    feedbackEl.textContent = ' ถูกต้อง! ยอดเยี่ยมมาก';
+    feedbackEl.textContent = 'โ“ เธ–เธนเธเธ•เนเธญเธ! เธขเธญเธ”เน€เธขเธตเนเธขเธกเธกเธฒเธ';
     feedbackEl.style.color = '#059669';
     feedbackEl.style.display = 'block';
 
   } else {
-    wrongAnswers.push({
-      word: wordObj.word,
-      correctMeaning: wordObj.meaning,
-      userMeaning: selectedOpt
-    });
-
     vocabStreak = 0;
     vocabCompletedInRound++;
 
@@ -3040,66 +2775,20 @@ async function handleVocabAnswer(selectedOpt, btnElement) {
       }
     });
 
-    feedbackEl.textContent = ` ผิด — คำแปลที่ถูกต้องคือ: ${wordObj.meaning}`;
+    feedbackEl.textContent = `โ— เธเธดเธ” โ€” เธเธณเนเธเธฅเธ—เธตเนเธ–เธนเธเธ•เนเธญเธเธเธทเธญ: ${wordObj.meaning}`;
     feedbackEl.style.color = '#DC2626';
     feedbackEl.style.display = 'block';
   }
 
   // Next word after 1.5 seconds
   setTimeout(() => {
+    vocabIdx++;
     renderVocabQuestion();
   }, 1500);
 }
 
 async function completeVocabSession() {
-  // Show ELO/XP/Points loading indicator or summary screen
-  const lvlSelection = document.getElementById('vocabLevelSelection');
-  const gameplaySec = document.getElementById('vocabGameplaySection');
-  const summarySec = document.getElementById('vocabSummarySection');
-
-  if (lvlSelection) lvlSelection.style.display = 'none';
-  if (gameplaySec) gameplaySec.style.display = 'none';
-  if (summarySec) summarySec.style.display = 'block';
-
-  // Compute final statistics
-  const totalQuestions = vocabCompletedInRound;
-  const correctCount = totalQuestions - wrongAnswers.length;
-  const accuracy = Math.round((correctCount / totalQuestions) * 100);
-
-  // Set text labels
-  document.getElementById('lblVocabSummaryMeta').textContent = `ระดับ ${currentLevel} | จำนวน ${totalQuestions} คำ`;
-  document.getElementById('vocabSummaryScore').textContent = `${correctCount}/${totalQuestions}`;
-  document.getElementById('vocabSummaryAccuracy').textContent = `${accuracy}%`;
-
-  // Render wrong answers list
-  const container = document.getElementById('vocabWrongAnswersList');
-  const wrongContainer = document.getElementById('vocabWrongAnswersContainer');
-  if (container && wrongContainer) {
-    container.innerHTML = '';
-    if (wrongAnswers.length === 0) {
-      wrongContainer.style.display = 'none';
-      
-      const successDiv = document.createElement('div');
-      successDiv.style.cssText = 'text-align: center; color: #10B981; font-weight: 700; font-size: 14px; padding: 20px 0;';
-      successDiv.innerHTML = ' ยอดเยี่ยมมาก! คุณตอบถูกทุกข้อ';
-      container.appendChild(successDiv);
-      wrongContainer.style.display = 'block';
-    } else {
-      wrongAnswers.forEach(item => {
-        const div = document.createElement('div');
-        div.style.cssText = 'background: #FFF1F2; border: 1px solid #FFE4E6; border-radius: 12px; padding: 10px 12px; font-size: 12px;';
-        div.innerHTML = `
-          <div style="font-weight: 700; color: #9F1239;">${item.word}</div>
-          <div style="color: #475569; margin-top: 2px;">
-            แปลว่า: <span style="font-weight: 600; color: #10B981;">${item.correctMeaning}</span> 
-            (คุณตอบ: <span style="font-weight: 600; color: #EF4444;">${item.userMeaning}</span>)
-          </div>
-        `;
-        container.appendChild(div);
-      });
-      wrongContainer.style.display = 'block';
-    }
-  }
+  closeVocabArena();
 
   try {
     const res = await fetch(`${API_BASE}/api/user/vocab-complete`, {
@@ -3109,464 +2798,27 @@ async function completeVocabSession() {
         'Authorization': `Bearer ${authToken}`
       },
       body: JSON.stringify({
-        level: currentLevel,
-        matchedPairs: totalQuestions,
-        timeSeconds: totalQuestions * 6,
+        level: 'B1',
+        matchedPairs: 5,
+        timeSeconds: 30,
         mode: 'sentence'
       })
     });
 
-    if (res.ok) {
-      loadRealProfile(); // Refresh ELO, XP, level on dashboard
-    }
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+
+    await showCenteredAlert(
+      `๐ เธชเธณเน€เธฃเนเธ! เธเธธเธ“เน€เธฅเนเธเธฃเธญเธเธเธตเนเน€เธชเธฃเนเธเธชเธดเนเธ\nเธเธฐเนเธเธเธ—เธตเนเนเธ”เน: ${vocabScore} PTS\n${data.message}`,
+      { title: 'เธชเธณเน€เธฃเนเธเธเธฒเธฃเธเธถเธเธเธ', icon: '๐' }
+    );
+
+    loadRealProfile(); // Refresh ELO, XP, level on dashboard
   } catch (err) {
     console.error('Error saving vocab session:', err);
+    await showCenteredAlert('เธชเธณเน€เธฃเนเธเธกเธดเธเธดเน€เธเธกเธเธณเธจเธฑเธเธ—เนเนเธฅเนเธง! เนเธ•เนเนเธกเนเธชเธฒเธกเธฒเธฃเธ–เธเธฑเธเธ—เธถเธเธเธฐเนเธเธเน€เธเนเธฒเน€เธเธดเธฃเนเธเน€เธงเธญเธฃเนเนเธ”เน');
   }
 }
 
-let currentCropper = null;
-
-window.handleProfileImageUpload = function(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    const imageToCrop = document.getElementById('imageToCrop');
-    imageToCrop.src = e.target.result;
-    document.getElementById('cropModal').style.display = 'flex';
-    
-    if (currentCropper) {
-      currentCropper.destroy();
-    }
-    
-    currentCropper = new Cropper(imageToCrop, {
-      aspectRatio: 1,
-      viewMode: 1,
-    });
-  };
-  reader.readAsDataURL(file);
-  
-  // clear input so same file can be selected again if needed
-  event.target.value = '';
-};
-
-window.cancelCrop = function() {
-  document.getElementById('cropModal').style.display = 'none';
-  if (currentCropper) {
-    currentCropper.destroy();
-    currentCropper = null;
-  }
-};
-
-window.confirmCrop = async function() {
-  if (!currentCropper) return;
-  
-  // Get cropped canvas with fixed max size
-  const canvas = currentCropper.getCroppedCanvas({
-    width: 500,
-    height: 500,
-  });
-  
-  if (!canvas) return;
-  
-  const base64Image = canvas.toDataURL('image/jpeg', 0.8);
-  cancelCrop();
-  
-  try {
-    const res = await fetch(`${API_BASE}/api/user/profile/upload-face`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${authToken}`
-      },
-      body: JSON.stringify({ faceImage: base64Image })
-    });
-    
-    if (res.ok) {
-      const data = await res.json();
-      userProfile.faceImage = base64Image;
-      sessionStorage.setItem('userProfile', JSON.stringify(userProfile));
-      
-      updateAllMyAvatars(base64Image, userProfile.fullName);
-
-      
-      showCenteredAlert('อัปเดตรูปโปรไฟล์สำเร็จ');
-    } else {
-      showCenteredAlert('เกิดข้อผิดพลาดในการอัปโหลด');
-    }
-  } catch (err) {
-    console.error('Upload Error:', err);
-    showCenteredAlert('เกิดข้อผิดพลาดในการเชื่อมต่อ');
-  }
-};
-
-// ==========================================
-// Profile Menu Features (Modals & Toggles)
-// ==========================================
-
-document.addEventListener('DOMContentLoaded', () => {
-  // 1. Hide Change Password if Google Login
-  const loginProvider = sessionStorage.getItem('loginProvider');
-  if (loginProvider === 'google') {
-    const cpMenu = document.getElementById('menuChangePassword');
-    if (cpMenu) cpMenu.style.display = 'none';
-  }
-
-  // 2. Notification Toggle
-  const notifToggle = document.getElementById('notificationToggle');
-  if (notifToggle) {
-    const savedNotif = localStorage.getItem('notificationsEnabled');
-    if (savedNotif !== null) {
-      notifToggle.checked = savedNotif === 'true';
-    }
-    notifToggle.addEventListener('change', (e) => {
-      localStorage.setItem('notificationsEnabled', e.target.checked);
-      showCenteredAlert(e.target.checked ? 'เปิดการแจ้งเตือนแล้ว' : 'ปิดการแจ้งเตือนแล้ว');
-    });
-  }
-
-  // 3. Dark Mode Initialization
-  const darkModeToggle = document.getElementById('darkModeToggle');
-  const savedDark = localStorage.getItem('darkMode');
-  if (savedDark === 'true') {
-    document.body.classList.add('dark-mode');
-    if (darkModeToggle) darkModeToggle.checked = true;
-  }
-});
-
-window.toggleDarkMode = function(isDark) {
-  if (isDark) {
-    document.body.classList.add('dark-mode');
-    localStorage.setItem('darkMode', 'true');
-  } else {
-    document.body.classList.remove('dark-mode');
-    localStorage.setItem('darkMode', 'false');
-  }
-};
-
-// --- Modals Logic ---
-
-// Change Password
-window.openChangePasswordModal = function() {
-  document.getElementById('changePasswordModal').style.display = 'flex';
-};
-window.closeChangePasswordModal = function() {
-  document.getElementById('changePasswordModal').style.display = 'none';
-};
-window.submitChangePassword = function() {
-  alert('ฟีเจอร์เปลี่ยนรหัสผ่าน กำลังอยู่ในช่วงพัฒนาครับ!');
-  closeChangePasswordModal();
-};
-
-// Help / FAQ
-window.openHelpModal = function() {
-  document.getElementById('helpModal').style.display = 'flex';
-  fetchSupportTickets();
-};
-window.closeHelpModal = function() {
-  document.getElementById('helpModal').style.display = 'none';
-};
-window.submitSupportTicket = async function() {
-  const msg = document.getElementById('supportMessage').value.trim();
-  if (!msg) return showCenteredAlert('กรุณากรอกข้อความก่อนส่ง');
-  try {
-    const res = await fetch(`${API_BASE}/api/support/ticket`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${authToken}`
-      },
-      body: JSON.stringify({ message: msg })
-    });
-    const data = await res.json();
-    if (res.ok) {
-      showCenteredAlert('ส่งปัญหาเรียบร้อยแล้ว');
-      document.getElementById('supportMessage').value = '';
-      fetchSupportTickets();
-    } else {
-      showCenteredAlert(data.error || 'เกิดข้อผิดพลาด');
-    }
-  } catch (err) {
-    showCenteredAlert('ไม่สามารถเชื่อมต่อได้');
-  }
-};
-window.fetchSupportTickets = async function() {
-  const list = document.getElementById('supportTicketsList');
-  if (!list) return;
-  list.innerHTML = '<div style="text-align: center; color: #94A3B8; font-size: 14px; padding: 20px 0;">กำลังโหลด...</div>';
-  try {
-    const res = await fetch(`${API_BASE}/api/support/tickets`, {
-      headers: { 'Authorization': `Bearer ${authToken}` }
-    });
-    if (res.ok) {
-      const data = await res.json();
-      if (!data.tickets || data.tickets.length === 0) {
-        list.innerHTML = '<div style="text-align: center; color: #94A3B8; font-size: 14px; padding: 20px 0;">ไม่มีประวัติการแจ้งปัญหา</div>';
-        return;
-      }
-      list.innerHTML = data.tickets.map(t => {
-        const date = new Date(t.createdAt).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
-        const statusColor = t.status === 'PENDING' ? '#F59E0B' : '#10B981';
-        const statusText = t.status === 'PENDING' ? 'รอดำเนินการ' : 'เรียบร้อยแล้ว';
-        return `<div style="background: var(--bg-gray, #F8FAFC); border: 1px solid var(--border-color, #E2E8F0); padding: 12px; border-radius: 12px; font-size: 13px;">
-          <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-            <span style="color: #64748B;">${date}</span>
-            <span style="color: ${statusColor}; font-weight: 700;">${statusText}</span>
-          </div>
-          <div style="color: var(--text-dark, #1E293B); font-weight: 500;">${escapeHTML(t.message)}</div>
-        </div>`;
-      }).join('');
-    }
-  } catch (err) {
-    list.innerHTML = '<div style="text-align: center; color: #EF4444; font-size: 14px; padding: 20px 0;">โหลดข้อมูลล้มเหลว</div>';
-  }
-};
-
-// Settings
-window.openSettingsModal = function() {
-  document.getElementById('settingsModal').style.display = 'flex';
-};
-window.closeSettingsModal = function() {
-  document.getElementById('settingsModal').style.display = 'none';
-};
-
-// Exam History
-window.openExamHistoryModal = function() {
-  document.getElementById('examHistoryModal').style.display = 'flex';
-  const countEl = document.getElementById('examHistoryCount');
-  if (countEl) {
-    // Count from userProfile.stageProgress
-    const progress = userProfile?.stageProgress || [];
-    const completedStages = progress.filter(p => p.completed).length;
-    countEl.textContent = completedStages;
-  }
-};
-window.closeExamHistoryModal = function() {
-  document.getElementById('examHistoryModal').style.display = 'none';
-};
-
-// Edit Profile
-window.openEditProfileModal = function() {
-  document.getElementById('editProfileModal').style.display = 'flex';
-  const nameInput = document.getElementById('editProfileNameInput');
-  if (nameInput) nameInput.value = userProfile?.fullName || '';
-
-  const editAvatarImg = document.getElementById('editProfileAvatarImg');
-  const editAvatarBox = document.getElementById('editProfileAvatarBox');
-  if (userProfile?.faceImage) {
-    if (editAvatarImg) {
-      editAvatarImg.src = userProfile.faceImage;
-      editAvatarImg.style.display = 'block';
-    }
-    if (editAvatarBox) editAvatarBox.style.display = 'none';
-  } else {
-    if (editAvatarImg) editAvatarImg.style.display = 'none';
-    if (editAvatarBox) {
-      editAvatarBox.style.display = 'flex';
-      editAvatarBox.textContent = userProfile?.fullName ? userProfile.fullName.charAt(0) : 'ส';
-    }
-  }
-};
-window.closeEditProfileModal = function() {
-  document.getElementById('editProfileModal').style.display = 'none';
-};
-window.submitEditProfile = async function() {
-  const nameInput = document.getElementById('editProfileNameInput');
-  const newName = nameInput ? nameInput.value.trim() : '';
-  if (!newName) return showCenteredAlert('กรุณากรอกชื่อ-นามสกุล');
-
-  const btn = document.getElementById('btnSubmitEditProfile');
-  if (btn) btn.disabled = true;
-
-  try {
-    const res = await fetch(`${API_BASE}/api/user/profile`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${authToken}`
-      },
-      body: JSON.stringify({ fullName: newName })
-    });
-    const data = await res.json();
-    if (res.ok && data.success) {
-      // Update local storage and UI
-      userProfile.fullName = newName;
-      sessionStorage.setItem('userProfile', JSON.stringify(userProfile));
-      
-      const profileName = document.getElementById('profileName');
-      const dropdownName = document.getElementById('dropdownUserName');
-      if (profileName) profileName.textContent = newName;
-      if (dropdownName) dropdownName.textContent = newName;
-      
-      // Update avatar letter if no image
-      if (!userProfile.faceImage) {
-        updateAllMyAvatars(null, newName);
-      }
-
-      showCenteredAlert('อัปเดตโปรไฟล์เรียบร้อยแล้ว');
-      closeEditProfileModal();
-    } else {
-      showCenteredAlert(data.error || 'เกิดข้อผิดพลาดในการบันทึก');
-    }
-  } catch (err) {
-    showCenteredAlert('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
-  } finally {
-    if (btn) btn.disabled = false;
-  }
-};
-
-// Handle Image Uploads for Chats
-function handleChatImageUpload(e, apiEndpoint) {
-  const file = e.target.files[0];
-  if (!file) return;
-  e.target.value = ''; // Reset
-  
-  if (file.size > 5 * 1024 * 1024) {
-    showCenteredAlert('ไฟล์ภาพมีขนาดใหญ่เกินไป (จำกัด 5MB)');
-    return;
-  }
-  
-  const reader = new FileReader();
-  reader.onload = async (ev) => {
-    const base64 = ev.target.result;
-    let url = apiEndpoint;
-    // Replace dynamic parts if needed, like groupId or dmUserId
-    if (url.includes(':groupId')) url = url.replace(':groupId', window.activeGroupId);
-    if (url.includes(':friendId')) url = url.replace(':friendId', window.activeDmFriendId);
-    
-    try {
-      const res = await fetch(`${API_BASE}${url}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
-        body: JSON.stringify({ content: base64 })
-      });
-      if (!res.ok) throw new Error('Failed to send image');
-      
-      // Reload chat based on endpoint
-      if (url.includes('/chat') && !url.includes('/groups/') && !url.includes('/dm/')) loadChatMessages();
-      else if (url.includes('/groups/')) loadGroupChatMessages(window.activeGroupId);
-      else if (url.includes('/dm/')) loadDmChatMessages(window.activeDmFriendId);
-    } catch (err) {
-      console.error('Upload image error:', err);
-      showCenteredAlert('ไม่สามารถส่งรูปภาพได้');
-    }
-  };
-  reader.readAsDataURL(file);
-}
 
 
-// ==========================================
-// Group Members Management
-// ==========================================
-let currentManageGroupId = null;
-let currentManageGroupCreatorId = null;
-
-window.openGroupMembersModal = async function(groupId, creatorId) {
-  currentManageGroupId = groupId;
-  currentManageGroupCreatorId = creatorId;
-  const modal = document.getElementById('groupMembersModal');
-  const container = document.getElementById('groupMembersContainer');
-  if (!modal || !container) return;
-  
-  modal.style.display = 'flex';
-  container.innerHTML = '<div style="text-align:center; padding: 20px; color: var(--text-light);">กำลังโหลด...</div>';
-  
-  try {
-    const res = await fetch(`${API_BASE}/api/community/groups/${groupId}/members`, {
-      headers: { 'Authorization': `Bearer ${authToken}` }
-    });
-    if (!res.ok) throw new Error('Failed to load members');
-    const members = await res.json();
-    
-    // Check my role
-    const myMember = members.find(m => m.userId === userProfile.id);
-    const iAmAdmin = myMember && (myMember.role === 'ADMIN' || creatorId === userProfile.id);
-    
-    let html = '';
-    members.forEach(m => {
-      const isCreator = m.userId === creatorId;
-      const isAdmin = m.role === 'ADMIN';
-      const isMe = m.userId === userProfile.id;
-      
-      let roleBadge = '';
-      if (isCreator) roleBadge = '<span style="font-size:10px; background:#FEF3C7; color:#D97706; padding:2px 6px; border-radius:4px; margin-left:6px;">หัวหน้ากลุ่ม</span>';
-      else if (isAdmin) roleBadge = '<span style="font-size:10px; background:#DBEAFE; color:#1D4ED8; padding:2px 6px; border-radius:4px; margin-left:6px;">แอดมิน</span>';
-      
-      let actionBtns = '';
-      if (iAmAdmin && !isCreator && !isMe) {
-        if (!isAdmin) {
-          actionBtns += `<button onclick="updateMemberRole(${m.userId}, 'ADMIN')" style="font-size:11px; padding:4px 8px; border-radius:4px; background:#EFF6FF; color:#2563EB; border:1px solid #BFDBFE; cursor:pointer;">ตั้งแอดมิน</button>`;
-        } else if (creatorId === userProfile.id) {
-          // Only creator can demote admins
-          actionBtns += `<button onclick="updateMemberRole(${m.userId}, 'MEMBER')" style="font-size:11px; padding:4px 8px; border-radius:4px; background:#FFF1F2; color:#E11D48; border:1px solid #FECDD3; cursor:pointer;">ปลดแอดมิน</button>`;
-        }
-        actionBtns += `<button onclick="kickMember(${m.userId})" style="font-size:11px; padding:4px 8px; border-radius:4px; background:#FEF2F2; color:#DC2626; border:1px solid #FECACA; cursor:pointer; margin-left:6px;">เตะออก</button>`;
-      }
-
-      html += `
-        <div style="display:flex; justify-content:space-between; align-items:center; padding: 10px; border:1px solid var(--border-color); border-radius:12px;">
-          <div style="display:flex; align-items:center; gap:12px;">
-            <div onclick="showUserProfileModal(${m.userId})" style="cursor:pointer;">
-              ${renderAvatarHtml(m.user, '', 'width:36px; height:36px; border-radius:50%;', '#64748B')}
-            </div>
-            <div>
-              <div style="font-size:14px; font-weight:600; color:var(--text-dark); display:flex; align-items:center;">
-                ${escapeHTML(m.user.fullName || m.user.username || 'ผู้ใช้งาน')} ${roleBadge}
-              </div>
-            </div>
-          </div>
-          <div style="display:flex; align-items:center;">${actionBtns}</div>
-        </div>
-      `;
-    });
-    container.innerHTML = html;
-  } catch (err) {
-    console.error(err);
-    container.innerHTML = '<div style="text-align:center; padding: 20px; color: #EF4444;">เกิดข้อผิดพลาดในการโหลดข้อมูล</div>';
-  }
-};
-
-window.updateMemberRole = async function(userId, newRole) {
-  if (!confirm(`ยืนยันการ${newRole === 'ADMIN' ? 'ตั้ง' : 'ปลด'}แอดมิน?`)) return;
-  try {
-    const res = await fetch(`${API_BASE}/api/community/groups/${currentManageGroupId}/members/${userId}/role`, {
-      method: 'PUT',
-      headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ role: newRole })
-    });
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.error || 'Failed to update role');
-    }
-    openGroupMembersModal(currentManageGroupId, currentManageGroupCreatorId);
-  } catch(err) {
-    alert(err.message);
-  }
-};
-
-window.kickMember = async function(userId) {
-  if (!confirm('ยืนยันการเตะสมาชิกออกจากกลุ่ม?')) return;
-  try {
-    const res = await fetch(`${API_BASE}/api/community/groups/${currentManageGroupId}/members/${userId}`, {
-      method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${authToken}` }
-    });
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.error || 'Failed to kick member');
-    }
-    openGroupMembersModal(currentManageGroupId, currentManageGroupCreatorId);
-  } catch(err) {
-    alert(err.message);
-  }
-};
-
-document.addEventListener('DOMContentLoaded', () => {
-  const btnClose = document.getElementById('btnCloseGroupMembersModal');
-  if (btnClose) {
-    btnClose.onclick = () => {
-      document.getElementById('groupMembersModal').style.display = 'none';
-    };
-  }
-});
