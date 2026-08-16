@@ -90,10 +90,54 @@ function showModal(modal) {
 }
 
 window.triggerGoogleLogin = function() {
+  if (typeof google !== 'undefined' && google.accounts && google.accounts.oauth2) {
+    try {
+      const client = google.accounts.oauth2.initTokenClient({
+        client_id: googleClientId,
+        scope: 'email profile openid',
+        callback: async (tokenResponse) => {
+          if (tokenResponse.access_token) {
+            try {
+              const userRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                headers: { Authorization: `Bearer ${tokenResponse.access_token}` }
+              });
+              const googleUser = await userRes.json();
+              
+              const res = await fetch(`${API_BASE}/api/auth/google-user-info`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  email: googleUser.email,
+                  name: googleUser.name || googleUser.email.split('@')[0],
+                  picture: googleUser.picture
+                })
+              });
+              const data = await res.json();
+              if (res.ok && data.token) {
+                localStorage.setItem('authToken', data.token);
+                localStorage.setItem('userProfile', JSON.stringify(data.user));
+                window.location.href = 'home/index.html';
+              } else {
+                alert(data.error || 'เข้าสู่ระบบด้วย Google ไม่สำเร็จ');
+              }
+            } catch (err) {
+              console.error('Google oauth fetch error:', err);
+              alert('เกิดข้อผิดพลาดในการเชื่อมต่อกับ Google');
+            }
+          }
+        }
+      });
+      client.requestAccessToken();
+      return;
+    } catch (e) {
+      console.error('Token client error:', e);
+    }
+  }
+
   if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
     google.accounts.id.prompt();
   } else {
-    alert('ระบบกำลังดาวน์โหลดบริการ Google Sign-In กรุณาลองใหม่อีกครั้งใน 2 วินาที');
+    alert('ระบบกำลังดาวน์โหลดบริการ Google Sign-In กรุณาลองใหม่อีกครั้ง');
   }
 };
 
