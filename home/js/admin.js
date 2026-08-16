@@ -237,6 +237,10 @@ async function showAddExamModal() {
 
   onSubjectChange();
 
+  const savedKey = localStorage.getItem('admin_gemini_key') || '';
+  const keyInput = document.getElementById('adminGeminiApiKey');
+  if (keyInput) keyInput.value = savedKey;
+
   document.getElementById('addExamModal').style.display = 'flex';
 }
 
@@ -297,6 +301,11 @@ async function generateAIExamPreview() {
   const docId = document.getElementById('knowledgeDocSelect').value;
   let title = document.getElementById('examTitle').value.trim();
   const numQuestions = document.getElementById('examNumQuestions').value;
+  const apiKey = document.getElementById('adminGeminiApiKey')?.value.trim() || localStorage.getItem('admin_gemini_key') || '';
+
+  if (apiKey) {
+    localStorage.setItem('admin_gemini_key', apiKey);
+  }
 
   if (!title) {
     title = `ชุดข้อสอบ${subject} (${numQuestions} ข้อ)`;
@@ -320,7 +329,8 @@ async function generateAIExamPreview() {
         subject,
         knowledgeBase,
         docId,
-        numQuestions: parseInt(numQuestions) || 10
+        numQuestions: parseInt(numQuestions) || 10,
+        apiKey
       })
     });
 

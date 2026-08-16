@@ -6390,7 +6390,7 @@ ${d.content}`).join('\n\n');
 ${d.content}`).join('\n\n');
     }
 
-    let apiKey = (process.env.GEMINI_API_KEY || '').trim().replace(/^['"]|['"]$/g, '');
+    let apiKey = (req.body.apiKey || process.env.GEMINI_API_KEY || '').trim().replace(/^['"]|['"]$/g, '');
     if (!apiKey) {
       const dbSettings = await prisma.systemSetting.findMany({
         where: { key: { in: ['settings_gemini_key', 'gemini_api_key', 'GEMINI_API_KEY', 'geminiKey', 'apiKey'] } }
@@ -6405,7 +6405,7 @@ ${d.content}`).join('\n\n');
 
     if (!apiKey) {
       return res.status(400).json({
-        error: '🔑 ไม่พบ API Key ของ Gemini ในระบบ กรุณาเข้าหน้า Admin -> ตั้งค่าระบบ เพื่อระบุ Gemini API Key'
+        error: '🔑 ไม่พบ API Key ของ Gemini กรุณาระบุ API Key ในช่องที่กำหนด หรือในเมนู Admin -> ตั้งค่าระบบ'
       });
     }
 
@@ -6589,7 +6589,7 @@ app.post('/api/admin/exams/:examSetId/append-ai', authenticateToken, async (req,
     const contextText = docs.map(d => `[${d.title}]
 ${d.content}`).join('\n\n');
 
-    let apiKey = (process.env.GEMINI_API_KEY || '').trim().replace(/^['"]|['"]$/g, '');
+    let apiKey = (req.body.apiKey || process.env.GEMINI_API_KEY || '').trim().replace(/^['"]|['"]$/g, '');
     if (!apiKey) {
       const dbSettings = await prisma.systemSetting.findMany({
         where: { key: { in: ['settings_gemini_key', 'gemini_api_key', 'GEMINI_API_KEY', 'geminiKey', 'apiKey'] } }
