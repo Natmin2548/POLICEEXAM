@@ -487,3 +487,29 @@ window.submitAiGenerate = async function() {
     btnSubmit.textContent = '✨ สร้างข้อสอบด้วย AI';
   }
 };
+
+// Mobile Sidebar Toggle
+window.addEventListener('DOMContentLoaded', () => {
+  const adminMobileMenuToggle = document.getElementById('adminMobileMenuToggle');
+  const sidebar = document.querySelector('.sidebar');
+  const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+  if (adminMobileMenuToggle && sidebar && sidebarOverlay) {
+    adminMobileMenuToggle.addEventListener('click', () => {
+      sidebar.classList.toggle('active');
+      sidebarOverlay.classList.toggle('active');
+    });
+
+    sidebarOverlay.addEventListener('click', () => {
+      sidebar.classList.remove('active');
+      sidebarOverlay.classList.remove('active');
+    });
+
+    document.querySelectorAll('.sidebar .nav-item').forEach(item => {
+      item.addEventListener('click', () => {
+        sidebar.classList.remove('active');
+        sidebarOverlay.classList.remove('active');
+      });
+    });
+  }
+});
