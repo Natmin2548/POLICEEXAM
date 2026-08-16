@@ -173,9 +173,11 @@ async function loadRealProfile() {
     });
 
     if (!res.ok) {
-      if (res.status === 401 || res.status === 403) {
+      if (res.status === 401 || res.status === 403 || res.status === 404) {
         localStorage.clear();
-        window.location.href = '/';
+        sessionStorage.clear();
+        alert('บัญชีผู้ใช้งานนี้ไม่มีอยู่ในระบบหรือหมดอายุแล้ว กรุณาเข้าสู่ระบบด้วยบัญชีใหม่');
+        window.location.replace(window.location.origin + '/?session_expired=1');
         return;
       }
       throw new Error('Profile fetch failed');

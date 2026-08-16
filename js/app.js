@@ -1,5 +1,13 @@
 // Immediate Route Guard: If user is already logged in on this device, bounce to home/index.html immediately!
 (function checkExistingSession() {
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('session_expired') === '1' || urlParams.get('reset') === '1') {
+    localStorage.clear();
+    sessionStorage.clear();
+    window.history.replaceState({}, document.title, window.location.pathname);
+    return;
+  }
+
   let token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
   let profile = localStorage.getItem('userProfile') || sessionStorage.getItem('userProfile');
 
@@ -15,6 +23,16 @@
     }
   }
 })();
+
+window.resetGoogleSession = function() {
+  localStorage.clear();
+  sessionStorage.clear();
+  if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+    google.accounts.id.disableAutoSelect();
+  }
+  alert('ล้างข้อมูลเข้าสู่ระบบเดิมในเครื่องเรียบร้อยแล้ว กรุณากดลงชื่อเข้าใช้ด้วยบัญชี Google ใหม่');
+  window.location.replace(window.location.origin + '/?reset=1');
+};
 
 // ==========================================
 // Configuration
