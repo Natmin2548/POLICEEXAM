@@ -6393,7 +6393,7 @@ ${d.content}`).join('\n\n');
     let apiKey = (process.env.GEMINI_API_KEY || '').trim();
     if (!apiKey) {
       const dbSettings = await prisma.systemSetting.findMany({
-        where: { key: { in: ['settings_gemini_key', 'gemini_api_key', 'GEMINI_API_KEY', 'geminiKey'] } }
+        where: { key: { in: ['settings_gemini_key', 'gemini_api_key', 'GEMINI_API_KEY', 'geminiKey', 'apiKey'] } }
       });
       for (const s of dbSettings) {
         if (s.value && s.value.trim()) {
@@ -6408,8 +6408,8 @@ ${d.content}`).join('\n\n');
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    let model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-
+    const modelsToTry = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-2.5-flash-lite', 'gemini-1.5-pro'];
+    
     const prompt = `คุณเป็นผู้เชี่ยวชาญระดับสูงในการออกข้อสอบแข่งขันบรรจุเป็นข้าราชการตำรวจ (สายอำนวยการและปราบปราม)
 โปรดสร้างข้อสอบภาษาไทยคุณภาพสูงจำนวน ${count} ข้อ สำหรับวิชา: "${subject}"
 
@@ -6433,8 +6433,28 @@ ${contextText ? `คลังข้อมูลอ้างอิงทางก
 ]
 `;
 
-    const result = await model.generateContent(prompt);
-    let cleanJson = result.response.text().trim();
+    let textResponse = '';
+    let lastErr = null;
+    for (const modelName of modelsToTry) {
+      try {
+        const model = genAI.getGenerativeModel({ model: modelName });
+        const result = await model.generateContent(prompt);
+        textResponse = result.response.text();
+        if (textResponse) break;
+      } catch (mErr) {
+        console.warn(`[Gemini Model ${modelName} failed]:`, mErr.message);
+        lastErr = mErr;
+      }
+    }
+
+    if (!textResponse) {
+      if (lastErr && (lastErr.message.includes('401') || lastErr.message.includes('Unauthorized') || lastErr.message.includes('API key'))) {
+        return res.status(401).json({ error: '🔑 Gemini API Key ไม่ถูกต้องหรือไม่มีสิทธิ์ใช้งาน (401 Unauthorized) กรุณาตรวจสอบ API Key ในเมนู Admin -> ตั้งค่าระบบ' });
+      }
+      return res.status(500).json({ error: 'ไม่สามารถเรียกใช้งาน Gemini AI ได้: ' + (lastErr ? lastErr.message : 'Unknown error') });
+    }
+
+    let cleanJson = textResponse.trim();
     if (cleanJson.startsWith('```json')) cleanJson = cleanJson.replace(/^```json/, '').replace(/```$/, '').trim();
     else if (cleanJson.startsWith('```')) cleanJson = cleanJson.replace(/^```/, '').replace(/```$/, '').trim();
 
