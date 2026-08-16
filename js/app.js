@@ -126,7 +126,7 @@ window.triggerGoogleLogin = function() {
               }
             } catch (err) {
               console.error('Google oauth fetch error:', err);
-              alert('เกิดข้อผิดพลาดในการเชื่อมต่อกับ Google');
+              alert('⏳ เซิร์ฟเวอร์กำลังเริ่มต้นการทำงาน (Render Cold Start)... กรุณารอประมาณ 5-10 วินาที แล้วลองกดเข้าสู่ระบบอีกครั้งครับ');
             }
           }
         }
@@ -401,6 +401,9 @@ registerForm.addEventListener('submit', async (e) => {
 // ==========================================
 
 window.addEventListener('DOMContentLoaded', () => {
+  // Warmup backend on Render if sleeping
+  fetch(`${API_BASE}/api/health`).catch(() => {});
+
   // Auto-redirect to dashboard if token exists on this device
   const existingToken = localStorage.getItem('authToken');
   const existingProfile = localStorage.getItem('userProfile');

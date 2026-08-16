@@ -632,10 +632,15 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
+// Health Check / Warmup route
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', serverTime: new Date() });
+});
+
 // --- Google Auth Configuration & Verification Routes ---
 app.get('/api/auth/config', (req, res) => {
   res.json({
-    googleClientId: process.env.GOOGLE_CLIENT_ID || null
+    googleClientId: process.env.GOOGLE_CLIENT_ID || '848275108419-q0171b1bmm4l29lp9blgpin3fl4p1fnh.apps.googleusercontent.com'
   });
 });
 
