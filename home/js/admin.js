@@ -11,7 +11,7 @@ function escapeHTML(str) {
 // Configuration
 const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
   ? 'http://localhost:3000' 
-  : 'https://police-exam-backend.onrender.com';
+  : window.location.origin;
 
 const authToken = localStorage.getItem('authToken');
 let currentUser = null;
