@@ -88,6 +88,11 @@ function showCenteredAlert(message, opts = {}) {
   });
 }
 
+// Override standard browser alert with modern centered dialog
+window.alert = function(msg) {
+  showCenteredAlert(msg);
+};
+
 // ==========================================
 // Session Route Guard & Initialization
 // ==========================================

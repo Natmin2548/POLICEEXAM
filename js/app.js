@@ -51,6 +51,59 @@ window.resetGoogleSession = function() {
 };
 
 // ==========================================
+// Custom Centered Dialog Modal
+// ==========================================
+function showCenteredAlert(message, opts = {}) {
+  return new Promise((resolve) => {
+    let modal = document.getElementById('customAlertModal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'customAlertModal';
+      modal.style.cssText = 'display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(8px); z-index: 99999; align-items: center; justify-content: center; padding: 16px;';
+      modal.innerHTML = `
+        <div style="background: white; border-radius: 24px; padding: 28px 24px; max-width: 380px; width: 100%; text-align: center; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); font-family: 'Kanit', sans-serif; animation: modalPop 0.25s ease;">
+          <div id="customAlertIcon" style="font-size: 40px; margin-bottom: 12px; display: none;"></div>
+          <h3 id="customAlertTitle" style="font-size: 18px; font-weight: 700; color: #1E293B; margin: 0 0 10px 0;">แจ้งเตือน</h3>
+          <p id="customAlertMessage" style="font-size: 14px; color: #475569; margin: 0 0 24px 0; line-height: 1.6; word-break: break-word;"></p>
+          <button id="btnAlertOk" style="width: 100%; padding: 14px; border-radius: 14px; border: none; background: #BD1B0B; color: white; font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit;">ตกลง</button>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    }
+
+    const iconEl = document.getElementById('customAlertIcon');
+    const titleEl = document.getElementById('customAlertTitle');
+    const msgEl = document.getElementById('customAlertMessage');
+    const btnOk = document.getElementById('btnAlertOk');
+
+    if (iconEl) {
+      if (opts.icon) {
+        iconEl.textContent = opts.icon;
+        iconEl.style.display = 'block';
+      } else {
+        iconEl.style.display = 'none';
+      }
+    }
+    if (titleEl) titleEl.textContent = opts.title || 'แจ้งเตือน';
+    if (msgEl) msgEl.textContent = message;
+    modal.style.display = 'flex';
+
+    function cleanup() {
+      if (modal) modal.style.display = 'none';
+      if (btnOk) btnOk.removeEventListener('click', onOk);
+    }
+    function onOk() { cleanup(); resolve(); }
+
+    if (btnOk) btnOk.addEventListener('click', onOk);
+  });
+}
+
+// Override standard browser alert with modern centered dialog
+window.alert = function(msg) {
+  showCenteredAlert(msg);
+};
+
+// ==========================================
 // Configuration
 // ==========================================
 const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
