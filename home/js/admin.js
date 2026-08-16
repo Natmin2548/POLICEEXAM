@@ -3,7 +3,7 @@ const API_BASE = window.location.hostname === 'localhost' || window.location.hos
   ? 'http://localhost:3000' 
   : 'https://police-exam-t090.onrender.com';
 
-const authToken = sessionStorage.getItem('authToken');
+const authToken = localStorage.getItem('authToken');
 let currentUser = null;
 
 // Initialization
@@ -24,7 +24,7 @@ async function initAdmin() {
       if (res.ok) {
         const data = await res.json();
         currentUserProfile = data.user;
-        sessionStorage.setItem('userProfile', JSON.stringify(currentUserProfile));
+        localStorage.setItem('userProfile', JSON.stringify(currentUserProfile));
       }
     } catch (fetchErr) {
       console.warn('Backend fetch failed, falling back to cached profile:', fetchErr);
@@ -32,7 +32,7 @@ async function initAdmin() {
 
     // Fallback to cache if API failed
     if (!currentUserProfile) {
-      const cachedProfileStr = sessionStorage.getItem('userProfile');
+      const cachedProfileStr = localStorage.getItem('userProfile');
       if (cachedProfileStr) {
         currentUserProfile = JSON.parse(cachedProfileStr);
       }

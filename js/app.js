@@ -148,10 +148,10 @@ loginForm.addEventListener('submit', async (e) => {
       return;
     }
 
-    // Save JWT token and user data to sessionStorage
-    sessionStorage.setItem('authToken', data.token);
-    sessionStorage.setItem('userProfile', JSON.stringify(data.user));
-    sessionStorage.setItem('loginProvider', 'local');
+    // Save JWT token and user data to localStorage
+    localStorage.setItem('authToken', data.token);
+    localStorage.setItem('userProfile', JSON.stringify(data.user));
+    localStorage.setItem('loginProvider', 'local');
 
     hideModal(loginModal);
     window.location.href = 'home/index.html';
@@ -245,6 +245,13 @@ const FALLBACK_GOOGLE_CLIENT_ID = '848275108419-q0171b1bmm4l29lp9blgpin3fl4p1fnh
 let googleClientId = FALLBACK_GOOGLE_CLIENT_ID;
 
 window.addEventListener('DOMContentLoaded', () => {
+  // Auto-redirect to dashboard if token exists on this device
+  const existingToken = localStorage.getItem('authToken');
+  const existingProfile = localStorage.getItem('userProfile');
+  if (existingToken && existingProfile) {
+    window.location.href = 'home/index.html';
+    return;
+  }
   // Try to fetch Client ID from API, but use fallback immediately
   fetch(`${API_BASE}/api/auth/config`)
     .then(res => res.json())
@@ -348,9 +355,9 @@ async function handleGoogleCredential(response) {
       return;
     }
 
-    sessionStorage.setItem('authToken', data.token);
-    sessionStorage.setItem('userProfile', JSON.stringify(data.user));
-    sessionStorage.setItem('loginProvider', 'google');
+    localStorage.setItem('authToken', data.token);
+    localStorage.setItem('userProfile', JSON.stringify(data.user));
+    localStorage.setItem('loginProvider', 'google');
 
     hideModal(loginModal);
     hideModal(registerModal);

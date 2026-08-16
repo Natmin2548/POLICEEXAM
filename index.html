@@ -14,7 +14,7 @@
   <!-- Google Identity Services SDK -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <!-- External Application Script -->
-  <script src="js/app.js?v=7" defer></script>
+  <script src="js/app.js?v=9" defer></script>
 </head>
 
 <body>
@@ -142,10 +142,10 @@
   </section>
 
   <!-- ==========================================
-       Log In Modal (เข้าสู่ระบบ)
+       Log In Modal (เข้าสู่ระบบด้วย Google)
        ========================================== -->
   <div class="modal-overlay" id="loginModal">
-    <div class="modal-card">
+    <div class="modal-card" style="text-align: center; padding: 36px 24px;">
       <button class="modal-close" id="closeLogin" aria-label="ปิด">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <line x1="18" y1="6" x2="6" y2="18" />
@@ -153,54 +153,33 @@
         </svg>
       </button>
 
-      <div class="modal-header">
+      <div class="modal-header" style="margin-bottom: 24px;">
         <div class="modal-logo-wrapper">
-          <!-- Red Shield Outline on red box -->
           <svg class="modal-logo-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M12 22C12 22 20 18 20 12V5L12 2L4 5V12C4 18 12 22 12 22Z" fill="none" stroke="white"
               stroke-width="2" stroke-linejoin="round" />
           </svg>
         </div>
-        <h2 class="modal-title">เข้าสู่ระบบ</h2>
-        <p class="modal-subtitle">ยินดีต้อนรับกลับมา</p>
-      </div>
-
-      <form class="modal-form" id="loginForm">
-        <div class="form-group">
-          <label class="form-label">อีเมล</label>
-          <input type="email" class="form-input-field" placeholder="example@email.com" required>
-        </div>
-
-        <div class="form-group">
-          <div class="label-row">
-            <label class="form-label">รหัสผ่าน</label>
-            <a href="#" class="forgot-password-link"
-              onclick="alert('ฟีเจอร์กู้คืนรหัสผ่านจะพร้อมใช้งานเร็วๆ นี้');">ลืมรหัสผ่าน?</a>
-          </div>
-          <input type="password" class="form-input-field" placeholder="........" required>
-        </div>
-
-        <button type="submit" class="btn-modal-submit">เข้าสู่ระบบ</button>
-      </form>
-
-      <div class="modal-or-divider">
-        <span>หรือ</span>
+        <h2 class="modal-title">เข้าสู่ระบบ / สมัครสมาชิก</h2>
+        <p class="modal-subtitle">เข้าสู่ระบบง่ายๆ ด้วยบัญชี Google</p>
       </div>
 
       <div id="googleSignInButtonLogin" class="google-signin-container"
-        style="display: flex; justify-content: center; margin-top: 8px;"></div>
+        style="display: flex; justify-content: center; margin-top: 20px; margin-bottom: 20px;"></div>
 
-      <div class="modal-footer-text">
-        ยังไม่มีบัญชี? <a href="#" class="red-link" id="linkToRegister">สมัครสมาชิก</a>
+      <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 14px; margin-top: 16px;">
+        <p style="font-size: 12px; color: #64748B; margin: 0; line-height: 1.5;">
+          🔒 <strong>จำการเข้าสู่ระบบประจำเครื่อง:</strong> ระบบจะบันทึกสิทธิ์การใช้งานบนอุปกรณ์นี้ไว้โดยอัตโนมัติ ไม่ต้องเข้าสู่ระบบซ้ำจนกว่าคุณจะกดออกจากระบบ
+        </p>
       </div>
     </div>
   </div>
 
   <!-- ==========================================
-       Register Modal (สมัครสมาชิก)
+       Register Modal (สมัครสมาชิกด้วย Google)
        ========================================== -->
   <div class="modal-overlay" id="registerModal">
-    <div class="modal-card">
+    <div class="modal-card" style="text-align: center; padding: 36px 24px;">
       <button class="modal-close" id="closeRegister" aria-label="ปิด">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <line x1="18" y1="6" x2="6" y2="18" />
@@ -208,74 +187,24 @@
         </svg>
       </button>
 
-      <div class="modal-header">
+      <div class="modal-header" style="margin-bottom: 24px;">
         <div class="modal-logo-wrapper">
-          <!-- Red Shield Outline on red box -->
           <svg class="modal-logo-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M12 22C12 22 20 18 20 12V5L12 2L4 5V12C4 18 12 22 12 22Z" fill="none" stroke="white"
               stroke-width="2" stroke-linejoin="round" />
           </svg>
         </div>
-        <h2 class="modal-title">สมัครสมาชิก</h2>
+        <h2 class="modal-title">สมัครสมาชิกด้วย Google</h2>
         <p class="modal-subtitle">เริ่มต้นเตรียมสอบ ฟรี!</p>
       </div>
 
-      <form class="modal-form" id="registerForm">
-        <!-- Multi-column First/Last Name -->
-        <div class="form-row-2">
-          <div class="form-group">
-            <label class="form-label">ชื่อ</label>
-            <input type="text" class="form-input-field" placeholder="สมชาย" required>
-          </div>
-          <div class="form-group">
-            <label class="form-label">นามสกุล</label>
-            <input type="text" class="form-input-field" placeholder="ใจดี" required>
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">อีเมล</label>
-          <input type="email" class="form-input-field" placeholder="example@email.com" required>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">เบอร์โทรศัพท์</label>
-          <input type="tel" class="form-input-field" placeholder="08X-XXX-XXXX" required>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">รหัสผ่าน</label>
-          <input type="password" class="form-input-field" placeholder="อย่างน้อย 8 ตัวอักษร" required minlength="8">
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">ยืนยันรหัสผ่าน</label>
-          <input type="password" class="form-input-field" placeholder="........" required minlength="8">
-        </div>
-
-        <!-- Checkbox with styled terms link -->
-        <div class="form-group-checkbox">
-          <input type="checkbox" id="termsCheck" required>
-          <label for="termsCheck" class="checkbox-label">
-            ฉันยอมรับ <a href="#" class="red-link"
-              onclick="alert('ข้อกำหนดการใช้งาน'); event.stopPropagation();">ข้อกำหนดการใช้งาน</a> และ <a href="#"
-              class="red-link"
-              onclick="alert('นโยบายความเป็นส่วนตัว'); event.stopPropagation();">นโยบายความเป็นส่วนตัว</a>
-          </label>
-        </div>
-
-        <button type="submit" class="btn-modal-submit">สมัครสมาชิก</button>
-      </form>
-
-      <div class="modal-or-divider">
-        <span>หรือ</span>
-      </div>
-
       <div id="googleSignInButtonRegister" class="google-signin-container"
-        style="display: flex; justify-content: center; margin-top: 8px;"></div>
+        style="display: flex; justify-content: center; margin-top: 20px; margin-bottom: 20px;"></div>
 
-      <div class="modal-footer-text">
-        มีบัญชีแล้ว? <a href="#" class="red-link" id="linkToLogin">เข้าสู่ระบบ</a>
+      <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 14px; margin-top: 16px;">
+        <p style="font-size: 12px; color: #64748B; margin: 0; line-height: 1.5;">
+          🔒 <strong>จำการเข้าสู่ระบบประจำเครื่อง:</strong> ระบบจะบันทึกสิทธิ์การใช้งานบนอุปกรณ์นี้ไว้โดยอัตโนมัติ ไม่ต้องเข้าสู่ระบบซ้ำจนกว่าคุณจะกดออกจากระบบ
+        </p>
       </div>
     </div>
   </div>

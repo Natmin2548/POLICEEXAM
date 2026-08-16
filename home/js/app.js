@@ -95,8 +95,8 @@ let userProfile = null;
 let authToken = null;
 
 async function checkSession() {
-  authToken = sessionStorage.getItem('authToken');
-  const sessionData = sessionStorage.getItem('userProfile');
+  authToken = localStorage.getItem('authToken');
+  const sessionData = localStorage.getItem('userProfile');
 
   if (!authToken || !sessionData) {
     await showCenteredAlert('กรุณาเข้าสู่ระบบก่อนใช้งานแดชบอร์ด');
@@ -174,7 +174,7 @@ async function loadRealProfile() {
 
     if (!res.ok) {
       if (res.status === 401 || res.status === 403) {
-        sessionStorage.clear();
+        localStorage.clear();
         window.location.href = '/';
         return;
       }
@@ -184,7 +184,7 @@ async function loadRealProfile() {
     const data = await res.json();
     if (data.user) {
       userProfile = data.user;
-      sessionStorage.setItem('userProfile', JSON.stringify(userProfile));
+      localStorage.setItem('userProfile', JSON.stringify(userProfile));
       initializeDashboard();
       updateStatsFromProfile(data.user);
       
@@ -532,7 +532,7 @@ const btnProfileLogout = document.getElementById('btnProfileLogout');
 async function handleLogout() {
   const confirmLog = await showCenteredConfirm('ยืนยันการออกจากระบบ', 'คุณต้องการออกจากระบบใช่หรือไม่?', { okText: 'ออกจากระบบ', okColor: '#EF4444' });
   if (confirmLog) {
-    sessionStorage.clear();
+    localStorage.clear();
     window.location.href = '/';
   }
 }
@@ -3187,7 +3187,7 @@ window.confirmCrop = async function() {
     if (res.ok) {
       const data = await res.json();
       userProfile.faceImage = base64Image;
-      sessionStorage.setItem('userProfile', JSON.stringify(userProfile));
+      localStorage.setItem('userProfile', JSON.stringify(userProfile));
       
       updateAllMyAvatars(base64Image, userProfile.fullName);
 
@@ -3208,7 +3208,7 @@ window.confirmCrop = async function() {
 
 document.addEventListener('DOMContentLoaded', () => {
   // 1. Hide Change Password if Google Login
-  const loginProvider = sessionStorage.getItem('loginProvider');
+  const loginProvider = localStorage.getItem('loginProvider');
   if (loginProvider === 'google') {
     const cpMenu = document.getElementById('menuChangePassword');
     if (cpMenu) cpMenu.style.display = 'none';
@@ -3393,7 +3393,7 @@ window.submitEditProfile = async function() {
     if (res.ok && data.success) {
       // Update local storage and UI
       userProfile.fullName = newName;
-      sessionStorage.setItem('userProfile', JSON.stringify(userProfile));
+      localStorage.setItem('userProfile', JSON.stringify(userProfile));
       
       const profileName = document.getElementById('profileName');
       const dropdownName = document.getElementById('dropdownUserName');
