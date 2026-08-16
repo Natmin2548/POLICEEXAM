@@ -45,14 +45,7 @@
       <nav class="nav-menu" id="navMenu">
         <!-- Default State: Log In & Register Links -->
         <div class="nav-auth-links" id="navAuthLinks">
-          <a href="#" class="btn-register open-login-btn" style="background: #BD1B0B; color: white; padding: 10px 24px; border-radius: 12px; font-weight: 600;">เข้าสู่ระบบ</a>
-        </div>
-
-        <!-- Authenticated State: Profile Details -->
-        <div class="nav-profile-container" id="navProfile" style="display: none;">
-          <img src="" alt="User Avatar" class="user-avatar" id="userAvatar">
-          <span class="user-name" id="userName"></span>
-          <button class="btn-logout" id="btnLogout">ออกจากระบบ</button>
+          <a href="#" id="navLoginBtn" class="btn-register open-login-btn" style="background: #BD1B0B; color: white; padding: 10px 24px; border-radius: 12px; font-weight: 600;">เข้าสู่ระบบ</a>
         </div>
       </nav>
     </div>
@@ -85,7 +78,7 @@
 
       <!-- CTA Buttons -->
       <div class="hero-actions">
-        <a href="#" class="btn btn-primary open-login-btn">
+        <a href="#" id="heroLoginBtn" class="btn btn-primary open-login-btn">
           <span>เข้าสู่ระบบด้วย Google</span>
           <svg class="arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="5" y1="12" x2="19" y2="12" stroke-linecap="round" />
@@ -108,7 +101,7 @@
         <div class="stat-divider"></div>
         <div class="stat-item">
           <span class="stat-number" id="publicStatPass">...</span>
-          <span class="stat-label">ผ่านสอบ</span>
+          <span class="stat-label">สอบผ่าน</span>
         </div>
       </div>
 
@@ -164,17 +157,6 @@
 
       <div id="googleSignInButtonLogin" class="google-signin-container"
         style="display: flex; justify-content: center; margin-top: 20px; margin-bottom: 20px;"></div>
-      <div style="margin-top: 14px; text-align: center;">
-        <button type="button" onclick="resetGoogleSession()" style="background: none; border: none; color: #BD1B0B; font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: underline;" title="ล้างเซสชันค้างและสลับบัญชี Google">
-          🔄 สลับสิทธิ์การใช้งาน / ลงชื่อเข้าใช้ด้วยบัญชี Google อื่น
-        </button>
-      </div>
-
-      <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 14px; margin-top: 16px;">
-        <p style="font-size: 12px; color: #64748B; margin: 0; line-height: 1.5;">
-          🔒 <strong>จำการเข้าสู่ระบบประจำเครื่อง:</strong> ระบบจะบันทึกสิทธิ์การใช้งานบนอุปกรณ์นี้ไว้โดยอัตโนมัติ ไม่ต้องเข้าสู่ระบบซ้ำจนกว่าคุณจะกดออกจากระบบ
-        </p>
-      </div>
     </div>
   </div>
 
@@ -203,17 +185,7 @@
 
       <div id="googleSignInButtonRegister" class="google-signin-container"
         style="display: flex; justify-content: center; margin-top: 20px; margin-bottom: 20px;"></div>
-      <div style="margin-top: 14px; text-align: center;">
-        <button type="button" onclick="resetGoogleSession()" style="background: none; border: none; color: #BD1B0B; font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: underline;" title="ล้างเซสชันค้างและสลับบัญชี Google">
-          🔄 สลับสิทธิ์การใช้งาน / ลงชื่อเข้าใช้ด้วยบัญชี Google อื่น
-        </button>
-      </div>
 
-      <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 14px; margin-top: 16px;">
-        <p style="font-size: 12px; color: #64748B; margin: 0; line-height: 1.5;">
-          🔒 <strong>จำการเข้าสู่ระบบประจำเครื่อง:</strong> ระบบจะบันทึกสิทธิ์การใช้งานบนอุปกรณ์นี้ไว้โดยอัตโนมัติ ไม่ต้องเข้าสู่ระบบซ้ำจนกว่าคุณจะกดออกจากระบบ
-        </p>
-      </div>
     </div>
   </div>
 

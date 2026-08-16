@@ -1,4 +1,4 @@
-// Session Helper (No Forced Auto-Redirect on Landing Page)
+// Session Helper (If user is logged in, change button text from 'เข้าสู่ระบบ' to 'เข้าสู่หน้าหลัก')
 (function checkExistingSession() {
   const urlParams = new URLSearchParams(window.location.search);
   if (urlParams.get('session_expired') === '1' || urlParams.get('reset') === '1') {
@@ -6,6 +6,37 @@
     sessionStorage.clear();
     window.history.replaceState({}, document.title, window.location.pathname);
     return;
+  }
+
+  const updateButtons = () => {
+    const token = localStorage.getItem('authToken');
+    const profile = localStorage.getItem('userProfile');
+
+    if (token && profile) {
+      const navLoginBtn = document.getElementById('navLoginBtn');
+      const heroLoginBtn = document.getElementById('heroLoginBtn');
+
+      if (navLoginBtn) {
+        navLoginBtn.textContent = 'เข้าสู่หน้าหลัก';
+        navLoginBtn.href = '/home/index.html';
+        navLoginBtn.classList.remove('open-login-btn');
+        navLoginBtn.style.background = '#10B981';
+      }
+
+      if (heroLoginBtn) {
+        const span = heroLoginBtn.querySelector('span');
+        if (span) span.textContent = '🚀 เข้าสู่หน้าหลัก (Dashboard)';
+        heroLoginBtn.href = '/home/index.html';
+        heroLoginBtn.classList.remove('open-login-btn');
+        heroLoginBtn.style.background = '#10B981';
+      }
+    }
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', updateButtons);
+  } else {
+    updateButtons();
   }
 })();
 
