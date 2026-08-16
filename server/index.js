@@ -6391,12 +6391,12 @@ ${d.content}`).join('\n\n');
     }
 
     let apiKey = (process.env.GEMINI_API_KEY || '').trim();
-    if (!apiKey) {
+    if (!apiKey || !apiKey.startsWith('AIzaSy')) {
       const dbSettings = await prisma.systemSetting.findMany({
         where: { key: { in: ['settings_gemini_key', 'gemini_api_key', 'GEMINI_API_KEY', 'geminiKey', 'apiKey'] } }
       });
       for (const s of dbSettings) {
-        if (s.value && s.value.trim()) {
+        if (s.value && s.value.trim() && s.value.trim().startsWith('AIzaSy')) {
           apiKey = s.value.trim().replace(/^['"]|['"]$/g, '');
           break;
         }
@@ -6404,7 +6404,15 @@ ${d.content}`).join('\n\n');
     }
 
     if (!apiKey) {
-      return res.status(500).json({ error: 'ไม่พบ API Key ของ Gemini ในระบบ กรุณาเข้าหน้า Admin -> ตั้งค่าระบบ เพื่อระบุ Gemini API Key' });
+      return res.status(400).json({
+        error: '🔑 ข้อความที่นำมาใส่ไม่ใช่ Gemini API Key ที่ถูกต้อง (API Key ของ Google AI Studio จะขึ้นต้นด้วย "AIzaSy..." เท่านั้น)\n\nโปรดไปที่ https://aistudio.google.com/app/apikey กดสร้าง API Key ( Create API key ) แล้วนำรหัสที่ขึ้นต้นด้วย AIzaSy... มาใส่ในเมนู Admin -> ตั้งค่าระบบ'
+      });
+    }
+
+    if (!apiKey.startsWith('AIzaSy')) {
+      return res.status(400).json({
+        error: '🔑 รหัส API Key ไม่ถูกต้อง (API Key ของ Gemini ต้องขึ้นต้นด้วย "AIzaSy..." เท่านั้น)\n\nข้อความที่คุณใส่ขึ้นต้นด้วย "' + apiKey.substring(0, 8) + '..." ซึ่งไม่ใช่ API Key จาก Google AI Studio'
+      });
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
