@@ -1,9 +1,18 @@
 // Immediate Route Guard: If user is already logged in on this device, bounce to home/index.html immediately!
-(function() {
-  const token = localStorage.getItem('authToken');
-  const profile = localStorage.getItem('userProfile');
+(function checkExistingSession() {
+  let token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+  let profile = localStorage.getItem('userProfile') || sessionStorage.getItem('userProfile');
+
   if (token && profile) {
-    window.location.replace('/home/index.html');
+    localStorage.setItem('authToken', token);
+    localStorage.setItem('userProfile', profile);
+    sessionStorage.removeItem('authToken');
+    sessionStorage.removeItem('userProfile');
+
+    const target = window.location.origin + '/home/index.html';
+    if (!window.location.pathname.includes('/home/')) {
+      window.location.replace(target);
+    }
   }
 })();
 
@@ -163,7 +172,7 @@ loginForm.addEventListener('submit', async (e) => {
     localStorage.setItem('loginProvider', 'local');
 
     hideModal(loginModal);
-    window.location.href = 'home/index.html';
+    window.location.replace(window.location.origin + '/home/index.html');
 
   } catch (err) {
     console.error('Login fetch error:', err);
