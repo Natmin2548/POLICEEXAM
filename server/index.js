@@ -6729,6 +6729,99 @@ ${contextText ? `คลังข้อมูลอ้างอิง:\n${context
 });
 
 
+
+// GET /api/exams/subject-questions - Fetch real questions for Question Bank Mode
+app.get('/api/exams/subject-questions', authenticateToken, async (req, res) => {
+  try {
+    const { subject } = req.query;
+    const categoryQuery = (subject || 'งานสารบรรณ').trim();
+
+    // Map common aliases
+    let searchCategory = categoryQuery;
+    if (categoryQuery === 'สบ' || categoryQuery === 'สารบรรณ') searchCategory = 'งานสารบรรณ';
+    else if (categoryQuery === 'ทป' || categoryQuery === 'ทั่วไป') searchCategory = 'ความรู้ทั่วไป';
+    else if (categoryQuery === 'กม' || categoryQuery === 'กฎหมาย') searchCategory = 'กฎหมาย';
+    else if (categoryQuery === 'คอม') searchCategory = 'เทคโนโลยีสารสนเทศ';
+    else if (categoryQuery === 'สังคม') searchCategory = 'สังคม';
+
+    const examSets = await prisma.examSet.findMany({
+      where: {
+        OR: [
+          { category: { contains: searchCategory } },
+          { subcategory: { contains: searchCategory } }
+        ]
+      },
+      include: { questions: true }
+    });
+
+    let allQuestions = [];
+    examSets.forEach(set => {
+      if (set.questions && set.questions.length > 0) {
+        allQuestions.push(...set.questions);
+      }
+    });
+
+    if (allQuestions.length === 0) {
+      allQuestions = await prisma.question.findMany({ take: 20 });
+    }
+
+    // Shuffle questions
+    allQuestions = allQuestions.sort(() => 0.5 - Math.random()).slice(0, 10);
+
+    const formattedQuestions = allQuestions.map(q => ({
+      id: q.id,
+      questionText: q.questionText,
+      optionA: q.choice1 || 'ตัวเลือก ก',
+      optionB: q.choice2 || 'ตัวเลือก ข',
+      optionC: q.choice3 || 'ตัวเลือก ค',
+      optionD: q.choice4 || 'ตัวเลือก ง',
+      correctOption: q.correctAnswer === 1 ? 'A' : q.correctAnswer === 2 ? 'B' : q.correctAnswer === 3 ? 'C' : 'D',
+      explanation: q.explanation || 'คำอธิบายเฉลยอ้างอิงตามระเบียบและมาตรฐานข้อสอบตำรวจ'
+    }));
+
+    res.json({
+      subject: categoryQuery,
+      questions: formattedQuestions
+    });
+  } catch (err) {
+    console.error('Subject questions error:', err);
+    res.status(500).json({ error: 'เกิดข้อผิดพลาดในการโหลดข้อสอบ: ' + err.message });
+  }
+});
+
+// POST /api/user/record-quiz - Record quiz result & award XP
+app.post('/api/user/record-quiz', authenticateToken, async (req, res) => {
+  try {
+    const { score, totalCount, subject } = req.body;
+    const user = await prisma.user.findUnique({ where: { id: req.user.userId } });
+    if (!user) return res.status(404).json({ error: 'ไม่พบผู้ใช้' });
+
+    const xpGained = (score || 0) * 10 + 20;
+    const pointsGained = (score || 0) * 5;
+    const newXp = (user.xp || 0) + xpGained;
+    const newPoints = (user.points || 0) + pointsGained;
+
+    const updated = await prisma.user.update({
+      where: { id: req.user.userId },
+      data: {
+        xp: newXp,
+        points: newPoints
+      }
+    });
+
+    res.json({
+      message: 'บันทึกคะแนนสำเร็จ! คุณได้รับ +' + xpGained + ' XP และ +' + pointsGained + ' คะแนน',
+      xpGained,
+      pointsGained,
+      user: updated
+    });
+  } catch (err) {
+    console.error('Record quiz error:', err);
+    res.status(500).json({ error: 'เกิดข้อผิดพลาดในการบันทึกคะแนน' });
+  }
+});
+
+
 app.listen(PORT, async () => {
   console.log(`[Server] Running on http://localhost:${PORT}`);
   await ensureDefaultQuestions();

@@ -520,9 +520,226 @@ if (btnExamModeBank) {
 }
 
 // Handle subject selection from Question Bank
-window.startBankSubject = function(subjectName) {
-  showCenteredAlert(`เลือกทำข้อสอบวิชา: ${subjectName}\n\n(ระบบคลังข้อสอบกำลังพัฒนา)`);
+
+// ==========================================
+// Question Bank Real Interactive Quiz Runner
+// ==========================================
+let currentQuizQuestions = [];
+let currentQuizIndex = 0;
+let currentQuizScore = 0;
+let currentQuizSubject = '';
+let currentQuizAnswered = false;
+
+window.startBankSubject = async function(subjectName) {
+  currentQuizSubject = subjectName;
+  currentQuizQuestions = [];
+  currentQuizIndex = 0;
+  currentQuizScore = 0;
+  currentQuizAnswered = false;
+
+  const modal = document.getElementById('subjectQuizModal');
+  const bodyContent = document.getElementById('quizBodyContent');
+  const badge = document.getElementById('quizSubjectBadge');
+  const title = document.getElementById('quizTitle');
+  const stepText = document.getElementById('quizStepText');
+  const btnNext = document.getElementById('btnNextQuiz');
+
+  if (!modal) return;
+
+  badge.textContent = `วิชา: ${subjectName}`;
+  title.textContent = `กำลังโหลดข้อสอบวิชา ${subjectName}...`;
+  bodyContent.innerHTML = `<div style="text-align: center; padding: 40px; color: #64748B;"><div class="leaderboard-item-loading">⏳ กำลังดึงคลังข้อสอบวิชา ${subjectName}...</div></div>`;
+  modal.style.display = 'flex';
+  btnNext.style.display = 'none';
+
+  try {
+    const res = await fetch(`${API_BASE}/api/exams/subject-questions?subject=${encodeURIComponent(subjectName)}`, {
+      headers: { 'Authorization': `Bearer ${authToken}` }
+    });
+
+    const data = await res.json();
+    if (!res.ok || !data.questions || data.questions.length === 0) {
+      bodyContent.innerHTML = `<div style="text-align: center; padding: 40px; color: #EF4444;">❌ ไม่พบข้อสอบในวิชานี้ กรุณาแจ้งแอดมินสร้างข้อสอบเพิ่ม</div>`;
+      return;
+    }
+
+    currentQuizQuestions = data.questions;
+    title.textContent = `คลังข้อสอบวิชา ${subjectName}`;
+    renderCurrentQuizQuestion();
+
+  } catch (err) {
+    console.error('Fetch subject questions error:', err);
+    bodyContent.innerHTML = `<div style="text-align: center; padding: 40px; color: #EF4444;">❌ เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์</div>`;
+  }
 };
+
+window.closeSubjectQuiz = function() {
+  const modal = document.getElementById('subjectQuizModal');
+  if (modal) modal.style.display = 'none';
+};
+
+function renderCurrentQuizQuestion() {
+  const q = currentQuizQuestions[currentQuizIndex];
+  const total = currentQuizQuestions.length;
+  currentQuizAnswered = false;
+
+  const progressBar = document.getElementById('quizProgressBar');
+  const stepText = document.getElementById('quizStepText');
+  const btnNext = document.getElementById('btnNextQuiz');
+  const bodyContent = document.getElementById('quizBodyContent');
+
+  progressBar.style.width = `${((currentQuizIndex + 1) / total) * 100}%`;
+  stepText.textContent = `ข้อที่ ${currentQuizIndex + 1} / ${total}`;
+  btnNext.style.display = 'none';
+
+  bodyContent.innerHTML = `
+    <div style="font-size: 16px; font-weight: 700; color: #1E293B; margin-bottom: 20px; line-height: 1.6;">
+      <span style="color: #BD1B0B;">ข้อที่ ${currentQuizIndex + 1}:</span> ${q.questionText}
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 12px;" id="choicesContainer">
+      <button class="choice-btn" onclick="selectQuizAnswer('A')" id="choice_A" style="padding: 16px; border: 1px solid #E2E8F0; border-radius: 16px; background: white; text-align: left; font-size: 14px; cursor: pointer; transition: all 0.2s; font-family: inherit; font-weight: 500; display: flex; align-items: center; gap: 12px;">
+        <span style="background: #F1F5F9; color: #475569; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0;">ก</span>
+        <span>${q.optionA}</span>
+      </button>
+
+      <button class="choice-btn" onclick="selectQuizAnswer('B')" id="choice_B" style="padding: 16px; border: 1px solid #E2E8F0; border-radius: 16px; background: white; text-align: left; font-size: 14px; cursor: pointer; transition: all 0.2s; font-family: inherit; font-weight: 500; display: flex; align-items: center; gap: 12px;">
+        <span style="background: #F1F5F9; color: #475569; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0;">ข</span>
+        <span>${q.optionB}</span>
+      </button>
+
+      <button class="choice-btn" onclick="selectQuizAnswer('C')" id="choice_C" style="padding: 16px; border: 1px solid #E2E8F0; border-radius: 16px; background: white; text-align: left; font-size: 14px; cursor: pointer; transition: all 0.2s; font-family: inherit; font-weight: 500; display: flex; align-items: center; gap: 12px;">
+        <span style="background: #F1F5F9; color: #475569; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0;">ค</span>
+        <span>${q.optionC}</span>
+      </button>
+
+      <button class="choice-btn" onclick="selectQuizAnswer('D')" id="choice_D" style="padding: 16px; border: 1px solid #E2E8F0; border-radius: 16px; background: white; text-align: left; font-size: 14px; cursor: pointer; transition: all 0.2s; font-family: inherit; font-weight: 500; display: flex; align-items: center; gap: 12px;">
+        <span style="background: #F1F5F9; color: #475569; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0;">ง</span>
+        <span>${q.optionD}</span>
+      </button>
+    </div>
+
+    <div id="quizExplanationBox" style="display: none; margin-top: 20px; padding: 16px; border-radius: 16px; background: #F8FAFC; border: 1px solid #CBD5E1; font-size: 13px; line-height: 1.6;">
+    </div>
+  `;
+}
+
+window.selectQuizAnswer = function(selectedOption) {
+  if (currentQuizAnswered) return;
+  currentQuizAnswered = true;
+
+  const q = currentQuizQuestions[currentQuizIndex];
+  const isCorrect = selectedOption.toUpperCase() === String(q.correctOption).toUpperCase();
+
+  if (isCorrect) {
+    currentQuizScore++;
+  }
+
+  const options = ['A', 'B', 'C', 'D'];
+  options.forEach(opt => {
+    const btn = document.getElementById(`choice_${opt}`);
+    if (!btn) return;
+    btn.style.pointerEvents = 'none';
+
+    if (opt === String(q.correctOption).toUpperCase()) {
+      btn.style.background = '#ECFDF5';
+      btn.style.borderColor = '#10B981';
+      btn.style.color = '#065F46';
+      btn.querySelector('span').style.background = '#10B981';
+      btn.querySelector('span').style.color = 'white';
+    } else if (opt === selectedOption.toUpperCase() && !isCorrect) {
+      btn.style.background = '#FEF2F2';
+      btn.style.borderColor = '#EF4444';
+      btn.style.color = '#991B1B';
+      btn.querySelector('span').style.background = '#EF4444';
+      btn.querySelector('span').style.color = 'white';
+    } else {
+      btn.style.opacity = '0.5';
+    }
+  });
+
+  const expBox = document.getElementById('quizExplanationBox');
+  if (expBox) {
+    expBox.style.display = 'block';
+    expBox.style.background = isCorrect ? '#F0FDF4' : '#FEF2F2';
+    expBox.style.borderColor = isCorrect ? '#BBF7D0' : '#FECACA';
+    expBox.innerHTML = `
+      <div style="font-weight: 700; color: ${isCorrect ? '#166534' : '#991B1B'}; margin-bottom: 4px;">
+        ${isCorrect ? '✅ ถูกต้อง!' : '❌ ยังไม่ถูกต้อง (เฉลยข้อ ' + q.correctOption + ')'}
+      </div>
+      <div style="color: #334155;">${q.explanation || 'ไม่มีคำอธิบายเฉลยเพิ่มเติม'}</div>
+    `;
+  }
+
+  const btnNext = document.getElementById('btnNextQuiz');
+  if (btnNext) {
+    btnNext.style.display = 'block';
+    btnNext.textContent = currentQuizIndex === currentQuizQuestions.length - 1 ? 'ดูสรุปผลคะแนน 🎉' : 'ข้อถัดไป ➔';
+  }
+};
+
+window.nextQuizQuestion = function() {
+  if (currentQuizIndex < currentQuizQuestions.length - 1) {
+    currentQuizIndex++;
+    renderCurrentQuizQuestion();
+  } else {
+    finishQuiz();
+  }
+};
+
+async function finishQuiz() {
+  const bodyContent = document.getElementById('quizBodyContent');
+  const stepText = document.getElementById('quizStepText');
+  const btnNext = document.getElementById('btnNextQuiz');
+  const total = currentQuizQuestions.length;
+
+  stepText.textContent = 'เสร็จสิ้นการทำข้อสอบ';
+  btnNext.style.display = 'none';
+
+  const percent = Math.round((currentQuizScore / total) * 100);
+
+  bodyContent.innerHTML = `
+    <div style="text-align: center; padding: 20px;">
+      <div style="font-size: 48px; margin-bottom: 12px;">🎉</div>
+      <h3 style="font-size: 22px; font-weight: 800; color: #1E293B; margin-bottom: 8px;">สรุปผลการทำข้อสอบ</h3>
+      <p style="color: #64748B; font-size: 14px; margin-bottom: 24px;">วิชา ${currentQuizSubject}</p>
+
+      <div style="background: #F8FAFC; border: 2px solid #E2E8F0; border-radius: 20px; padding: 24px; max-width: 320px; margin: 0 auto 24px auto;">
+        <div style="font-size: 36px; font-weight: 800; color: ${percent >= 60 ? '#10B981' : '#EF4444'};">
+          ${currentQuizScore} / ${total}
+        </div>
+        <div style="font-size: 14px; font-weight: 600; color: #64748B; margin-top: 4px;">
+          คิดเป็น ${percent}% (${percent >= 60 ? 'ผ่านเกณฑ์ 👏' : 'ควรทบทวนเพิ่ม 📖'})
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 12px; justify-content: center;">
+        <button onclick="startBankSubject('${currentQuizSubject}')" style="padding: 12px 20px; border-radius: 12px; border: 1px solid #CBD5E1; background: white; font-weight: 700; cursor: pointer; font-family: inherit;">🔄 ทำซ้ำวิชานี้</button>
+        <button onclick="closeSubjectQuiz()" style="padding: 12px 20px; border-radius: 12px; border: none; background: #BD1B0B; color: white; font-weight: 700; cursor: pointer; font-family: inherit;">🏠 กลับคลังข้อสอบ</button>
+      </div>
+    </div>
+  `;
+
+  // Submit score to backend
+  try {
+    await fetch(`${API_BASE}/api/user/record-quiz`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`
+      },
+      body: JSON.stringify({
+        score: currentQuizScore,
+        totalCount: total,
+        subject: currentQuizSubject
+      })
+    });
+    if (typeof checkSession === 'function') checkSession();
+  } catch (err) {
+    console.error('Record quiz score error:', err);
+  }
+}
+
 
 if (btnExamModePretest) {
   btnExamModePretest.addEventListener('click', () => handleStartExam('pretest'));
