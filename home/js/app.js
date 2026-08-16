@@ -2562,7 +2562,13 @@ window.showUserProfile = async function(userId) {
     const u = await res.json();
 
     const nameStr = u.fullName || u.username;
-    if (avatar) avatar.textContent = nameStr.charAt(0);
+    if (avatar) {
+      if (u.faceImage) {
+        avatar.innerHTML = `<img src="${u.faceImage}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block;" alt="avatar" />`;
+      } else {
+        avatar.textContent = nameStr.charAt(0);
+      }
+    }
     if (fullName) fullName.textContent = nameStr;
     if (username) username.textContent = `@${u.username}`;
     if (level) level.textContent = `Lv.${u.level || 1}`;
