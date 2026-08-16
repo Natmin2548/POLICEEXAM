@@ -191,6 +191,7 @@ async function loadExams() {
           <td>${ex.totalCount}</td>
           <td><span class="badge badge-user">${ex.status}</span></td>
           <td class="action-buttons">
+            <button class="btn btn-outline" style="background: #EEF2FF; color: #4F46E5; border: 1px solid #C7D2FE;" onclick="openAppendModal(${ex.id}, '${escapeHTML(ex.title)}', ${ex.totalCount})">➕ เพิ่มข้อสอบ</button>
             <button class="btn btn-danger" onclick="confirmDelete('exam', ${ex.id})">ลบ</button>
           </td>
         `;
@@ -202,20 +203,339 @@ async function loadExams() {
   }
 }
 
-function showAddExamModal() {
+// ==========================================
+// Cascading Dropdowns & AI Exam Generator Logic
+// ==========================================
+let cachedKnowledgeDocs = [];
+let previewExamQuestions = [];
+let appendTargetExamId = null;
+let appendTargetCurrentCount = 0;
+
+async function fetchKnowledgeDocs() {
+  if (cachedKnowledgeDocs.length > 0) return cachedKnowledgeDocs;
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/knowledge-topics`, {
+      headers: { 'Authorization': `Bearer ${authToken}` }
+    });
+    if (res.ok) {
+      cachedKnowledgeDocs = await res.json();
+    }
+  } catch (err) {
+    console.error('Fetch knowledge docs error:', err);
+  }
+  return cachedKnowledgeDocs;
+}
+
+async function showAddExamModal() {
+  await fetchKnowledgeDocs();
+  
+  document.getElementById('examSubject').value = 'งานสารบรรณ';
   document.getElementById('examTitle').value = '';
-  document.getElementById('examCategory').value = 'งานสารบรรณ';
-  document.getElementById('knowledgeCategory').value = 'ALL';
-  document.getElementById('examNumQuestions').value = '5';
+  document.getElementById('examNumQuestions').value = '10';
   document.getElementById('examStatus').value = 'PUBLISHED';
   document.getElementById('aiProgressInfo').style.display = 'none';
-  document.getElementById('btnSubmitGenerateExam').disabled = false;
-  
+
+  onSubjectChange();
+
   document.getElementById('addExamModal').style.display = 'flex';
 }
 
 function closeAddExamModal() {
   document.getElementById('addExamModal').style.display = 'none';
+}
+
+function onSubjectChange() {
+  const subject = document.getElementById('examSubject').value;
+  const kbSelect = document.getElementById('knowledgeBaseSelect');
+
+  kbSelect.innerHTML = '';
+
+  if (subject === 'งานสารบรรณ') {
+    kbSelect.innerHTML = `
+      <option value="ALL_SARABAN">📚 ดึงจากคลังงานสารบรรณทั้งหมด (๒๕๒๖ + ๕๔)</option>
+      <option value="สารบรรณ_๒๕๒๖">📖 ระเบียบสำนักนายกฯ งานสารบรรณ พ.ศ. ๒๕๒๖</option>
+      <option value="สารบรรณ_๕๔">👮 ประมวลระเบียบการตำรวจ ลักษณะที่ ๕๔ (พ.ศ. ๒๕๕๖)</option>
+    `;
+  } else {
+    kbSelect.innerHTML = `
+      <option value="GENERAL">⚖️ คลังข้อสอบตามมาตรฐานวิชา ${subject}</option>
+      <option value="NONE">⚙️ ไม่อ้างอิงคลังระเบียบเฉพาะ</option>
+    `;
+  }
+
+  onKnowledgeBaseChange();
+}
+
+function onKnowledgeBaseChange() {
+  const kb = document.getElementById('knowledgeBaseSelect').value;
+  const docSelect = document.getElementById('knowledgeDocSelect');
+
+  docSelect.innerHTML = '';
+
+  if (kb === 'ALL_SARABAN') {
+    docSelect.innerHTML = '<option value="ALL">รวมทุกบท/ทุกภาคผนวกในคลังสารบรรณ</option>';
+  } else if (kb === 'สารบรรณ_๒๕๒๖') {
+    docSelect.innerHTML = '<option value="ALL_2526">รวมทุกหมวดในระเบียบสารบรรณ ๒๕๒๖</option>';
+    const filtered = cachedKnowledgeDocs.filter(d => d.category.includes('ระเบียบสำนักนายก'));
+    filtered.forEach(d => {
+      docSelect.innerHTML += `<option value="${d.id}">${d.title}</option>`;
+    });
+  } else if (kb === 'สารบรรณ_๕๔') {
+    docSelect.innerHTML = '<option value="ALL_54">รวมทุกบทในระเบียบตำรวจ ลักษณะ ๕๔</option>';
+    const filtered = cachedKnowledgeDocs.filter(d => d.category.includes('ลักษณะที่ ๕๔'));
+    filtered.forEach(d => {
+      docSelect.innerHTML += `<option value="${d.id}">${d.title}</option>`;
+    });
+  } else {
+    docSelect.innerHTML = '<option value="ALL">ออกครอบคลุมทุกหัวข้อในวิชานี้</option>';
+  }
+}
+
+async function generateAIExamPreview() {
+  const subject = document.getElementById('examSubject').value;
+  const knowledgeBase = document.getElementById('knowledgeBaseSelect').value;
+  const docId = document.getElementById('knowledgeDocSelect').value;
+  let title = document.getElementById('examTitle').value.trim();
+  const numQuestions = document.getElementById('examNumQuestions').value;
+
+  if (!title) {
+    title = `ชุดข้อสอบ${subject} (${numQuestions} ข้อ)`;
+  }
+
+  const btn = document.getElementById('btnSubmitGenerateExam');
+  const progressInfo = document.getElementById('aiProgressInfo');
+
+  try {
+    btn.disabled = true;
+    btn.style.opacity = '0.6';
+    progressInfo.style.display = 'block';
+
+    const res = await fetch(`${API_BASE}/api/admin/exams/preview-ai`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`
+      },
+      body: JSON.stringify({
+        subject,
+        knowledgeBase,
+        docId,
+        numQuestions: parseInt(numQuestions) || 10
+      })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert('เกิดข้อผิดพลาด: ' + (data.error || 'ไม่สามารถออกข้อสอบได้'));
+      return;
+    }
+
+    previewExamQuestions = data.questions || [];
+    closeAddExamModal();
+    renderExamPreviewModal(title, subject, knowledgeBase);
+
+  } catch (err) {
+    console.error('Preview AI Exam Error:', err);
+    alert('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.style.opacity = '1';
+    progressInfo.style.display = 'none';
+  }
+}
+
+function renderExamPreviewModal(title, subject, knowledgeBase) {
+  document.getElementById('previewSummaryBadge').textContent = `รวม ${previewExamQuestions.length} ข้อ`;
+  const container = document.getElementById('previewQuestionsContainer');
+  container.innerHTML = '';
+
+  previewExamQuestions.forEach((q, idx) => {
+    const card = document.createElement('div');
+    card.className = 'stat-card';
+    card.style.cssText = 'padding: 16px; border: 1px solid #E2E8F0; border-radius: 12px; background: #F8FAFC; text-align: left;';
+
+    card.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <span style="font-weight: 700; color: #BD1B0B; font-size: 14px;">ข้อที่ ${idx + 1}</span>
+        <button type="button" onclick="removePreviewQuestion(${idx})" style="background: none; border: none; color: #EF4444; font-size: 12px; font-weight: 600; cursor: pointer;">🗑️ ลบข้อนี้</button>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 10px;">
+        <label style="font-size: 12px;">คำถาม</label>
+        <textarea id="q_text_${idx}" class="form-input" rows="2" style="font-size: 13px;">${escapeHTML(q.questionText)}</textarea>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
+        <div>
+          <label style="font-size: 11px;">ตัวเลือก ก (Option A)</label>
+          <input type="text" id="q_a_${idx}" class="form-input" value="${escapeHTML(q.optionA)}" style="font-size: 12px;">
+        </div>
+        <div>
+          <label style="font-size: 11px;">ตัวเลือก ข (Option B)</label>
+          <input type="text" id="q_b_${idx}" class="form-input" value="${escapeHTML(q.optionB)}" style="font-size: 12px;">
+        </div>
+        <div>
+          <label style="font-size: 11px;">ตัวเลือก ค (Option C)</label>
+          <input type="text" id="q_c_${idx}" class="form-input" value="${escapeHTML(q.optionC)}" style="font-size: 12px;">
+        </div>
+        <div>
+          <label style="font-size: 11px;">ตัวเลือก ง (Option D)</label>
+          <input type="text" id="q_d_${idx}" class="form-input" value="${escapeHTML(q.optionD)}" style="font-size: 12px;">
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 12px;">
+        <div>
+          <label style="font-size: 11px; color: #10B981; font-weight: 700;">ข้อที่ถูกต้อง (Correct Option)</label>
+          <select id="q_correct_${idx}" class="form-input" style="font-size: 12px; font-weight: 700; color: #10B981;">
+            <option value="A" ${q.correctOption === 'A' ? 'selected' : ''}>ก (A)</option>
+            <option value="B" ${q.correctOption === 'B' ? 'selected' : ''}>ข (B)</option>
+            <option value="C" ${q.correctOption === 'C' ? 'selected' : ''}>ค (C)</option>
+            <option value="D" ${q.correctOption === 'D' ? 'selected' : ''}>ง (D)</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size: 11px;">คำอธิบายเฉลย</label>
+          <textarea id="q_exp_${idx}" class="form-input" rows="1" style="font-size: 12px;">${escapeHTML(q.explanation || '')}</textarea>
+        </div>
+      </div>
+    `;
+
+    container.appendChild(card);
+  });
+
+  document.getElementById('examPreviewModal').style.display = 'flex';
+}
+
+function removePreviewQuestion(index) {
+  previewExamQuestions.splice(index, 1);
+  const title = document.getElementById('examTitle').value;
+  const subject = document.getElementById('examSubject').value;
+  const knowledgeBase = document.getElementById('knowledgeBaseSelect').value;
+  renderExamPreviewModal(title, subject, knowledgeBase);
+}
+
+function addCustomQuestionToPreview() {
+  previewExamQuestions.push({
+    questionText: 'คำถามข้อสอบใหม่ที่เพิ่มเอง...',
+    optionA: 'ตัวเลือก ก',
+    optionB: 'ตัวเลือก ข',
+    optionC: 'ตัวเลือก ค',
+    optionD: 'ตัวเลือก ง',
+    correctOption: 'A',
+    explanation: 'คำอธิบายเฉลยข้อสอบ...'
+  });
+  const title = document.getElementById('examTitle').value;
+  const subject = document.getElementById('examSubject').value;
+  const knowledgeBase = document.getElementById('knowledgeBaseSelect').value;
+  renderExamPreviewModal(title, subject, knowledgeBase);
+}
+
+async function saveVerifiedExamSet(status) {
+  previewExamQuestions.forEach((q, idx) => {
+    const textEl = document.getElementById(`q_text_${idx}`);
+    const aEl = document.getElementById(`q_a_${idx}`);
+    const bEl = document.getElementById(`q_b_${idx}`);
+    const cEl = document.getElementById(`q_c_${idx}`);
+    const dEl = document.getElementById(`q_d_${idx}`);
+    const corrEl = document.getElementById(`q_correct_${idx}`);
+    const expEl = document.getElementById(`q_exp_${idx}`);
+
+    if (textEl) q.questionText = textEl.value;
+    if (aEl) q.optionA = aEl.value;
+    if (bEl) q.optionB = bEl.value;
+    if (cEl) q.optionC = cEl.value;
+    if (dEl) q.optionD = dEl.value;
+    if (corrEl) q.correctOption = corrEl.value;
+    if (expEl) q.explanation = expEl.value;
+  });
+
+  const title = document.getElementById('examTitle').value.trim() || 'ชุดข้อสอบใหม่';
+  const category = document.getElementById('examSubject').value;
+  const subcategory = document.getElementById('knowledgeBaseSelect').value;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/exams/save-set`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`
+      },
+      body: JSON.stringify({
+        title,
+        category,
+        subcategory,
+        status,
+        questions: previewExamQuestions
+      })
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      alert('เกิดข้อผิดพลาดในการบันทึก: ' + (data.error || 'ไม่สามารถบันทึกชุดข้อสอบได้'));
+      return;
+    }
+
+    alert(`🎉 ${data.message}`);
+    document.getElementById('examPreviewModal').style.display = 'none';
+    loadExams();
+
+  } catch (err) {
+    console.error('Save exam set error:', err);
+    alert('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์: ' + err.message);
+  }
+}
+
+function openAppendModal(examId, title, currentCount) {
+  appendTargetExamId = examId;
+  appendTargetCurrentCount = currentCount;
+  document.getElementById('appendExamTitleLabel').textContent = `ชุดเดิมมีอยู่แล้ว ${currentCount} ข้อ (ข้อสอบใหม่จะเริ่มนับข้อที่ ${currentCount + 1})`;
+  document.getElementById('appendCount').value = '10';
+  document.getElementById('appendProgressInfo').style.display = 'none';
+  document.getElementById('btnSubmitAppend').disabled = false;
+  document.getElementById('appendQuestionsModal').style.display = 'flex';
+}
+
+function closeAppendModal() {
+  document.getElementById('appendQuestionsModal').style.display = 'none';
+}
+
+async function submitAppendQuestions() {
+  const numQuestions = parseInt(document.getElementById('appendCount').value) || 10;
+  const btn = document.getElementById('btnSubmitAppend');
+  const progressInfo = document.getElementById('appendProgressInfo');
+
+  try {
+    btn.disabled = true;
+    progressInfo.style.display = 'block';
+
+    const res = await fetch(`${API_BASE}/api/admin/exams/${appendTargetExamId}/append-ai`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`
+      },
+      body: JSON.stringify({ numQuestions })
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      alert('เกิดข้อผิดพลาด: ' + (data.error || 'ไม่สามารถเพิ่มข้อสอบได้'));
+      return;
+    }
+
+    alert(`🎉 ${data.message}`);
+    closeAppendModal();
+    loadExams();
+
+  } catch (err) {
+    console.error('Append questions error:', err);
+    alert('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    progressInfo.style.display = 'none';
+  }
 }
 
 async function generateAIExamSet() {

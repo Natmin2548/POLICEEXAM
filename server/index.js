@@ -6349,53 +6349,62 @@ app.get('/api/support/tickets', authenticateToken, async (req, res) => {
 
 // Start express server
 
-// --- Admin API: Generate AI Exam Set via Gemini ---
-app.post('/api/admin/exams/generate-ai-set', authenticateToken, async (req, res) => {
+// --- Admin API: Knowledge Topics List ---
+app.get('/api/admin/knowledge-topics', authenticateToken, async (req, res) => {
+  try {
+    const docs = await prisma.knowledgeDocument.findMany({
+      select: { id: true, title: true, category: true }
+    });
+    res.json(docs);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// --- Admin API: Preview AI Exam Generation ---
+app.post('/api/admin/exams/preview-ai', authenticateToken, async (req, res) => {
   try {
     if (req.user.role !== 'ADMIN' && req.user.role !== 'OWNER') {
       return res.status(403).json({ error: 'คุณไม่มีสิทธิ์ใช้งานคำสั่งนี้ (สำหรับ Admin เท่านั้น)' });
     }
 
-    const { title, category, knowledgeCategory, numQuestions, status } = req.body;
-    const count = Math.min(Math.max(parseInt(numQuestions) || 5, 1), 50);
+    const { subject, knowledgeBase, docId, numQuestions } = req.body;
+    const count = Math.min(Math.max(parseInt(numQuestions) || 10, 1), 50);
 
-    // 1. Fetch Knowledge Base Documents if requested
     let contextText = '';
-    if (knowledgeCategory && knowledgeCategory !== 'NONE') {
-      let docs = [];
-      if (knowledgeCategory === 'ALL') {
-        docs = await prisma.knowledgeDocument.findMany({});
-      } else {
-        docs = await prisma.knowledgeDocument.findMany({
-          where: { category: knowledgeCategory }
-        });
-      }
-
-      if (docs.length > 0) {
-        contextText = docs.map(d => `[หัวข้อเอกสาร: ${d.title} (หมวด: ${d.category})]
+    if (docId && docId !== 'ALL' && docId !== 'ALL_2526' && docId !== 'ALL_54') {
+      const doc = await prisma.knowledgeDocument.findUnique({ where: { id: parseInt(docId) } });
+      if (doc) contextText = `[เอกสารอ้างอิง: ${doc.title}]
+${doc.content}`;
+    } else if (knowledgeBase === 'สารบรรณ_๒๕๒๖' || docId === 'ALL_2526') {
+      const docs = await prisma.knowledgeDocument.findMany({ where: { category: { contains: 'ระเบียบสำนักนายก' } } });
+      contextText = docs.map(d => `[${d.title}]
 ${d.content}`).join('\n\n');
-      }
+    } else if (knowledgeBase === 'สารบรรณ_๕๔' || docId === 'ALL_54') {
+      const docs = await prisma.knowledgeDocument.findMany({ where: { category: { contains: 'ลักษณะที่ ๕๔' } } });
+      contextText = docs.map(d => `[${d.title}]
+${d.content}`).join('\n\n');
+    } else if (knowledgeBase === 'ALL_SARABAN' || subject === 'งานสารบรรณ') {
+      const docs = await prisma.knowledgeDocument.findMany({});
+      contextText = docs.map(d => `[${d.title}]
+${d.content}`).join('\n\n');
     }
 
-    // 2. Prepare Gemini AI Instance
-    const systemSetting = await prisma.systemSetting.findFirst({
-      where: { key: 'settings_gemini_key' }
-    });
+    const systemSetting = await prisma.systemSetting.findFirst({ where: { key: 'settings_gemini_key' } });
     const apiKey = process.env.GEMINI_API_KEY || systemSetting?.value;
 
     if (!apiKey) {
-      return res.status(500).json({ error: 'ไม่พบ API Key ของ Gemini ในระบบ กรุณาตั้งค่าใน System Settings หรือ .env' });
+      return res.status(500).json({ error: 'ไม่พบ API Key ของ Gemini ในระบบ' });
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
     const prompt = `คุณเป็นผู้เชี่ยวชาญระดับสูงในการออกข้อสอบแข่งขันบรรจุเป็นข้าราชการตำรวจ (สายอำนวยการและปราบปราม)
-โปรดสร้างชุดข้อสอบภาษาไทยคุณภาพสูงจำนวน ${count} ข้อ สำหรับวิชา: "${category || 'งานสารบรรณ'}"
+โปรดสร้างข้อสอบภาษาไทยคุณภาพสูงจำนวน ${count} ข้อ สำหรับวิชา: "${subject}"
 
-${contextText ? `คลังข้อมูลอ้างอิงทางกฎหมายและระเบียบตำรวจที่ต้องใช้ออกข้อสอบ:\n${contextText.substring(0, 16000)}\n` : ''}
-
-ข้อกำหนดและกติกาในการออกข้อสอบ:
+${contextText ? `คลังข้อมูลอ้างอิงทางกฎหมายและระเบียบตำรวจที่ต้องใช้ออกข้อสอบ:\n${contextText.substring(0, 16000)}\n\n` : ''}
+ข้อกำหนดสำคัญในการสร้างข้อสอบ:
 1. ออกข้อสอบจำนวน ${count} ข้อ แบบปรนัย 4 ตัวเลือก (A, B, C, D)
 2. ${contextText ? 'เนื้อหาข้อสอบ ตัวเลือก และคำอธิบายเฉลย ต้องอ้างอิงระเบียบ/กฎหมายในคลังข้อมูลอ้างอิงด้านบนอย่างถูกต้อง 100%' : 'เนื้อหาต้องตรงตามขอบเขตข้อสอบตำรวจล่าสุด'}
 3. แต่ละข้อต้องมีคำอธิบายเฉลยอย่างละเอียด อ้างอิงระเบียบหรือเหตุผลทางวิชาการ
@@ -6404,51 +6413,54 @@ ${contextText ? `คลังข้อมูลอ้างอิงทางก
 [
   {
     "questionText": "คำถามข้อที่ 1...",
-    "optionA": "ตัวเลือก ก (หรือ A)...",
-    "optionB": "ตัวเลือก ข (หรือ B)...",
-    "optionC": "ตัวเลือก ค (หรือ C)...",
-    "optionD": "ตัวเลือก ง (หรือ D)...",
+    "optionA": "ตัวเลือก ก...",
+    "optionB": "ตัวเลือก ข...",
+    "optionC": "ตัวเลือก ค...",
+    "optionD": "ตัวเลือก ง...",
     "correctOption": "A",
-    "explanation": "คำอธิบายเฉลยอย่างละเอียด..."
+    "explanation": "คำอธิบายเฉลย..."
   }
 ]
 `;
 
     const result = await model.generateContent(prompt);
-    const textResponse = result.response.text();
+    let cleanJson = result.response.text().trim();
+    if (cleanJson.startsWith('```json')) cleanJson = cleanJson.replace(/^```json/, '').replace(/```$/, '').trim();
+    else if (cleanJson.startsWith('```')) cleanJson = cleanJson.replace(/^```/, '').replace(/```$/, '').trim();
 
-    // Clean JSON response from Gemini
-    let cleanJson = textResponse.trim();
-    if (cleanJson.startsWith('```json')) {
-      cleanJson = cleanJson.replace(/^```json/, '').replace(/```$/, '').trim();
-    } else if (cleanJson.startsWith('```')) {
-      cleanJson = cleanJson.replace(/^```/, '').replace(/```$/, '').trim();
+    const rawQuestions = JSON.parse(cleanJson);
+    res.json({ success: true, questions: rawQuestions });
+
+  } catch (err) {
+    console.error('Preview AI Exam error:', err);
+    res.status(500).json({ error: 'เกิดข้อผิดพลาดจาก Gemini: ' + err.message });
+  }
+});
+
+// --- Admin API: Save Verified Exam Set ---
+app.post('/api/admin/exams/save-set', authenticateToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'ADMIN' && req.user.role !== 'OWNER') {
+      return res.status(403).json({ error: 'คุณไม่มีสิทธิ์ใช้งานคำสั่งนี้' });
     }
 
-    let rawQuestions = [];
-    try {
-      rawQuestions = JSON.parse(cleanJson);
-    } catch (parseErr) {
-      console.error('Failed to parse Gemini JSON output:', textResponse);
-      return res.status(500).json({ error: 'Gemini ตอบกลับรูปแบบข้อสอบไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง' });
+    const { title, category, subcategory, status, questions } = req.body;
+
+    if (!questions || !Array.isArray(questions) || questions.length === 0) {
+      return res.status(400).json({ error: 'ไม่พบรายการข้อสอบที่ต้องการบันทึก' });
     }
 
-    if (!Array.isArray(rawQuestions) || rawQuestions.length === 0) {
-      return res.status(500).json({ error: 'ไม่ได้รับข้อมูลข้อสอบจาก Gemini' });
-    }
-
-    // 3. Save to Prisma DB
     const newExamSet = await prisma.examSet.create({
       data: {
-        title: title || `ชุดข้อสอบ ${category} (${rawQuestions.length} ข้อ)`,
+        title: title || 'ชุดข้อสอบใหม่',
         category: category || 'งานสารบรรณ',
-        subcategory: knowledgeCategory !== 'NONE' ? knowledgeCategory : null,
-        totalCount: rawQuestions.length,
+        subcategory: subcategory || null,
+        totalCount: questions.length,
         status: status || 'PUBLISHED',
         isPublic: true,
         createdById: req.user.userId,
         questions: {
-          create: rawQuestions.map((q, idx) => {
+          create: questions.map((q, idx) => {
             let correctNum = 1;
             const opt = String(q.correctOption || 'A').toUpperCase();
             if (opt === 'B' || opt === '2') correctNum = 2;
@@ -6467,20 +6479,120 @@ ${contextText ? `คลังข้อมูลอ้างอิงทางก
             };
           })
         }
-      },
-      include: {
-        questions: true
       }
     });
 
     res.json({
-      message: `สร้างชุดข้อสอบ "${newExamSet.title}" สำเร็จจำนวน ${newExamSet.questions.length} ข้อ!`,
+      message: `บันทึกชุดข้อสอบ "${newExamSet.title}" สำเร็จจำนวน ${questions.length} ข้อ!`,
       examSet: newExamSet
     });
 
   } catch (err) {
-    console.error('Generate AI Exam Set error:', err);
-    res.status(500).json({ error: 'เกิดข้อผิดพลาดในการสร้างชุดข้อสอบด้วย AI: ' + err.message });
+    console.error('Save exam set error:', err);
+    res.status(500).json({ error: 'เกิดข้อผิดพลาดในการบันทึก: ' + err.message });
+  }
+});
+
+// --- Admin API: Append Questions to Existing Exam Set ---
+app.post('/api/admin/exams/:examSetId/append-ai', authenticateToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'ADMIN' && req.user.role !== 'OWNER') {
+      return res.status(403).json({ error: 'คุณไม่มีสิทธิ์ใช้งานคำสั่งนี้' });
+    }
+
+    const examSetId = parseInt(req.params.examSetId);
+    const { numQuestions } = req.body;
+    const count = Math.min(Math.max(parseInt(numQuestions) || 10, 1), 50);
+
+    const examSet = await prisma.examSet.findUnique({
+      where: { id: examSetId },
+      include: { questions: true }
+    });
+
+    if (!examSet) {
+      return res.status(404).json({ error: 'ไม่พบชุดข้อสอบนี้' });
+    }
+
+    const currentCount = examSet.questions.length;
+
+    let docs = [];
+    if (examSet.category === 'งานสารบรรณ') {
+      docs = await prisma.knowledgeDocument.findMany({});
+    }
+    const contextText = docs.map(d => `[${d.title}]
+${d.content}`).join('\n\n');
+
+    const systemSetting = await prisma.systemSetting.findFirst({ where: { key: 'settings_gemini_key' } });
+    const apiKey = process.env.GEMINI_API_KEY || systemSetting?.value;
+
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+
+    const prompt = `คุณเป็นผู้เชี่ยวชาญการออกข้อสอบแข่งขันบรรจุเป็นข้าราชการตำรวจ
+โปรดสร้างข้อสอบเพิ่มเติมจำนวน ${count} ข้อ สำหรับวิชา: "${examSet.category}" (สร้างเนื้อหาไม่ซ้ำกับข้อสอบเดิม)
+
+${contextText ? `คลังข้อมูลอ้างอิง:\n${contextText.substring(0, 16000)}\n\n` : ''}
+ตอบกลับเฉพาะ JSON Array เท่านั้น:
+[
+  {
+    "questionText": "คำถามข้อสอบเพิ่มเติม...",
+    "optionA": "ตัวเลือก ก...",
+    "optionB": "ตัวเลือก ข...",
+    "optionC": "ตัวเลือก ค...",
+    "optionD": "ตัวเลือก ง...",
+    "correctOption": "A",
+    "explanation": "คำอธิบายเฉลย..."
+  }
+]
+`;
+
+    const result = await model.generateContent(prompt);
+    let cleanJson = result.response.text().trim();
+    if (cleanJson.startsWith('```json')) cleanJson = cleanJson.replace(/^```json/, '').replace(/```$/, '').trim();
+    else if (cleanJson.startsWith('```')) cleanJson = cleanJson.replace(/^```/, '').replace(/```$/, '').trim();
+
+    const newRawQuestions = JSON.parse(cleanJson);
+
+    const createdQuestions = [];
+    for (let i = 0; i < newRawQuestions.length; i++) {
+      const q = newRawQuestions[i];
+      let correctNum = 1;
+      const opt = String(q.correctOption || 'A').toUpperCase();
+      if (opt === 'B' || opt === '2') correctNum = 2;
+      else if (opt === 'C' || opt === '3') correctNum = 3;
+      else if (opt === 'D' || opt === '4') correctNum = 4;
+
+      const createdQ = await prisma.question.create({
+        data: {
+          examSetId: examSetId,
+          questionText: q.questionText || `ข้อสอบเพิ่มเติมข้อที่ ${currentCount + i + 1}`,
+          choice1: q.optionA || 'ตัวเลือก ก',
+          choice2: q.optionB || 'ตัวเลือก ข',
+          choice3: q.optionC || 'ตัวเลือก ค',
+          choice4: q.optionD || 'ตัวเลือก ง',
+          correctAnswer: correctNum,
+          explanation: q.explanation || '',
+          sortOrder: currentCount + i + 1
+        }
+      });
+      createdQuestions.push(createdQ);
+    }
+
+    const newTotalCount = currentCount + createdQuestions.length;
+
+    await prisma.examSet.update({
+      where: { id: examSetId },
+      data: { totalCount: newTotalCount }
+    });
+
+    res.json({
+      message: `เพิ่มข้อสอบเข้าชุด "${examSet.title}" อีก ${createdQuestions.length} ข้อสำเร็จ! (รวมทั้งหมดเป็น ${newTotalCount} ข้อ)`,
+      totalCount: newTotalCount
+    });
+
+  } catch (err) {
+    console.error('Append questions error:', err);
+    res.status(500).json({ error: 'เกิดข้อผิดพลาดในการเพิ่มข้อสอบ: ' + err.message });
   }
 });
 
