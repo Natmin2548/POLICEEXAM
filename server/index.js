@@ -6390,15 +6390,25 @@ ${d.content}`).join('\n\n');
 ${d.content}`).join('\n\n');
     }
 
-    const systemSetting = await prisma.systemSetting.findFirst({ where: { key: 'settings_gemini_key' } });
-    const apiKey = process.env.GEMINI_API_KEY || systemSetting?.value;
+    let apiKey = (process.env.GEMINI_API_KEY || '').trim();
+    if (!apiKey) {
+      const dbSettings = await prisma.systemSetting.findMany({
+        where: { key: { in: ['settings_gemini_key', 'gemini_api_key', 'GEMINI_API_KEY', 'geminiKey'] } }
+      });
+      for (const s of dbSettings) {
+        if (s.value && s.value.trim()) {
+          apiKey = s.value.trim().replace(/^['"]|['"]$/g, '');
+          break;
+        }
+      }
+    }
 
     if (!apiKey) {
-      return res.status(500).json({ error: 'ไม่พบ API Key ของ Gemini ในระบบ' });
+      return res.status(500).json({ error: 'ไม่พบ API Key ของ Gemini ในระบบ กรุณาเข้าหน้า Admin -> ตั้งค่าระบบ เพื่อระบุ Gemini API Key' });
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+    let model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
     const prompt = `คุณเป็นผู้เชี่ยวชาญระดับสูงในการออกข้อสอบแข่งขันบรรจุเป็นข้าราชการตำรวจ (สายอำนวยการและปราบปราม)
 โปรดสร้างข้อสอบภาษาไทยคุณภาพสูงจำนวน ${count} ข้อ สำหรับวิชา: "${subject}"
@@ -6522,11 +6532,25 @@ app.post('/api/admin/exams/:examSetId/append-ai', authenticateToken, async (req,
     const contextText = docs.map(d => `[${d.title}]
 ${d.content}`).join('\n\n');
 
-    const systemSetting = await prisma.systemSetting.findFirst({ where: { key: 'settings_gemini_key' } });
-    const apiKey = process.env.GEMINI_API_KEY || systemSetting?.value;
+    let apiKey = (process.env.GEMINI_API_KEY || '').trim();
+    if (!apiKey) {
+      const dbSettings = await prisma.systemSetting.findMany({
+        where: { key: { in: ['settings_gemini_key', 'gemini_api_key', 'GEMINI_API_KEY', 'geminiKey'] } }
+      });
+      for (const s of dbSettings) {
+        if (s.value && s.value.trim()) {
+          apiKey = s.value.trim().replace(/^['"]|['"]$/g, '');
+          break;
+        }
+      }
+    }
+
+    if (!apiKey) {
+      return res.status(500).json({ error: 'ไม่พบ API Key ของ Gemini ในระบบ' });
+    }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
     const prompt = `คุณเป็นผู้เชี่ยวชาญการออกข้อสอบแข่งขันบรรจุเป็นข้าราชการตำรวจ
 โปรดสร้างข้อสอบเพิ่มเติมจำนวน ${count} ข้อ สำหรับวิชา: "${examSet.category}" (สร้างเนื้อหาไม่ซ้ำกับข้อสอบเดิม)

@@ -1,4 +1,4 @@
-// Immediate Route Guard: If user is already logged in on this device, bounce to home/index.html immediately!
+// Session Helper (No Forced Auto-Redirect on Landing Page)
 (function checkExistingSession() {
   const urlParams = new URLSearchParams(window.location.search);
   if (urlParams.get('session_expired') === '1' || urlParams.get('reset') === '1') {
@@ -6,21 +6,6 @@
     sessionStorage.clear();
     window.history.replaceState({}, document.title, window.location.pathname);
     return;
-  }
-
-  let token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-  let profile = localStorage.getItem('userProfile') || sessionStorage.getItem('userProfile');
-
-  if (token && profile) {
-    localStorage.setItem('authToken', token);
-    localStorage.setItem('userProfile', profile);
-    sessionStorage.removeItem('authToken');
-    sessionStorage.removeItem('userProfile');
-
-    const target = window.location.origin + '/home/index.html';
-    if (!window.location.pathname.includes('/home/')) {
-      window.location.replace(target);
-    }
   }
 })();
 
