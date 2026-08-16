@@ -1,7 +1,7 @@
 // Configuration
 const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
   ? 'http://localhost:3000' 
-  : 'https://police-exam-t090.onrender.com';
+  : 'https://police-exam-backend.onrender.com';
 
 const authToken = localStorage.getItem('authToken');
 let currentUser = null;
@@ -203,7 +203,70 @@ async function loadExams() {
 }
 
 function showAddExamModal() {
-  alert('ฟีเจอร์เพิ่มชุดข้อสอบใหม่ผ่านหน้าเว็บกำลังพัฒนา กรุณาใช้สคริปต์หลังบ้านชั่วคราว');
+  document.getElementById('examTitle').value = '';
+  document.getElementById('examCategory').value = 'งานสารบรรณ';
+  document.getElementById('knowledgeCategory').value = 'ALL';
+  document.getElementById('examNumQuestions').value = '5';
+  document.getElementById('examStatus').value = 'PUBLISHED';
+  document.getElementById('aiProgressInfo').style.display = 'none';
+  document.getElementById('btnSubmitGenerateExam').disabled = false;
+  
+  document.getElementById('addExamModal').style.display = 'flex';
+}
+
+function closeAddExamModal() {
+  document.getElementById('addExamModal').style.display = 'none';
+}
+
+async function generateAIExamSet() {
+  const title = document.getElementById('examTitle').value.trim();
+  const category = document.getElementById('examCategory').value;
+  const knowledgeCategory = document.getElementById('knowledgeCategory').value;
+  const numQuestions = document.getElementById('examNumQuestions').value;
+  const status = document.getElementById('examStatus').value;
+
+  const btn = document.getElementById('btnSubmitGenerateExam');
+  const progressInfo = document.getElementById('aiProgressInfo');
+
+  try {
+    btn.disabled = true;
+    btn.style.opacity = '0.6';
+    progressInfo.style.display = 'block';
+
+    const res = await fetch(`${API_BASE}/api/admin/exams/generate-ai-set`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`
+      },
+      body: JSON.stringify({
+        title,
+        category,
+        knowledgeCategory,
+        numQuestions: parseInt(numQuestions) || 5,
+        status
+      })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert('เกิดข้อผิดพลาด: ' + (data.error || 'ไม่สามารถสร้างข้อสอบได้'));
+      return;
+    }
+
+    alert(`🎉 ${data.message}`);
+    closeAddExamModal();
+    loadExams();
+
+  } catch (err) {
+    console.error('Generate AI Exam Set JS error:', err);
+    alert('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.style.opacity = '1';
+    progressInfo.style.display = 'none';
+  }
 }
 
 // ==========================================

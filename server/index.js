@@ -6348,6 +6348,143 @@ app.get('/api/support/tickets', authenticateToken, async (req, res) => {
 });
 
 // Start express server
+
+// --- Admin API: Generate AI Exam Set via Gemini ---
+app.post('/api/admin/exams/generate-ai-set', authenticateToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'ADMIN' && req.user.role !== 'OWNER') {
+      return res.status(403).json({ error: 'คุณไม่มีสิทธิ์ใช้งานคำสั่งนี้ (สำหรับ Admin เท่านั้น)' });
+    }
+
+    const { title, category, knowledgeCategory, numQuestions, status } = req.body;
+    const count = Math.min(Math.max(parseInt(numQuestions) || 5, 1), 50);
+
+    // 1. Fetch Knowledge Base Documents if requested
+    let contextText = '';
+    if (knowledgeCategory && knowledgeCategory !== 'NONE') {
+      let docs = [];
+      if (knowledgeCategory === 'ALL') {
+        docs = await prisma.knowledgeDocument.findMany({});
+      } else {
+        docs = await prisma.knowledgeDocument.findMany({
+          where: { category: knowledgeCategory }
+        });
+      }
+
+      if (docs.length > 0) {
+        contextText = docs.map(d => `[หัวข้อเอกสาร: ${d.title} (หมวด: ${d.category})]
+${d.content}`).join('\n\n');
+      }
+    }
+
+    // 2. Prepare Gemini AI Instance
+    const systemSetting = await prisma.systemSetting.findFirst({
+      where: { key: 'settings_gemini_key' }
+    });
+    const apiKey = process.env.GEMINI_API_KEY || systemSetting?.value;
+
+    if (!apiKey) {
+      return res.status(500).json({ error: 'ไม่พบ API Key ของ Gemini ในระบบ กรุณาตั้งค่าใน System Settings หรือ .env' });
+    }
+
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+
+    const prompt = `คุณเป็นผู้เชี่ยวชาญระดับสูงในการออกข้อสอบแข่งขันบรรจุเป็นข้าราชการตำรวจ (สายอำนวยการและปราบปราม)
+โปรดสร้างชุดข้อสอบภาษาไทยคุณภาพสูงจำนวน ${count} ข้อ สำหรับวิชา: "${category || 'งานสารบรรณ'}"
+
+${contextText ? `คลังข้อมูลอ้างอิงทางกฎหมายและระเบียบตำรวจที่ต้องใช้ออกข้อสอบ:\n${contextText.substring(0, 16000)}\n` : ''}
+
+ข้อกำหนดและกติกาในการออกข้อสอบ:
+1. ออกข้อสอบจำนวน ${count} ข้อ แบบปรนัย 4 ตัวเลือก (A, B, C, D)
+2. ${contextText ? 'เนื้อหาข้อสอบ ตัวเลือก และคำอธิบายเฉลย ต้องอ้างอิงระเบียบ/กฎหมายในคลังข้อมูลอ้างอิงด้านบนอย่างถูกต้อง 100%' : 'เนื้อหาต้องตรงตามขอบเขตข้อสอบตำรวจล่าสุด'}
+3. แต่ละข้อต้องมีคำอธิบายเฉลยอย่างละเอียด อ้างอิงระเบียบหรือเหตุผลทางวิชาการ
+4. ตอบกลับเฉพาะโครงสร้าง JSON Array ตามรูปแบบนี้เท่านั้น ห้ามใส่ข้อความเกริ่นหรือ Markdown ล้อมรอบนอกเหนือจาก JSON:
+
+[
+  {
+    "questionText": "คำถามข้อที่ 1...",
+    "optionA": "ตัวเลือก ก (หรือ A)...",
+    "optionB": "ตัวเลือก ข (หรือ B)...",
+    "optionC": "ตัวเลือก ค (หรือ C)...",
+    "optionD": "ตัวเลือก ง (หรือ D)...",
+    "correctOption": "A",
+    "explanation": "คำอธิบายเฉลยอย่างละเอียด..."
+  }
+]
+`;
+
+    const result = await model.generateContent(prompt);
+    const textResponse = result.response.text();
+
+    // Clean JSON response from Gemini
+    let cleanJson = textResponse.trim();
+    if (cleanJson.startsWith('```json')) {
+      cleanJson = cleanJson.replace(/^```json/, '').replace(/```$/, '').trim();
+    } else if (cleanJson.startsWith('```')) {
+      cleanJson = cleanJson.replace(/^```/, '').replace(/```$/, '').trim();
+    }
+
+    let rawQuestions = [];
+    try {
+      rawQuestions = JSON.parse(cleanJson);
+    } catch (parseErr) {
+      console.error('Failed to parse Gemini JSON output:', textResponse);
+      return res.status(500).json({ error: 'Gemini ตอบกลับรูปแบบข้อสอบไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง' });
+    }
+
+    if (!Array.isArray(rawQuestions) || rawQuestions.length === 0) {
+      return res.status(500).json({ error: 'ไม่ได้รับข้อมูลข้อสอบจาก Gemini' });
+    }
+
+    // 3. Save to Prisma DB
+    const newExamSet = await prisma.examSet.create({
+      data: {
+        title: title || `ชุดข้อสอบ ${category} (${rawQuestions.length} ข้อ)`,
+        category: category || 'งานสารบรรณ',
+        subcategory: knowledgeCategory !== 'NONE' ? knowledgeCategory : null,
+        totalCount: rawQuestions.length,
+        status: status || 'PUBLISHED',
+        isPublic: true,
+        createdById: req.user.userId,
+        questions: {
+          create: rawQuestions.map((q, idx) => {
+            let correctNum = 1;
+            const opt = String(q.correctOption || 'A').toUpperCase();
+            if (opt === 'B' || opt === '2') correctNum = 2;
+            else if (opt === 'C' || opt === '3') correctNum = 3;
+            else if (opt === 'D' || opt === '4') correctNum = 4;
+
+            return {
+              questionText: q.questionText || `ข้อสอบที่ ${idx + 1}`,
+              choice1: q.optionA || 'ตัวเลือก ก',
+              choice2: q.optionB || 'ตัวเลือก ข',
+              choice3: q.optionC || 'ตัวเลือก ค',
+              choice4: q.optionD || 'ตัวเลือก ง',
+              correctAnswer: correctNum,
+              explanation: q.explanation || '',
+              sortOrder: idx + 1
+            };
+          })
+        }
+      },
+      include: {
+        questions: true
+      }
+    });
+
+    res.json({
+      message: `สร้างชุดข้อสอบ "${newExamSet.title}" สำเร็จจำนวน ${newExamSet.questions.length} ข้อ!`,
+      examSet: newExamSet
+    });
+
+  } catch (err) {
+    console.error('Generate AI Exam Set error:', err);
+    res.status(500).json({ error: 'เกิดข้อผิดพลาดในการสร้างชุดข้อสอบด้วย AI: ' + err.message });
+  }
+});
+
+
 app.listen(PORT, async () => {
   console.log(`[Server] Running on http://localhost:${PORT}`);
   await ensureDefaultQuestions();
