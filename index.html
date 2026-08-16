@@ -14,7 +14,7 @@
   <!-- Google Identity Services SDK -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <!-- External Application Script -->
-  <script src="js/app.js?v=9" defer></script>
+  <script src="js/app.js?v=10" defer></script>
 </head>
 
 <body>
@@ -45,8 +45,7 @@
       <nav class="nav-menu" id="navMenu">
         <!-- Default State: Log In & Register Links -->
         <div class="nav-auth-links" id="navAuthLinks">
-          <a href="#" class="nav-link open-login-btn">เข้าสู่ระบบ</a>
-          <a href="#" class="btn-register open-register-btn">สมัครสมาชิก</a>
+          <a href="#" class="btn-register open-login-btn" style="background: #BD1B0B; color: white; padding: 10px 24px; border-radius: 12px; font-weight: 600;">เข้าสู่ระบบ</a>
         </div>
 
         <!-- Authenticated State: Profile Details -->
@@ -86,14 +85,13 @@
 
       <!-- CTA Buttons -->
       <div class="hero-actions">
-        <a href="#" class="btn btn-primary open-register-btn">
-          <span>เริ่มต้นฟรี</span>
+        <a href="#" class="btn btn-primary open-login-btn">
+          <span>เข้าสู่ระบบด้วย Google</span>
           <svg class="arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="5" y1="12" x2="19" y2="12" stroke-linecap="round" />
             <polyline points="12 5 19 12 12 19" stroke-linecap="round" stroke-linejoin="round" />
           </svg>
         </a>
-        <a href="#" class="btn btn-secondary open-login-btn">เข้าสู่ระบบ</a>
       </div>
 
       <!-- Stats Grid -->
@@ -160,8 +158,8 @@
               stroke-width="2" stroke-linejoin="round" />
           </svg>
         </div>
-        <h2 class="modal-title">เข้าสู่ระบบ / สมัครสมาชิก</h2>
-        <p class="modal-subtitle">เข้าสู่ระบบง่ายๆ ด้วยบัญชี Google</p>
+        <h2 class="modal-title">เข้าสู่ระบบด้วย Google</h2>
+        <p class="modal-subtitle">เข้าสู่ระบบเพื่อใช้งานระบบเตรียมสอบ</p>
       </div>
 
       <div id="googleSignInButtonLogin" class="google-signin-container"

@@ -1,3 +1,12 @@
+// Immediate Route Guard: If user is already logged in on this device, bounce to home/index.html immediately!
+(function() {
+  const token = localStorage.getItem('authToken');
+  const profile = localStorage.getItem('userProfile');
+  if (token && profile) {
+    window.location.replace('/home/index.html');
+  }
+})();
+
 // ==========================================
 // Configuration
 // ==========================================
