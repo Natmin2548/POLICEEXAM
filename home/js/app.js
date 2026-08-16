@@ -4079,7 +4079,7 @@ window.startBankSubject = function(subjectKey) {
   };
 
   if (titleEl) titleEl.textContent = `วิชา: ${displayNames[subjectKey] || subjectKey}`;
-  if (badgeEl) badgeEl.textContent = subjectKey.includes('สารบรรณ') || subjectKey.includes('54') ? 'วิชาหลักสำคัญ ⭐' : 'วิชาเตรียมสอบ';
+  if (badgeEl) badgeEl.textContent = subjectKey.includes('สารบรรณ') || subjectKey.includes('54') ? 'วิชาหลักสำคัญ' : 'วิชาเตรียมสอบ';
 
   renderSubjectExamSets(subjectKey);
   renderSubjectStatistics(subjectKey);
@@ -4093,130 +4093,69 @@ window.backToBankSubjects = function() {
   if (examSetsPanel) examSetsPanel.style.display = 'none';
 };
 
-function renderSubjectExamSets(subjectKey) {
+async function renderSubjectExamSets(subjectKey) {
   const container = document.getElementById('examSetsContainer');
   const countTag = document.getElementById('examSetsCountTag');
   if (!container) return;
 
-  // Define Available Exam Sets per Subject
-  let sets = [];
+  container.innerHTML = '<div style="text-align: center; color: #64748B; padding: 24px; font-size: 13px;">กำลังโหลดข้อมูลชุดข้อสอบ...</div>';
 
-  if (subjectKey === 'งานสารบรรณ' || subjectKey === 'ลักษณะที่54') {
-    sets = [
-      {
-        id: 'saraban_full_54',
-        title: '📝 ชุดข้อสอบสารบรรณฉบับเต็ม (54 ข้อ - พ.ศ. ๒๕๕๖)',
-        desc: 'รวมข้อสอบระเบียบงานสารบรรณครบทุกหมวด ทั้ง ๕๔ ข้อ พร้อมคำอธิบายเฉลยละเอียด',
-        questionsCount: 54,
-        timeMinutes: 60,
-        difficulty: 'ฉบับเต็มมาตรฐาน',
-        tag: 'แนะนำ 🌟',
-        color: '#BD1B0B'
-      },
-      {
-        id: 'saraban_quick_10',
-        title: '⚡ ชุดฝึกซ้อมย่อย 10 ข้อ (สุ่มจากคลังสารบรรณ)',
-        desc: 'สุ่มข้อสอบสารบรรณ 10 ข้อ เหมาะสำหรับการฝึกทบทวนแบบรวดเร็วใน 10 นาที',
-        questionsCount: 10,
-        timeMinutes: 10,
-        difficulty: 'ฝึกฝนรวดเร็ว',
-        tag: 'ฝึกด่วน ⏱️',
-        color: '#2563EB'
-      },
-      {
-        id: 'saraban_mock_1',
-        title: '🎯 ชุดเก็งข้อสอบสารบรรณ ชุดที่ 1 (เก็งประเด็นออกบ่อย)',
-        desc: 'รวบรวมประเด็นที่ออกสอบบ่อยที่สุด เช่น ชนิดหนังสือ การส่ง-รับ และระยะเวลาเก็บรักษา',
-        questionsCount: 20,
-        timeMinutes: 25,
-        difficulty: 'เก็งข้อสอบจริง',
-        tag: 'เก็งข้อสอบ 🎯',
-        color: '#D97706'
-      },
-      {
-        id: 'saraban_mock_2',
-        title: '🎯 ชุดเก็งข้อสอบสารบรรณ ชุดที่ 2 (เจาะลึกภาคปฏิบัติ)',
-        desc: 'เน้นโจทย์สถานการณ์จำลอง การลงรับหนังสือ และคำขึ้นต้น-คำลงท้ายตามตำแหน่ง',
-        questionsCount: 20,
-        timeMinutes: 25,
-        difficulty: 'เจาะลึกเข้มข้น',
-        tag: 'ใหม่ ✨',
-        color: '#8B5CF6'
-      }
-    ];
-  } else {
-    const name = subjectKey;
-    sets = [
-      {
-        id: `${subjectKey}_quick_10`,
-        title: `⚡ ชุดฝึกซ้อมย่อยวิชา ${name} (10 ข้อ)`,
-        desc: `แบบทดสอบสุ่ม 10 ข้อ เจาะลึกหมวด ${name} พร้อมสรุปผลคะแนนทันที`,
-        questionsCount: 10,
-        timeMinutes: 10,
-        difficulty: 'ปานกลาง',
-        tag: 'ฝึกด่วน ⏱️',
-        color: '#2563EB'
-      },
-      {
-        id: `${subjectKey}_mock_1`,
-        title: `🎯 ชุดแนวข้อสอบจริงวิชา ${name} - ชุดที่ 1`,
-        desc: `คัดสรรข้อสอบจริงปีล่าสุด 20 ข้อ เพื่อเตรียมความพร้อมเสมือนอยู่สนามสอบ`,
-        questionsCount: 20,
-        timeMinutes: 20,
-        difficulty: 'ระดับสนามสอบ',
-        tag: 'เก็งข้อสอบ 🎯',
-        color: '#D97706'
-      },
-      {
-        id: `${subjectKey}_mock_2`,
-        title: `🎯 ชุดแนวข้อสอบจริงวิชา ${name} - ชุดที่ 2`,
-        desc: `รวบรวมโจทย์ประยุกต์และข้อสอบท้าทาย เพื่ออัปเกรดคะแนนในวิชา ${name}`,
-        questionsCount: 20,
-        timeMinutes: 20,
-        difficulty: 'ท้าทายเข้มข้น',
-        tag: 'อัปคะแนน 🔥',
-        color: '#10B981'
-      }
-    ];
-  }
+  try {
+    const res = await fetch(`${API_BASE}/api/exams/sets?category=${encodeURIComponent(subjectKey)}`);
+    const sets = res.ok ? await res.json() : [];
 
-  if (countTag) countTag.textContent = `${sets.length} ชุดข้อสอบ`;
+    if (countTag) countTag.textContent = `${sets.length} ชุดข้อสอบ`;
 
-  // Get user history for score badges
-  const history = getLocalQuizHistory(subjectKey);
-
-  container.innerHTML = sets.map(s => {
-    // Find best score for this set
-    const setRecords = history.filter(h => h.setId === s.id || h.setType === s.id);
-    let bestBadge = `<span style="font-size: 11px; background: #F1F5F9; color: #64748B; padding: 4px 10px; border-radius: 999px; font-weight: 600;">ยังไม่ได้ทำ</span>`;
-    
-    if (setRecords.length > 0) {
-      const maxScore = Math.max(...setRecords.map(r => r.scorePct || 0));
-      bestBadge = `<span style="font-size: 11px; background: #ECFDF5; color: #059669; padding: 4px 10px; border-radius: 999px; font-weight: 700;">🏆 ทำได้สูงสุด ${maxScore}%</span>`;
+    if (!Array.isArray(sets) || sets.length === 0) {
+      container.innerHTML = `
+        <div style="background: white; border: 1px dashed #CBD5E1; border-radius: 16px; padding: 32px 20px; text-align: center;">
+          <div style="font-size: 15px; font-weight: 800; color: #475569; margin-bottom: 6px;">ไม่มีชุดข้อสอบในวิชานี้</div>
+          <p style="font-size: 13px; color: #94A3B8; margin: 0; line-height: 1.5;">ยังไม่มีชุดข้อสอบสำหรับวิชานี้ในระบบ สามารถเพิ่มชุดข้อสอบใหม่ได้ผ่านแผงจัดการผู้ดูแลระบบ (Admin Panel)</p>
+        </div>
+      `;
+      return;
     }
 
-    return `
-      <div style="background: white; border: 1px solid #E2E8F0; border-radius: 18px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); transition: all 0.2s;">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 8px;">
-          <h4 style="margin: 0; font-size: 15px; font-weight: 800; color: #1E293B; line-height: 1.4;">${s.title}</h4>
-          <span style="font-size: 11px; background: ${s.color}15; color: ${s.color}; font-weight: 700; padding: 4px 10px; border-radius: 999px; flex-shrink: 0;">${s.tag}</span>
-        </div>
-        
-        <p style="font-size: 13px; color: #64748B; margin: 0 0 14px 0; line-height: 1.5;">${s.desc}</p>
-        
-        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #F1F5F9; padding-top: 14px; flex-wrap: wrap; gap: 10px;">
-          <div style="display: flex; align-items: center; gap: 10px; font-size: 12px; color: #64748B; font-weight: 600; flex-wrap: wrap;">
-            <span>⏱️ ${s.timeMinutes} นาที</span>
-            <span>❓ ${s.questionsCount} ข้อ</span>
-            ${bestBadge}
+    // Get user history for score badges
+    const history = getLocalQuizHistory(subjectKey);
+
+    container.innerHTML = sets.map(s => {
+      const setRecords = history.filter(h => h.setId === s.id || h.setType === s.id);
+      let bestBadge = `<span style="font-size: 11px; background: #F1F5F9; color: #64748B; padding: 4px 10px; border-radius: 999px; font-weight: 600;">ยังไม่ได้ทำ</span>`;
+      
+      if (setRecords.length > 0) {
+        const maxScore = Math.max(...setRecords.map(r => r.scorePct || 0));
+        bestBadge = `<span style="font-size: 11px; background: #ECFDF5; color: #059669; padding: 4px 10px; border-radius: 999px; font-weight: 700;">ทำได้สูงสุด ${maxScore}%</span>`;
+      }
+
+      const color = s.color || '#2563EB';
+
+      return `
+        <div style="background: white; border: 1px solid #E2E8F0; border-radius: 18px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); transition: all 0.2s;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 8px;">
+            <h4 style="margin: 0; font-size: 15px; font-weight: 800; color: #1E293B; line-height: 1.4;">${escapeHTML(s.title)}</h4>
+            <span style="font-size: 11px; background: ${color}15; color: ${color}; font-weight: 700; padding: 4px 10px; border-radius: 999px; flex-shrink: 0;">${escapeHTML(s.tag || 'ชุดข้อสอบ')}</span>
           </div>
-          <button onclick="launchSelectedExamSet('${subjectKey}', '${s.id}', ${s.questionsCount}, '${escapeHTML(s.title)}')" style="background: ${s.color}; color: white; border: none; padding: 8px 18px; border-radius: 12px; font-weight: 700; font-size: 13px; cursor: pointer; font-family: inherit; box-shadow: 0 4px 8px ${s.color}33; transition: all 0.2s;">
-            เริ่มทำข้อสอบ 🚀
-          </button>
+          
+          <p style="font-size: 13px; color: #64748B; margin: 0 0 14px 0; line-height: 1.5;">${escapeHTML(s.desc || '')}</p>
+          
+          <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #F1F5F9; padding-top: 14px; flex-wrap: wrap; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 10px; font-size: 12px; color: #64748B; font-weight: 600; flex-wrap: wrap;">
+              <span>${s.timeMinutes || 60} นาที</span>
+              <span>${s.questionsCount || 0} ข้อ</span>
+              ${bestBadge}
+            </div>
+            <button onclick="launchSelectedExamSet('${subjectKey}', '${s.id}', ${s.questionsCount || 10}, '${escapeHTML(s.title)}')" style="background: ${color}; color: white; border: none; padding: 8px 18px; border-radius: 12px; font-weight: 700; font-size: 13px; cursor: pointer; font-family: inherit; box-shadow: 0 4px 8px ${color}33; transition: all 0.2s;">
+              เริ่มทำข้อสอบ
+            </button>
+          </div>
         </div>
-      </div>
-    `;
-  }).join('');
+      `;
+    }).join('');
+  } catch (err) {
+    console.error('Render exam sets error:', err);
+    container.innerHTML = '<div style="text-align: center; color: #EF4444; padding: 20px; font-size: 13px;">เกิดข้อผิดพลาดในการโหลดชุดข้อสอบ</div>';
+  }
 }
 
 function getLocalQuizHistory(subjectKey) {
@@ -4244,7 +4183,7 @@ function renderSubjectStatistics(subjectKey) {
     if (bestScoreEl) bestScoreEl.textContent = '0%';
     if (attemptsEl) attemptsEl.textContent = '0 ครั้ง';
     if (avgScoreEl) avgScoreEl.textContent = '0%';
-    if (masteryEl) masteryEl.textContent = 'มือใหม่ 🔰';
+    if (masteryEl) masteryEl.textContent = 'มือใหม่';
     if (historyContainer) {
       historyContainer.innerHTML = '<div style="text-align: center; color: #94A3B8; font-size: 13px; padding: 16px 0;">ยังไม่มีประวัติการทำข้อสอบในวิชานี้</div>';
     }
@@ -4256,10 +4195,10 @@ function renderSubjectStatistics(subjectKey) {
   const totalAttempts = history.length;
   const avgScore = Math.round(scores.reduce((a, b) => a + b, 0) / totalAttempts);
 
-  let mastery = 'มือใหม่ 🔰';
-  if (avgScore >= 85) mastery = 'ระดับเซียน 🌟';
-  else if (avgScore >= 70) mastery = 'ชำนาญ 👍';
-  else if (avgScore >= 50) mastery = 'ปานกลาง 📈';
+  let mastery = 'มือใหม่';
+  if (avgScore >= 85) mastery = 'ระดับเซียน';
+  else if (avgScore >= 70) mastery = 'ชำนาญ';
+  else if (avgScore >= 50) mastery = 'ปานกลาง';
 
   if (bestScoreEl) bestScoreEl.textContent = `${maxScore}%`;
   if (attemptsEl) attemptsEl.textContent = `${totalAttempts} ครั้ง`;
@@ -4270,7 +4209,7 @@ function renderSubjectStatistics(subjectKey) {
     historyContainer.innerHTML = history.slice(0, 10).map(h => `
       <div style="display: flex; justify-content: space-between; align-items: center; background: #F8FAFC; border-radius: 12px; padding: 10px 14px; border: 1px solid #E2E8F0; font-size: 13px;">
         <div>
-          <span style="font-weight: 700; color: #1E293B; display: block;">${h.setTitle || 'แบบทดสอบประเมิน'}</span>
+          <span style="font-weight: 700; color: #1E293B; display: block;">${escapeHTML(h.setTitle || 'แบบทดสอบประเมิน')}</span>
           <span style="font-size: 11px; color: #64748B;">${h.date || 'เมื่อสักครู่'} • ${h.correctCount || 0}/${h.totalQuestions || 10} ข้อ</span>
         </div>
         <span style="font-weight: 800; font-size: 15px; color: ${h.scorePct >= 70 ? '#10B981' : (h.scorePct >= 50 ? '#F59E0B' : '#EF4444')};">

@@ -641,6 +641,62 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', serverTime: new Date() });
 });
 
+// --- Dynamic Exam Sets API ---
+app.get('/api/exams/sets', async (req, res) => {
+  const { category } = req.query;
+  try {
+    const where = { isPublic: true };
+    if (category) {
+      where.OR = [
+        { category: { contains: category, mode: 'insensitive' } },
+        { subcategory: { contains: category, mode: 'insensitive' } }
+      ];
+    }
+
+    const sets = await prisma.examSet.findMany({
+      where,
+      include: {
+        _count: {
+          select: { questions: true }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    let result = sets.map(s => ({
+      id: `db_${s.id}`,
+      dbId: s.id,
+      title: s.title,
+      category: s.category,
+      subcategory: s.subcategory,
+      questionsCount: s._count.questions || s.totalCount || 0,
+      desc: `ชุดข้อสอบหมวด ${s.category} (จำนวน ${s._count.questions || s.totalCount || 0} ข้อ)`,
+      timeMinutes: Math.max(10, Math.ceil((s._count.questions || s.totalCount || 10) * 1.2)),
+      tag: 'ชุดข้อสอบจริง',
+      createdAt: s.createdAt
+    }));
+
+    // If Saraban category and no DB sets created yet, supply standard Saraban set
+    if (category && (category.includes('สารบรรณ') || category.includes('54')) && result.length === 0) {
+      result = [
+        {
+          id: 'saraban_full_54',
+          title: 'ชุดข้อสอบสารบรรณฉบับเต็ม (54 ข้อ - พ.ศ. 2556)',
+          desc: 'รวมข้อสอบระเบียบงานสารบรรณครบทุกหมวด ทั้ง 54 ข้อ พร้อมคำอธิบายเฉลยอย่างละเอียด',
+          questionsCount: 54,
+          timeMinutes: 60,
+          tag: 'ชุดมาตรฐาน'
+        }
+      ];
+    }
+
+    res.json(result);
+  } catch (err) {
+    console.error('Fetch exam sets error:', err);
+    res.status(500).json({ error: 'เกิดข้อผิดพลาดในการดึงข้อมูลชุดข้อสอบ' });
+  }
+});
+
 // --- Google Auth Configuration & Verification Routes ---
 app.get('/api/auth/config', (req, res) => {
   res.json({
