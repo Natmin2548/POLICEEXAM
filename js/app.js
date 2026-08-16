@@ -108,7 +108,7 @@ window.alert = function(msg) {
 // ==========================================
 const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
   ? 'http://localhost:3000' 
-  : window.location.origin;
+  : 'https://police-exam-backend.onrender.com';
 
 const FALLBACK_GOOGLE_CLIENT_ID = '848275108419-q0171b1bmm4l29lp9blgpin3fl4p1fnh.apps.googleusercontent.com';
 let googleClientId = FALLBACK_GOOGLE_CLIENT_ID;
