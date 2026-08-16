@@ -2356,7 +2356,7 @@ async function loadFriendsList() {
       html += `
         <div class="friend-item-row" style="cursor: default;">
           <div style="display: flex; align-items: center; gap: 10px; cursor: pointer;" onclick="showUserProfile(${f.id})">
-            <div class="friend-user-avatar" style="background-color: #BD1B0B;">${initial}</div>
+            ${f.faceImage ? `<img src="${f.faceImage}" class="friend-user-avatar" style="object-fit: cover; border-radius: 50%;" />` : `<div class="friend-user-avatar" style="background-color: #BD1B0B;">${initial}</div>`}
             <div style="text-align: left;">
               <span class="friend-user-name" style="display: block;">${escapeHTML(displayName)}</span>
               <span style="font-size: 11px; color: var(--text-light);">แชทส่วนตัว</span>
@@ -2403,7 +2403,7 @@ async function loadBlockedList() {
       html += `
         <div style="display: flex; justify-content: space-between; align-items: center; background: #F8FAFC; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-color); width: 100%;">
           <div style="display: flex; align-items: center; gap: 8px; text-align: left; cursor: pointer;" onclick="showUserProfile(${u.id})">
-            <div class="friend-user-avatar" style="background-color: #64748B; width: 26px; height: 26px; font-size: 11px;">${displayName.charAt(0)}</div>
+            ${u.faceImage ? `<img src="${u.faceImage}" style="width: 26px; height: 26px; border-radius: 50%; object-fit: cover;" />` : `<div class="friend-user-avatar" style="background-color: #64748B; width: 26px; height: 26px; font-size: 11px;">${displayName.charAt(0)}</div>`}
             <div>
               <span style="font-size: 12px; font-weight: 600; color: var(--text-dark); display: block;">${escapeHTML(displayName)}</span>
               <span style="font-size: 9px; color: var(--text-light);">@${escapeHTML(u.username)}</span>
@@ -2464,7 +2464,7 @@ async function loadFriendRequests() {
       html += `
         <div style="display: flex; justify-content: space-between; align-items: center; background: white; padding: 8px 12px; border-radius: 8px; border: 1px solid #FDE68A;">
           <div style="display: flex; align-items: center; gap: 8px; cursor: pointer;" onclick="showUserProfile(${r.senderId})">
-            <div class="friend-user-avatar" style="width: 28px; height: 28px; font-size: 11px; background-color: #BD1B0B; display: flex; align-items: center; justify-content: center; color: white; border-radius: 50%;">${displayName.charAt(0)}</div>
+            ${r.faceImage ? `<img src="${r.faceImage}" style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover;" />` : `<div class="friend-user-avatar" style="width: 28px; height: 28px; font-size: 11px; background-color: #BD1B0B; display: flex; align-items: center; justify-content: center; color: white; border-radius: 50%;">${displayName.charAt(0)}</div>`}
             <div style="text-align: left;">
               <span style="font-size: 12px; font-weight: 600; color: var(--text-dark); display: block;">${escapeHTML(displayName)}</span>
               <span style="font-size: 9px; color: var(--text-light);">@${escapeHTML(r.username)}</span>
@@ -2626,6 +2626,13 @@ window.showUserProfile = async function(userId) {
     if (fullName) fullName.textContent = 'โหลดโปรไฟล์ล้มเหลว';
   }
 };
+
+const userProfileModalElem = document.getElementById('userProfileModal');
+if (userProfileModalElem) {
+  userProfileModalElem.addEventListener('click', (e) => {
+    if (e.target === userProfileModalElem) closeUserProfileModal();
+  });
+}
 
 window.closeUserProfileModal = function() {
   const modal = document.getElementById('userProfileModal');
