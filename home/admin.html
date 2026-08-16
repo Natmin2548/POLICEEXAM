@@ -252,75 +252,7 @@
   </div>
 
 
-  <!-- Add Exam Set Modal (AI Powered by Gemini) -->
-  <div class="modal-overlay" id="addExamModal">
-    <div class="modal-content" style="max-width: 560px;">
-      <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px; color: var(--primary-color);">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-        </svg>
-        🤖 สร้างชุดข้อสอบด้วย Gemini AI
-      </h3>
 
-      <form id="addExamForm" onsubmit="event.preventDefault(); generateAIExamSet();">
-        <div class="form-group">
-          <label for="examTitle">ชื่อชุดข้อสอบ</label>
-          <input type="text" id="examTitle" class="form-input" placeholder="เช่น ชุดข้อสอบงานสารบรรณ พ.ศ. ๒๕๒๖ และ ๒๕๕๖ (ชุดที่ ๑)" required>
-        </div>
-
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-          <div class="form-group">
-            <label for="examCategory">หมวดหมู่วิชาหลัก</label>
-            <select id="examCategory" class="form-input" required>
-              <option value="งานสารบรรณ">งานสารบรรณ (๒๕๒๖/๕๔)</option>
-              <option value="ความรู้ทั่วไปและกฎหมาย">ความรู้ทั่วไปและกฎหมาย</option>
-              <option value="ภาษาไทย">ภาษาไทย</option>
-              <option value="ภาษาอังกฤษ">ภาษาอังกฤษ</option>
-              <option value="เทคโนโลยีสารสนเทศ">คอมพิวเตอร์และ IT</option>
-              <option value="สังคมและจริยธรรม">สังคมและจริยธรรมตำรวจ</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label for="knowledgeCategory">คลังความรู้ในห้องสมุด</label>
-            <select id="knowledgeCategory" class="form-input" required>
-              <option value="ALL">📚 ดึงจากคลังสารบรรณทั้งหมด (๒๕๒๖ + ๕๔)</option>
-              <option value="สารบรรณ_๒๕๒๖">📖 ระเบียบสารบรรณ พ.ศ. ๒๕๒๖</option>
-              <option value="สารบรรณ_๕๔">👮 ระเบียบตำรวจ ลักษณะ ๕๔</option>
-              <option value="NONE">⚙️ ไม่อ้างอิงคลังระเบียบ (สร้างทั่วไป)</option>
-            </select>
-          </div>
-        </div>
-
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-          <div class="form-group">
-            <label for="examNumQuestions">จำนวนข้อสอบที่ต้องการสร้าง</label>
-            <input type="number" id="examNumQuestions" class="form-input" min="1" max="50" value="5" required>
-          </div>
-
-          <div class="form-group">
-            <label for="examStatus">สถานะการเผยแพร่</label>
-            <select id="examStatus" class="form-input">
-              <option value="PUBLISHED">เปิดใช้งานทันที (Published)</option>
-              <option value="DRAFT">ฉบับร่าง (Draft)</option>
-            </select>
-          </div>
-        </div>
-
-        <div id="aiProgressInfo" style="display: none; background: #FFF1F2; border: 1px solid #FECACA; border-radius: 8px; padding: 12px; margin-bottom: 16px; font-size: 13px; color: #BD1B0B; text-align: center;">
-          ⏳ <strong>Gemini 2.5 Flash กำลังดึงคลังความรู้และสร้างข้อสอบ...</strong><br>
-          <span style="font-size: 11px; opacity: 0.8;">ขั้นตอนนี้อาจใช้เวลาประมาณ 5-15 วินาที</span>
-        </div>
-
-        <div class="modal-actions">
-          <button type="button" class="btn btn-outline" onclick="closeAddExamModal()">ยกเลิก</button>
-          <button type="submit" id="btnSubmitGenerateExam" class="btn btn-primary" style="display: flex; align-items: center; gap: 6px;">
-            <span>🤖 สั่ง Gemini สร้างข้อสอบ</span>
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
 
   <!-- Add Exam Set Modal (สร้างข้อสอบจากคลังข้อมูล) -->
   <div class="modal-overlay" id="addExamModal">
