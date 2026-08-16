@@ -57,6 +57,9 @@ const API_BASE = window.location.hostname === 'localhost' || window.location.hos
   ? 'http://localhost:3000' 
   : 'https://police-exam-backend.onrender.com';
 
+const FALLBACK_GOOGLE_CLIENT_ID = '848275108419-q0171b1bmm4l29lp9blgpin3fl4p1fnh.apps.googleusercontent.com';
+let googleClientId = FALLBACK_GOOGLE_CLIENT_ID;
+
 // ==========================================
 // UI Layout Controls (Navbar menu / Modal toggles)
 // ==========================================
@@ -90,10 +93,11 @@ function showModal(modal) {
 }
 
 window.triggerGoogleLogin = function() {
+  const activeClientId = googleClientId || FALLBACK_GOOGLE_CLIENT_ID;
   if (typeof google !== 'undefined' && google.accounts && google.accounts.oauth2) {
     try {
       const client = google.accounts.oauth2.initTokenClient({
-        client_id: googleClientId,
+        client_id: activeClientId,
         scope: 'email profile openid',
         callback: async (tokenResponse) => {
           if (tokenResponse.access_token) {
@@ -395,8 +399,6 @@ registerForm.addEventListener('submit', async (e) => {
 // ==========================================
 // Real Google Sign-In via API (POST /api/auth/google)
 // ==========================================
-const FALLBACK_GOOGLE_CLIENT_ID = '848275108419-q0171b1bmm4l29lp9blgpin3fl4p1fnh.apps.googleusercontent.com';
-let googleClientId = FALLBACK_GOOGLE_CLIENT_ID;
 
 window.addEventListener('DOMContentLoaded', () => {
   // Auto-redirect to dashboard if token exists on this device
