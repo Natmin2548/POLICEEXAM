@@ -905,10 +905,78 @@
           </div>
         </div>
 
-        <!-- Exam Sets List (Hidden initially) -->
+        <!-- Subject Detail Panel with 2-Column Layout (Hidden initially) -->
         <div id="questionBankExamSetsList" style="display: none; margin-top: 16px;">
-          <div style="display: flex; flex-direction: column; gap: 12px;" id="examSetsContainer">
-            <!-- Dynamically populated via JS -->
+          <!-- Top Bar with Back Button & Subject Header -->
+          <div style="display: flex; justify-content: space-between; align-items: center; background: white; border-radius: 16px; padding: 16px 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-bottom: 20px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <button onclick="backToBankSubjects()" style="background: #F1F5F9; border: none; padding: 8px 14px; border-radius: 10px; cursor: pointer; font-family: inherit; font-weight: 700; color: #475569; display: flex; align-items: center; gap: 6px; transition: all 0.2s;">
+                <span>⬅</span> กลับเลือกวิชา
+              </button>
+              <h2 id="currentSubjectTitle" style="margin: 0; font-size: 18px; font-weight: 800; color: #1E293B;">วิชา: งานสารบรรณ</h2>
+            </div>
+            <span id="currentSubjectBadge" style="background: #EFF6FF; color: #2563EB; font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 999px;">หมวดหมู่เฉพาะ</span>
+          </div>
+
+          <!-- 2-Column Responsive Grid -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
+            
+            <!-- LEFT COLUMN: Available Exam Sets List -->
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #1E293B; display: flex; align-items: center; gap: 8px;">
+                  <span>📝</span> ชุดข้อสอบทั้งหมดในวิชานี้
+                </h3>
+                <span id="examSetsCountTag" style="font-size: 12px; color: #64748B; font-weight: 600;">3 ชุดข้อสอบ</span>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 14px;" id="examSetsContainer">
+                <!-- Dynamically populated via JS -->
+              </div>
+            </div>
+
+            <!-- RIGHT COLUMN: Subject Score Statistics & History -->
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #1E293B; display: flex; align-items: center; gap: 8px;">
+                  <span>📊</span> สถิติคะแนนที่เคยทำ
+                </h3>
+              </div>
+
+              <!-- Stats Summary Cards Grid -->
+              <div style="background: white; border-radius: 20px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-bottom: 16px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; text-align: center; margin-bottom: 16px;">
+                  <div style="background: #F8FAFC; border-radius: 14px; padding: 14px; border: 1px solid #E2E8F0;">
+                    <div style="font-size: 24px; font-weight: 900; color: #BD1B0B; line-height: 1;" id="subjStatBestScore">0%</div>
+                    <div style="font-size: 11px; font-weight: 600; color: #64748B; margin-top: 4px;">🏆 คะแนนสูงสุด</div>
+                  </div>
+                  <div style="background: #F8FAFC; border-radius: 14px; padding: 14px; border: 1px solid #E2E8F0;">
+                    <div style="font-size: 24px; font-weight: 900; color: #2563EB; line-height: 1;" id="subjStatAttempts">0 ครั้ง</div>
+                    <div style="font-size: 11px; font-weight: 600; color: #64748B; margin-top: 4px;">📊 จำนวนครั้งที่ทำ</div>
+                  </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; text-align: center;">
+                  <div style="background: #F8FAFC; border-radius: 14px; padding: 14px; border: 1px solid #E2E8F0;">
+                    <div style="font-size: 24px; font-weight: 900; color: #10B981; line-height: 1;" id="subjStatAvgScore">0%</div>
+                    <div style="font-size: 11px; font-weight: 600; color: #64748B; margin-top: 4px;">📈 คะแนนเฉลี่ย</div>
+                  </div>
+                  <div style="background: #F8FAFC; border-radius: 14px; padding: 14px; border: 1px solid #E2E8F0;">
+                    <div style="font-size: 16px; font-weight: 800; color: #D97706; line-height: 1.3;" id="subjStatMastery">มือใหม่ 🔰</div>
+                    <div style="font-size: 11px; font-weight: 600; color: #64748B; margin-top: 4px;">🔥 ระดับความชำนาญ</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- History Card List -->
+              <div style="background: white; border-radius: 20px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
+                <h4 style="margin: 0 0 12px 0; font-size: 14px; font-weight: 700; color: #1E293B;">🕒 ประวัติการทำข้อสอบล่าสุดวิชานี้</h4>
+                <div id="subjHistoryListContainer" style="display: flex; flex-direction: column; gap: 10px; max-height: 240px; overflow-y: auto;">
+                  <div style="text-align: center; color: #94A3B8; font-size: 13px; padding: 16px 0;">ยังไม่มีประวัติการทำข้อสอบในวิชานี้</div>
+                </div>
+              </div>
+
+            </div>
+
           </div>
         </div>
       </div>
