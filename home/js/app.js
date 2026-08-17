@@ -1667,38 +1667,35 @@ let currentBattleState = {
   mode: ''
 };
 
-async function fetchAndLaunchBattleDuel(subjectName, mode) {
-  try {
-    const res = await fetch(`${API_BASE}/api/exams/questions?subject=${encodeURIComponent(subjectName)}&count=10`);
-    const questions = res.ok ? await res.json() : [];
+// 4. Live Battle Duel Runner (Real Opponent & Real Subject)
+function startLiveBattleArenaWithQuestions(subjectName, opponent, questions) {
+  currentBattleState = {
+    subject: subjectName,
+    questions,
+    currentIndex: 0,
+    playerScore: 0,
+    opponentScore: 0,
+    opponentInfo: opponent,
+    mode: 'real_match'
+  };
 
-    if (!Array.isArray(questions) || questions.length === 0) {
-      showCenteredAlert('ไม่สามารถโหลดข้อสอบสุ่มวิชานี้ได้ กรุณาลองใหม่อีกครั้ง', { title: 'ข้อผิดพลาด' });
-      return;
-    }
+  const modal = document.getElementById('liveBattleArenaModal');
+  if (modal) modal.style.display = 'flex';
 
-    currentBattleState = {
-      subject: subjectName,
-      questions,
-      currentIndex: 0,
-      playerScore: 0,
-      opponentScore: 0,
-      mode
-    };
+  const pName = document.getElementById('arenaPlayerName');
+  const oName = document.getElementById('arenaOpponentName');
+  const oAvatar = document.getElementById('arenaOpponentAvatar');
+  const subjTag = document.getElementById('arenaSubjectTag');
 
-    const modal = document.getElementById('liveBattleArenaModal');
-    if (modal) modal.style.display = 'flex';
+  const oppName = opponent ? (opponent.fullName || opponent.username || 'ผู้เล่นตัวจริง') : 'ผู้เล่นตัวจริง';
+  const oppInitial = oppName.charAt(0);
 
-    const pName = document.getElementById('arenaPlayerName');
-    const subjTag = document.getElementById('arenaSubjectTag');
-    if (pName) pName.textContent = userProfile ? (userProfile.fullName || 'คุณ') : 'คุณ';
-    if (subjTag) subjTag.textContent = `วิชา: ${subjectName}`;
+  if (pName) pName.textContent = userProfile ? (userProfile.fullName || 'คุณ') : 'คุณ';
+  if (oName) oName.textContent = oppName;
+  if (oAvatar) oAvatar.textContent = oppInitial;
+  if (subjTag) subjTag.textContent = `วิชา: ${subjectName}`;
 
-    renderCurrentBattleQuestion();
-  } catch (err) {
-    console.error('Battle Duel Error:', err);
-    showCenteredAlert('เกิดข้อผิดพลาดในการโหลดฉากประลอง', { title: 'ข้อผิดพลาด' });
-  }
+  renderCurrentBattleQuestion();
 }
 
 function renderCurrentBattleQuestion() {
