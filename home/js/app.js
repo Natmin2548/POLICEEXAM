@@ -4179,12 +4179,20 @@ async function renderSubjectExamSets(subjectKey) {
     const history = getLocalQuizHistory(subjectKey);
 
     container.innerHTML = sets.map(s => {
-      const setRecords = history.filter(h => h.setId === s.id || h.setType === s.id);
+      const setRecords = history.filter(h => 
+        (h.setId && String(h.setId) === String(s.id)) ||
+        (h.setType && String(h.setType) === String(s.id)) ||
+        (h.setTitle && s.title && h.setTitle.trim() === s.title.trim()) ||
+        (h.subject && subjectKey && (h.subject === subjectKey || (subjectKey.includes('สารบรรณ') && h.subject.includes('สารบรรณ'))))
+      );
+
       let bestBadge = `<span style="font-size: 11px; background: #F1F5F9; color: #64748B; padding: 4px 10px; border-radius: 999px; font-weight: 600;">ยังไม่ได้ทำ</span>`;
+      let btnLabel = 'เริ่มทำข้อสอบ';
       
       if (setRecords.length > 0) {
         const maxScore = Math.max(...setRecords.map(r => r.scorePct || 0));
-        bestBadge = `<span style="font-size: 11px; background: #ECFDF5; color: #059669; padding: 4px 10px; border-radius: 999px; font-weight: 700;">ทำได้สูงสุด ${maxScore}%</span>`;
+        bestBadge = `<span style="font-size: 11px; background: #ECFDF5; color: #059669; padding: 4px 10px; border-radius: 999px; font-weight: 700;">ทำแล้ว (สูงสุด ${maxScore}%)</span>`;
+        btnLabel = 'ทำอีกครั้ง';
       }
 
       const color = s.color || '#2563EB';
@@ -4205,7 +4213,7 @@ async function renderSubjectExamSets(subjectKey) {
               ${bestBadge}
             </div>
             <button onclick="launchSelectedExamSet('${subjectKey}', '${s.id}', ${s.questionsCount || 10}, '${escapeHTML(s.title)}')" style="background: ${color}; color: white; border: none; padding: 8px 18px; border-radius: 12px; font-weight: 700; font-size: 13px; cursor: pointer; font-family: inherit; box-shadow: 0 4px 8px ${color}33; transition: all 0.2s;">
-              เริ่มทำข้อสอบ
+              ${btnLabel}
             </button>
           </div>
         </div>
@@ -4348,6 +4356,10 @@ window.startBankSubjectQuiz = async function(subjectKey, setId, questionsCount, 
 window.closeSubjectQuiz = function() {
   const modal = document.getElementById('subjectQuizModal');
   if (modal) modal.style.display = 'none';
+  if (currentSelectedBankSubject) {
+    renderSubjectExamSets(currentSelectedBankSubject);
+    renderSubjectStatistics(currentSelectedBankSubject);
+  }
 };
 
 function renderCurrentQuizQuestion() {
