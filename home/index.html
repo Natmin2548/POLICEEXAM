@@ -722,7 +722,46 @@
               </div>
               <svg class="menu-item-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="9 18 15 12 9 6" />
-                      <!-- Battle Custom Rooms Main Card -->
+              </svg>
+            </div>
+          </section>
+
+          <!-- Admin Panel Button (Hidden by default) -->
+          <button class="btn-profile-logout" id="btnAdminPanel" style="display: none; background: var(--surface-color); color: #BD1B0B; border: 1px solid #BD1B0B; margin-bottom: 12px;" onclick="window.location.href='admin.html?t=' + Date.now()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+            <span>จัดการระบบ (Admin Panel)</span>
+          </button>
+
+          <!-- Logout Button -->
+          <button class="btn-profile-logout" id="btnProfileLogout">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
+            </svg>
+            <span>ออกจากระบบ</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Battle View Content -->
+      <div id="battleView" class="tab-view">
+        <!-- Header title -->
+        <section class="profile-header-title-section">
+          <h1 class="profile-header-title">Battle Arena</h1>
+          <svg class="header-trophy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            style="color: #BD1B0B; width: 24px; height: 24px;">
+            <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
+            <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
+            <path d="M4 22h16" />
+            <path d="M10 14.66V17c0 .55-.45 1-1 1H4v2h16v-2h-5c-.55 0-1-.45-1-1v-2.34" />
+            <path d="M12 2a6 6 0 0 1 6 6v1H6V8a6 6 0 0 1 6-6z" />
+          </svg>
+        </section>
+
+        <!-- Left Column Wrapper -->
+        <div class="profile-left-column">
+          <!-- Battle Custom Rooms Main Card -->
           <section class="battle-elo-card" style="background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%); color: white; padding: 20px; border-radius: 24px; box-shadow: 0 10px 25px -5px rgba(15,23,42,0.3); margin-bottom: 20px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
               <div>
@@ -760,45 +799,6 @@
               <div style="text-align: center; padding: 24px 12px; color: #94A3B8; font-size: 13px;">
                 กำลังโหลดรายการห้องประลอง...
               </div>
-            </div>
-          </section>class="mode-icon-wrapper tournament-icon">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
-                    <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
-                    <path d="M4 22h16" />
-                    <path d="M10 14.66V17c0 .55-.45 1-1 1H4v2h16v-2h-5c-.55 0-1-.45-1-1v-2.34" />
-                    <path d="M12 2a6 6 0 0 1 6 6v1H6V8a6 6 0 0 1 6-6z" />
-                  </svg>
-                </div>
-                <div class="mode-info">
-                  <div class="mode-title-row">
-                    <span class="mode-title">Tournament</span>
-                    <span class="mode-badge badge-popular">Popular</span>
-                  </div>
-                  <span class="mode-subtitle">8 คน รางวัลพิเศษทุกสัปดาห์</span>
-                </div>
-              </div>
-              <svg class="menu-item-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
-            </div>
-
-            <!-- Mode 3: Invite Friend -->
-            <div class="battle-mode-item" onclick="openCustomRoomSetup()">
-              <div class="mode-item-left">
-                <div class="mode-icon-wrapper challenge-icon">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
-                  </svg>
-                </div>
-                <div class="mode-info">
-                  <span class="mode-title">ท้าเพื่อน</span>
-                  <span class="mode-subtitle">สร้างห้องและส่งลิงก์</span>
-                </div>
-              </div>
-              <svg class="menu-item-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
             </div>
           </section>
         </div>
