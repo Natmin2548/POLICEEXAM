@@ -676,7 +676,7 @@ app.get('/api/exams/sets', async (req, res) => {
       createdAt: s.createdAt
     }));
 
-    // If Saraban category and no DB sets created yet, supply standard Saraban set
+    // If category is Saraban, General Math, etc., supply standard fallback sets if DB has no sets yet
     if (category && (category.includes('สารบรรณ') || category.includes('54')) && result.length === 0) {
       result = [
         {
@@ -685,6 +685,17 @@ app.get('/api/exams/sets', async (req, res) => {
           desc: 'รวมข้อสอบระเบียบงานสารบรรณครบทุกหมวด ทั้ง 54 ข้อ พร้อมคำอธิบายเฉลยอย่างละเอียด',
           questionsCount: 54,
           timeMinutes: 60,
+          tag: 'ชุดมาตรฐาน'
+        }
+      ];
+    } else if (category && (category.includes('ทั่วไป') || category.includes('คณิต')) && result.length === 0) {
+      result = [
+        {
+          id: 'general_math_1',
+          title: 'ชุดข้อสอบความสามารถทั่วไป (คณิตศาสตร์และเหตุผล) ชุดที่ 1',
+          desc: 'แบบทดสอบวิชาความสามารถทั่วไป การคิดคำนวณ คณิตศาสตร์ อนุกรม และการเปรียบเทียบเชิงเหตุผล',
+          questionsCount: 10,
+          timeMinutes: 15,
           tag: 'ชุดมาตรฐาน'
         }
       ];
@@ -843,6 +854,72 @@ app.get('/api/exams/questions', async (req, res) => {
         explanation: "บทที่ ๔ ข้อ ๑.๔ กำหนดการส่งคืนหนังสือไม่อยู่ในความรับผิดชอบ ต้องลงชื่อโดยผู้ดำรงตำแหน่งไม่ต่ำกว่า ผู้กำกับการ (ผกก.) หรือเทียบเท่า"
       }
     ];
+
+    if (setId === 'general_math_1' || (category && (category.includes('ทั่วไป') || category.includes('คณิต')))) {
+      const mathQuestions = [
+        {
+          id: 1,
+          questionText: "ถ้า A > B และ B = C ข้อใดถูกต้องที่สุด?",
+          choices: [
+            "A > C",
+            "A = C",
+            "A < C",
+            "สรุปไม่ได้"
+          ],
+          correctAnswer: 1,
+          explanation: "เนื่องจาก B เท่ากับ C ดังนั้นเมื่อ A มากกว่า B จึงสรุปได้ว่า A ต้องมากกว่า C ด้วย (A > C)"
+        },
+        {
+          id: 2,
+          questionText: "ผลรวมของเลขจำนวนเต็มตั้งแต่ 1 ถึง 100 เท่ากับเท่าใด?",
+          choices: [
+            "5,050",
+            "5,000",
+            "5,100",
+            "4,950"
+          ],
+          correctAnswer: 1,
+          explanation: "ใช้สูตรผลบวกอนุกรมเลขคณิต N(N+1)/2 = 100(101)/2 = 5,050"
+        },
+        {
+          id: 3,
+          questionText: "นายดำอายุมากกว่านายแดง 5 ปี อีก 3 ปีข้างหน้าผลรวมอายุทั้งสองคนเป็น 45 ปี ปัจจุบันนายแดงอายุเท่าใด?",
+          choices: [
+            "17 ปี",
+            "22 ปี",
+            "15 ปี",
+            "20 ปี"
+          ],
+          correctAnswer: 1,
+          explanation: "สมมติปัจจุบันแดงอายุ x ปี ดำอายุ x+5 ปี อีก 3 ปีข้างหน้า ผลรวมอายุคือ (x+3) + (x+5+3) = 45 => 2x + 11 = 45 => 2x = 34 => x = 17 ปี"
+        },
+        {
+          id: 4,
+          questionText: "สินค้าชิ้นหนึ่งติดราคาไว้ 1,000 บาท ลดราคา 20% แล้วยังได้กำไร 25% ต้นทุนของสินค้าชิ้นนี้คือเท่าใด?",
+          choices: [
+            "640 บาท",
+            "700 บาท",
+            "750 บาท",
+            "800 บาท"
+          ],
+          correctAnswer: 1,
+          explanation: "ราคาขายหลังลด 20% = 1,000 x 0.80 = 800 บาท. ขาย 800 บาทได้กำไร 25% แสดงว่า 800 = ต้นทุน x 1.25 => ต้นทุน = 800 / 1.25 = 640 บาท"
+        },
+        {
+          id: 5,
+          questionText: "อนุกรมเลข 2, 5, 10, 17, 26, ... จำนวนถัดไปคือเลขใด?",
+          choices: [
+            "37",
+            "35",
+            "36",
+            "38"
+          ],
+          correctAnswer: 1,
+          explanation: "ระยะห่างของอนุกรมเพิ่มขึ้นทีละเลขคี่: +3, +5, +7, +9, +11 ... ดังนั้น 26 + 11 = 37"
+        }
+      ];
+      return res.json(mathQuestions.slice(0, targetCount));
+    }
 
     res.json(sarabanQuestions.slice(0, targetCount));
   } catch (err) {
