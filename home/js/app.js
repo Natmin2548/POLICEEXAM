@@ -1427,30 +1427,7 @@ function showMatchFoundModal(subjectName, opponent, questions) {
   }
 }
 
-function startLiveBattleArenaWithQuestions(subjectName, opponent, questions) {
-  currentBattleState = {
-    subject: subjectName,
-    questions,
-    currentIndex: 0,
-    playerScore: 0,
-    opponentScore: 0,
-    opponentInfo: opponent,
-    mode: 'real_match'
-  };
 
-  const modal = document.getElementById('liveBattleArenaModal');
-  if (modal) modal.style.display = 'flex';
-
-  const pName = document.getElementById('arenaPlayerName');
-  const oName = document.getElementById('arenaOpponentName');
-  const subjTag = document.getElementById('arenaSubjectTag');
-
-  if (pName) pName.textContent = userProfile ? (userProfile.fullName || 'คุณ') : 'คุณ';
-  if (oName) oName.textContent = opponent ? (opponent.fullName || opponent.username || 'คู่ต่อสู้') : 'คู่ต่อสู้';
-  if (subjTag) subjTag.textContent = `วิชา: ${subjectName}`;
-
-  renderCurrentBattleQuestion();
-}
 
 window.confirmSubjectSelection = function(subjectName) {
   closeBattleSubjectSelectModal();
