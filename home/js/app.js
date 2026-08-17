@@ -1266,12 +1266,27 @@ window.triggerWheelSpin = function() {
   requestAnimationFrame(animateWheel);
 };
 
+// Auto-random subject selector (no manual wheel spin needed)
+const BATTLE_SUBJECT_LIST = [
+  'งานสารบรรณ',
+  'ความสามารถทั่วไป',
+  'ภาษาไทย',
+  'ภาษาอังกฤษ',
+  'ความรู้สังคมฯ',
+  'กฎหมายตำรวจ',
+  'คอมพิวเตอร์'
+];
+
+function getRandomBattleSubject() {
+  const randIdx = Math.floor(Math.random() * BATTLE_SUBJECT_LIST.length);
+  return BATTLE_SUBJECT_LIST[randIdx];
+}
+
 // 2. Battle Modes: 1v1, Ranked (±200 Pts), Tournament (3-8 P)
-window.startNormalBattle1v1 = function() {
+window.startNormalBattle1v1 = async function() {
   closeBattleHub();
-  openRouletteWheelModal(async (selectedSubject) => {
-    await fetchAndLaunchBattleDuel(selectedSubject, '1v1_normal');
-  });
+  const selectedSubject = getRandomBattleSubject();
+  await fetchAndLaunchBattleDuel(selectedSubject, '1v1_normal');
 };
 
 window.startRankedBattle = function() {
@@ -1279,10 +1294,9 @@ window.startRankedBattle = function() {
   const currentPts = userProfile ? (userProfile.points || 0) : 0;
   showCenteredAlert(`ระบบกำลังค้นหาคู่ต่อสู้สายจัดอันดับที่มีคะแนนต่างกันไม่เกิน 200 แต้ม (คะแนนของคุณ: ${currentPts} แต้ม)`, { title: '🏆 Ranked Matchmaking' });
   
-  setTimeout(() => {
-    openRouletteWheelModal(async (selectedSubject) => {
-      await fetchAndLaunchBattleDuel(selectedSubject, 'ranked');
-    });
+  setTimeout(async () => {
+    const selectedSubject = getRandomBattleSubject();
+    await fetchAndLaunchBattleDuel(selectedSubject, 'ranked');
   }, 1200);
 };
 
@@ -1311,16 +1325,15 @@ window.startTournamentBattle = function() {
   `;
   document.body.appendChild(modal);
 
-  const timer = setInterval(() => {
+  const timer = setInterval(async () => {
     count--;
     const el = document.getElementById('lblTourneyCount');
     if (el) el.textContent = count;
     if (count <= 0) {
       clearInterval(timer);
       modal.remove();
-      openRouletteWheelModal(async (selectedSubject) => {
-        await fetchAndLaunchBattleDuel(selectedSubject, 'tournament');
-      });
+      const selectedSubject = getRandomBattleSubject();
+      await fetchAndLaunchBattleDuel(selectedSubject, 'tournament');
     }
   }, 1000);
 };
@@ -1446,11 +1459,10 @@ window.leaveRoomLobby = function() {
   if (modal) modal.style.display = 'none';
 };
 
-window.hostTriggerStartDuel = function() {
+window.hostTriggerStartDuel = async function() {
   leaveRoomLobby();
-  openRouletteWheelModal(async (selectedSubject) => {
-    await fetchAndLaunchBattleDuel(selectedSubject, 'custom_room');
-  });
+  const selectedSubject = getRandomBattleSubject();
+  await fetchAndLaunchBattleDuel(selectedSubject, 'custom_room');
 };
 
 // Check if loaded with ?room=CODE
