@@ -4280,9 +4280,219 @@ function renderSubjectStatistics(subjectKey) {
 }
 
 window.launchSelectedExamSet = function(subjectKey, setId, questionsCount, setTitle) {
-  if (window.startBankSubjectQuiz) {
-    window.startBankSubjectQuiz(subjectKey, setId, questionsCount, setTitle);
-  } else {
-    showCenteredAlert(`พร้อมเริ่มทำข้อสอบ: ${setTitle} (${questionsCount} ข้อ)`);
+  startBankSubjectQuiz(subjectKey, setId, questionsCount, setTitle);
+};
+
+let currentQuizState = {
+  subjectKey: '',
+  setId: '',
+  setTitle: '',
+  questions: [],
+  currentIndex: 0,
+  userAnswers: {},
+  score: 0
+};
+
+window.startBankSubjectQuiz = async function(subjectKey, setId, questionsCount, setTitle) {
+  const modal = document.getElementById('subjectQuizModal');
+  const badgeEl = document.getElementById('quizSubjectBadge');
+  const titleEl = document.getElementById('quizTitle');
+  const bodyContent = document.getElementById('quizBodyContent');
+  const stepText = document.getElementById('quizStepText');
+  const btnNext = document.getElementById('btnNextQuiz');
+  const progressBar = document.getElementById('quizProgressBar');
+
+  if (!modal || !bodyContent) return;
+
+  modal.style.display = 'flex';
+  if (badgeEl) badgeEl.textContent = subjectKey;
+  if (titleEl) titleEl.textContent = setTitle || 'ทำข้อสอบ';
+  if (stepText) stepText.textContent = 'กำลังโหลดข้อสอบ...';
+  if (btnNext) btnNext.style.display = 'none';
+  if (progressBar) progressBar.style.width = '5%';
+
+  bodyContent.innerHTML = '<div style="text-align: center; color: #64748B; padding: 40px; font-size: 14px;">กำลังดาวน์โหลดชุดข้อสอบจากระบบ...</div>';
+
+  try {
+    const res = await fetch(`${API_BASE}/api/exams/questions?subject=${encodeURIComponent(subjectKey)}&setId=${encodeURIComponent(setId)}&count=${questionsCount}`);
+    const questions = res.ok ? await res.json() : [];
+
+    if (!Array.isArray(questions) || questions.length === 0) {
+      bodyContent.innerHTML = `
+        <div style="text-align: center; padding: 40px 20px;">
+          <h4 style="font-size: 16px; color: #475569; margin-bottom: 8px;">ไม่พบข้อสอบในระบบ</h4>
+          <p style="font-size: 13px; color: #94A3B8; margin-bottom: 20px;">ยังไม่มีข้อสอบสำหรับชุดนี้ สามารถปิดหน้าต่างนี้และลองเลือกชุดอื่นได้</p>
+          <button onclick="closeSubjectQuiz()" style="background: #BD1B0B; color: white; border: none; padding: 10px 24px; border-radius: 12px; font-weight: 700; cursor: pointer; font-family: inherit;">ปิด</button>
+        </div>
+      `;
+      return;
+    }
+
+    currentQuizState = {
+      subjectKey,
+      setId,
+      setTitle: setTitle || 'ทำข้อสอบ',
+      questions,
+      currentIndex: 0,
+      userAnswers: {},
+      score: 0
+    };
+
+    renderCurrentQuizQuestion();
+  } catch (err) {
+    console.error('Start quiz error:', err);
+    bodyContent.innerHTML = '<div style="text-align: center; color: #EF4444; padding: 30px;">เกิดข้อผิดพลาดในการโหลดแบบทดสอบ</div>';
   }
 };
+
+window.closeSubjectQuiz = function() {
+  const modal = document.getElementById('subjectQuizModal');
+  if (modal) modal.style.display = 'none';
+};
+
+function renderCurrentQuizQuestion() {
+  const { questions, currentIndex, userAnswers } = currentQuizState;
+  const bodyContent = document.getElementById('quizBodyContent');
+  const stepText = document.getElementById('quizStepText');
+  const btnNext = document.getElementById('btnNextQuiz');
+  const progressBar = document.getElementById('quizProgressBar');
+
+  if (!questions || questions.length === 0 || currentIndex >= questions.length) {
+    renderQuizResults();
+    return;
+  }
+
+  const q = questions[currentIndex];
+  const progressPct = Math.round(((currentIndex + 1) / questions.length) * 100);
+  if (progressBar) progressBar.style.width = `${progressPct}%`;
+  if (stepText) stepText.textContent = `ข้อที่ ${currentIndex + 1} / ${questions.length}`;
+
+  const selectedAnswer = userAnswers[currentIndex];
+  const isAnswered = selectedAnswer !== undefined;
+
+  if (btnNext) {
+    btnNext.style.display = isAnswered ? 'block' : 'none';
+    btnNext.textContent = (currentIndex === questions.length - 1) ? 'ดูสรุปผลคะแนน' : 'ข้อถัดไป ➔';
+  }
+
+  let choicesHtml = q.choices.map((choiceText, idx) => {
+    const choiceNum = idx + 1;
+    let btnStyle = 'background: #F8FAFC; border: 1px solid #E2E8F0; color: #1E293B;';
+    
+    if (isAnswered) {
+      if (choiceNum === q.correctAnswer) {
+        btnStyle = 'background: #ECFDF5; border: 2px solid #10B981; color: #065F46; font-weight: 700;';
+      } else if (choiceNum === selectedAnswer) {
+        btnStyle = 'background: #FEF2F2; border: 2px solid #EF4444; color: #991B1B; font-weight: 700;';
+      } else {
+        btnStyle = 'background: #F8FAFC; border: 1px solid #E2E8F0; color: #94A3B8; opacity: 0.6;';
+      }
+    }
+
+    return `
+      <button onclick="selectQuizAnswer(${choiceNum})" ${isAnswered ? 'disabled' : ''} style="${btnStyle} width: 100%; text-align: left; padding: 14px 18px; border-radius: 14px; font-size: 14px; font-family: inherit; margin-bottom: 10px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 12px; line-height: 1.5;">
+        <span style="width: 28px; height: 28px; border-radius: 50%; background: rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; flex-shrink: 0;">${choiceNum}</span>
+        <span>${escapeHTML(choiceText)}</span>
+      </button>
+    `;
+  }).join('');
+
+  let explanationHtml = '';
+  if (isAnswered && q.explanation) {
+    const isCorrect = selectedAnswer === q.correctAnswer;
+    explanationHtml = `
+      <div style="margin-top: 16px; background: ${isCorrect ? '#EFF6FF' : '#FFFBEB'}; border: 1px solid ${isCorrect ? '#BFDBFE' : '#FDE68A'}; border-radius: 14px; padding: 16px; font-size: 13px; color: ${isCorrect ? '#1E40AF' : '#92400E'};">
+        <strong style="display: block; margin-bottom: 4px;">เฉลยคำอธิบาย:</strong>
+        ${escapeHTML(q.explanation)}
+      </div>
+    `;
+  }
+
+  bodyContent.innerHTML = `
+    <div>
+      <h3 style="font-size: 16px; font-weight: 800; color: #1E293B; line-height: 1.6; margin-top: 0; margin-bottom: 20px;">
+        ${currentIndex + 1}. ${escapeHTML(q.questionText)}
+      </h3>
+      <div>
+        ${choicesHtml}
+      </div>
+      ${explanationHtml}
+    </div>
+  `;
+}
+
+window.selectQuizAnswer = function(choiceNum) {
+  const { currentIndex, questions } = currentQuizState;
+  currentQuizState.userAnswers[currentIndex] = choiceNum;
+
+  if (choiceNum === questions[currentIndex].correctAnswer) {
+    currentQuizState.score++;
+  }
+
+  renderCurrentQuizQuestion();
+};
+
+window.nextQuizQuestion = function() {
+  currentQuizState.currentIndex++;
+  renderCurrentQuizQuestion();
+};
+
+function renderQuizResults() {
+  const { subjectKey, setId, setTitle, questions, score } = currentQuizState;
+  const bodyContent = document.getElementById('quizBodyContent');
+  const stepText = document.getElementById('quizStepText');
+  const btnNext = document.getElementById('btnNextQuiz');
+  const progressBar = document.getElementById('quizProgressBar');
+
+  if (btnNext) btnNext.style.display = 'none';
+  if (stepText) stepText.textContent = 'สรุปผลสอบ';
+  if (progressBar) progressBar.style.width = '100%';
+
+  const total = questions.length;
+  const pct = Math.round((score / total) * 100);
+
+  saveQuizHistoryRecord({
+    subject: subjectKey,
+    setId,
+    setTitle,
+    scorePct: pct,
+    correctCount: score,
+    totalQuestions: total,
+    date: new Date().toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })
+  });
+
+  bodyContent.innerHTML = `
+    <div style="text-align: center; padding: 20px 10px;">
+      <div style="font-size: 44px; font-weight: 900; color: ${pct >= 70 ? '#10B981' : (pct >= 50 ? '#F59E0B' : '#EF4444')}; line-height: 1; margin-bottom: 8px;">
+        ${pct}%
+      </div>
+      <h3 style="margin: 0 0 16px 0; font-size: 18px; font-weight: 800; color: #1E293B;">
+        ${pct >= 80 ? 'ดีเยี่ยม! ผ่านเกณฑ์ระดับสูง' : (pct >= 60 ? 'ผ่านเกณฑ์ทดสอบ' : 'ควรทบทวนเนื้อหาเพิ่มเติม')}
+      </h3>
+      <p style="font-size: 14px; color: #64748B; margin-bottom: 24px;">
+        ตอบถูกต้อง ${score} จากทั้งหมด ${total} ข้อ
+      </p>
+
+      <div style="display: flex; gap: 12px; justify-content: center;">
+        <button onclick="startBankSubjectQuiz('${subjectKey}', '${setId}', ${total}, '${escapeHTML(setTitle)}')" style="flex: 1; max-width: 200px; padding: 12px; border-radius: 12px; background: #BD1B0B; color: white; border: none; font-weight: 700; font-family: inherit; cursor: pointer;">
+          ทำอีกครั้ง
+        </button>
+        <button onclick="closeSubjectQuiz(); renderSubjectStatistics('${subjectKey}'); switchSubjectSubtab('stats');" style="flex: 1; max-width: 200px; padding: 12px; border-radius: 12px; background: #F1F5F9; color: #475569; border: 1px solid #CBD5E1; font-weight: 700; font-family: inherit; cursor: pointer;">
+          ดูสถิติคะแนน
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+function saveQuizHistoryRecord(record) {
+  try {
+    const raw = localStorage.getItem('userQuizHistory');
+    let list = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(list)) list = [];
+    list.unshift(record);
+    localStorage.setItem('userQuizHistory', JSON.stringify(list.slice(0, 50)));
+  } catch (e) {
+    console.error('Save quiz record error:', e);
+  }
+}
