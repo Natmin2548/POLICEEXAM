@@ -1277,49 +1277,198 @@ const BATTLE_SUBJECT_LIST = [
   'คอมพิวเตอร์'
 ];
 
-function getRandomBattleSubject() {
-  const randIdx = Math.floor(Math.random() * BATTLE_SUBJECT_LIST.length);
-  return BATTLE_SUBJECT_LIST[randIdx];
+// Real-Time Matchmaking Engine (No Demo / No Bots)
+let realMatchPollInterval = null;
+let searchingSubject = '';
+let searchingIsRanked = false;
+
+window.startRealMatchmakingPoll = function(subjectName, isRanked = false) {
+  searchingSubject = subjectName;
+  searchingIsRanked = isRanked;
+
+  // Show Searching Modal
+  const modal = document.createElement('div');
+  modal.id = 'realMatchSearchingModal';
+  modal.style.position = 'fixed';
+  modal.style.top = '0'; modal.style.left = '0'; modal.style.width = '100vw'; modal.style.height = '100vh';
+  modal.style.background = 'rgba(15, 23, 42, 0.85)'; modal.style.zIndex = '9999'; modal.style.display = 'flex';
+  modal.style.alignItems = 'center'; modal.style.justifyContent = 'center'; modal.style.fontFamily = 'Kanit, sans-serif';
+
+  modal.innerHTML = `
+    <div style="background: white; border-radius: 28px; padding: 32px 24px; text-align: center; max-width: 440px; width: 90%; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3);">
+      <div class="searching-spinner" style="width: 64px; height: 64px; border: 5px solid #F1F5F9; border-top-color: #BD1B0B; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px auto;"></div>
+      <span style="background: #FEF2F2; color: #BD1B0B; font-weight: 800; padding: 4px 12px; border-radius: 999px; font-size: 12px;">Real Online Players Only</span>
+      <h3 style="font-size: 20px; font-weight: 800; margin: 10px 0 6px 0; color: #1E293B;">กำลังรอคู่ต่อสู้ตัวจริงเข้ามา...</h3>
+      <p style="font-size: 13px; color: #64748B; margin-bottom: 16px;" id="lblRealSearchSubtext">วิชาประลอง: <strong style="color: #BD1B0B;">${escapeHTML(subjectName)}</strong> ${isRanked ? '(โหมด Ranked ±200 แต้ม)' : ''}</p>
+      
+      <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 16px; padding: 12px; margin-bottom: 20px; font-size: 13px; color: #475569;">
+        ⏱️ เวลาที่รอ: <strong id="lblRealSearchTimer" style="color: #BD1B0B; font-size: 15px;">0 วินาที</strong>
+        <p style="margin: 4px 0 0 0; font-size: 11px; color: #94A3B8;">(ระบบจับคู่เฉพาะผู้เล่นจริงออนไลน์เท่านั้น ไม่มีบอท หากยังไม่มีผู้เล่นเข้ามา จะรอต่อไปเรื่อยๆ)</p>
+      </div>
+
+      <button onclick="cancelRealMatchmakingPoll()" style="background: #F1F5F9; color: #64748B; border: 1px solid #CBD5E1; padding: 12px 24px; border-radius: 14px; font-weight: 700; font-size: 14px; width: 100%; cursor: pointer; font-family: inherit;">
+        ❌ ยกเลิกการค้นหา
+      </button>
+    </div>
+  `;
+
+  if (!document.getElementById('spin-keyframes')) {
+    const style = document.createElement('style');
+    style.id = 'spin-keyframes';
+    style.innerHTML = `@keyframes spin { to { transform: rotate(360deg); } }`;
+    document.head.appendChild(style);
+  }
+
+  document.body.appendChild(modal);
+
+  let searchSeconds = 0;
+  if (realMatchPollInterval) clearInterval(realMatchPollInterval);
+
+  async function poll() {
+    searchSeconds += 2;
+    const timerEl = document.getElementById('lblRealSearchTimer');
+    if (timerEl) timerEl.textContent = `${searchSeconds} วินาที`;
+
+    try {
+      const res = await fetch(`${API_BASE}/api/exams/battle/poll-match`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userToken}` },
+        body: JSON.stringify({ subject: subjectName, isRanked })
+      });
+      const data = await res.json();
+
+      if (data.status === 'matched') {
+        clearInterval(realMatchPollInterval);
+        const searchModal = document.getElementById('realMatchSearchingModal');
+        if (searchModal) searchModal.remove();
+
+        showMatchFoundModal(data.subject || subjectName, data.opponent, data.questions);
+      }
+    } catch (err) {
+      console.error('Poll match error:', err);
+    }
+  }
+
+  poll(); // Initial poll
+  realMatchPollInterval = setInterval(poll, 2000);
+};
+
+window.cancelRealMatchmakingPoll = async function() {
+  if (realMatchPollInterval) clearInterval(realMatchPollInterval);
+  const modal = document.getElementById('realMatchSearchingModal');
+  if (modal) modal.remove();
+
+  try {
+    await fetch(`${API_BASE}/api/exams/battle/leave-queue`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userToken}` }
+    });
+  } catch (e) {
+    console.error('Leave queue error:', e);
+  }
+};
+
+function showMatchFoundModal(subjectName, opponent, questions) {
+  const modal = document.createElement('div');
+  modal.id = 'realMatchFoundModal';
+  modal.style.position = 'fixed';
+  modal.style.top = '0'; modal.style.left = '0'; modal.style.width = '100vw'; modal.style.height = '100vh';
+  modal.style.background = 'rgba(15, 23, 42, 0.9)'; modal.style.zIndex = '9999'; modal.style.display = 'flex';
+  modal.style.alignItems = 'center'; modal.style.justifyContent = 'center'; modal.style.fontFamily = 'Kanit, sans-serif';
+
+  const userInitial = userProfile ? (userProfile.fullName || 'คุณ').charAt(0) : 'ค';
+  const userPts = userProfile ? (userProfile.points || 0) : 0;
+  const oppName = opponent ? (opponent.fullName || opponent.username || 'ผู้เล่นตัวจริง') : 'ผู้เล่นตัวจริง';
+  const oppInitial = oppName.charAt(0);
+  const oppPts = opponent ? (opponent.points || 0) : 0;
+
+  modal.innerHTML = `
+    <div style="background: white; border-radius: 28px; padding: 32px 24px; text-align: center; max-width: 480px; width: 90%; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3);">
+      <span style="background: #ECFDF5; color: #059669; font-weight: 800; padding: 4px 14px; border-radius: 999px; font-size: 12px;">🎉 พบคู่ต่อสู้ตัวจริงแล้ว!</span>
+      
+      <div style="margin: 14px 0 18px 0; background: #FEF2F2; border: 1px solid #FECACA; border-radius: 16px; padding: 12px;">
+        <span style="font-size: 12px; color: #991B1B; font-weight: 700; display: block;">วิชาที่จับคู่ประลอง:</span>
+        <h3 style="margin: 2px 0 0 0; font-size: 18px; font-weight: 900; color: #BD1B0B;">${escapeHTML(subjectName)}</h3>
+      </div>
+
+      <!-- VS Card -->
+      <div style="display: flex; justify-content: space-around; align-items: center; background: #F8FAFC; border: 1px solid #E2E8F0; padding: 20px 14px; border-radius: 20px; margin-bottom: 24px;">
+        <!-- Player 1 -->
+        <div style="text-align: center; flex: 1;">
+          <div style="width: 54px; height: 54px; border-radius: 50%; background: #BD1B0B; color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; margin: 0 auto 8px auto; font-size: 20px; box-shadow: 0 4px 12px rgba(189,27,11,0.3);">${userInitial}</div>
+          <span style="font-size: 14px; font-weight: 800; color: #1E293B; display: block;">${escapeHTML(userProfile ? (userProfile.fullName || 'คุณ') : 'คุณ')}</span>
+          <span style="font-size: 12px; color: #64748B; font-weight: 600;">คะแนน ${userPts} แต้ม</span>
+        </div>
+
+        <div style="font-size: 22px; font-weight: 900; color: #BD1B0B; font-style: italic; padding: 0 10px;">VS</div>
+
+        <!-- Player 2 (Opponent) -->
+        <div style="text-align: center; flex: 1;">
+          <div style="width: 54px; height: 54px; border-radius: 50%; background: #D97706; color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; margin: 0 auto 8px auto; font-size: 20px; box-shadow: 0 4px 12px rgba(217,119,6,0.3);">${oppInitial}</div>
+          <span style="font-size: 14px; font-weight: 800; color: #1E293B; display: block;">${escapeHTML(oppName)}</span>
+          <span style="font-size: 12px; color: #64748B; font-weight: 600;">คะแนน ${oppPts} แต้ม</span>
+        </div>
+      </div>
+
+      <button id="btnStartRealDuel" style="background: #BD1B0B; color: white; border: none; padding: 14px 28px; border-radius: 14px; font-weight: 800; font-size: 16px; width: 100%; cursor: pointer; font-family: inherit; box-shadow: 0 4px 12px rgba(189,27,11,0.3);">
+        ⚔️ เริ่มประลองดวลเดี่ยว (10 ข้อ)
+      </button>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  const btnStart = document.getElementById('btnStartRealDuel');
+  if (btnStart) {
+    btnStart.addEventListener('click', () => {
+      modal.remove();
+      startLiveBattleArenaWithQuestions(subjectName, opponent, questions);
+    });
+  }
 }
 
-// Manual Subject Selector Modal State (for Ranked, Tournament, Custom Room)
-let pendingSubjectMode = '';
+function startLiveBattleArenaWithQuestions(subjectName, opponent, questions) {
+  currentBattleState = {
+    subject: subjectName,
+    questions,
+    currentIndex: 0,
+    playerScore: 0,
+    opponentScore: 0,
+    opponentInfo: opponent,
+    mode: 'real_match'
+  };
 
-window.openBattleSubjectSelectModal = function(mode, modeLabel) {
-  pendingSubjectMode = mode;
-  const modal = document.getElementById('battleSubjectSelectModal');
-  const badge = document.getElementById('lblSubjectSelectModeBadge');
+  const modal = document.getElementById('liveBattleArenaModal');
   if (modal) modal.style.display = 'flex';
-  if (badge) badge.textContent = modeLabel || 'เลือกวิชาประลอง';
-};
 
-window.closeBattleSubjectSelectModal = function() {
-  const modal = document.getElementById('battleSubjectSelectModal');
-  if (modal) modal.style.display = 'none';
-};
+  const pName = document.getElementById('arenaPlayerName');
+  const oName = document.getElementById('arenaOpponentName');
+  const subjTag = document.getElementById('arenaSubjectTag');
 
-window.confirmSubjectSelection = async function(subjectName) {
+  if (pName) pName.textContent = userProfile ? (userProfile.fullName || 'คุณ') : 'คุณ';
+  if (oName) oName.textContent = opponent ? (opponent.fullName || opponent.username || 'คู่ต่อสู้') : 'คู่ต่อสู้';
+  if (subjTag) subjTag.textContent = `วิชา: ${subjectName}`;
+
+  renderCurrentBattleQuestion();
+}
+
+window.confirmSubjectSelection = function(subjectName) {
   closeBattleSubjectSelectModal();
-  await fetchAndLaunchBattleDuel(subjectName, pendingSubjectMode || 'manual');
+  startRealMatchmakingPoll(subjectName, pendingSubjectMode === 'ranked');
 };
 
 // 2. Battle Modes
 // Quick Match: Auto-random subject (1v1)
-window.startNormalBattle1v1 = async function() {
+window.startNormalBattle1v1 = function() {
   closeBattleHub();
   const selectedSubject = getRandomBattleSubject();
-  await fetchAndLaunchBattleDuel(selectedSubject, '1v1_normal');
+  startRealMatchmakingPoll(selectedSubject, false);
 };
 
 // Ranked Battle: User selects subject manually
 window.startRankedBattle = function() {
   closeBattleHub();
-  const currentPts = userProfile ? (userProfile.points || 0) : 0;
-  showCenteredAlert(`ระบบกำลังจับคู่สายจัดอันดับที่มีคะแนนต่างกันไม่เกิน 200 แต้ม (คะแนนของคุณ: ${currentPts} แต้ม)`, { title: '🏆 Ranked Matchmaking' });
-  
-  setTimeout(() => {
-    openBattleSubjectSelectModal('ranked', '🏆 ประลองจัดอันดับ');
-  }, 1200);
+  openBattleSubjectSelectModal('ranked', '🏆 ประลองจัดอันดับ (±200 แต้ม)');
 };
 
 // Tournament Battle: User selects subject manually after 10s countdown

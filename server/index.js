@@ -5664,9 +5664,9 @@ app.get('/api/exams/battle-opponent', authenticateToken, async (req, res) => {
   }
 });
 
-// POST to join and poll matchmaking queue
+// POST to join and poll real-time matchmaking queue
 app.post('/api/exams/battle/poll-match', authenticateToken, async (req, res) => {
-  const { subject } = req.body;
+  const { subject, isRanked } = req.body;
   const now = Date.now();
 
   try {
@@ -5689,6 +5689,7 @@ app.post('/api/exams/battle/poll-match', authenticateToken, async (req, res) => 
       return res.json({
         status: 'matched',
         matchId: existingMatch.matchId,
+        subject: existingMatch.subject,
         opponent,
         questions: existingMatch.questions
       });
@@ -5698,7 +5699,7 @@ app.post('/api/exams/battle/poll-match', authenticateToken, async (req, res) => 
     let selfInQueue = battleQueue.find(u => u.userId === req.user.userId);
     if (selfInQueue) {
       selfInQueue.lastPoll = now;
-      selfInQueue.subject = subject;
+      selfInQueue.subject = subject || 'ทั่วไป';
     } else {
       const user = await prisma.user.findUnique({
         where: { id: req.user.userId }
@@ -5709,16 +5710,26 @@ app.post('/api/exams/battle/poll-match', authenticateToken, async (req, res) => 
           username: user.username,
           fullName: user.fullName || user.username,
           level: user.level || 1,
+          points: user.points || 0,
           faceImage: user.faceImage,
-          subject,
+          subject: subject || 'ทั่วไป',
           lastPoll: now
         };
         battleQueue.push(selfInQueue);
       }
     }
 
-    // 4. Try to find another active user in queue for the same subject
-    const partner = battleQueue.find(u => u.userId !== req.user.userId && u.subject === subject);
+    // 4. Try to find another REAL active user in queue
+    let partner = null;
+    if (isRanked && selfInQueue) {
+      partner = battleQueue.find(u => u.userId !== req.user.userId && Math.abs((u.points || 0) - (selfInQueue.points || 0)) <= 200);
+    } else {
+      partner = battleQueue.find(u => u.userId !== req.user.userId && u.subject === subject);
+      if (!partner) {
+        partner = battleQueue.find(u => u.userId !== req.user.userId);
+      }
+    }
+
     if (partner) {
       // Remove both from queue
       const idx1 = battleQueue.findIndex(u => u.userId === req.user.userId);
@@ -5727,8 +5738,9 @@ app.post('/api/exams/battle/poll-match', authenticateToken, async (req, res) => 
       if (idx2 !== -1) battleQueue.splice(idx2, 1);
 
       // Fetch questions
+      const selectedSubj = subject || partner.subject || 'ทั่วไป';
       const sets = await prisma.examSet.findMany({
-        where: { category: subject },
+        where: { category: selectedSubj },
         select: { id: true }
       });
       const setIds = sets.map(s => s.id);
@@ -5736,7 +5748,18 @@ app.post('/api/exams/battle/poll-match', authenticateToken, async (req, res) => 
         where: { examSetId: { in: setIds } },
         include: { examSet: true }
       });
+      if (qList.length < 10) {
+        qList = await prisma.question.findMany({ take: 20 });
+      }
       qList = localShuffle(qList).slice(0, 10);
+
+      const formattedQuestions = qList.map(q => ({
+        id: q.id,
+        questionText: q.questionText,
+        choices: [q.choice1, q.choice2, q.choice3, q.choice4],
+        correctAnswer: q.correctAnswer,
+        explanation: q.explanation || 'คำอธิบายเฉลยประลอง'
+      }));
 
       const matchId = `match_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const newMatch = {
@@ -5746,11 +5769,12 @@ app.post('/api/exams/battle/poll-match', authenticateToken, async (req, res) => 
           username: selfInQueue.username,
           fullName: selfInQueue.fullName,
           level: selfInQueue.level,
+          points: selfInQueue.points,
           faceImage: selfInQueue.faceImage
         },
         player2: partner,
-        subject,
-        questions: qList,
+        subject: selectedSubj,
+        questions: formattedQuestions,
         createdAt: now
       };
 
@@ -5766,8 +5790,9 @@ app.post('/api/exams/battle/poll-match', authenticateToken, async (req, res) => 
       return res.json({
         status: 'matched',
         matchId,
+        subject: selectedSubj,
         opponent: partner,
-        questions: qList
+        questions: formattedQuestions
       });
     }
 
