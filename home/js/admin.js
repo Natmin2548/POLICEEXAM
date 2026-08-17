@@ -329,6 +329,8 @@ async function generateAIExamPreview() {
     btn.style.opacity = '0.6';
     progressInfo.style.display = 'block';
 
+    const subcategory = document.getElementById('examSubcategory')?.value.trim() || '';
+
     const res = await fetch(`${API_BASE}/api/admin/exams/preview-ai`, {
       method: 'POST',
       headers: {
@@ -339,6 +341,8 @@ async function generateAIExamPreview() {
         subject,
         knowledgeBase,
         docId,
+        title,
+        subcategory,
         numQuestions: parseInt(numQuestions) || 10,
         apiKey
       })

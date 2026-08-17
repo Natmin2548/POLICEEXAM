@@ -6664,7 +6664,7 @@ app.post('/api/admin/exams/preview-ai', authenticateToken, async (req, res) => {
       return res.status(403).json({ error: 'คุณไม่มีสิทธิ์ใช้งานคำสั่งนี้ (สำหรับ Admin เท่านั้น)' });
     }
 
-    const { subject, knowledgeBase, docId, numQuestions } = req.body;
+    const { subject, knowledgeBase, docId, numQuestions, title, subcategory } = req.body;
     const count = Math.min(Math.max(parseInt(numQuestions) || 10, 1), 50);
 
     let contextText = '';
@@ -6707,9 +6707,20 @@ ${d.content}`).join('\n\n');
 
     const modelsToTry = ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.0-flash', 'gemini-1.5-flash'];
     
+    let topicInstruction = '';
+    const combinedStr = `${subject || ''} ${subcategory || ''} ${title || ''}`.toLowerCase();
+    if (combinedStr.includes('อนุกรม')) {
+      topicInstruction = 'คำแนะนำพิเศษ: ข้อสอบชุดนี้เน้นเรื่อง "อนุกรมตัวเลขและอนุกรมตัวอักษร" (Number & Letter Series) สำหรับสอบตำรวจ โปรดสร้างคำถามอนุกรมตัวเลข (เช่น 2, 5, 10, 17, 26, ...) พร้อม 4 ตัวเลือก และอธิบายวิธีคิดหาตัวเลขถัดไปอย่างเป็นขั้นตอนในช่อง explanation';
+    } else if (combinedStr.includes('คำนวณ') || combinedStr.includes('คณิต')) {
+      topicInstruction = 'คำแนะนำพิเศษ: เน้นออกข้อสอบการคิดคำนวณคณิตศาสตร์ โจทย์ปัญหา สมการ อัตราส่วน เปอร์เซ็นต์ และการคำนวณอายุ';
+    } else if (combinedStr.includes('เหตุผล') || combinedStr.includes('ตรรกศาสตร์')) {
+      topicInstruction = 'คำแนะนำพิเศษ: เน้นออกข้อสอบการคิดเชิงเหตุผล ตรรกศาสตร์ เงื่อนไขภาษา และเงื่อนไขสัญลักษณ์';
+    }
+
     const prompt = `คุณเป็นผู้เชี่ยวชาญระดับสูงในการออกข้อสอบแข่งขันบรรจุเป็นข้าราชการตำรวจ (สายอำนวยการและปราบปราม)
 โปรดสร้างข้อสอบภาษาไทยคุณภาพสูงจำนวน ${count} ข้อ สำหรับวิชา: "${subject}"
-
+${subcategory ? `หมวดย่อย/หัวข้อเรื่อง: "${subcategory}"\n` : ''}${title ? `ชื่อชุดข้อสอบ: "${title}"\n` : ''}
+${topicInstruction ? `${topicInstruction}\n` : ''}
 ${contextText ? `คลังข้อมูลอ้างอิงทางกฎหมายและระเบียบตำรวจที่ต้องใช้ออกข้อสอบ:\n${contextText.substring(0, 16000)}\n\n` : ''}
 ข้อกำหนดสำคัญในการสร้างข้อสอบ:
 1. ออกข้อสอบจำนวน ${count} ข้อ แบบปรนัย 4 ตัวเลือก (A, B, C, D)
