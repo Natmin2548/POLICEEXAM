@@ -76,9 +76,16 @@ button {
 /* Layout Container */
 .container {
   width: 100%;
-  max-width: 600px; /* Mobile dashboard focus */
+  max-width: 640px; /* Mobile dashboard focus */
   margin: 0 auto;
-  padding: 0 16px;
+  padding: 0 20px;
+}
+
+@media (min-width: 992px) {
+  .container {
+    max-width: 1100px;
+    padding: 0 32px;
+  }
 }
 
 /* ==========================================
