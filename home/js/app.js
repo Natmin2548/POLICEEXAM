@@ -1510,7 +1510,7 @@ window.fetchActiveBattleRooms = async function() {
       container.innerHTML = `
         <div style="text-align: center; padding: 24px 12px; background: #F8FAFC; border: 1px dashed #CBD5E1; border-radius: 16px;">
           <p style="margin: 0 0 6px 0; font-weight: 700; color: #475569; font-size: 14px;">ยังไม่มีห้องสาธารณะเปิดอยู่ขณะนี้</p>
-          <span style="font-size: 12px; color: #94A3B8;">กดปุ่ม "➕ สร้างห้องประลอง" ด้านบนเพื่อเปิดห้องประลองยุทธ์ของคุณได้เลย!</span>
+          <span style="font-size: 12px; color: #94A3B8;">กดปุ่ม "สร้างห้องประลอง" ด้านบนเพื่อเปิดห้องประลองของคุณได้เลย</span>
         </div>
       `;
       return;
@@ -1521,12 +1521,12 @@ window.fetchActiveBattleRooms = async function() {
         <div>
           <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
             <span style="background: #FEF2F2; color: #BD1B0B; font-weight: 800; padding: 2px 10px; border-radius: 999px; font-size: 11px;">วิชา: ${escapeHTML(r.subject)}</span>
-            <span style="background: #EFF6FF; color: #2563EB; font-weight: 700; padding: 2px 10px; border-radius: 999px; font-size: 11px;">👥 ${r.currentPlayers}/${r.maxPlayers} คน</span>
+            <span style="background: #EFF6FF; color: #2563EB; font-weight: 700; padding: 2px 10px; border-radius: 999px; font-size: 11px;">ผู้เล่น ${r.currentPlayers}/${r.maxPlayers} คน</span>
           </div>
           <h4 style="margin: 0; font-size: 14px; font-weight: 800; color: #1E293B;">หัวหน้าห้อง: ${escapeHTML(r.hostName)} (${r.roomCode})</h4>
         </div>
         <button onclick="submitDirectJoinRoom('${r.roomCode}')" style="background: #10B981; color: white; border: none; padding: 8px 16px; border-radius: 12px; font-weight: 800; font-size: 13px; cursor: pointer; font-family: inherit; box-shadow: 0 2px 6px rgba(16,185,129,0.3);">
-          🚪 เข้าประลอง
+          เข้าประลอง
         </button>
       </div>
     `).join('');
@@ -1662,7 +1662,7 @@ function updateLobbyUI(roomData) {
             <span style="font-size: 11px; color: #64748B;">คะแนน ${p.points || 0} แต้ม</span>
           </div>
         </div>
-        ${p.isHost ? '<span style="font-size: 11px; background: #FEF2F2; color: #BD1B0B; font-weight: 800; padding: 4px 10px; border-radius: 999px;">👑 หัวหน้าห้อง</span>' : '<span style="font-size: 11px; background: #ECFDF5; color: #059669; font-weight: 700; padding: 4px 10px; border-radius: 999px;">พร้อมแล้ว</span>'}
+        ${p.isHost ? '<span style="font-size: 11px; background: #FEF2F2; color: #BD1B0B; font-weight: 800; padding: 4px 10px; border-radius: 999px;">หัวหน้าห้อง</span>' : '<span style="font-size: 11px; background: #ECFDF5; color: #059669; font-weight: 700; padding: 4px 10px; border-radius: 999px;">พร้อมแล้ว</span>'}
       </div>
     `).join('');
   }
@@ -1671,12 +1671,12 @@ function updateLobbyUI(roomData) {
   if (btnStart) {
     if (isHost) {
       btnStart.style.display = 'block';
-      btnStart.innerHTML = `🎰 กดเริ่มประลอง (หมุนสุ่มชุดข้อสอบ!)`;
+      btnStart.innerHTML = `กดเริ่มประลอง (หมุนสุ่มชุดข้อสอบ!)`;
       btnStart.onclick = hostTriggerStartDuel;
     } else {
       btnStart.style.display = 'block';
       btnStart.style.background = '#94A3B8';
-      btnStart.innerHTML = `⏳ รอหัวหน้าห้องกดเริ่มประลอง...`;
+      btnStart.innerHTML = `รอหัวหน้าห้องกดเริ่มประลอง...`;
       btnStart.onclick = null;
     }
   }
@@ -1714,7 +1714,7 @@ function showExamSetWheelSpinAnimation(subjectName, selectedSetTitle, questions,
 
   modal.innerHTML = `
     <div style="background: white; border-radius: 28px; padding: 32px 24px; text-align: center; max-width: 440px; width: 90%; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3);">
-      <span style="background: #FEF2F2; color: #BD1B0B; font-weight: 800; padding: 4px 12px; border-radius: 999px; font-size: 12px;">🎰 กำลังสุ่มชุดข้อสอบ</span>
+      <span style="background: #FEF2F2; color: #BD1B0B; font-weight: 800; padding: 4px 12px; border-radius: 999px; font-size: 12px;">กำลังสุ่มชุดข้อสอบ</span>
       <h3 style="margin: 10px 0 4px 0; font-size: 20px; font-weight: 800; color: #1E293B;">วิชา: ${escapeHTML(subjectName)}</h3>
       <p style="font-size: 13px; color: #64748B; margin-bottom: 20px;">หมุนวงล้อเพื่อเลือกชุดข้อสอบทำข้อสอบ 10 ข้อ...</p>
 
@@ -1724,7 +1724,7 @@ function showExamSetWheelSpinAnimation(subjectName, selectedSetTitle, questions,
       </div>
 
       <div id="spinResultBox" style="display: none; background: #FEF2F2; border: 2px solid #FECACA; border-radius: 16px; padding: 14px; margin-top: 10px;">
-        <span style="font-size: 12px; color: #991B1B; font-weight: 700; display: block;">🎯 สุ่มได้ชุดข้อสอบ:</span>
+        <span style="font-size: 12px; color: #991B1B; font-weight: 700; display: block;">สุ่มได้ชุดข้อสอบ:</span>
         <h4 style="margin: 4px 0 0 0; font-size: 17px; font-weight: 900; color: #BD1B0B;">${escapeHTML(selectedSetTitle)}</h4>
       </div>
     </div>
