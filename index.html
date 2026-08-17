@@ -3,6 +3,17 @@
 
 <head>
   <meta charset="UTF-8">
+  <script>
+    (function() {
+      try {
+        const token = localStorage.getItem('authToken');
+        const profile = localStorage.getItem('userProfile');
+        if (token || profile) {
+          window.location.replace('/home/index.html');
+        }
+      } catch (e) {}
+    })();
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>POLICE EXAM - เตรียมพร้อมสู่เครื่องแบบ</title>
   <!-- Google Fonts: Kanit -->

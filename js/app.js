@@ -536,4 +536,9 @@ async function handleGoogleCredential(response) {
       console.error('Failed to load announcements:', err);
       container.innerHTML = '<p style="text-align:center;padding:24px;color:#64748B;font-size:14px;">ไม่สามารถโหลดข้อมูลประกาศได้</p>';
     });
+
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('login') === '1' && typeof openLoginModal === 'function') {
+    setTimeout(() => openLoginModal(), 100);
+  }
 })();

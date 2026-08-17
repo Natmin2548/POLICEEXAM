@@ -757,7 +757,7 @@ async function handleLogout() {
   const confirmLog = await showCenteredConfirm('ยืนยันการออกจากระบบ', 'คุณต้องการออกจากระบบใช่หรือไม่?', { okText: 'ออกจากระบบ', okColor: '#EF4444' });
   if (confirmLog) {
     localStorage.clear();
-    window.location.href = '/';
+    window.location.replace('/?login=1');
   }
 }
 
