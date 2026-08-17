@@ -1118,84 +1118,507 @@ async function loadLeaderboard() {
   }
 }
 
-// matchmaking mockup
+// --- BATTLE ARENA ENGINE & WHEEL OF FORTUNE ---
+
+window.openBattleHub = function() {
+  const modal = document.getElementById('battleHubModal');
+  if (modal) modal.style.display = 'flex';
+};
+
+window.closeBattleHub = function() {
+  const modal = document.getElementById('battleHubModal');
+  if (modal) modal.style.display = 'none';
+};
+
 const btnQuickMatch = document.getElementById('btnQuickMatch');
 if (btnQuickMatch) {
   btnQuickMatch.addEventListener('click', (e) => {
     e.preventDefault();
-    if (!userProfile) return;
-    
-    // Create popup modal container
-    const modal = document.createElement('div');
-    modal.style.position = 'fixed';
-    modal.style.top = '0';
-    modal.style.left = '0';
-    modal.style.width = '100vw';
-    modal.style.height = '100vh';
-    modal.style.backgroundColor = 'rgba(0, 0, 0, 0.6)';
-    modal.style.display = 'flex';
-    modal.style.alignItems = 'center';
-    modal.style.justifyContent = 'center';
-    modal.style.zIndex = '9999';
-    modal.style.fontFamily = 'Kanit, sans-serif';
-    
-    modal.innerHTML = `
-      <div style="background: white; padding: 30px; border-radius: 24px; text-align: center; max-width: 400px; width: 90%; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);">
-        <div class="searching-spinner" style="width: 60px; height: 60px; border: 5px solid #F1F5F9; border-top-color: #BD1B0B; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px auto;"></div>
-        <h3 style="font-size: 20px; font-weight: 600; margin-bottom: 10px; color: #1E293B;">กำลังค้นหาคู่ประลอง...</h3>
-        <p style="font-size: 14px; color: #64748B; margin-bottom: 0;" id="matchmakingTimer">จับคู่ ELO ใกล้เคียงกัน (0s)</p>
-      </div>
-    `;
-    
-    // Append spin animation style tag dynamically if not exists
-    if (!document.getElementById('spin-keyframes')) {
-      const style = document.createElement('style');
-      style.id = 'spin-keyframes';
-      style.innerHTML = `@keyframes spin { to { transform: rotate(360deg); } }`;
-      document.head.appendChild(style);
-    }
-    
-    document.body.appendChild(modal);
-    
-    let seconds = 0;
-    const timerInterval = setInterval(() => {
-      seconds++;
-      const timerEl = document.getElementById('matchmakingTimer');
-      if (timerEl) timerEl.textContent = `จับคู่ ELO ใกล้เคียงกัน (${seconds}s)`;
-    }, 1000);
-    
-    setTimeout(() => {
-      clearInterval(timerInterval);
-      
-      const modalContent = modal.querySelector('div');
-      modalContent.innerHTML = `
-        <div style="font-size: 50px; margin-bottom: 20px;"></div>
-        <h3 style="font-size: 20px; font-weight: 600; margin-bottom: 10px; color: #1E293B;">พบคู่ต่อสู้แล้ว!</h3>
-        <div style="display: flex; justify-content: space-around; align-items: center; margin: 24px 0; background: #F8FAFC; padding: 15px; border-radius: 16px;">
-          <div>
-            <div style="width: 48px; height: 48px; border-radius: 50%; background: #BD1B0B; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; margin: 0 auto 8px auto; font-size: 16px;">${userProfile.fullName ? userProfile.fullName.charAt(0) : 'ค'}</div>
-            <span style="font-size: 14px; font-weight: 600; color: #334155; display: block;">คุณ</span>
-            <span style="font-size: 12px; color: #64748B;">ELO ${(1000 + (userProfile.points || 0)).toLocaleString()}</span>
-          </div>
-          <div style="font-size: 18px; font-weight: 700; color: #BD1B0B;">VS</div>
-          <div>
-            <div style="width: 48px; height: 48px; border-radius: 50%; background: #D97706; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; margin: 0 auto 8px auto; font-size: 16px;">ป</div>
-            <span style="font-size: 14px; font-weight: 600; color: #334155; display: block;">ประสิทธิ์ สมร</span>
-            <span style="font-size: 12px; color: #64748B;">ELO 2,840</span>
-          </div>
-        </div>
-        <button id="btnStartBattleArena" style="background: #BD1B0B; color: white; border: none; padding: 12px 24px; border-radius: 12px; font-weight: 600; width: 100%; cursor: pointer; transition: 0.2s;">เริ่มประลอง</button>
-      `;
-      
-      const btnStart = document.getElementById('btnStartBattleArena');
-      btnStart.addEventListener('click', async () => {
-        modal.remove();
-        await showCenteredAlert('ระบบประลอง Arena กำลังอยู่ในการพัฒนาร่วมกับ AI เจนเนอเรเตอร์คำถาม จะเปิดใช้งานเต็มรูปแบบเร็วๆ นี้!', { title: 'ประลอง Arena' });
-      });
-      
-    }, 3000);
+    openBattleHub();
   });
 }
+
+// 1. Wheel of Fortune Canvas & Spin
+const SUBJECT_WHEEL_SECTORS = [
+  { name: 'งานสารบรรณ', color: '#BD1B0B' },
+  { name: 'ความสามารถทั่วไป', color: '#2563EB' },
+  { name: 'ภาษาไทย', color: '#059669' },
+  { name: 'ภาษาอังกฤษ', color: '#7E22CE' },
+  { name: 'ความรู้สังคมฯ', color: '#D97706' },
+  { name: 'กฎหมายตำรวจ', color: '#DC2626' },
+  { name: 'คอมพิวเตอร์', color: '#0284C7' }
+];
+
+let wheelCurrentAngle = 0;
+let wheelSpinning = false;
+let wheelSelectedSubject = '';
+let wheelOnFinishCallback = null;
+
+function drawRouletteWheel() {
+  const canvas = document.getElementById('rouletteCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const numSectors = SUBJECT_WHEEL_SECTORS.length;
+  const arc = (Math.PI * 2) / numSectors;
+  const radius = canvas.width / 2;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  for (let i = 0; i < numSectors; i++) {
+    const angle = wheelCurrentAngle + i * arc;
+    ctx.fillStyle = SUBJECT_WHEEL_SECTORS[i].color;
+    ctx.beginPath();
+    ctx.arc(radius, radius, radius - 6, angle, angle + arc, false);
+    ctx.lineTo(radius, radius);
+    ctx.fill();
+
+    // Draw text label
+    ctx.save();
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 12px Kanit, sans-serif';
+    ctx.translate(
+      radius + Math.cos(angle + arc / 2) * (radius - 50),
+      radius + Math.sin(angle + arc / 2) * (radius - 50)
+    );
+    ctx.rotate(angle + arc / 2 + Math.PI / 2);
+    ctx.fillText(SUBJECT_WHEEL_SECTORS[i].name, -ctx.measureText(SUBJECT_WHEEL_SECTORS[i].name).width / 2, 0);
+    ctx.restore();
+  }
+
+  // Draw Center Circle Cap
+  ctx.fillStyle = '#FFFFFF';
+  ctx.beginPath();
+  ctx.arc(radius, radius, 28, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#BD1B0B';
+  ctx.font = 'bold 14px Kanit, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('VS', radius, radius);
+}
+
+window.openRouletteWheelModal = function(callback) {
+  wheelOnFinishCallback = callback;
+  const modal = document.getElementById('rouletteWheelModal');
+  const resBox = document.getElementById('rouletteResultBox');
+  const btnSpin = document.getElementById('btnStartWheelSpin');
+  if (modal) modal.style.display = 'flex';
+  if (resBox) resBox.style.display = 'none';
+  if (btnSpin) {
+    btnSpin.style.display = 'block';
+    btnSpin.disabled = false;
+    btnSpin.textContent = '🎰 กดเพื่อหมุนวงล้อสุ่มวิชา!';
+  }
+  wheelCurrentAngle = 0;
+  drawRouletteWheel();
+};
+
+window.triggerWheelSpin = function() {
+  if (wheelSpinning) return;
+  wheelSpinning = true;
+  const btnSpin = document.getElementById('btnStartWheelSpin');
+  if (btnSpin) {
+    btnSpin.disabled = true;
+    btnSpin.textContent = '🔄 กำลังหมุนเสี่ยงโชควิชา...';
+  }
+
+  const randIdx = Math.floor(Math.random() * SUBJECT_WHEEL_SECTORS.length);
+  wheelSelectedSubject = SUBJECT_WHEEL_SECTORS[randIdx].name;
+
+  const numSectors = SUBJECT_WHEEL_SECTORS.length;
+  const arc = (Math.PI * 2) / numSectors;
+  const targetAngle = (Math.PI * 3 / 2) - (randIdx * arc + arc / 2) + (Math.PI * 10);
+
+  const startAngle = wheelCurrentAngle;
+  const duration = 3500;
+  const startTime = Date.now();
+
+  function animateWheel() {
+    const now = Date.now();
+    const elapsed = now - startTime;
+    if (elapsed >= duration) {
+      wheelCurrentAngle = targetAngle % (Math.PI * 2);
+      drawRouletteWheel();
+      wheelSpinning = false;
+
+      const resBox = document.getElementById('rouletteResultBox');
+      const lblRes = document.getElementById('lblSelectedSubjectResult');
+      if (resBox) resBox.style.display = 'block';
+      if (lblRes) lblRes.textContent = wheelSelectedSubject;
+
+      setTimeout(() => {
+        const modal = document.getElementById('rouletteWheelModal');
+        if (modal) modal.style.display = 'none';
+        if (typeof wheelOnFinishCallback === 'function') {
+          wheelOnFinishCallback(wheelSelectedSubject);
+        }
+      }, 1500);
+      return;
+    }
+
+    const t = elapsed / duration;
+    const easeOut = 1 - Math.pow(1 - t, 3);
+    wheelCurrentAngle = startAngle + (targetAngle - startAngle) * easeOut;
+    drawRouletteWheel();
+    requestAnimationFrame(animateWheel);
+  }
+
+  requestAnimationFrame(animateWheel);
+};
+
+// 2. Battle Modes: 1v1, Ranked (±200 Pts), Tournament (3-8 P)
+window.startNormalBattle1v1 = function() {
+  closeBattleHub();
+  openRouletteWheelModal(async (selectedSubject) => {
+    await fetchAndLaunchBattleDuel(selectedSubject, '1v1_normal');
+  });
+};
+
+window.startRankedBattle = function() {
+  closeBattleHub();
+  const currentPts = userProfile ? (userProfile.points || 0) : 0;
+  showCenteredAlert(`ระบบกำลังค้นหาคู่ต่อสู้สายจัดอันดับที่มีคะแนนต่างกันไม่เกิน 200 แต้ม (คะแนนของคุณ: ${currentPts} แต้ม)`, { title: '🏆 Ranked Matchmaking' });
+  
+  setTimeout(() => {
+    openRouletteWheelModal(async (selectedSubject) => {
+      await fetchAndLaunchBattleDuel(selectedSubject, 'ranked');
+    });
+  }, 1200);
+};
+
+window.startTournamentBattle = function() {
+  closeBattleHub();
+  let count = 10;
+  const modal = document.createElement('div');
+  modal.style.position = 'fixed';
+  modal.style.top = '0'; modal.style.left = '0'; modal.style.width = '100vw'; modal.style.height = '100vh';
+  modal.style.background = 'rgba(15, 23, 42, 0.9)'; modal.style.zIndex = '9999'; modal.style.display = 'flex';
+  modal.style.alignItems = 'center'; modal.style.justifyContent = 'center'; modal.style.fontFamily = 'Kanit, sans-serif';
+
+  modal.innerHTML = `
+    <div style="background: white; border-radius: 24px; padding: 30px; text-align: center; max-width: 440px; width: 90%; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3);">
+      <div style="font-size: 40px; font-weight: 900; color: #7E22CE; margin-bottom: 8px;" id="lblTourneyCount">10</div>
+      <h3 style="margin: 0 0 8px 0; font-size: 18px; font-weight: 800; color: #1E293B;">👑 เตรียมเปิดศึกลายพรางทัวร์นาเมนต์ (8 คน)!</h3>
+      <p style="font-size: 13px; color: #64748B; margin-bottom: 16px;">กำลังจับคู่ผู้เล่นในทัวร์นาเมนต์ ทั้งหมด 8 คน พร้อมลุยในอีก 10 วินาที...</p>
+      <div style="display: flex; justify-content: center; gap: 6px; flex-wrap: wrap;">
+        <span style="background: #ECFDF5; color: #059669; font-weight: 700; padding: 4px 10px; border-radius: 999px; font-size: 11px;">คุณ (Ready)</span>
+        <span style="background: #F1F5F9; color: #475569; font-weight: 700; padding: 4px 10px; border-radius: 999px; font-size: 11px;">ประสิทธิ์ (Ready)</span>
+        <span style="background: #F1F5F9; color: #475569; font-weight: 700; padding: 4px 10px; border-radius: 999px; font-size: 11px;">วิชัย (Ready)</span>
+        <span style="background: #F1F5F9; color: #475569; font-weight: 700; padding: 4px 10px; border-radius: 999px; font-size: 11px;">อนุชา (Ready)</span>
+        <span style="background: #F1F5F9; color: #475569; font-weight: 700; padding: 4px 10px; border-radius: 999px; font-size: 11px;">สมศักดิ์ (Ready)</span>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  const timer = setInterval(() => {
+    count--;
+    const el = document.getElementById('lblTourneyCount');
+    if (el) el.textContent = count;
+    if (count <= 0) {
+      clearInterval(timer);
+      modal.remove();
+      openRouletteWheelModal(async (selectedSubject) => {
+        await fetchAndLaunchBattleDuel(selectedSubject, 'tournament');
+      });
+    }
+  }, 1000);
+};
+
+// 3. Custom Room Links
+let currentRoomCode = '';
+
+window.openCustomRoomSetup = function() {
+  closeBattleHub();
+  const modal = document.getElementById('customRoomModal');
+  if (modal) modal.style.display = 'flex';
+  switchRoomTab('create');
+};
+
+window.switchRoomTab = function(tab) {
+  const pCreate = document.getElementById('roomCreatePanel');
+  const pJoin = document.getElementById('roomJoinPanel');
+  const btnCreate = document.getElementById('tabRoomCreate');
+  const btnJoin = document.getElementById('tabRoomJoin');
+
+  if (tab === 'create') {
+    if (pCreate) pCreate.style.display = 'block';
+    if (pJoin) pJoin.style.display = 'none';
+    if (btnCreate) { btnCreate.style.background = '#BD1B0B'; btnCreate.style.color = 'white'; }
+    if (btnJoin) { btnJoin.style.background = '#F1F5F9'; btnJoin.style.color = '#475569'; }
+  } else {
+    if (pCreate) pCreate.style.display = 'none';
+    if (pJoin) pJoin.style.display = 'block';
+    if (btnCreate) { btnCreate.style.background = '#F1F5F9'; btnCreate.style.color = '#475569'; }
+    if (btnJoin) { btnJoin.style.background = '#10B981'; btnJoin.style.color = 'white'; }
+  }
+};
+
+window.submitCreateCustomRoom = async function() {
+  const maxP = document.getElementById('selMaxRoomPlayers') ? document.getElementById('selMaxRoomPlayers').value : 8;
+  try {
+    const res = await fetch(`${API_BASE}/api/battle/room/create`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userToken}` },
+      body: JSON.stringify({ mode: 'CUSTOM', maxPlayers: maxP })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'สร้างห้องไม่สำเร็จ');
+
+    document.getElementById('customRoomModal').style.display = 'none';
+    enterRoomLobby(data.roomCode, data.room);
+  } catch (err) {
+    showCenteredAlert(err.message, { title: 'เกิดข้อผิดพลาด' });
+  }
+};
+
+window.submitJoinCustomRoom = async function() {
+  const code = (document.getElementById('txtJoinRoomCode') ? document.getElementById('txtJoinRoomCode').value : '').trim();
+  if (!code) {
+    showCenteredAlert('กรุณากรอกรหัสห้องประลอง', { title: 'แจ้งเตือน' });
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/api/battle/room/join`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userToken}` },
+      body: JSON.stringify({ roomCode: code })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'เข้าห้องไม่สำเร็จ');
+
+    document.getElementById('customRoomModal').style.display = 'none';
+    enterRoomLobby(data.roomCode);
+  } catch (err) {
+    showCenteredAlert(err.message, { title: 'เกิดข้อผิดพลาด' });
+  }
+};
+
+function enterRoomLobby(code, roomData) {
+  currentRoomCode = code;
+  const modal = document.getElementById('roomLobbyDialog');
+  const lblCode = document.getElementById('lblLobbyRoomCode');
+  const lblUrl = document.getElementById('lblRoomShareUrl');
+  const shareUrl = `${window.location.origin}${window.location.pathname}?room=${code}`;
+
+  if (modal) modal.style.display = 'flex';
+  if (lblCode) lblCode.textContent = `ห้อง: ${code}`;
+  if (lblUrl) lblUrl.textContent = shareUrl;
+
+  renderLobbyPlayers(roomData ? roomData.players : []);
+}
+
+function renderLobbyPlayers(players) {
+  const container = document.getElementById('lobbyPlayersContainer');
+  const countLabel = document.getElementById('lblLobbyPlayersCount');
+
+  const pList = Array.isArray(players) && players.length > 0 ? players : [
+    { fullName: userProfile ? (userProfile.fullName || 'คุณ') : 'คุณ', isHost: true }
+  ];
+
+  if (countLabel) countLabel.textContent = `${pList.length}/8`;
+
+  if (container) {
+    container.innerHTML = pList.map((p, idx) => `
+      <div style="display: flex; justify-content: space-between; align-items: center; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 10px 14px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="width: 32px; height: 32px; border-radius: 50%; background: #BD1B0B; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px;">${escapeHTML((p.fullName || 'P').charAt(0))}</div>
+          <span style="font-size: 14px; font-weight: 700; color: #1E293B;">${escapeHTML(p.fullName || p.username || 'ผู้เล่น')}</span>
+        </div>
+        ${p.isHost ? '<span style="font-size: 11px; background: #FEF2F2; color: #BD1B0B; font-weight: 800; padding: 2px 8px; border-radius: 999px;">👑 หัวหน้าห้อง</span>' : '<span style="font-size: 11px; background: #ECFDF5; color: #059669; font-weight: 700; padding: 2px 8px; border-radius: 999px;">พร้อมแล้ว</span>'}
+      </div>
+    `).join('');
+  }
+}
+
+window.copyRoomShareLink = function() {
+  const shareUrl = `${window.location.origin}${window.location.pathname}?room=${currentRoomCode}`;
+  navigator.clipboard.writeText(shareUrl).then(() => {
+    showCenteredAlert(`คัดลอกลิงก์เชิญเพื่อนเข้าร่วมห้อง ${currentRoomCode} เรียบร้อยแล้ว!`, { title: 'คัดลอกสำเร็จ' });
+  }).catch(() => {
+    showCenteredAlert(`ลิงก์สำหรับส่งให้เพื่อน: ${shareUrl}`, { title: 'ลิงก์เข้าห้อง' });
+  });
+};
+
+window.leaveRoomLobby = function() {
+  const modal = document.getElementById('roomLobbyDialog');
+  if (modal) modal.style.display = 'none';
+};
+
+window.hostTriggerStartDuel = function() {
+  leaveRoomLobby();
+  openRouletteWheelModal(async (selectedSubject) => {
+    await fetchAndLaunchBattleDuel(selectedSubject, 'custom_room');
+  });
+};
+
+// Check if loaded with ?room=CODE
+function checkRoomShareUrlOnLoad() {
+  const params = new URLSearchParams(window.location.search);
+  const roomCode = params.get('room');
+  if (roomCode) {
+    setTimeout(async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/battle/room/join`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userToken}` },
+          body: JSON.stringify({ roomCode })
+        });
+        if (res.ok) {
+          enterRoomLobby(roomCode);
+        }
+      } catch (e) {
+        console.error('URL Room Join Error:', e);
+      }
+    }, 1500);
+  }
+}
+
+// 4. Live Battle Duel Runner
+let currentBattleState = {
+  subject: '',
+  questions: [],
+  currentIndex: 0,
+  playerScore: 0,
+  opponentScore: 0,
+  mode: ''
+};
+
+async function fetchAndLaunchBattleDuel(subjectName, mode) {
+  try {
+    const res = await fetch(`${API_BASE}/api/exams/questions?subject=${encodeURIComponent(subjectName)}&count=10`);
+    const questions = res.ok ? await res.json() : [];
+
+    if (!Array.isArray(questions) || questions.length === 0) {
+      showCenteredAlert('ไม่สามารถโหลดข้อสอบสุ่มวิชานี้ได้ กรุณาลองใหม่อีกครั้ง', { title: 'ข้อผิดพลาด' });
+      return;
+    }
+
+    currentBattleState = {
+      subject: subjectName,
+      questions,
+      currentIndex: 0,
+      playerScore: 0,
+      opponentScore: 0,
+      mode
+    };
+
+    const modal = document.getElementById('liveBattleArenaModal');
+    if (modal) modal.style.display = 'flex';
+
+    const pName = document.getElementById('arenaPlayerName');
+    const subjTag = document.getElementById('arenaSubjectTag');
+    if (pName) pName.textContent = userProfile ? (userProfile.fullName || 'คุณ') : 'คุณ';
+    if (subjTag) subjTag.textContent = `วิชา: ${subjectName}`;
+
+    renderCurrentBattleQuestion();
+  } catch (err) {
+    console.error('Battle Duel Error:', err);
+    showCenteredAlert('เกิดข้อผิดพลาดในการโหลดฉากประลอง', { title: 'ข้อผิดพลาด' });
+  }
+}
+
+function renderCurrentBattleQuestion() {
+  const { questions, currentIndex, playerScore, opponentScore } = currentBattleState;
+  const container = document.getElementById('arenaBodyContent');
+  const stepText = document.getElementById('arenaStepText');
+  const btnNext = document.getElementById('btnArenaNext');
+  const pScore = document.getElementById('arenaPlayerScore');
+  const oScore = document.getElementById('arenaOpponentScore');
+
+  if (pScore) pScore.textContent = `คะแนน: ${playerScore} ข้อ`;
+  if (oScore) oScore.textContent = `คะแนน: ${opponentScore} ข้อ`;
+
+  if (currentIndex >= questions.length) {
+    finishLiveBattleDuel();
+    return;
+  }
+
+  if (btnNext) btnNext.style.display = 'none';
+  if (stepText) stepText.textContent = `ข้อที่ ${currentIndex + 1} / ${questions.length}`;
+
+  const q = questions[currentIndex];
+
+  if (container) {
+    container.innerHTML = `
+      <div>
+        <h3 style="font-size: 16px; font-weight: 800; color: #1E293B; line-height: 1.6; margin-top: 0; margin-bottom: 20px;">
+          ${currentIndex + 1}. ${escapeHTML(q.questionText)}
+        </h3>
+        <div>
+          ${q.choices.map((choiceText, idx) => `
+            <button onclick="selectArenaAnswer(${idx + 1})" style="width: 100%; text-align: left; padding: 14px 18px; border-radius: 14px; font-size: 14px; font-family: inherit; margin-bottom: 10px; cursor: pointer; background: #F8FAFC; border: 1px solid #E2E8F0; color: #1E293B; display: flex; align-items: center; gap: 12px; transition: all 0.2s;">
+              <span style="width: 28px; height: 28px; border-radius: 50%; background: #E2E8F0; color: #475569; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; flex-shrink: 0;">${idx + 1}</span>
+              <span>${escapeHTML(choiceText)}</span>
+            </button>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+}
+
+window.selectArenaAnswer = function(choiceNum) {
+  const { questions, currentIndex } = currentBattleState;
+  const q = questions[currentIndex];
+
+  if (choiceNum === q.correctAnswer) {
+    currentBattleState.playerScore++;
+  }
+
+  // Simulated Opponent random answer (70% accuracy)
+  if (Math.random() < 0.7) {
+    currentBattleState.opponentScore++;
+  }
+
+  currentBattleState.currentIndex++;
+  renderCurrentBattleQuestion();
+};
+
+async function finishLiveBattleDuel() {
+  const { playerScore, opponentScore, subject } = currentBattleState;
+  const isWinner = playerScore >= opponentScore;
+  const modal = document.getElementById('liveBattleArenaModal');
+
+  if (modal) modal.style.display = 'none';
+
+  try {
+    const res = await fetch(`${API_BASE}/api/user/battle-complete`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userToken}` },
+      body: JSON.stringify({ winner: isWinner, subject })
+    });
+    const data = await res.json();
+
+    if (userProfile && data.user) {
+      userProfile.points = data.user.points;
+      userProfile.level = data.user.level;
+      userProfile.xp = data.user.xp;
+      userProfile.battleWins = data.user.battleWins;
+      updateUserProfileUI();
+    }
+
+    const titleMsg = isWinner ? '🎉 ชนะการประลองยุทธ์!' : '😢 แพ้การประลอง!';
+    const ptsMsg = isWinner ? '+30 แต้ม' : '-30 แต้ม (ไม่ติดลบ)';
+
+    showCenteredAlert(`
+      <div style="text-align: center; padding: 10px;">
+        <div style="font-size: 50px; margin-bottom: 8px;">${isWinner ? '🏆' : '💀'}</div>
+        <h3 style="font-size: 20px; font-weight: 900; margin: 0 0 10px 0; color: ${isWinner ? '#10B981' : '#EF4444'};">${titleMsg}</h3>
+        <p style="font-size: 14px; color: #475569; margin-bottom: 12px;">คุณทำได้ <strong>${playerScore}</strong> ข้อ | คู่ต่อสู้ทำได้ <strong>${opponentScore}</strong> ข้อ</p>
+        <div style="background: ${isWinner ? '#ECFDF5' : '#FEF2F2'}; color: ${isWinner ? '#059669' : '#991B1B'}; padding: 10px; border-radius: 12px; font-weight: 800; font-size: 15px;">
+          ผลการปรับแต้ม: ${ptsMsg} (คะแนนปัจจุบัน: ${userProfile ? userProfile.points : 0} แต้ม)
+        </div>
+      </div>
+    `, { title: 'สรุปการประลอง' });
+  } catch (err) {
+    console.error('Complete Duel Error:', err);
+  }
+}
+
+// Automatically check room parameter on initialization
+checkRoomShareUrlOnLoad();
 
   var statsRadarChartInstance = null;
   var statsBarChartInstance = null;

@@ -346,3 +346,18 @@ model KnowledgeDocument {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+model BattleRoom {
+  id          Int      @id @default(autoincrement())
+  roomCode    String   @unique
+  hostId      Int
+  mode        String   @default("CUSTOM")
+  subject     String?
+  maxPlayers  Int      @default(8)
+  status      String   @default("WAITING")
+  players     Json     @default("[]")
+  questions   Json     @default("[]")
+  scores      Json     @default("{}")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
