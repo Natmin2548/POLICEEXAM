@@ -756,7 +756,9 @@ const btnProfileLogout = document.getElementById('btnProfileLogout');
 async function handleLogout() {
   const confirmLog = await showCenteredConfirm('ยืนยันการออกจากระบบ', 'คุณต้องการออกจากระบบใช่หรือไม่?', { okText: 'ออกจากระบบ', okColor: '#EF4444' });
   if (confirmLog) {
-    localStorage.clear();
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('userProfile');
+    localStorage.removeItem('loginProvider');
     window.location.replace('/?login=1');
   }
 }
@@ -4179,11 +4181,20 @@ async function renderSubjectExamSets(subjectKey) {
     const history = getLocalQuizHistory(subjectKey);
 
     container.innerHTML = sets.map(s => {
-      const setRecords = history.filter(h => 
-        (h.setId && String(h.setId) === String(s.id)) ||
-        (h.setType && String(h.setType) === String(s.id)) ||
-        (h.setTitle && s.title && h.setTitle.trim() === s.title.trim())
-      );
+      const setRecords = history.filter(h => {
+        if (!h) return false;
+        if (h.setId && String(h.setId) === String(s.id)) return true;
+        if (h.setType && String(h.setType) === String(s.id)) return true;
+        if (h.setTitle && s.title) {
+          const hTitle = h.setTitle.trim().toLowerCase();
+          const sTitle = s.title.trim().toLowerCase();
+          if (hTitle === sTitle || hTitle.includes(sTitle) || sTitle.includes(hTitle)) return true;
+        }
+        if (sets.length === 1 && (h.subject === subjectKey || (subjectKey.includes('สารบรรณ') && h.subject && h.subject.includes('สารบรรณ')))) {
+          return true;
+        }
+        return false;
+      });
 
       let bestBadge = `<span style="font-size: 11px; background: #F1F5F9; color: #64748B; padding: 4px 10px; border-radius: 999px; font-weight: 600;">ยังไม่ได้ทำ</span>`;
       let btnLabel = 'เริ่มทำข้อสอบ';
