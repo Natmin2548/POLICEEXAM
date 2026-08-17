@@ -1266,7 +1266,7 @@ window.triggerWheelSpin = function() {
   requestAnimationFrame(animateWheel);
 };
 
-// Auto-random subject selector (no manual wheel spin needed)
+// Auto-random subject selector (for Quick Match 1v1)
 const BATTLE_SUBJECT_LIST = [
   'งานสารบรรณ',
   'ความสามารถทั่วไป',
@@ -1282,24 +1282,47 @@ function getRandomBattleSubject() {
   return BATTLE_SUBJECT_LIST[randIdx];
 }
 
-// 2. Battle Modes: 1v1, Ranked (±200 Pts), Tournament (3-8 P)
+// Manual Subject Selector Modal State (for Ranked, Tournament, Custom Room)
+let pendingSubjectMode = '';
+
+window.openBattleSubjectSelectModal = function(mode, modeLabel) {
+  pendingSubjectMode = mode;
+  const modal = document.getElementById('battleSubjectSelectModal');
+  const badge = document.getElementById('lblSubjectSelectModeBadge');
+  if (modal) modal.style.display = 'flex';
+  if (badge) badge.textContent = modeLabel || 'เลือกวิชาประลอง';
+};
+
+window.closeBattleSubjectSelectModal = function() {
+  const modal = document.getElementById('battleSubjectSelectModal');
+  if (modal) modal.style.display = 'none';
+};
+
+window.confirmSubjectSelection = async function(subjectName) {
+  closeBattleSubjectSelectModal();
+  await fetchAndLaunchBattleDuel(subjectName, pendingSubjectMode || 'manual');
+};
+
+// 2. Battle Modes
+// Quick Match: Auto-random subject (1v1)
 window.startNormalBattle1v1 = async function() {
   closeBattleHub();
   const selectedSubject = getRandomBattleSubject();
   await fetchAndLaunchBattleDuel(selectedSubject, '1v1_normal');
 };
 
+// Ranked Battle: User selects subject manually
 window.startRankedBattle = function() {
   closeBattleHub();
   const currentPts = userProfile ? (userProfile.points || 0) : 0;
-  showCenteredAlert(`ระบบกำลังค้นหาคู่ต่อสู้สายจัดอันดับที่มีคะแนนต่างกันไม่เกิน 200 แต้ม (คะแนนของคุณ: ${currentPts} แต้ม)`, { title: '🏆 Ranked Matchmaking' });
+  showCenteredAlert(`ระบบกำลังจับคู่สายจัดอันดับที่มีคะแนนต่างกันไม่เกิน 200 แต้ม (คะแนนของคุณ: ${currentPts} แต้ม)`, { title: '🏆 Ranked Matchmaking' });
   
-  setTimeout(async () => {
-    const selectedSubject = getRandomBattleSubject();
-    await fetchAndLaunchBattleDuel(selectedSubject, 'ranked');
+  setTimeout(() => {
+    openBattleSubjectSelectModal('ranked', '🏆 ประลองจัดอันดับ');
   }, 1200);
 };
 
+// Tournament Battle: User selects subject manually after 10s countdown
 window.startTournamentBattle = function() {
   closeBattleHub();
   let count = 10;
@@ -1325,15 +1348,14 @@ window.startTournamentBattle = function() {
   `;
   document.body.appendChild(modal);
 
-  const timer = setInterval(async () => {
+  const timer = setInterval(() => {
     count--;
     const el = document.getElementById('lblTourneyCount');
     if (el) el.textContent = count;
     if (count <= 0) {
       clearInterval(timer);
       modal.remove();
-      const selectedSubject = getRandomBattleSubject();
-      await fetchAndLaunchBattleDuel(selectedSubject, 'tournament');
+      openBattleSubjectSelectModal('tournament', '👑 ศึกลายพรางทัวร์นาเมนต์');
     }
   }, 1000);
 };
@@ -1459,10 +1481,9 @@ window.leaveRoomLobby = function() {
   if (modal) modal.style.display = 'none';
 };
 
-window.hostTriggerStartDuel = async function() {
+window.hostTriggerStartDuel = function() {
   leaveRoomLobby();
-  const selectedSubject = getRandomBattleSubject();
-  await fetchAndLaunchBattleDuel(selectedSubject, 'custom_room');
+  openBattleSubjectSelectModal('custom_room', '🔑 เลือกวิชาประลองในห้อง');
 };
 
 // Check if loaded with ?room=CODE
