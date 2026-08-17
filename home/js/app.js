@@ -1489,57 +1489,99 @@ window.startTournamentBattle = function() {
 // 3. Custom Room Links
 let currentRoomCode = '';
 
-window.openCustomRoomSetup = function() {
-  closeBattleHub();
-  const modal = document.getElementById('customRoomModal');
-  if (modal) modal.style.display = 'flex';
-  switchRoomTab('create');
-};
+// Custom Battle Room Arena System
+let lobbyPollInterval = null;
+let currentRoomData = null;
 
-window.switchRoomTab = function(tab) {
-  const pCreate = document.getElementById('roomCreatePanel');
-  const pJoin = document.getElementById('roomJoinPanel');
-  const btnCreate = document.getElementById('tabRoomCreate');
-  const btnJoin = document.getElementById('tabRoomJoin');
+// 1. Fetch Active Public Rooms
+window.fetchActiveBattleRooms = async function() {
+  const container = document.getElementById('activeRoomsListContainer');
+  if (!container) return;
 
-  if (tab === 'create') {
-    if (pCreate) pCreate.style.display = 'block';
-    if (pJoin) pJoin.style.display = 'none';
-    if (btnCreate) { btnCreate.style.background = '#BD1B0B'; btnCreate.style.color = 'white'; }
-    if (btnJoin) { btnJoin.style.background = '#F1F5F9'; btnJoin.style.color = '#475569'; }
-  } else {
-    if (pCreate) pCreate.style.display = 'none';
-    if (pJoin) pJoin.style.display = 'block';
-    if (btnCreate) { btnCreate.style.background = '#F1F5F9'; btnCreate.style.color = '#475569'; }
-    if (btnJoin) { btnJoin.style.background = '#10B981'; btnJoin.style.color = 'white'; }
+  try {
+    const res = await fetch(`${API_BASE}/api/battle/rooms`, {
+      headers: { 'Authorization': `Bearer ${userToken}` }
+    });
+    const data = res.ok ? await res.json() : { rooms: [] };
+    const rooms = data.rooms || [];
+
+    if (rooms.length === 0) {
+      container.innerHTML = `
+        <div style="text-align: center; padding: 24px 12px; background: #F8FAFC; border: 1px dashed #CBD5E1; border-radius: 16px;">
+          <p style="margin: 0 0 6px 0; font-weight: 700; color: #475569; font-size: 14px;">ยังไม่มีห้องสาธารณะเปิดอยู่ขณะนี้</p>
+          <span style="font-size: 12px; color: #94A3B8;">กดปุ่ม "➕ สร้างห้องประลอง" ด้านบนเพื่อเปิดห้องประลองยุทธ์ของคุณได้เลย!</span>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = rooms.map(r => `
+      <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 16px; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+        <div>
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+            <span style="background: #FEF2F2; color: #BD1B0B; font-weight: 800; padding: 2px 10px; border-radius: 999px; font-size: 11px;">วิชา: ${escapeHTML(r.subject)}</span>
+            <span style="background: #EFF6FF; color: #2563EB; font-weight: 700; padding: 2px 10px; border-radius: 999px; font-size: 11px;">👥 ${r.currentPlayers}/${r.maxPlayers} คน</span>
+          </div>
+          <h4 style="margin: 0; font-size: 14px; font-weight: 800; color: #1E293B;">หัวหน้าห้อง: ${escapeHTML(r.hostName)} (${r.roomCode})</h4>
+        </div>
+        <button onclick="submitDirectJoinRoom('${r.roomCode}')" style="background: #10B981; color: white; border: none; padding: 8px 16px; border-radius: 12px; font-weight: 800; font-size: 13px; cursor: pointer; font-family: inherit; box-shadow: 0 2px 6px rgba(16,185,129,0.3);">
+          🚪 เข้าประลอง
+        </button>
+      </div>
+    `).join('');
+  } catch (err) {
+    console.error('Fetch Active Rooms Error:', err);
   }
 };
 
+window.openCustomRoomModal = function() {
+  const modal = document.getElementById('customRoomModal');
+  if (modal) modal.style.display = 'flex';
+};
+
+window.openCustomRoomSetup = function() {
+  openCustomRoomModal();
+};
+
 window.submitCreateCustomRoom = async function() {
-  const maxP = document.getElementById('selMaxRoomPlayers') ? document.getElementById('selMaxRoomPlayers').value : 8;
+  const subject = document.getElementById('selRoomSubject') ? document.getElementById('selRoomSubject').value : 'งานสารบรรณ';
+  const privacy = document.getElementById('selRoomPrivacy') ? document.getElementById('selRoomPrivacy').value : 'public';
+  const maxPlayers = document.getElementById('selMaxRoomPlayers') ? document.getElementById('selMaxRoomPlayers').value : 8;
+
   try {
     const res = await fetch(`${API_BASE}/api/battle/room/create`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userToken}` },
-      body: JSON.stringify({ mode: 'CUSTOM', maxPlayers: maxP })
+      body: JSON.stringify({ subject, isPrivate: privacy === 'private', maxPlayers })
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'สร้างห้องไม่สำเร็จ');
+    if (!res.ok) throw new Error(data.error || 'ไม่สามารถสร้างห้องได้');
 
     document.getElementById('customRoomModal').style.display = 'none';
     enterRoomLobby(data.roomCode, data.room);
+    fetchActiveBattleRooms();
   } catch (err) {
     showCenteredAlert(err.message, { title: 'เกิดข้อผิดพลาด' });
   }
 };
 
-window.submitJoinCustomRoom = async function() {
-  const code = (document.getElementById('txtJoinRoomCode') ? document.getElementById('txtJoinRoomCode').value : '').trim();
+window.submitDirectJoinRoom = function(codeFromList) {
+  const codeInput = document.getElementById('txtDirectJoinRoomCode');
+  const code = codeFromList || (codeInput ? codeInput.value : '').trim();
+
   if (!code) {
     showCenteredAlert('กรุณากรอกรหัสห้องประลอง', { title: 'แจ้งเตือน' });
     return;
   }
+  submitJoinCustomRoomByCode(code);
+};
 
+window.submitJoinCustomRoom = function() {
+  const code = (document.getElementById('txtJoinRoomCode') ? document.getElementById('txtJoinRoomCode').value : '').trim();
+  submitJoinCustomRoomByCode(code);
+};
+
+async function submitJoinCustomRoomByCode(code) {
   try {
     const res = await fetch(`${API_BASE}/api/battle/room/join`, {
       method: 'POST',
@@ -1547,70 +1589,160 @@ window.submitJoinCustomRoom = async function() {
       body: JSON.stringify({ roomCode: code })
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'เข้าห้องไม่สำเร็จ');
+    if (!res.ok) throw new Error(data.error || 'ไม่สามารถเข้าห้องได้');
 
-    document.getElementById('customRoomModal').style.display = 'none';
-    enterRoomLobby(data.roomCode);
+    const modal = document.getElementById('customRoomModal');
+    if (modal) modal.style.display = 'none';
+    enterRoomLobby(data.roomCode, data.room);
   } catch (err) {
     showCenteredAlert(err.message, { title: 'เกิดข้อผิดพลาด' });
   }
-};
+}
 
 function enterRoomLobby(code, roomData) {
   currentRoomCode = code;
+  currentRoomData = roomData;
   const modal = document.getElementById('roomLobbyDialog');
   const lblCode = document.getElementById('lblLobbyRoomCode');
   const lblUrl = document.getElementById('lblRoomShareUrl');
   const shareUrl = `${window.location.origin}${window.location.pathname}?room=${code}`;
 
   if (modal) modal.style.display = 'flex';
-  if (lblCode) lblCode.textContent = `ห้อง: ${code}`;
+  if (lblCode) lblCode.textContent = `ห้องประลอง: ${code}`;
   if (lblUrl) lblUrl.textContent = shareUrl;
 
-  renderLobbyPlayers(roomData ? roomData.players : []);
+  updateLobbyUI(roomData);
+
+  // Poll lobby status every 2 seconds
+  if (lobbyPollInterval) clearInterval(lobbyPollInterval);
+  lobbyPollInterval = setInterval(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/battle/room/status?roomCode=${code}`, {
+        headers: { 'Authorization': `Bearer ${userToken}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.room) {
+          currentRoomData = data.room;
+          updateLobbyUI(data.room);
+
+          if (data.room.status === 'SPINNING') {
+            clearInterval(lobbyPollInterval);
+            modal.style.display = 'none';
+            showExamSetWheelSpinAnimation(data.room.subject, data.room.selectedSetTitle, data.room.questions, data.room.players);
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Lobby status poll error:', e);
+    }
+  }, 2000);
 }
 
-function renderLobbyPlayers(players) {
-  const container = document.getElementById('lobbyPlayersContainer');
+function updateLobbyUI(roomData) {
+  if (!roomData) return;
   const countLabel = document.getElementById('lblLobbyPlayersCount');
+  const container = document.getElementById('lobbyPlayersContainer');
+  const btnStart = document.getElementById('btnHostStartDuel');
 
-  const pList = Array.isArray(players) && players.length > 0 ? players : [
-    { fullName: userProfile ? (userProfile.fullName || 'คุณ') : 'คุณ', isHost: true }
-  ];
-
-  if (countLabel) countLabel.textContent = `${pList.length}/8`;
+  const players = roomData.players || [];
+  if (countLabel) countLabel.textContent = `${players.length}/${roomData.maxPlayers}`;
 
   if (container) {
-    container.innerHTML = pList.map((p, idx) => `
+    container.innerHTML = players.map(p => `
       <div style="display: flex; justify-content: space-between; align-items: center; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 10px 14px;">
         <div style="display: flex; align-items: center; gap: 10px;">
-          <div style="width: 32px; height: 32px; border-radius: 50%; background: #BD1B0B; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px;">${escapeHTML((p.fullName || 'P').charAt(0))}</div>
-          <span style="font-size: 14px; font-weight: 700; color: #1E293B;">${escapeHTML(p.fullName || p.username || 'ผู้เล่น')}</span>
+          <div style="width: 34px; height: 34px; border-radius: 50%; background: ${p.isHost ? '#BD1B0B' : '#059669'}; color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px;">${escapeHTML((p.fullName || 'P').charAt(0))}</div>
+          <div>
+            <span style="font-size: 14px; font-weight: 800; color: #1E293B; display: block;">${escapeHTML(p.fullName || p.username || 'ผู้เล่น')}</span>
+            <span style="font-size: 11px; color: #64748B;">คะแนน ${p.points || 0} แต้ม</span>
+          </div>
         </div>
-        ${p.isHost ? '<span style="font-size: 11px; background: #FEF2F2; color: #BD1B0B; font-weight: 800; padding: 2px 8px; border-radius: 999px;">👑 หัวหน้าห้อง</span>' : '<span style="font-size: 11px; background: #ECFDF5; color: #059669; font-weight: 700; padding: 2px 8px; border-radius: 999px;">พร้อมแล้ว</span>'}
+        ${p.isHost ? '<span style="font-size: 11px; background: #FEF2F2; color: #BD1B0B; font-weight: 800; padding: 4px 10px; border-radius: 999px;">👑 หัวหน้าห้อง</span>' : '<span style="font-size: 11px; background: #ECFDF5; color: #059669; font-weight: 700; padding: 4px 10px; border-radius: 999px;">พร้อมแล้ว</span>'}
       </div>
     `).join('');
   }
+
+  const isHost = userProfile && roomData.hostUserId === userProfile.id;
+  if (btnStart) {
+    if (isHost) {
+      btnStart.style.display = 'block';
+      btnStart.innerHTML = `🎰 กดเริ่มประลอง (หมุนสุ่มชุดข้อสอบ!)`;
+      btnStart.onclick = hostTriggerStartDuel;
+    } else {
+      btnStart.style.display = 'block';
+      btnStart.style.background = '#94A3B8';
+      btnStart.innerHTML = `⏳ รอหัวหน้าห้องกดเริ่มประลอง...`;
+      btnStart.onclick = null;
+    }
+  }
 }
 
-window.copyRoomShareLink = function() {
-  const shareUrl = `${window.location.origin}${window.location.pathname}?room=${currentRoomCode}`;
-  navigator.clipboard.writeText(shareUrl).then(() => {
-    showCenteredAlert(`คัดลอกลิงก์เชิญเพื่อนเข้าร่วมห้อง ${currentRoomCode} เรียบร้อยแล้ว!`, { title: 'คัดลอกสำเร็จ' });
-  }).catch(() => {
-    showCenteredAlert(`ลิงก์สำหรับส่งให้เพื่อน: ${shareUrl}`, { title: 'ลิงก์เข้าห้อง' });
-  });
-};
-
 window.leaveRoomLobby = function() {
+  if (lobbyPollInterval) clearInterval(lobbyPollInterval);
   const modal = document.getElementById('roomLobbyDialog');
   if (modal) modal.style.display = 'none';
 };
 
-window.hostTriggerStartDuel = function() {
-  leaveRoomLobby();
-  openBattleSubjectSelectModal('custom_room', '🔑 เลือกวิชาประลองในห้อง');
+window.hostTriggerStartDuel = async function() {
+  if (!currentRoomCode) return;
+  try {
+    const res = await fetch(`${API_BASE}/api/battle/room/start-spin`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userToken}` },
+      body: JSON.stringify({ roomCode: currentRoomCode })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'ไม่สามารถเริ่มการสุ่มได้');
+  } catch (err) {
+    showCenteredAlert(err.message, { title: 'เกิดข้อผิดพลาด' });
+  }
 };
+
+// Exam Set Wheel Spin Animation
+function showExamSetWheelSpinAnimation(subjectName, selectedSetTitle, questions, players) {
+  const modal = document.createElement('div');
+  modal.style.position = 'fixed';
+  modal.style.top = '0'; modal.style.left = '0'; modal.style.width = '100vw'; modal.style.height = '100vh';
+  modal.style.background = 'rgba(15, 23, 42, 0.9)'; modal.style.zIndex = '9999'; modal.style.display = 'flex';
+  modal.style.alignItems = 'center'; modal.style.justifyContent = 'center'; modal.style.fontFamily = 'Kanit, sans-serif';
+
+  modal.innerHTML = `
+    <div style="background: white; border-radius: 28px; padding: 32px 24px; text-align: center; max-width: 440px; width: 90%; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3);">
+      <span style="background: #FEF2F2; color: #BD1B0B; font-weight: 800; padding: 4px 12px; border-radius: 999px; font-size: 12px;">🎰 กำลังสุ่มชุดข้อสอบ</span>
+      <h3 style="margin: 10px 0 4px 0; font-size: 20px; font-weight: 800; color: #1E293B;">วิชา: ${escapeHTML(subjectName)}</h3>
+      <p style="font-size: 13px; color: #64748B; margin-bottom: 20px;">หมุนวงล้อเพื่อเลือกชุดข้อสอบทำข้อสอบ 10 ข้อ...</p>
+
+      <div style="position: relative; width: 220px; height: 220px; margin: 0 auto 20px auto;">
+        <div style="position: absolute; top: -10px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 12px solid transparent; border-right: 12px solid transparent; border-top: 20px solid #BD1B0B; z-index: 10;"></div>
+        <div id="examWheelSpinner" style="width: 220px; height: 220px; border-radius: 50%; border: 6px solid #BD1B0B; background: conic-gradient(#BD1B0B 0 60deg, #2563EB 60deg 120deg, #059669 120deg 180deg, #7E22CE 180deg 240deg, #D97706 240deg 300deg, #0284C7 300deg 360deg); transition: transform 3s cubic-bezier(0.15, 0.9, 0.3, 1);"></div>
+      </div>
+
+      <div id="spinResultBox" style="display: none; background: #FEF2F2; border: 2px solid #FECACA; border-radius: 16px; padding: 14px; margin-top: 10px;">
+        <span style="font-size: 12px; color: #991B1B; font-weight: 700; display: block;">🎯 สุ่มได้ชุดข้อสอบ:</span>
+        <h4 style="margin: 4px 0 0 0; font-size: 17px; font-weight: 900; color: #BD1B0B;">${escapeHTML(selectedSetTitle)}</h4>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  setTimeout(() => {
+    const wheel = document.getElementById('examWheelSpinner');
+    if (wheel) wheel.style.transform = 'rotate(1800deg)';
+  }, 100);
+
+  setTimeout(() => {
+    const resBox = document.getElementById('spinResultBox');
+    if (resBox) resBox.style.display = 'block';
+  }, 3000);
+
+  setTimeout(() => {
+    modal.remove();
+    const opp = (Array.isArray(players) && players.length > 1) ? players.find(p => p.userId !== (userProfile ? userProfile.id : '')) : null;
+    startLiveBattleArenaWithQuestions(subjectName, opp, questions);
+  }, 4200);
+}
 
 // Check if loaded with ?room=CODE
 function checkRoomShareUrlOnLoad() {
@@ -5175,3 +5307,10 @@ function saveQuizHistoryRecord(record) {
     console.error('Save quiz record error:', e);
   }
 }
+
+// Auto-fetch active rooms on load
+setTimeout(() => {
+  if (typeof fetchActiveBattleRooms === 'function') {
+    fetchActiveBattleRooms();
+  }
+}, 1000);

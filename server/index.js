@@ -5803,94 +5803,184 @@ app.post('/api/exams/battle/poll-match', authenticateToken, async (req, res) => 
   }
 });
 
-// POST to match instantly (matches with queue if someone is waiting, or grabs random real user offline)
-app.post('/api/exams/battle/match-instant', authenticateToken, async (req, res) => {
-  const { subject } = req.body;
+// --- Custom Battle Rooms Store & Endpoints ---
+const customBattleRooms = new Map();
+
+// 1. GET /api/battle/rooms - List all public active lobby rooms
+app.get('/api/battle/rooms', authenticateToken, (req, res) => {
+  const now = Date.now();
+  const roomsList = [];
+
+  for (const [code, r] of customBattleRooms.entries()) {
+    if (now - r.createdAt > 30 * 60 * 1000) {
+      customBattleRooms.delete(code);
+      continue;
+    }
+    if (!r.isPrivate && r.status === 'LOBBY') {
+      roomsList.push({
+        roomCode: r.roomCode,
+        hostName: r.hostName,
+        subject: r.subject,
+        maxPlayers: r.maxPlayers,
+        currentPlayers: r.players.length,
+        isPrivate: r.isPrivate,
+        createdAt: r.createdAt
+      });
+    }
+  }
+
+  res.json({ rooms: roomsList });
+});
+
+// 2. POST /api/battle/room/create - Create a new room
+app.post('/api/battle/room/create', authenticateToken, async (req, res) => {
+  const { subject, isPrivate, maxPlayers } = req.body;
   const now = Date.now();
 
   try {
-    // 1. Clean up stale users in queue (no poll for > 6 seconds)
-    const activeQueue = battleQueue.filter(u => now - u.lastPoll < 6000);
-    battleQueue.length = 0;
-    battleQueue.push(...activeQueue);
+    const user = await prisma.user.findUnique({ where: { id: req.user.userId } });
+    if (!user) return res.status(404).json({ error: 'ไม่พบผู้ใช้งาน' });
 
-    // 2. Check if this user is already in an active match
-    let existingMatch = null;
-    for (const m of activeMatches.values()) {
-      if (m.player1.userId === req.user.userId || m.player2.userId === req.user.userId) {
-        existingMatch = m;
-        break;
-      }
-    }
-
-    if (existingMatch) {
-      const opponent = existingMatch.player1.userId === req.user.userId ? existingMatch.player2 : existingMatch.player1;
-      return res.json({
-        status: 'matched',
-        matchId: existingMatch.matchId,
-        opponent,
-        questions: existingMatch.questions
-      });
-    }
-
-    // 3. Check if anyone else is waiting in queue (ignoring subject, excluding self)
-    const partner = battleQueue.find(u => u.userId !== req.user.userId);
-    if (partner) {
-      // Match with them!
-      const idx2 = battleQueue.findIndex(u => u.userId === partner.userId);
-      if (idx2 !== -1) battleQueue.splice(idx2, 1);
-      
-      // Also remove self from queue if present
-      const idxSelf = battleQueue.findIndex(u => u.userId === req.user.userId);
-      if (idxSelf !== -1) battleQueue.splice(idxSelf, 1);
-
-      // Fetch questions for the subject requested by the matcher
-      const sets = await prisma.examSet.findMany({
-        where: { category: subject },
-        select: { id: true }
-      });
-      const setIds = sets.map(s => s.id);
-      let qList = await prisma.question.findMany({
-        where: { examSetId: { in: setIds } },
-        include: { examSet: true }
-      });
-      qList = localShuffle(qList).slice(0, 10);
-
-      const user = await prisma.user.findUnique({ where: { id: req.user.userId } });
-      const matchId = `match_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      const newMatch = {
-        matchId,
-        player1: {
-          userId: req.user.userId,
+    const roomCode = 'RM' + Math.random().toString(36).substring(2, 8).toUpperCase();
+    const newRoom = {
+      roomCode,
+      hostUserId: user.id,
+      hostName: user.fullName || user.username,
+      subject: subject || 'งานสารบรรณ',
+      isPrivate: !!isPrivate,
+      maxPlayers: parseInt(maxPlayers) || 8,
+      players: [
+        {
+          userId: user.id,
           username: user.username,
           fullName: user.fullName || user.username,
           level: user.level || 1,
-          faceImage: user.faceImage
-        },
-        player2: partner,
-        subject,
-        questions: qList,
-        createdAt: now
-      };
+          points: user.points || 0,
+          faceImage: user.faceImage,
+          isHost: true
+        }
+      ],
+      status: 'LOBBY',
+      selectedSetTitle: '',
+      questions: [],
+      createdAt: now
+    };
 
-      activeMatches.set(matchId, newMatch);
+    customBattleRooms.set(roomCode, newRoom);
+    res.json({ roomCode, room: newRoom });
+  } catch (err) {
+    console.error('Create Room Error:', err);
+    res.status(500).json({ error: 'ไม่สามารถสร้างห้องประลองได้' });
+  }
+});
 
-      return res.json({
-        status: 'matched',
-        matchId,
-        opponent: partner,
-        questions: qList
-      });
+// 3. POST /api/battle/room/join - Join an existing room
+app.post('/api/battle/room/join', authenticateToken, async (req, res) => {
+  const { roomCode } = req.body;
+  const cleanCode = (roomCode || '').trim().toUpperCase();
+
+  try {
+    const room = customBattleRooms.get(cleanCode);
+    if (!room) {
+      return res.status(404).json({ error: 'ไม่พบห้องประลองนี้ หรือห้องถูกปิดแล้ว' });
     }
 
-    // 4. No one is waiting in the queue, return waiting status so they keep waiting as normal
+    if (room.players.length >= room.maxPlayers) {
+      return res.status(400).json({ error: 'ห้องประลองนี้เต็มแล้ว' });
+    }
+
+    const user = await prisma.user.findUnique({ where: { id: req.user.userId } });
+    if (!user) return res.status(404).json({ error: 'ไม่พบผู้ใช้งาน' });
+
+    let player = room.players.find(p => p.userId === user.id);
+    if (!player) {
+      player = {
+        userId: user.id,
+        username: user.username,
+        fullName: user.fullName || user.username,
+        level: user.level || 1,
+        points: user.points || 0,
+        faceImage: user.faceImage,
+        isHost: false
+      };
+      room.players.push(player);
+    }
+
+    res.json({ roomCode: cleanCode, room });
+  } catch (err) {
+    console.error('Join Room Error:', err);
+    res.status(500).json({ error: 'ไม่สามารถเข้าร่วมห้องได้' });
+  }
+});
+
+// 4. POST /api/battle/room/start-spin - Host triggers exam set spin & starts duel
+app.post('/api/battle/room/start-spin', authenticateToken, async (req, res) => {
+  const { roomCode } = req.body;
+  const room = customBattleRooms.get((roomCode || '').trim().toUpperCase());
+
+  if (!room) return res.status(404).json({ error: 'ไม่พบห้องประลอง' });
+  if (room.hostUserId !== req.user.userId) {
+    return res.status(403).json({ error: 'เฉพาะหัวหน้าห้องเท่านั้นที่กดเริ่มประลองได้' });
+  }
+
+  try {
+    const sets = await prisma.examSet.findMany({
+      where: { category: room.subject },
+      select: { id: true, title: true }
+    });
+
+    let chosenSetTitle = 'ชุดข้อสอบประลองวิชา ' + room.subject;
+    let setIds = [];
+    if (sets.length > 0) {
+      const randSet = sets[Math.floor(Math.random() * sets.length)];
+      chosenSetTitle = randSet.title || chosenSetTitle;
+      setIds = [randSet.id];
+    }
+
+    let qList = [];
+    if (setIds.length > 0) {
+      qList = await prisma.question.findMany({
+        where: { examSetId: { in: setIds } },
+        include: { examSet: true }
+      });
+    }
+    if (qList.length < 10) {
+      qList = await prisma.question.findMany({ take: 20 });
+    }
+    qList = localShuffle(qList).slice(0, 10);
+
+    const formattedQuestions = qList.map(q => ({
+      id: q.id,
+      questionText: q.questionText,
+      choices: [q.choice1, q.choice2, q.choice3, q.choice4],
+      correctAnswer: q.correctAnswer,
+      explanation: q.explanation || 'คำอธิบายเฉลยประลอง'
+    }));
+
+    room.status = 'SPINNING';
+    room.selectedSetTitle = chosenSetTitle;
+    room.questions = formattedQuestions;
+
     res.json({
-      status: 'waiting'
+      success: true,
+      roomCode: room.roomCode,
+      subject: room.subject,
+      selectedSetTitle: chosenSetTitle,
+      questions: formattedQuestions
     });
   } catch (err) {
-    console.error('Match Instant Error:', err);
-    res.status(500).json({ error: 'เกิดข้อผิดพลาดในการจับคู่ทันที' });
+    console.error('Start Spin Error:', err);
+    res.status(500).json({ error: 'ไม่สามารถเริ่มการสุ่มชุดข้อสอบได้' });
   }
+});
+
+// 5. GET /api/battle/room/status - Poll status for lobby / joined players
+app.get('/api/battle/room/status', authenticateToken, (req, res) => {
+  const roomCode = (req.query.roomCode || '').trim().toUpperCase();
+  const room = customBattleRooms.get(roomCode);
+  if (!room) return res.status(404).json({ error: 'ไม่พบห้องประลอง' });
+
+  res.json({ room });
 });
 
 // POST to leave matchmaking queue
