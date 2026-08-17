@@ -473,7 +473,8 @@ async function saveVerifiedExamSet(status) {
 
   const title = document.getElementById('examTitle').value.trim() || 'ชุดข้อสอบใหม่';
   const category = document.getElementById('examSubject').value;
-  const subcategory = document.getElementById('knowledgeBaseSelect').value;
+  const customSubcategory = document.getElementById('examSubcategory')?.value.trim();
+  const subcategory = customSubcategory || document.getElementById('knowledgeBaseSelect').value;
 
   try {
     const res = await fetch(`${API_BASE}/api/admin/exams/save-set`, {

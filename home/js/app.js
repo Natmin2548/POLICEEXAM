@@ -4154,6 +4154,9 @@ window.backToBankSubjects = function() {
   if (examSetsPanel) examSetsPanel.style.display = 'none';
 };
 
+let currentFetchedExamSets = [];
+let activeSubcategoryFilter = 'ALL';
+
 async function renderSubjectExamSets(subjectKey) {
   const container = document.getElementById('examSetsContainer');
   const countTag = document.getElementById('examSetsCountTag');
@@ -4165,74 +4168,149 @@ async function renderSubjectExamSets(subjectKey) {
     const res = await fetch(`${API_BASE}/api/exams/sets?category=${encodeURIComponent(subjectKey)}`);
     const sets = res.ok ? await res.json() : [];
 
-    if (countTag) countTag.textContent = `${sets.length} ชุดข้อสอบ`;
+    currentFetchedExamSets = Array.isArray(sets) ? sets : [];
+    activeSubcategoryFilter = 'ALL';
 
-    if (!Array.isArray(sets) || sets.length === 0) {
-      container.innerHTML = `
-        <div style="background: white; border: 1px dashed #CBD5E1; border-radius: 16px; padding: 32px 20px; text-align: center;">
-          <div style="font-size: 15px; font-weight: 800; color: #475569; margin-bottom: 6px;">ไม่มีชุดข้อสอบในวิชานี้</div>
-          <p style="font-size: 13px; color: #94A3B8; margin: 0; line-height: 1.5;">ยังไม่มีชุดข้อสอบสำหรับวิชานี้ในระบบ สามารถเพิ่มชุดข้อสอบใหม่ได้ผ่านแผงจัดการผู้ดูแลระบบ (Admin Panel)</p>
-        </div>
-      `;
-      return;
-    }
+    renderSubcategoryFilterPills(subjectKey, currentFetchedExamSets);
+    renderFilteredExamSets(subjectKey);
 
-    // Get user history for score badges
-    const history = getLocalQuizHistory(subjectKey);
-
-    container.innerHTML = sets.map(s => {
-      const setRecords = history.filter(h => {
-        if (!h) return false;
-        if (h.setId && String(h.setId) === String(s.id)) return true;
-        if (h.setType && String(h.setType) === String(s.id)) return true;
-        if (h.setTitle && s.title) {
-          const hTitle = h.setTitle.trim().toLowerCase();
-          const sTitle = s.title.trim().toLowerCase();
-          if (hTitle === sTitle || hTitle.includes(sTitle) || sTitle.includes(hTitle)) return true;
-        }
-        if (sets.length === 1 && (h.subject === subjectKey || (subjectKey.includes('สารบรรณ') && h.subject && h.subject.includes('สารบรรณ')))) {
-          return true;
-        }
-        return false;
-      });
-
-      let bestBadge = `<span style="font-size: 11px; background: #F1F5F9; color: #64748B; padding: 4px 10px; border-radius: 999px; font-weight: 600;">ยังไม่ได้ทำ</span>`;
-      let btnLabel = 'เริ่มทำข้อสอบ';
-      
-      if (setRecords.length > 0) {
-        const maxScore = Math.max(...setRecords.map(r => r.scorePct || 0));
-        bestBadge = `<span style="font-size: 11px; background: #ECFDF5; color: #059669; padding: 4px 10px; border-radius: 999px; font-weight: 700;">ทำแล้ว (สูงสุด ${maxScore}%)</span>`;
-        btnLabel = 'ทำอีกครั้ง';
-      }
-
-      const color = s.color || '#2563EB';
-
-      return `
-        <div style="background: white; border: 1px solid #E2E8F0; border-radius: 18px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); transition: all 0.2s;">
-          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 8px;">
-            <h4 style="margin: 0; font-size: 15px; font-weight: 800; color: #1E293B; line-height: 1.4;">${escapeHTML(s.title)}</h4>
-            <span style="font-size: 11px; background: ${color}15; color: ${color}; font-weight: 700; padding: 4px 10px; border-radius: 999px; flex-shrink: 0;">${escapeHTML(s.tag || 'ชุดข้อสอบ')}</span>
-          </div>
-          
-          <p style="font-size: 13px; color: #64748B; margin: 0 0 14px 0; line-height: 1.5;">${escapeHTML(s.desc || '')}</p>
-          
-          <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #F1F5F9; padding-top: 14px; flex-wrap: wrap; gap: 10px;">
-            <div style="display: flex; align-items: center; gap: 10px; font-size: 12px; color: #64748B; font-weight: 600; flex-wrap: wrap;">
-              <span>${s.timeMinutes || 60} นาที</span>
-              <span>${s.questionsCount || 0} ข้อ</span>
-              ${bestBadge}
-            </div>
-            <button onclick="launchSelectedExamSet('${subjectKey}', '${s.id}', ${s.questionsCount || 10}, '${escapeHTML(s.title)}')" style="background: ${color}; color: white; border: none; padding: 8px 18px; border-radius: 12px; font-weight: 700; font-size: 13px; cursor: pointer; font-family: inherit; box-shadow: 0 4px 8px ${color}33; transition: all 0.2s;">
-              ${btnLabel}
-            </button>
-          </div>
-        </div>
-      `;
-    }).join('');
   } catch (err) {
     console.error('Render exam sets error:', err);
     container.innerHTML = '<div style="text-align: center; color: #EF4444; padding: 20px; font-size: 13px;">เกิดข้อผิดพลาดในการโหลดชุดข้อสอบ</div>';
   }
+}
+
+function renderSubcategoryFilterPills(subjectKey, sets) {
+  const subcatFilterContainer = document.getElementById('subcategoryFilterContainer');
+  if (!subcatFilterContainer) return;
+
+  const subcats = Array.from(new Set(sets.map(s => s.subcategory).filter(Boolean)));
+
+  if (subcats.length === 0) {
+    subcatFilterContainer.style.display = 'none';
+    subcatFilterContainer.innerHTML = '';
+    return;
+  }
+
+  subcatFilterContainer.style.display = 'flex';
+  
+  let pillsHtml = `
+    <button onclick="filterExamSetsBySubcategory('ALL')" id="subcatPill_ALL" style="padding: 6px 14px; border-radius: 999px; font-size: 12px; font-weight: 700; border: 1px solid #BD1B0B; background: #BD1B0B; color: white; cursor: pointer; transition: all 0.2s; font-family: inherit;">
+      ทั้งหมด
+    </button>
+  `;
+
+  subcats.forEach(sc => {
+    const safeSc = escapeHTML(sc);
+    pillsHtml += `
+      <button onclick="filterExamSetsBySubcategory('${safeSc}')" id="subcatPill_${safeSc}" style="padding: 6px 14px; border-radius: 999px; font-size: 12px; font-weight: 700; border: 1px solid #CBD5E1; background: #F1F5F9; color: #475569; cursor: pointer; transition: all 0.2s; font-family: inherit;">
+        ${safeSc}
+      </button>
+    `;
+  });
+
+  subcatFilterContainer.innerHTML = pillsHtml;
+}
+
+window.filterExamSetsBySubcategory = function(subcat) {
+  activeSubcategoryFilter = subcat;
+
+  const subcatFilterContainer = document.getElementById('subcategoryFilterContainer');
+  if (subcatFilterContainer) {
+    const buttons = subcatFilterContainer.querySelectorAll('button');
+    buttons.forEach(btn => {
+      if (btn.id === `subcatPill_${subcat}`) {
+        btn.style.background = '#BD1B0B';
+        btn.style.borderColor = '#BD1B0B';
+        btn.style.color = '#FFFFFF';
+      } else {
+        btn.style.background = '#F1F5F9';
+        btn.style.borderColor = '#CBD5E1';
+        btn.style.color = '#475569';
+      }
+    });
+  }
+
+  renderFilteredExamSets(currentSelectedBankSubject);
+};
+
+function renderFilteredExamSets(subjectKey) {
+  const container = document.getElementById('examSetsContainer');
+  const countTag = document.getElementById('examSetsCountTag');
+  if (!container) return;
+
+  let sets = currentFetchedExamSets;
+  if (activeSubcategoryFilter !== 'ALL') {
+    sets = sets.filter(s => s.subcategory === activeSubcategoryFilter);
+  }
+
+  if (countTag) countTag.textContent = `${sets.length} ชุดข้อสอบ`;
+
+  if (!Array.isArray(sets) || sets.length === 0) {
+    container.innerHTML = `
+      <div style="background: white; border: 1px dashed #CBD5E1; border-radius: 16px; padding: 32px 20px; text-align: center; grid-column: 1 / -1;">
+        <div style="font-size: 15px; font-weight: 800; color: #475569; margin-bottom: 6px;">ไม่มีชุดข้อสอบในหมวดย่อยนี้</div>
+        <p style="font-size: 13px; color: #94A3B8; margin: 0;">ลองเลือกหมวดย่อยอื่น หรือรอผู้ดูแลระบบเพิ่มชุดข้อสอบใหม่</p>
+      </div>
+    `;
+    return;
+  }
+
+  const history = getLocalQuizHistory(subjectKey);
+
+  container.innerHTML = sets.map(s => {
+    const setRecords = history.filter(h => {
+      if (!h) return false;
+      if (h.setId && String(h.setId) === String(s.id)) return true;
+      if (h.setType && String(h.setType) === String(s.id)) return true;
+      if (h.setTitle && s.title) {
+        const hTitle = h.setTitle.trim().toLowerCase();
+        const sTitle = s.title.trim().toLowerCase();
+        if (hTitle === sTitle || hTitle.includes(sTitle) || sTitle.includes(hTitle)) return true;
+      }
+      if (sets.length === 1 && (h.subject === subjectKey || (subjectKey.includes('สารบรรณ') && h.subject && h.subject.includes('สารบรรณ')))) {
+        return true;
+      }
+      return false;
+    });
+
+    let bestBadge = `<span style="font-size: 11px; background: #F1F5F9; color: #64748B; padding: 4px 10px; border-radius: 999px; font-weight: 600;">ยังไม่ได้ทำ</span>`;
+    let btnLabel = 'เริ่มทำข้อสอบ';
+    
+    if (setRecords.length > 0) {
+      const maxScore = Math.max(...setRecords.map(r => r.scorePct || 0));
+      bestBadge = `<span style="font-size: 11px; background: #ECFDF5; color: #059669; padding: 4px 10px; border-radius: 999px; font-weight: 700;">ทำแล้ว (สูงสุด ${maxScore}%)</span>`;
+      btnLabel = 'ทำอีกครั้ง';
+    }
+
+    const color = s.color || '#2563EB';
+    const subcatTag = s.subcategory ? `<span style="font-size: 11px; background: #F3E8FF; color: #7E22CE; font-weight: 700; padding: 4px 10px; border-radius: 999px; flex-shrink: 0; margin-left: 4px;">${escapeHTML(s.subcategory)}</span>` : '';
+
+    return `
+      <div style="background: white; border: 1px solid #E2E8F0; border-radius: 18px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); transition: all 0.2s;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 8px;">
+          <h4 style="margin: 0; font-size: 15px; font-weight: 800; color: #1E293B; line-height: 1.4;">${escapeHTML(s.title)}</h4>
+          <div style="display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end;">
+            <span style="font-size: 11px; background: ${color}15; color: ${color}; font-weight: 700; padding: 4px 10px; border-radius: 999px; flex-shrink: 0;">${escapeHTML(s.tag || 'ชุดข้อสอบ')}</span>
+            ${subcatTag}
+          </div>
+        </div>
+        
+        <p style="font-size: 13px; color: #64748B; margin: 0 0 14px 0; line-height: 1.5;">${escapeHTML(s.desc || '')}</p>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #F1F5F9; padding-top: 14px; flex-wrap: wrap; gap: 10px;">
+          <div style="display: flex; align-items: center; gap: 10px; font-size: 12px; color: #64748B; font-weight: 600; flex-wrap: wrap;">
+            <span>${s.timeMinutes || 60} นาที</span>
+            <span>${s.questionsCount || 0} ข้อ</span>
+            ${bestBadge}
+          </div>
+          <button onclick="launchSelectedExamSet('${subjectKey}', '${s.id}', ${s.questionsCount || 10}, '${escapeHTML(s.title)}')" style="background: ${color}; color: white; border: none; padding: 8px 18px; border-radius: 12px; font-weight: 700; font-size: 13px; cursor: pointer; font-family: inherit; box-shadow: 0 4px 8px ${color}33; transition: all 0.2s;">
+            ${btnLabel}
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
 }
 
 function getLocalQuizHistory(subjectKey) {

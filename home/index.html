@@ -941,13 +941,19 @@
 
           <!-- SUBTAB 1: Available Exam Sets View -->
           <div id="subjectSubtabExamSetsView" style="display: block;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding: 0 4px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; padding: 0 4px;">
               <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #1E293B;">
                 ชุดข้อสอบทั้งหมดในวิชานี้
               </h3>
               <span id="examSetsCountTag" style="font-size: 12px; color: #64748B; font-weight: 600;">1 ชุดข้อสอบ</span>
             </div>
-            <!-- Grid Layout for Cards (No more stretched single-column bars!) -->
+
+            <!-- Dynamic Subcategory Filter Pills (e.g. หมวดอนุกรม, หมวดคำนวณ) -->
+            <div id="subcategoryFilterContainer" style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px;">
+              <!-- Dynamically populated via JS -->
+            </div>
+
+            <!-- Grid Layout for Cards -->
             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;" id="examSetsContainer">
               <!-- Dynamically populated via JS -->
             </div>
