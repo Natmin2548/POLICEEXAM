@@ -4182,8 +4182,7 @@ async function renderSubjectExamSets(subjectKey) {
       const setRecords = history.filter(h => 
         (h.setId && String(h.setId) === String(s.id)) ||
         (h.setType && String(h.setType) === String(s.id)) ||
-        (h.setTitle && s.title && h.setTitle.trim() === s.title.trim()) ||
-        (h.subject && subjectKey && (h.subject === subjectKey || (subjectKey.includes('สารบรรณ') && h.subject.includes('สารบรรณ'))))
+        (h.setTitle && s.title && h.setTitle.trim() === s.title.trim())
       );
 
       let bestBadge = `<span style="font-size: 11px; background: #F1F5F9; color: #64748B; padding: 4px 10px; border-radius: 999px; font-weight: 600;">ยังไม่ได้ทำ</span>`;
