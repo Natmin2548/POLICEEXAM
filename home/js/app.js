@@ -1499,8 +1499,9 @@ window.fetchActiveBattleRooms = async function() {
   if (!container) return;
 
   try {
+    const token = authToken || localStorage.getItem('authToken');
     const res = await fetch(`${API_BASE}/api/battle/rooms`, {
-      headers: { 'Authorization': `Bearer ${userToken}` }
+      headers: { 'Authorization': `Bearer ${token}` }
     });
     const data = res.ok ? await res.json() : { rooms: [] };
     const rooms = data.rooms || [];
@@ -1549,9 +1550,10 @@ window.submitCreateCustomRoom = async function() {
   const maxPlayers = document.getElementById('selMaxRoomPlayers') ? document.getElementById('selMaxRoomPlayers').value : 8;
 
   try {
+    const token = authToken || localStorage.getItem('authToken');
     const res = await fetch(`${API_BASE}/api/battle/room/create`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userToken}` },
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
       body: JSON.stringify({ subject, isPrivate: privacy === 'private', maxPlayers })
     });
     const data = await res.json();
@@ -1583,9 +1585,10 @@ window.submitJoinCustomRoom = function() {
 
 async function submitJoinCustomRoomByCode(code) {
   try {
+    const token = authToken || localStorage.getItem('authToken');
     const res = await fetch(`${API_BASE}/api/battle/room/join`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userToken}` },
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
       body: JSON.stringify({ roomCode: code })
     });
     const data = await res.json();
@@ -1617,8 +1620,9 @@ function enterRoomLobby(code, roomData) {
   if (lobbyPollInterval) clearInterval(lobbyPollInterval);
   lobbyPollInterval = setInterval(async () => {
     try {
+      const token = authToken || localStorage.getItem('authToken');
       const res = await fetch(`${API_BASE}/api/battle/room/status?roomCode=${code}`, {
-        headers: { 'Authorization': `Bearer ${userToken}` }
+        headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
         const data = await res.json();
@@ -1687,9 +1691,10 @@ window.leaveRoomLobby = function() {
 window.hostTriggerStartDuel = async function() {
   if (!currentRoomCode) return;
   try {
+    const token = authToken || localStorage.getItem('authToken');
     const res = await fetch(`${API_BASE}/api/battle/room/start-spin`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userToken}` },
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
       body: JSON.stringify({ roomCode: currentRoomCode })
     });
     const data = await res.json();
@@ -1751,9 +1756,10 @@ function checkRoomShareUrlOnLoad() {
   if (roomCode) {
     setTimeout(async () => {
       try {
+        const token = authToken || localStorage.getItem('authToken');
         const res = await fetch(`${API_BASE}/api/battle/room/join`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userToken}` },
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
           body: JSON.stringify({ roomCode })
         });
         if (res.ok) {
