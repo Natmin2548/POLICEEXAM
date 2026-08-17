@@ -1134,7 +1134,7 @@ const btnQuickMatch = document.getElementById('btnQuickMatch');
 if (btnQuickMatch) {
   btnQuickMatch.addEventListener('click', (e) => {
     e.preventDefault();
-    openBattleHub();
+    startNormalBattle1v1();
   });
 }
 

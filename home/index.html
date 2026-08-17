@@ -785,7 +785,7 @@
           <!-- Modes List Card -->
           <section class="battle-modes-list">
             <!-- Mode 1: Ranked Match -->
-            <div class="battle-mode-item" onclick="alert('Ranked Match จะพร้อมใช้งานเร็วๆ นี้');">
+            <div class="battle-mode-item" onclick="startRankedBattle()">
               <div class="mode-item-left">
                 <div class="mode-icon-wrapper ranked-icon">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -800,7 +800,7 @@
                     <span class="mode-title">Ranked Match</span>
                     <span class="mode-badge badge-ranked">Ranked</span>
                   </div>
-                  <span class="mode-subtitle">แข่งระดับ ELO เดียวกัน</span>
+                  <span class="mode-subtitle">แข่งระดับ ELO เดียวกัน (±200 แต้ม)</span>
                 </div>
               </div>
               <svg class="menu-item-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -809,7 +809,7 @@
             </div>
 
             <!-- Mode 2: Tournament -->
-            <div class="battle-mode-item" onclick="alert('Tournament จะพร้อมใช้งานเร็วๆ นี้');">
+            <div class="battle-mode-item" onclick="startTournamentBattle()">
               <div class="mode-item-left">
                 <div class="mode-icon-wrapper tournament-icon">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -834,7 +834,7 @@
             </div>
 
             <!-- Mode 3: Invite Friend -->
-            <div class="battle-mode-item" onclick="alert('ท้าทายเพื่อนจะพร้อมใช้งานเร็วๆ นี้');">
+            <div class="battle-mode-item" onclick="openCustomRoomSetup()">
               <div class="mode-item-left">
                 <div class="mode-icon-wrapper challenge-icon">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
