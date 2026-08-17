@@ -4081,8 +4081,44 @@ window.startBankSubject = function(subjectKey) {
   if (titleEl) titleEl.textContent = `วิชา: ${displayNames[subjectKey] || subjectKey}`;
   if (badgeEl) badgeEl.textContent = subjectKey.includes('สารบรรณ') || subjectKey.includes('54') ? 'วิชาหลักสำคัญ' : 'วิชาเตรียมสอบ';
 
+  // Reset to Exam Sets tab by default
+  switchSubjectSubtab('examSets');
+
   renderSubjectExamSets(subjectKey);
   renderSubjectStatistics(subjectKey);
+};
+
+window.switchSubjectSubtab = function(tabName) {
+  const btnExamSets = document.getElementById('btnSubjectSubtabExamSets');
+  const btnStats = document.getElementById('btnSubjectSubtabStats');
+  const viewExamSets = document.getElementById('subjectSubtabExamSetsView');
+  const viewStats = document.getElementById('subjectSubtabStatsView');
+
+  if (tabName === 'examSets') {
+    if (viewExamSets) viewExamSets.style.display = 'block';
+    if (viewStats) viewStats.style.display = 'none';
+
+    if (btnExamSets) {
+      btnExamSets.style.background = '#BD1B0B';
+      btnExamSets.style.color = '#FFFFFF';
+    }
+    if (btnStats) {
+      btnStats.style.background = '#F1F5F9';
+      btnStats.style.color = '#64748B';
+    }
+  } else if (tabName === 'stats') {
+    if (viewExamSets) viewExamSets.style.display = 'none';
+    if (viewStats) viewStats.style.display = 'block';
+
+    if (btnExamSets) {
+      btnExamSets.style.background = '#F1F5F9';
+      btnExamSets.style.color = '#64748B';
+    }
+    if (btnStats) {
+      btnStats.style.background = '#BD1B0B';
+      btnStats.style.color = '#FFFFFF';
+    }
+  }
 };
 
 window.backToBankSubjects = function() {
