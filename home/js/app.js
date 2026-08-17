@@ -4261,15 +4261,15 @@ function renderFilteredExamSets(subjectKey) {
   container.innerHTML = sets.map(s => {
     const setRecords = history.filter(h => {
       if (!h) return false;
+      // 1. Exact ID match (most reliable)
       if (h.setId && String(h.setId) === String(s.id)) return true;
       if (h.setType && String(h.setType) === String(s.id)) return true;
+      
+      // 2. Exact Title match (strictly exact equal, no loose substring match!)
       if (h.setTitle && s.title) {
         const hTitle = h.setTitle.trim().toLowerCase();
         const sTitle = s.title.trim().toLowerCase();
-        if (hTitle === sTitle || hTitle.includes(sTitle) || sTitle.includes(hTitle)) return true;
-      }
-      if (sets.length === 1 && (h.subject === subjectKey || (subjectKey.includes('สารบรรณ') && h.subject && h.subject.includes('สารบรรณ')))) {
-        return true;
+        if (hTitle === sTitle) return true;
       }
       return false;
     });
