@@ -790,15 +790,38 @@ const battleView = document.getElementById('battleView');
 const statsView = document.getElementById('statsView');
 const profileView = document.getElementById('profileView');
 const questionBankView = document.getElementById('questionBankView');
-const btnBackFromBank = document.getElementById('btnBackFromBank');
+window.switchTabToHome = function(e) {
+  if (e && typeof e.preventDefault === 'function') e.preventDefault();
+  
+  const navTabs = document.querySelectorAll('.bottom-nav .nav-tab');
+  const homeTabBtn = navTabs[0];
+  const homeView = document.getElementById('homeView');
+  const communityView = document.getElementById('communityView');
+  const battleView = document.getElementById('battleView');
+  const statsView = document.getElementById('statsView');
+  const profileView = document.getElementById('profileView');
+  const questionBankView = document.getElementById('questionBankView');
+
+  navTabs.forEach(t => t.classList.remove('active'));
+  if (homeTabBtn) homeTabBtn.classList.add('active');
+
+  if (homeView) homeView.classList.add('active');
+  if (communityView) communityView.classList.remove('active');
+  if (battleView) battleView.classList.remove('active');
+  if (statsView) statsView.classList.remove('active');
+  if (profileView) profileView.classList.remove('active');
+  if (questionBankView) questionBankView.classList.remove('active');
+
+  if (typeof loadRealProfile === 'function') loadRealProfile();
+  if (typeof loadRadarChart === 'function') loadRadarChart();
+  if (typeof updateStatsTabDetails === 'function') updateStatsTabDetails();
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
 
 if (btnBackFromBank) {
-  btnBackFromBank.addEventListener('click', () => {
-    if (questionBankView) questionBankView.classList.remove('active');
-    if (homeView) homeView.classList.add('active');
-    
-    navTabs.forEach(t => t.classList.remove('active'));
-    if (homeTabBtn) homeTabBtn.classList.add('active');
+  btnBackFromBank.addEventListener('click', (e) => {
+    switchTabToHome(e);
   });
 }
 
