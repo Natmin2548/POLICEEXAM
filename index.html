@@ -7,9 +7,30 @@
     (function() {
       try {
         const token = localStorage.getItem('authToken');
-        const profile = localStorage.getItem('userProfile');
-        if (token || profile) {
-          window.location.replace('/home/index.html');
+        if (token) {
+          // Validate token before redirecting - check if it's a valid non-expired JWT
+          try {
+            const parts = token.split('.');
+            if (parts.length === 3) {
+              const payload = JSON.parse(atob(parts[1]));
+              const now = Math.floor(Date.now() / 1000);
+              if (payload.exp && payload.exp > now) {
+                // Token is still valid - safe to redirect
+                window.location.replace('/home/index.html');
+                return;
+              } else {
+                // Token expired - clear it so login page shows properly
+                localStorage.removeItem('authToken');
+                localStorage.removeItem('userProfile');
+                localStorage.removeItem('loginProvider');
+              }
+            }
+          } catch(e) {
+            // Malformed token - clear it
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('userProfile');
+            localStorage.removeItem('loginProvider');
+          }
         }
       } catch (e) {}
     })();
