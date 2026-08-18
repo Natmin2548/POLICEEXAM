@@ -218,22 +218,22 @@ openRegisterButtons.forEach(btn => {
   });
 });
 
-closeLogin.addEventListener('click', () => hideModal(loginModal));
-closeRegister.addEventListener('click', () => hideModal(registerModal));
+if (closeLogin) closeLogin.addEventListener('click', () => hideModal(loginModal));
+if (closeRegister) closeRegister.addEventListener('click', () => hideModal(registerModal));
 
-[loginModal, registerModal].forEach(modal => {
+[loginModal, registerModal].filter(Boolean).forEach(modal => {
   modal.addEventListener('click', (e) => {
     if (e.target === modal) hideModal(modal);
   });
 });
 
-linkToRegister.addEventListener('click', (e) => {
+if (linkToRegister) linkToRegister.addEventListener('click', (e) => {
   e.preventDefault();
   hideModal(loginModal);
   setTimeout(() => showModal(registerModal), 150);
 });
 
-linkToLogin.addEventListener('click', (e) => {
+if (linkToLogin) linkToLogin.addEventListener('click', (e) => {
   e.preventDefault();
   hideModal(registerModal);
   setTimeout(() => showModal(loginModal), 150);
@@ -475,7 +475,7 @@ function initGoogleIdentity() {
 }
 
 async function handleGoogleCredential(response) {
-  if (!response.credential) return;
+  if (!response || !response.credential) return;
 
   try {
     const res = await fetch(`${API_BASE}/api/auth/google`, {
@@ -484,10 +484,23 @@ async function handleGoogleCredential(response) {
       body: JSON.stringify({ idToken: response.credential })
     });
 
-    const data = await res.json();
+    // Guard against empty response body (can happen if extension blocks request)
+    let data = {};
+    const contentType = res.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+      try { data = await res.json(); } catch(e) { data = {}; }
+    } else {
+      const text = await res.text();
+      if (text) { try { data = JSON.parse(text); } catch(e) {} }
+    }
 
     if (!res.ok) {
-      alert(data.error || 'เข้าสู่ระบบด้วย Google ไม่สำเร็จ');
+      alert(data.error || 'เข้าสู่ระบบด้วย Google ไม่สำเร็จ กรุณาลองใหม่หรือเข้าสู่ระบบด้วย Email แทน');
+      return;
+    }
+
+    if (!data.token) {
+      alert('เกิดข้อผิดพลาดจากเซิร์ฟเวอร์ กรุณาลองใหม่');
       return;
     }
 
@@ -495,14 +508,14 @@ async function handleGoogleCredential(response) {
     localStorage.setItem('userProfile', JSON.stringify(data.user));
     localStorage.setItem('loginProvider', 'google');
 
-    hideModal(loginModal);
-    hideModal(registerModal);
+    if (loginModal) hideModal(loginModal);
+    if (registerModal) hideModal(registerModal);
 
     window.location.href = 'home/index.html';
 
   } catch (err) {
     console.error('Google auth fetch error:', err);
-    alert('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาลองใหม่');
+    alert('เข้าสู่ระบบด้วย Google ไม่สำเร็จ หากใช้ AdBlock/Extension กรุณาปิดชั่วคราวหรือเข้าสู่ระบบด้วย Email แทน');
   }
 }
 
