@@ -251,15 +251,15 @@ document.addEventListener('keydown', (e) => {
 // ==========================================
 const loginForm = document.getElementById('loginForm');
 
-loginForm.addEventListener('submit', async (e) => {
+if (loginForm) loginForm.addEventListener('submit', async (e) => {
   e.preventDefault();
 
   const emailInput = loginForm.querySelector('input[type="email"]');
   const passwordInput = loginForm.querySelector('input[type="password"]');
   const submitBtn = loginForm.querySelector('.btn-modal-submit');
 
-  const usernameOrEmail = emailInput.value.trim();
-  const password = passwordInput.value;
+  const usernameOrEmail = emailInput ? emailInput.value.trim() : '';
+  const password = passwordInput ? passwordInput.value : '';
 
   if (!usernameOrEmail || !password) {
     showError(loginForm, 'กรุณากรอกอีเมลและรหัสผ่าน');
@@ -283,12 +283,11 @@ loginForm.addEventListener('submit', async (e) => {
       return;
     }
 
-    // Save JWT token and user data to localStorage
     localStorage.setItem('authToken', data.token);
     localStorage.setItem('userProfile', JSON.stringify(data.user));
     localStorage.setItem('loginProvider', 'local');
 
-    hideModal(loginModal);
+    if (loginModal) hideModal(loginModal);
     window.location.replace(window.location.origin + '/home/index.html');
 
   } catch (err) {
@@ -303,7 +302,7 @@ loginForm.addEventListener('submit', async (e) => {
 // ==========================================
 const registerForm = document.getElementById('registerForm');
 
-registerForm.addEventListener('submit', async (e) => {
+if (registerForm) registerForm.addEventListener('submit', async (e) => {
   e.preventDefault();
 
   const inputs = registerForm.querySelectorAll('.form-row-2 input');
@@ -320,7 +319,6 @@ registerForm.addEventListener('submit', async (e) => {
   const fullName = `${firstName} ${lastName}`.trim();
   const email = emailInput ? emailInput.value.trim() : '';
 
-  // Validation
   if (!firstName || !lastName) {
     showError(registerForm, 'กรุณากรอกชื่อและนามสกุล');
     return;
@@ -337,12 +335,11 @@ registerForm.addEventListener('submit', async (e) => {
     showError(registerForm, 'รหัสผ่านไม่ตรงกัน');
     return;
   }
-  if (!termsCheck.checked) {
+  if (termsCheck && !termsCheck.checked) {
     showError(registerForm, 'กรุณายอมรับข้อกำหนดการใช้งาน');
     return;
   }
 
-  // Generate a username from email prefix
   const username = email.split('@')[0] + '_' + Math.floor(1000 + Math.random() * 9000);
 
   setLoading(submitBtn, true);
@@ -362,8 +359,7 @@ registerForm.addEventListener('submit', async (e) => {
       return;
     }
 
-    // Registration requires email verification
-    hideModal(registerModal);
+    if (registerModal) hideModal(registerModal);
     alert('สมัครสมาชิกสำเร็จ! กรุณาตรวจสอบอีเมลเพื่อยืนยันบัญชีของคุณก่อนเข้าสู่ระบบ');
 
   } catch (err) {
@@ -381,13 +377,6 @@ window.addEventListener('DOMContentLoaded', () => {
   // Warmup backend on Render if sleeping
   fetch(`${API_BASE}/api/health`).catch(() => {});
 
-  // Auto-redirect to dashboard if token exists on this device
-  const existingToken = localStorage.getItem('authToken');
-  const existingProfile = localStorage.getItem('userProfile');
-  if (existingToken && existingProfile) {
-    window.location.href = 'home/index.html';
-    return;
-  }
   // Try to fetch Client ID from API, but use fallback immediately
   fetch(`${API_BASE}/api/auth/config`)
     .then(res => res.json())
