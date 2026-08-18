@@ -23,10 +23,36 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-const prisma = new PrismaClient();
+// Prisma with PgBouncer-compatible settings
+const prisma = new PrismaClient({
+  datasources: {
+    db: {
+      url: (() => {
+        const url = process.env.DATABASE_URL || '';
+        // Ensure pgbouncer=true is set for PgBouncer Transaction Mode (Supabase pooler port 6543)
+        if (url.includes(':6543') && !url.includes('pgbouncer=true')) {
+          const sep = url.includes('?') ? '&' : '?';
+          return url + sep + 'pgbouncer=true&connection_limit=1';
+        }
+        return url;
+      })()
+    }
+  }
+});
 const genAI = process.env.GEMINI_API_KEY ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY) : null;
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-key';
+
+// Prevent server crashes from unhandled promise rejections (e.g. Prisma prepared statement errors)
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[Server] Unhandled Rejection at:', promise, 'reason:', reason);
+  // Don't crash the process - just log it
+});
+process.on('uncaughtException', (err) => {
+  console.error('[Server] Uncaught Exception:', err);
+  // Don't crash the process - just log it
+});
+
 
 // --- Email Transporter (Nodemailer) ---
 const isResend = process.env.EMAIL_USER === 'resend';
