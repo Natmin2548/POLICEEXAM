@@ -5630,7 +5630,7 @@ app.get('/api/battle/rooms', authenticateToken, (req, res) => {
   const roomsList = [];
 
   for (const [code, r] of customBattleRooms.entries()) {
-    if (now - r.createdAt > 30 * 60 * 1000) {
+    if (now - r.createdAt > 30 * 60 * 1000 || !r.players || r.players.length === 0) {
       customBattleRooms.delete(code);
       continue;
     }
@@ -5699,7 +5699,8 @@ app.post('/api/battle/room/join', authenticateToken, async (req, res) => {
 
   try {
     const room = customBattleRooms.get(cleanCode);
-    if (!room) {
+    if (!room || !room.players || room.players.length === 0) {
+      customBattleRooms.delete(cleanCode);
       return res.status(404).json({ error: 'ไม่พบห้องประลองนี้ หรือห้องถูกปิดแล้ว' });
     }
 
@@ -5729,6 +5730,42 @@ app.post('/api/battle/room/join', authenticateToken, async (req, res) => {
     console.error('Join Room Error:', err);
     res.status(500).json({ error: 'ไม่สามารถเข้าร่วมห้องได้' });
   }
+});
+
+// 3.5. POST /api/battle/room/leave - Leave or close room
+app.post('/api/battle/room/leave', authenticateToken, (req, res) => {
+  const { roomCode } = req.body;
+  const cleanCode = (roomCode || '').trim().toUpperCase();
+  const room = customBattleRooms.get(cleanCode);
+
+  if (!room) {
+    return res.json({ success: true, roomDeleted: true });
+  }
+
+  // Filter out the leaving player
+  room.players = (room.players || []).filter(p => p.userId !== req.user.userId);
+
+  // If no players remain OR the user who left was the room host -> DELETE ROOM!
+  if (room.players.length === 0 || room.hostUserId === req.user.userId) {
+    customBattleRooms.delete(cleanCode);
+    return res.json({ success: true, roomDeleted: true });
+  }
+
+  res.json({ success: true, roomDeleted: false, room });
+});
+
+// 3.6. GET /api/battle/room/status - Poll status of current room
+app.get('/api/battle/room/status', authenticateToken, (req, res) => {
+  const { roomCode } = req.query;
+  const cleanCode = (roomCode || '').trim().toUpperCase();
+  const room = customBattleRooms.get(cleanCode);
+
+  if (!room || !room.players || room.players.length === 0) {
+    if (cleanCode) customBattleRooms.delete(cleanCode);
+    return res.status(404).json({ error: 'ห้องถูกปิดแล้ว', roomDeleted: true });
+  }
+
+  res.json({ room });
 });
 
 function getCategoryAliases(subject) {

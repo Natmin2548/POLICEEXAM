@@ -1634,6 +1634,14 @@ function enterRoomLobby(code, roomData) {
             showExamSetWheelSpinAnimation(data.room.subject, data.room.selectedSetTitle, data.room.questions, data.room.players);
           }
         }
+      } else {
+        // Room was closed or deleted (host left)
+        clearInterval(lobbyPollInterval);
+        if (modal) modal.style.display = 'none';
+        currentRoomCode = null;
+        currentRoomData = null;
+        showCenteredAlert('ห้องประลองนี้ถูกปิดแล้วหรือหัวหน้าห้องออกจากห้องแล้ว', { title: 'แจ้งเตือน' });
+        fetchActiveBattleRooms();
       }
     } catch (e) {
       console.error('Lobby status poll error:', e);
@@ -1680,10 +1688,29 @@ function updateLobbyUI(roomData) {
   }
 }
 
-window.leaveRoomLobby = function() {
+window.leaveRoomLobby = async function() {
   if (lobbyPollInterval) clearInterval(lobbyPollInterval);
+  const code = currentRoomCode;
+  currentRoomCode = null;
+  currentRoomData = null;
+
   const modal = document.getElementById('roomLobbyDialog');
   if (modal) modal.style.display = 'none';
+
+  if (code) {
+    try {
+      const token = authToken || localStorage.getItem('authToken');
+      await fetch(`${API_BASE}/api/battle/room/leave`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ roomCode: code })
+      });
+    } catch (e) {
+      console.error('Leave room error:', e);
+    }
+  }
+
+  fetchActiveBattleRooms();
 };
 
 window.hostTriggerStartDuel = async function() {
