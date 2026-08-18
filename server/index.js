@@ -5734,38 +5734,55 @@ app.post('/api/battle/room/join', authenticateToken, async (req, res) => {
 
 // 3.5. POST /api/battle/room/leave - Leave or close room
 app.post('/api/battle/room/leave', authenticateToken, (req, res) => {
-  const { roomCode } = req.body;
-  const cleanCode = (roomCode || '').trim().toUpperCase();
-  const room = customBattleRooms.get(cleanCode);
+  try {
+    const { roomCode } = req.body || {};
+    const cleanCode = (roomCode || '').trim().toUpperCase();
+    const room = customBattleRooms.get(cleanCode);
 
-  if (!room) {
-    return res.json({ success: true, roomDeleted: true });
+    if (!room) {
+      return res.json({ success: true, roomDeleted: true });
+    }
+
+    const currentUserId = req.user ? req.user.userId : null;
+
+    if (currentUserId) {
+      // Filter out leaving player using safe String comparison
+      room.players = (room.players || []).filter(p => String(p.userId) !== String(currentUserId));
+
+      // If no players remain OR the user who left was the room host -> DELETE ROOM!
+      if (room.players.length === 0 || String(room.hostUserId) === String(currentUserId)) {
+        customBattleRooms.delete(cleanCode);
+        return res.json({ success: true, roomDeleted: true });
+      }
+    } else if (room.players.length === 0) {
+      customBattleRooms.delete(cleanCode);
+      return res.json({ success: true, roomDeleted: true });
+    }
+
+    res.json({ success: true, roomDeleted: false, room });
+  } catch (err) {
+    console.error('Leave Room Error:', err);
+    res.status(500).json({ error: 'เกิดข้อผิดพลาดในการออกจากห้อง' });
   }
-
-  // Filter out the leaving player
-  room.players = (room.players || []).filter(p => p.userId !== req.user.userId);
-
-  // If no players remain OR the user who left was the room host -> DELETE ROOM!
-  if (room.players.length === 0 || room.hostUserId === req.user.userId) {
-    customBattleRooms.delete(cleanCode);
-    return res.json({ success: true, roomDeleted: true });
-  }
-
-  res.json({ success: true, roomDeleted: false, room });
 });
 
 // 3.6. GET /api/battle/room/status - Poll status of current room
 app.get('/api/battle/room/status', authenticateToken, (req, res) => {
-  const { roomCode } = req.query;
-  const cleanCode = (roomCode || '').trim().toUpperCase();
-  const room = customBattleRooms.get(cleanCode);
+  try {
+    const { roomCode } = req.query || {};
+    const cleanCode = (roomCode || '').trim().toUpperCase();
+    const room = customBattleRooms.get(cleanCode);
 
-  if (!room || !room.players || room.players.length === 0) {
-    if (cleanCode) customBattleRooms.delete(cleanCode);
-    return res.status(404).json({ error: 'ห้องถูกปิดแล้ว', roomDeleted: true });
+    if (!room || !room.players || room.players.length === 0) {
+      if (cleanCode) customBattleRooms.delete(cleanCode);
+      return res.status(404).json({ error: 'ห้องถูกปิดแล้ว', roomDeleted: true });
+    }
+
+    res.json({ room });
+  } catch (err) {
+    console.error('Room status error:', err);
+    res.status(500).json({ error: 'ไม่สามารถโหลดสถานะห้องได้' });
   }
-
-  res.json({ room });
 });
 
 function getCategoryAliases(subject) {

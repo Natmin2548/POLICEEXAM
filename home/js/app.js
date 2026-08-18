@@ -20,6 +20,8 @@ function renderAvatarHtml(user, classNames, inlineStyles = '', defaultBgColor = 
 }
 function getApiBase() {
   if (window.CUSTOM_API_BASE) return window.CUSTOM_API_BASE;
+  if (window.location.protocol === 'file:') return 'http://localhost:3000';
+
   const host = window.location.hostname;
   const port = window.location.port;
 
