@@ -5575,29 +5575,9 @@ app.post('/api/exams/battle/poll-match', authenticateToken, async (req, res) => 
       const idx2 = battleQueue.findIndex(u => u.userId === partner.userId);
       if (idx2 !== -1) battleQueue.splice(idx2, 1);
 
-      // Fetch questions
+      // Fetch questions matching exact subject or aliases
       const selectedSubj = subject || partner.subject || 'ทั่วไป';
-      const sets = await prisma.examSet.findMany({
-        where: { category: selectedSubj },
-        select: { id: true }
-      });
-      const setIds = sets.map(s => s.id);
-      let qList = await prisma.question.findMany({
-        where: { examSetId: { in: setIds } },
-        include: { examSet: true }
-      });
-      if (qList.length < 10) {
-        qList = await prisma.question.findMany({ take: 20 });
-      }
-      qList = localShuffle(qList).slice(0, 10);
-
-      const formattedQuestions = qList.map(q => ({
-        id: q.id,
-        questionText: q.questionText,
-        choices: [q.choice1, q.choice2, q.choice3, q.choice4],
-        correctAnswer: q.correctAnswer,
-        explanation: q.explanation || 'คำอธิบายเฉลยประลอง'
-      }));
+      const { questions: formattedQuestions } = await getBattleQuestionsForSubject(selectedSubj);
 
       const matchId = `match_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const newMatch = {
@@ -5751,6 +5731,86 @@ app.post('/api/battle/room/join', authenticateToken, async (req, res) => {
   }
 });
 
+function getCategoryAliases(subject) {
+  const s = (subject || '').toString().toLowerCase();
+  if (s.includes('สารบรรณ') || s.includes('saraban') || s.includes('54')) {
+    return ['saraban', 'งานสารบรรณ', 'ลักษณะที่54', '54', 'ระเบียบงานสารบรรณ'];
+  }
+  if (s.includes('ความสามารถ') || s.includes('ทั่วไป') || s.includes('general') || s.includes('คณิต') || s.includes('อนุกรม')) {
+    return ['general', 'ความสามารถทั่วไป', 'ทั่วไป', 'คณิตศาสตร์', 'ความสามารถทั่วไป (คณิตศาสตร์)'];
+  }
+  if (s.includes('ไทย') || s.includes('thai')) {
+    return ['thai', 'ภาษาไทย'];
+  }
+  if (s.includes('อังกฤษ') || s.includes('english')) {
+    return ['english', 'ภาษาอังกฤษ'];
+  }
+  if (s.includes('สังคม') || s.includes('social') || s.includes('อาเซียน') || s.includes('asean')) {
+    return ['social', 'ความรู้สังคมฯ', 'สังคม', 'ความรู้สังคม วัฒนธรรม และความรู้เกี่ยวกับประชาคมอาเซียน'];
+  }
+  if (s.includes('กฎหมาย') || s.includes('law') || s.includes('ตำรวจ')) {
+    return ['law', 'กฎหมายตำรวจ', 'กฎหมาย', 'กฎหมายตำรวจ / ความรู้เกี่ยวกับกฎหมายประชาชน'];
+  }
+  if (s.includes('คอม') || s.includes('computer') || s.includes('สารสนเทศ')) {
+    return ['computer', 'คอมพิวเตอร์', 'คอม', 'เทคโนโลยีสารสนเทศ (คอมพิวเตอร์สำนักงาน)'];
+  }
+  return [subject];
+}
+
+async function getBattleQuestionsForSubject(subjectName) {
+  const aliases = getCategoryAliases(subjectName);
+  
+  // 1. Find matching ExamSets by category aliases
+  const sets = await prisma.examSet.findMany({
+    where: {
+      OR: aliases.map(a => ({
+        category: { contains: a, mode: 'insensitive' }
+      }))
+    },
+    select: { id: true, title: true }
+  });
+
+  let chosenTitle = sets.length > 0 ? sets[Math.floor(Math.random() * sets.length)].title : ('ชุดข้อสอบประลองวิชา ' + subjectName);
+  let setIds = sets.map(s => s.id);
+
+  let qList = [];
+  if (setIds.length > 0) {
+    qList = await prisma.question.findMany({
+      where: { examSetId: { in: setIds } },
+      include: { examSet: true }
+    });
+  }
+
+  // 2. If qList is empty or small, search questions by category directly
+  if (qList.length < 5) {
+    qList = await prisma.question.findMany({
+      where: {
+        OR: aliases.map(a => ({
+          examSet: { category: { contains: a, mode: 'insensitive' } }
+        }))
+      },
+      include: { examSet: true }
+    });
+  }
+
+  // 3. Fallback to any questions if database has no matching sets for this subject yet
+  if (qList.length < 5) {
+    qList = await prisma.question.findMany({ take: 30, include: { examSet: true } });
+  }
+
+  qList = localShuffle(qList).slice(0, 10);
+
+  const formattedQuestions = qList.map(q => ({
+    id: q.id,
+    questionText: q.questionText,
+    choices: [q.choice1, q.choice2, q.choice3, q.choice4],
+    correctAnswer: q.correctAnswer,
+    explanation: q.explanation || 'คำอธิบายเฉลยประลอง'
+  }));
+
+  return { chosenTitle, questions: formattedQuestions };
+}
+
 // 4. POST /api/battle/room/start-spin - Host triggers exam set spin & starts duel
 app.post('/api/battle/room/start-spin', authenticateToken, async (req, res) => {
   const { roomCode } = req.body;
@@ -5762,49 +5822,18 @@ app.post('/api/battle/room/start-spin', authenticateToken, async (req, res) => {
   }
 
   try {
-    const sets = await prisma.examSet.findMany({
-      where: { category: room.subject },
-      select: { id: true, title: true }
-    });
-
-    let chosenSetTitle = 'ชุดข้อสอบประลองวิชา ' + room.subject;
-    let setIds = [];
-    if (sets.length > 0) {
-      const randSet = sets[Math.floor(Math.random() * sets.length)];
-      chosenSetTitle = randSet.title || chosenSetTitle;
-      setIds = [randSet.id];
-    }
-
-    let qList = [];
-    if (setIds.length > 0) {
-      qList = await prisma.question.findMany({
-        where: { examSetId: { in: setIds } },
-        include: { examSet: true }
-      });
-    }
-    if (qList.length < 10) {
-      qList = await prisma.question.findMany({ take: 20 });
-    }
-    qList = localShuffle(qList).slice(0, 10);
-
-    const formattedQuestions = qList.map(q => ({
-      id: q.id,
-      questionText: q.questionText,
-      choices: [q.choice1, q.choice2, q.choice3, q.choice4],
-      correctAnswer: q.correctAnswer,
-      explanation: q.explanation || 'คำอธิบายเฉลยประลอง'
-    }));
+    const { chosenTitle, questions } = await getBattleQuestionsForSubject(room.subject);
 
     room.status = 'SPINNING';
-    room.selectedSetTitle = chosenSetTitle;
-    room.questions = formattedQuestions;
+    room.selectedSetTitle = chosenTitle;
+    room.questions = questions;
 
     res.json({
       success: true,
       roomCode: room.roomCode,
       subject: room.subject,
-      selectedSetTitle: chosenSetTitle,
-      questions: formattedQuestions
+      selectedSetTitle: chosenTitle,
+      questions
     });
   } catch (err) {
     console.error('Start Spin Error:', err);
