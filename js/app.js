@@ -106,7 +106,21 @@ window.alert = function(msg) {
 // ==========================================
 // Configuration
 // ==========================================
-const API_BASE = '';
+function getApiBase() {
+  if (window.CUSTOM_API_BASE) return window.CUSTOM_API_BASE;
+  const host = window.location.hostname;
+  const port = window.location.port;
+
+  if (host === 'localhost' || host === '127.0.0.1') {
+    if (port && port !== '3000') {
+      return 'http://localhost:3000';
+    }
+    return '';
+  }
+  return '';
+}
+
+const API_BASE = getApiBase();
 
 const FALLBACK_GOOGLE_CLIENT_ID = '848275108419-q0171b1bmm4l29lp9blgpin3fl4p1fnh.apps.googleusercontent.com';
 let googleClientId = FALLBACK_GOOGLE_CLIENT_ID;

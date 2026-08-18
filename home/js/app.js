@@ -18,10 +18,21 @@ function renderAvatarHtml(user, classNames, inlineStyles = '', defaultBgColor = 
   }
   return `<div class="${classNames}" ${clickAction} style="${inlineStyles}; background-color: ${defaultBgColor}; display: flex; align-items: center; justify-content: center; color: white;">${initial}</div>`;
 }
-// ==========================================
-// Configuration
-// ==========================================
-const API_BASE = '';
+function getApiBase() {
+  if (window.CUSTOM_API_BASE) return window.CUSTOM_API_BASE;
+  const host = window.location.hostname;
+  const port = window.location.port;
+
+  if (host === 'localhost' || host === '127.0.0.1') {
+    if (port && port !== '3000') {
+      return 'http://localhost:3000';
+    }
+    return '';
+  }
+  return '';
+}
+
+const API_BASE = getApiBase();
 
 // ==========================================
 // Custom Centered Dialogs
@@ -176,14 +187,14 @@ async function loadRealProfile() {
     });
 
     if (!res.ok) {
-      if (res.status === 401 || res.status === 403 || res.status === 404) {
-        localStorage.clear();
-        sessionStorage.clear();
-        alert('บัญชีผู้ใช้งานนี้ไม่มีอยู่ในระบบหรือหมดอายุแล้ว กรุณาเข้าสู่ระบบด้วยบัญชีใหม่');
+      if (res.status === 401 || res.status === 403) {
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('userProfile');
+        alert('เซสชันการใช้งานของคุณหมดอายุ กรุณาเข้าสู่ระบบใหม่อีกครั้ง');
         window.location.replace(window.location.origin + '/?session_expired=1');
         return;
       }
-      throw new Error('Profile fetch failed');
+      throw new Error('Profile fetch failed with status ' + res.status);
     }
 
     const data = await res.json();
@@ -203,7 +214,15 @@ async function loadRealProfile() {
       }
     }
   } catch (err) {
-    console.error('Failed to load profile:', err);
+    console.error('Failed to load profile from API, trying local cache:', err);
+    const cached = localStorage.getItem('userProfile');
+    if (cached) {
+      try {
+        userProfile = JSON.parse(cached);
+        initializeDashboard();
+        updateStatsFromProfile(userProfile);
+      } catch (e) {}
+    }
   }
 }
 
