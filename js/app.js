@@ -374,19 +374,32 @@ if (registerForm) registerForm.addEventListener('submit', async (e) => {
 // ==========================================
 
 window.addEventListener('DOMContentLoaded', () => {
-  // Warmup backend on Render if sleeping
-  fetch(`${API_BASE}/api/health`).catch(() => {});
+  // Warmup Render backend - retry until server is ready
+  async function warmupServer(retries = 5) {
+    for (let i = 0; i < retries; i++) {
+      try {
+        const res = await fetch(`${API_BASE}/api/health`);
+        if (res.ok) {
+          console.log('[Warmup] Server is ready');
+          break;
+        }
+      } catch(e) {}
+      await new Promise(r => setTimeout(r, 2000)); // wait 2s between retries
+    }
+  }
 
-  // Try to fetch Client ID from API, but use fallback immediately
-  fetch(`${API_BASE}/api/auth/config`)
-    .then(res => res.json())
-    .then(data => {
-      if (data.googleClientId) googleClientId = data.googleClientId;
-    })
-    .catch(() => {})
-    .finally(() => {
-      initGoogleIdentity();
-    });
+  warmupServer().then(() => {
+    // Load Client ID from API after server is ready
+    fetch(`${API_BASE}/api/auth/config`)
+      .then(res => res.ok ? res.json() : {})
+      .then(data => {
+        if (data && data.googleClientId) googleClientId = data.googleClientId;
+      })
+      .catch(() => {})
+      .finally(() => {
+        initGoogleIdentity();
+      });
+  });
 
   // Load public stats for landing page
   loadPublicStats();
@@ -466,15 +479,38 @@ function initGoogleIdentity() {
 async function handleGoogleCredential(response) {
   if (!response || !response.credential) return;
 
-  try {
-    const res = await fetch(`${API_BASE}/api/auth/google`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ idToken: response.credential })
-    });
+  // Show loading indicator
+  const btn = document.querySelector('.open-login-btn');
+  if (btn) { btn.textContent = 'กำลังเชื่อมต่อ...'; btn.disabled = true; }
 
-    // Guard against empty response body (can happen if extension blocks request)
-    let data = {};
+  try {
+    let res, data = {};
+
+    // Retry up to 3 times to handle Render cold start (404)
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        res = await fetch(`${API_BASE}/api/auth/google`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ idToken: response.credential })
+        });
+
+        // If server returned 404 (cold start), wait and retry
+        if (res.status === 404 && attempt < 2) {
+          await new Promise(r => setTimeout(r, 3000));
+          continue;
+        }
+        break;
+      } catch(fetchErr) {
+        if (attempt < 2) {
+          await new Promise(r => setTimeout(r, 3000));
+          continue;
+        }
+        throw fetchErr;
+      }
+    }
+
+    // Guard against empty response body
     const contentType = res.headers.get('content-type') || '';
     if (contentType.includes('application/json')) {
       try { data = await res.json(); } catch(e) { data = {}; }
@@ -484,12 +520,12 @@ async function handleGoogleCredential(response) {
     }
 
     if (!res.ok) {
-      alert(data.error || 'เข้าสู่ระบบด้วย Google ไม่สำเร็จ กรุณาลองใหม่หรือเข้าสู่ระบบด้วย Email แทน');
+      alert(data.error || 'เข้าสู่ระบบด้วย Google ไม่สำเร็จ กรุณาลองใหม่');
       return;
     }
 
     if (!data.token) {
-      alert('เกิดข้อผิดพลาดจากเซิร์ฟเวอร์ กรุณาลองใหม่');
+      alert('เกิดข้อผิดพลาดจากเซิร์ฟเวอร์ กรุณาลองใหม่อีกครั้ง');
       return;
     }
 
@@ -504,7 +540,9 @@ async function handleGoogleCredential(response) {
 
   } catch (err) {
     console.error('Google auth fetch error:', err);
-    alert('เข้าสู่ระบบด้วย Google ไม่สำเร็จ หากใช้ AdBlock/Extension กรุณาปิดชั่วคราวหรือเข้าสู่ระบบด้วย Email แทน');
+    alert('เซิร์ฟเวอร์อาจกำลังเริ่มต้น กรุณารอสักครู่แล้วลองใหม่อีกครั้ง');
+  } finally {
+    if (btn) { btn.textContent = 'เข้าสู่ระบบด้วย Google'; btn.disabled = false; }
   }
 }
 
