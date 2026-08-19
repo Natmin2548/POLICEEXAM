@@ -164,11 +164,9 @@
     </div>
   </section>
 
-  <!-- ==========================================
-       Log In Modal (เข้าสู่ระบบด้วย Google)
-       ========================================== -->
+  <!-- Login Modal -->
   <div class="modal-overlay" id="loginModal">
-    <div class="modal-card" style="text-align: center; padding: 36px 24px;">
+    <div class="modal-card" style="text-align: center; padding: 32px 28px; max-width: 400px;">
       <button class="modal-close" id="closeLogin" aria-label="ปิด">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <line x1="18" y1="6" x2="6" y2="18" />
@@ -176,27 +174,59 @@
         </svg>
       </button>
 
-      <div class="modal-header" style="margin-bottom: 24px;">
+      <div class="modal-header" style="margin-bottom: 20px;">
         <div class="modal-logo-wrapper">
           <svg class="modal-logo-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M12 22C12 22 20 18 20 12V5L12 2L4 5V12C4 18 12 22 12 22Z" fill="none" stroke="white"
               stroke-width="2" stroke-linejoin="round" />
           </svg>
         </div>
-        <h2 class="modal-title">เข้าสู่ระบบด้วย Google</h2>
+        <h2 class="modal-title">เข้าสู่ระบบ</h2>
         <p class="modal-subtitle">เข้าสู่ระบบเพื่อใช้งานระบบเตรียมสอบ</p>
       </div>
 
+      <!-- Google Sign-In Button -->
       <div id="googleSignInButtonLogin" class="google-signin-container"
-        style="display: flex; justify-content: center; margin-top: 20px; margin-bottom: 20px;"></div>
+        style="display: flex; justify-content: center; margin-bottom: 16px;"></div>
+
+      <!-- Divider -->
+      <div style="display:flex; align-items:center; gap:12px; margin: 16px 0;">
+        <div style="flex:1; height:1px; background:#E2E8F0;"></div>
+        <span style="font-size:13px; color:#94A3B8;">หรือ</span>
+        <div style="flex:1; height:1px; background:#E2E8F0;"></div>
+      </div>
+
+      <!-- Email/Password Login Form -->
+      <form id="loginForm" style="text-align:left;">
+        <div style="margin-bottom:14px;">
+          <label style="font-size:13px; font-weight:600; color:#374151; display:block; margin-bottom:6px;">อีเมล</label>
+          <input type="email" placeholder="กรอกอีเมลของคุณ" required
+            style="width:100%; padding:10px 14px; border:1.5px solid #E2E8F0; border-radius:10px; font-size:14px; font-family:'Kanit',sans-serif; outline:none; box-sizing:border-box; transition:border-color .2s;"
+            onfocus="this.style.borderColor='#BD1B0B'" onblur="this.style.borderColor='#E2E8F0'">
+        </div>
+        <div style="margin-bottom:20px;">
+          <label style="font-size:13px; font-weight:600; color:#374151; display:block; margin-bottom:6px;">รหัสผ่าน</label>
+          <input type="password" placeholder="กรอกรหัสผ่าน" required
+            style="width:100%; padding:10px 14px; border:1.5px solid #E2E8F0; border-radius:10px; font-size:14px; font-family:'Kanit',sans-serif; outline:none; box-sizing:border-box; transition:border-color .2s;"
+            onfocus="this.style.borderColor='#BD1B0B'" onblur="this.style.borderColor='#E2E8F0'">
+        </div>
+        <button type="submit" class="btn-modal-submit"
+          style="width:100%; padding:12px; background:#BD1B0B; color:white; border:none; border-radius:10px; font-size:15px; font-weight:600; font-family:'Kanit',sans-serif; cursor:pointer; transition:background .2s;"
+          onmouseover="this.style.background='#A01508'" onmouseout="this.style.background='#BD1B0B'">
+          เข้าสู่ระบบ
+        </button>
+      </form>
+
+      <p style="margin-top:16px; font-size:13px; color:#64748B;">
+        ยังไม่มีบัญชี?
+        <a href="#" id="linkToRegister" style="color:#BD1B0B; font-weight:600; text-decoration:none;">สมัครสมาชิก</a>
+      </p>
     </div>
   </div>
 
-  <!-- ==========================================
-       Register Modal (สมัครสมาชิกด้วย Google)
-       ========================================== -->
+  <!-- Register Modal -->
   <div class="modal-overlay" id="registerModal">
-    <div class="modal-card" style="text-align: center; padding: 36px 24px;">
+    <div class="modal-card" style="text-align: center; padding: 32px 28px; max-width: 400px;">
       <button class="modal-close" id="closeRegister" aria-label="ปิด">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <line x1="18" y1="6" x2="6" y2="18" />
@@ -204,20 +234,79 @@
         </svg>
       </button>
 
-      <div class="modal-header" style="margin-bottom: 24px;">
+      <div class="modal-header" style="margin-bottom: 20px;">
         <div class="modal-logo-wrapper">
           <svg class="modal-logo-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M12 22C12 22 20 18 20 12V5L12 2L4 5V12C4 18 12 22 12 22Z" fill="none" stroke="white"
               stroke-width="2" stroke-linejoin="round" />
           </svg>
         </div>
-        <h2 class="modal-title">สมัครสมาชิกด้วย Google</h2>
+        <h2 class="modal-title">สมัครสมาชิก</h2>
         <p class="modal-subtitle">เริ่มต้นเตรียมสอบ ฟรี!</p>
       </div>
 
+      <!-- Google Sign-In for Register -->
       <div id="googleSignInButtonRegister" class="google-signin-container"
-        style="display: flex; justify-content: center; margin-top: 20px; margin-bottom: 20px;"></div>
+        style="display: flex; justify-content: center; margin-bottom: 16px;"></div>
 
+      <!-- Divider -->
+      <div style="display:flex; align-items:center; gap:12px; margin: 16px 0;">
+        <div style="flex:1; height:1px; background:#E2E8F0;"></div>
+        <span style="font-size:13px; color:#94A3B8;">หรือสมัครด้วยอีเมล</span>
+        <div style="flex:1; height:1px; background:#E2E8F0;"></div>
+      </div>
+
+      <!-- Register Form -->
+      <form id="registerForm" style="text-align:left;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px;" class="form-row-2">
+          <div>
+            <label style="font-size:13px; font-weight:600; color:#374151; display:block; margin-bottom:6px;">ชื่อ</label>
+            <input type="text" placeholder="ชื่อ" required
+              style="width:100%; padding:10px 12px; border:1.5px solid #E2E8F0; border-radius:10px; font-size:14px; font-family:'Kanit',sans-serif; outline:none; box-sizing:border-box;"
+              onfocus="this.style.borderColor='#BD1B0B'" onblur="this.style.borderColor='#E2E8F0'">
+          </div>
+          <div>
+            <label style="font-size:13px; font-weight:600; color:#374151; display:block; margin-bottom:6px;">นามสกุล</label>
+            <input type="text" placeholder="นามสกุล" required
+              style="width:100%; padding:10px 12px; border:1.5px solid #E2E8F0; border-radius:10px; font-size:14px; font-family:'Kanit',sans-serif; outline:none; box-sizing:border-box;"
+              onfocus="this.style.borderColor='#BD1B0B'" onblur="this.style.borderColor='#E2E8F0'">
+          </div>
+        </div>
+        <div style="margin-bottom:14px;">
+          <label style="font-size:13px; font-weight:600; color:#374151; display:block; margin-bottom:6px;">อีเมล</label>
+          <input type="email" placeholder="อีเมล" required
+            style="width:100%; padding:10px 14px; border:1.5px solid #E2E8F0; border-radius:10px; font-size:14px; font-family:'Kanit',sans-serif; outline:none; box-sizing:border-box;"
+            onfocus="this.style.borderColor='#BD1B0B'" onblur="this.style.borderColor='#E2E8F0'">
+        </div>
+        <div style="margin-bottom:14px;">
+          <label style="font-size:13px; font-weight:600; color:#374151; display:block; margin-bottom:6px;">รหัสผ่าน</label>
+          <input type="password" placeholder="อย่างน้อย 8 ตัวอักษร" required
+            style="width:100%; padding:10px 14px; border:1.5px solid #E2E8F0; border-radius:10px; font-size:14px; font-family:'Kanit',sans-serif; outline:none; box-sizing:border-box;"
+            onfocus="this.style.borderColor='#BD1B0B'" onblur="this.style.borderColor='#E2E8F0'">
+        </div>
+        <div style="margin-bottom:20px;">
+          <label style="font-size:13px; font-weight:600; color:#374151; display:block; margin-bottom:6px;">ยืนยันรหัสผ่าน</label>
+          <input type="password" placeholder="กรอกรหัสผ่านอีกครั้ง" required
+            style="width:100%; padding:10px 14px; border:1.5px solid #E2E8F0; border-radius:10px; font-size:14px; font-family:'Kanit',sans-serif; outline:none; box-sizing:border-box;"
+            onfocus="this.style.borderColor='#BD1B0B'" onblur="this.style.borderColor='#E2E8F0'">
+        </div>
+        <div style="display:flex; align-items:flex-start; gap:10px; margin-bottom:20px;">
+          <input type="checkbox" id="termsCheck" style="margin-top:3px; accent-color:#BD1B0B;">
+          <label for="termsCheck" style="font-size:13px; color:#64748B; line-height:1.5;">
+            ยอมรับ <a href="#" style="color:#BD1B0B;">ข้อกำหนดการใช้งาน</a>
+          </label>
+        </div>
+        <button type="submit" class="btn-modal-submit"
+          style="width:100%; padding:12px; background:#BD1B0B; color:white; border:none; border-radius:10px; font-size:15px; font-weight:600; font-family:'Kanit',sans-serif; cursor:pointer; transition:background .2s;"
+          onmouseover="this.style.background='#A01508'" onmouseout="this.style.background='#BD1B0B'">
+          สมัครสมาชิก
+        </button>
+      </form>
+
+      <p style="margin-top:16px; font-size:13px; color:#64748B;">
+        มีบัญชีแล้ว?
+        <a href="#" id="linkToLogin" style="color:#BD1B0B; font-weight:600; text-decoration:none;">เข้าสู่ระบบ</a>
+      </p>
     </div>
   </div>
 
