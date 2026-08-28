@@ -186,9 +186,14 @@
 
       <!-- Google Sign-In Button Container -->
       <div id="googleSignInButtonLogin" class="google-signin-container"
-        style="display: flex; justify-content: center; margin: 8px 0 16px 0;"></div>
+        style="display: flex; justify-content: center; margin: 8px 0 12px 0;"></div>
 
-      <p style="margin-top: 16px; font-size: 12px; color: #94A3B8; line-height: 1.5;">
+      <!-- Quick Direct Entry (Dev / Bypass) -->
+      <a href="home/index.html" onclick="localStorage.setItem('authToken', 'dev_' + Date.now()); localStorage.setItem('userProfile', JSON.stringify({ id: 1, fullName: 'ผู้หมวดทดสอบ (มิน)', username: 'police_min', role: 'ADMIN', streak: 5, xp: 2450, points: 1200 }));" style="display: block; width: 100%; padding: 12px; border-radius: 14px; background: #F8FAFC; border: 1px solid #E2E8F0; color: #334155; font-weight: 700; font-size: 13.5px; text-decoration: none; text-align: center; transition: all 0.2s;">
+        ⚡ เข้าสู่ระบบทันที (โหมดทดสอบ)
+      </a>
+
+      <p style="margin-top: 14px; font-size: 12px; color: #94A3B8; line-height: 1.5;">
         ระบบจะเชื่อมต่อข้อมูลคะแนนและประวัติการสอบของคุณโดยอัตโนมัติ
       </p>
     </div>
