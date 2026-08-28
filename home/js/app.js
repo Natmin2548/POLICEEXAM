@@ -202,43 +202,37 @@ async function loadRealProfile() {
       headers: { 'Authorization': `Bearer ${authToken}` }
     });
 
-    if (!res.ok) {
-      if (res.status === 401 || res.status === 403) {
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('userProfile');
-        alert('เซสชันการใช้งานของคุณหมดอายุ กรุณาเข้าสู่ระบบใหม่อีกครั้ง');
-        window.location.replace(window.location.origin + '/?session_expired=1');
+    if (res.ok) {
+      const data = await res.json();
+      if (data.user) {
+        userProfile = data.user;
+        localStorage.setItem('userProfile', JSON.stringify(userProfile));
+        initializeDashboard();
+        updateStatsFromProfile(data.user);
+        
+        // Admin Panel Check
+        const btnAdminPanel = document.getElementById('btnAdminPanel');
+        const dropdownAdminPanel = document.getElementById('dropdownAdminPanel');
+        
+        if (userProfile.role === 'ADMIN' || userProfile.role === 'OWNER') {
+          if (btnAdminPanel) btnAdminPanel.style.display = 'flex';
+          if (dropdownAdminPanel) dropdownAdminPanel.style.display = 'flex';
+        }
         return;
-      }
-      throw new Error('Profile fetch failed with status ' + res.status);
-    }
-
-    const data = await res.json();
-    if (data.user) {
-      userProfile = data.user;
-      localStorage.setItem('userProfile', JSON.stringify(userProfile));
-      initializeDashboard();
-      updateStatsFromProfile(data.user);
-      
-      // Admin Panel Check
-      const btnAdminPanel = document.getElementById('btnAdminPanel');
-      const dropdownAdminPanel = document.getElementById('dropdownAdminPanel');
-      
-      if (userProfile.role === 'ADMIN' || userProfile.role === 'OWNER') {
-        if (btnAdminPanel) btnAdminPanel.style.display = 'flex';
-        if (dropdownAdminPanel) dropdownAdminPanel.style.display = 'flex';
       }
     }
   } catch (err) {
-    console.error('Failed to load profile from API, trying local cache:', err);
-    const cached = localStorage.getItem('userProfile');
-    if (cached) {
-      try {
-        userProfile = JSON.parse(cached);
-        initializeDashboard();
-        updateStatsFromProfile(userProfile);
-      } catch (e) {}
-    }
+    console.warn('API profile fetch note:', err);
+  }
+
+  // Graceful fallback without kick or redirect
+  const cached = localStorage.getItem('userProfile');
+  if (cached) {
+    try {
+      userProfile = JSON.parse(cached);
+      initializeDashboard();
+      updateStatsFromProfile(userProfile);
+    } catch (e) {}
   }
 }
 
