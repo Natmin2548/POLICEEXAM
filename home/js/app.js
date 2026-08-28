@@ -1140,6 +1140,7 @@ const communityTabBtn = document.getElementById('btnTabCommunity'); // community
 const battleTabBtn = document.getElementById('btnTabBattle'); // battle tab
 const statsTabBtn = document.getElementById('btnTabStats'); // stats tab
 const profileTabBtn = document.getElementById('btnTabProfile'); // profile tab
+const btnBackFromBank = document.getElementById('btnBackFromBank');
 
 const homeView = document.getElementById('homeView');
 const communityView = document.getElementById('communityView');
