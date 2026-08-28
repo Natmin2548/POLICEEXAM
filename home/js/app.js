@@ -4988,57 +4988,57 @@ window.startBankSubject = function(subjectKey) {
       title: 'งานสารบรรณ',
       subtitle: 'ระเบียบสำนักนายกรัฐมนตรี (พ.ศ. ๒๕๒๖ และที่แก้ไขเพิ่มเติม)',
       badge: 'วิชาหลักสำคัญ',
-      icon: 'สบ',
+      icon: '📜',
       iconBg: '#EFF6FF',
-      iconColor: '#3B82F6'
+      iconColor: '#2563EB'
     },
     'ลักษณะที่54': {
       title: 'ลักษณะที่ ๕๔',
       subtitle: 'งานสารบรรณตำรวจ (พ.ศ. ๒๕๕๖)',
       badge: 'วิชาเฉพาะ ตร.',
-      icon: 'ล.54',
+      icon: '📑',
       iconBg: '#FDF2F8',
-      iconColor: '#EC4899'
+      iconColor: '#BE185D'
     },
     'ทั่วไป': {
       title: 'ความสามารถทั่วไป',
       subtitle: 'คณิตศาสตร์ การคิดคำนวณ และการใช้เหตุผล',
       badge: 'วิชาหลักสำคัญ',
-      icon: 'ทป',
+      icon: '🧠',
       iconBg: '#ECFDF5',
-      iconColor: '#10B981'
+      iconColor: '#059669'
     },
     'คณิต': {
       title: 'คณิตศาสตร์ตำรวจ',
       subtitle: 'การวิเคราะห์ตัวเลข อนุกรม และตรรกศาสตร์',
       badge: 'วิชาหลักสำคัญ',
-      icon: 'คณ',
+      icon: '🔢',
       iconBg: '#ECFDF5',
-      iconColor: '#10B981'
+      iconColor: '#059669'
     },
     'สังคม': {
       title: 'สังคมและวัฒนธรรม',
       subtitle: 'ความรู้รอบตัว ปรัชญาเศรษฐกิจพอเพียง และอาเซียน',
       badge: 'วิชาความรู้ทั่วไป',
-      icon: 'สค',
-      iconBg: '#EEF2FF',
-      iconColor: '#6366F1'
+      icon: '🏛️',
+      iconBg: '#F5F3FF',
+      iconColor: '#7C3AED'
     },
     'กฏหมาย': {
       title: 'กฎหมายที่ประชาชนควรรู้',
       subtitle: 'กฎหมายการปฏิบัติงานตำรวจและวิธีพิจารณาความอาญา',
       badge: 'วิชากฎหมาย',
-      icon: 'กม',
+      icon: '⚖️',
       iconBg: '#FEF2F2',
-      iconColor: '#EF4444'
+      iconColor: '#DC2626'
     },
     'คอม': {
       title: 'เทคโนโลยีสารสนเทศ',
       subtitle: 'คอมพิวเตอร์และระบบสารสนเทศเพื่อการสอบ',
       badge: 'วิชาเทคโนโลยี',
-      icon: 'คอม',
-      iconBg: '#F5F3FF',
-      iconColor: '#8B5CF6'
+      icon: '💻',
+      iconBg: '#ECFEFF',
+      iconColor: '#0891B2'
     }
   };
 

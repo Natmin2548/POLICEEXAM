@@ -22,7 +22,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <!-- Stylesheet -->
-  <link rel="stylesheet" href="/home/css/style.css?v=7">
+  <link rel="stylesheet" href="/home/css/style.css?v=8">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
   <!-- Cropper.js -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
@@ -155,7 +155,7 @@
     }
   </style>
   <script src="/home/vocab-data.js" defer></script>
-  <script src="/home/js/app.js?v=21" defer></script>
+  <script src="/home/js/app.js?v=22" defer></script>
 </head>
 
 <body>
@@ -820,67 +820,108 @@
       <!-- Question Bank View Content -->
       <div id="questionBankView" class="tab-view">
         <!-- Main Library Header (Visible on Subjects list) -->
-        <section id="bankMainHeader" class="bank-main-header">
+        <section id="bankMainHeader" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-end; padding: 4px 4px 0 4px;">
           <div>
-            <h1 class="profile-header-title" style="margin: 0; font-size: 22px;">คลังข้อสอบ</h1>
-            <p style="margin: 4px 0 0 0; color: #64748B; font-size: 13px;">เลือกวิชาเพื่อเริ่มฝึกฝนข้อสอบจริง</p>
+            <h2 style="margin: 0; font-size: 20px; font-weight: 800; color: #0F172A; letter-spacing: -0.02em;">คลังข้อสอบ</h2>
+            <p style="margin: 3px 0 0 0; color: #64748B; font-size: 13px;">เลือกวิชาเพื่อเริ่มฝึกฝนข้อสอบจริง</p>
           </div>
-          <button id="btnBackFromBank" onclick="switchTabToHome(event)" style="background: #F1F5F9; border: 1px solid #E2E8F0; cursor: pointer; color: #475569; font-weight: 700; font-size: 13px; font-family: inherit; padding: 7px 14px; border-radius: 999px; display: inline-flex; align-items: center; gap: 4px;">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-            </svg>
-            <span>หน้าหลัก</span>
-          </button>
+          <span style="font-size: 12px; font-weight: 700; color: #BD1B0B; background: #FFF1F2; padding: 4px 12px; border-radius: 999px; border: 1px solid #FFE4E6;">6 หมวดวิชา</span>
         </section>
 
-        <!-- Subjects List Grid -->
-        <div id="questionBankSubjectsList" style="margin-top: 12px;">
+        <!-- Subjects List Grid (Apple Luxury Vector Cards) -->
+        <div id="questionBankSubjectsList">
           <div class="bank-subjects-grid">
+            <!-- 1. สารบรรณ -->
             <button class="subject-card" onclick="startBankSubject('งานสารบรรณ')">
-              <div class="subject-card-icon" style="background: #EFF6FF; color: #3B82F6;">สบ</div>
+              <div class="subject-card-icon" style="background: #EFF6FF; color: #2563EB;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 26px; height: 26px;">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="16" y1="13" x2="8" y2="13"></line>
+                  <line x1="16" y1="17" x2="8" y2="17"></line>
+                  <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+              </div>
               <span class="subject-card-title">งานสารบรรณ</span>
               <span class="subject-card-hint">ระเบียบสำนักนายกฯ</span>
+              <div class="subject-card-tag">เริ่มฝึกฝน ›</div>
             </button>
 
+            <!-- 2. ความสามารถทั่วไป -->
             <button class="subject-card" onclick="startBankSubject('ทั่วไป')">
-              <div class="subject-card-icon" style="background: #ECFDF5; color: #10B981;">ทป</div>
+              <div class="subject-card-icon" style="background: #ECFDF5; color: #059669;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 26px; height: 26px;">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                  <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+              </div>
               <span class="subject-card-title">ความสามารถทั่วไป</span>
               <span class="subject-card-hint">คณิตศาสตร์และเหตุผล</span>
+              <div class="subject-card-tag">เริ่มฝึกฝน ›</div>
             </button>
 
+            <!-- 3. สังคม -->
             <button class="subject-card" onclick="startBankSubject('สังคม')">
-              <div class="subject-card-icon" style="background: #EEF2FF; color: #6366F1;">สค</div>
+              <div class="subject-card-icon" style="background: #F5F3FF; color: #7C3AED;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 26px; height: 26px;">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="2" y1="12" x2="22" y2="12"></line>
+                  <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                </svg>
+              </div>
               <span class="subject-card-title">สังคมและวัฒนธรรม</span>
               <span class="subject-card-hint">ความรู้รอบตัวและ AEC</span>
+              <div class="subject-card-tag">เริ่มฝึกฝน ›</div>
             </button>
 
+            <!-- 4. กฎหมาย -->
             <button class="subject-card" onclick="startBankSubject('กฏหมาย')">
-              <div class="subject-card-icon" style="background: #FEF2F2; color: #EF4444;">กม</div>
+              <div class="subject-card-icon" style="background: #FEF2F2; color: #DC2626;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 26px; height: 26px;">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                </svg>
+              </div>
               <span class="subject-card-title">กฎหมายที่ควรรู้</span>
               <span class="subject-card-hint">กฎหมายตำรวจและ ป.วิ.อ.</span>
+              <div class="subject-card-tag">เริ่มฝึกฝน ›</div>
             </button>
 
+            <!-- 5. คอมพิวเตอร์ -->
             <button class="subject-card" onclick="startBankSubject('คอม')">
-              <div class="subject-card-icon" style="background: #F5F3FF; color: #8B5CF6;">คอม</div>
+              <div class="subject-card-icon" style="background: #ECFEFF; color: #0891B2;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 26px; height: 26px;">
+                  <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                  <line x1="8" y1="21" x2="16" y2="21"></line>
+                  <line x1="12" y1="17" x2="12" y2="21"></line>
+                </svg>
+              </div>
               <span class="subject-card-title">เทคโนโลยีสารสนเทศ</span>
               <span class="subject-card-hint">คอมพิวเตอร์เพื่อการสอบ</span>
+              <div class="subject-card-tag">เริ่มฝึกฝน ›</div>
             </button>
 
+            <!-- 6. ลักษณะที่ 54 -->
             <button class="subject-card" onclick="startBankSubject('ลักษณะที่54')">
-              <div class="subject-card-icon" style="background: #FDF2F8; color: #EC4899;">ล.54</div>
+              <div class="subject-card-icon" style="background: #FDF2F8; color: #BE185D;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 26px; height: 26px;">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                </svg>
+              </div>
               <span class="subject-card-title">ลักษณะที่ ๕๔</span>
               <span class="subject-card-hint">งานสารบรรณตำรวจ ๒๕๕๖</span>
+              <div class="subject-card-tag">เริ่มฝึกฝน ›</div>
             </button>
           </div>
         </div>
 
         <!-- Subject Detail Panel with Sub-tab Switching (Hidden initially) -->
-        <div id="questionBankExamSetsList" style="display: none; margin-top: 12px;">
-          <!-- Top Subject Header Card -->
+        <div id="questionBankExamSetsList" style="display: none;">
+          <!-- Top Subject Header Hero Card -->
           <div class="subject-detail-header-card">
             <div class="subject-header-top">
               <button onclick="backToBankSubjects()" class="btn-subject-back">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                   <polyline points="15 18 9 12 15 6"/>
                 </svg>
                 <span>เลือกวิชา</span>
@@ -889,17 +930,21 @@
             </div>
 
             <div class="subject-title-wrapper">
-              <div id="currentSubjectIcon" class="subject-icon-box" style="background: #EFF6FF; color: #2563EB;">📚</div>
-              <div>
+              <div id="currentSubjectIcon" class="subject-icon-box" style="background: #EFF6FF; color: #2563EB;">
+                📚
+              </div>
+              <div style="flex: 1;">
                 <h2 id="currentSubjectTitle" class="subject-title-text">งานสารบรรณ</h2>
                 <p id="currentSubjectSubtitle" class="subject-subtitle-text">ระเบียบสำนักนายกรัฐมนตรี</p>
               </div>
             </div>
 
-            <!-- Subject Progress Overview Card -->
+            <!-- Sleek Apple Progress Overview -->
             <div class="subject-progress-container" id="subjectProgressOverview">
               <div class="subject-progress-header">
-                <span>📊 ความคืบหน้าการฝึกฝน</span>
+                <span style="display: flex; align-items: center; gap: 6px;">
+                  <span>📊</span> <span>ความคืบหน้าการฝึกฝน</span>
+                </span>
                 <span id="subjectProgressLabel" class="subject-progress-percent">0 / 0 ชุด (0%)</span>
               </div>
               <div class="subject-progress-track">
