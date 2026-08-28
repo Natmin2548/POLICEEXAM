@@ -1108,6 +1108,38 @@
     </div>
   </div>
 
+  <!-- Apple Luxury Subject Quiz / Exam Modal -->
+  <div id="subjectQuizModal" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 10000; align-items: center; justify-content: center; padding: 16px;">
+    <div style="background: white; border-radius: 28px; padding: 24px; max-width: 440px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); border: 1px solid rgba(226, 232, 240, 0.9); animation: scalePop 0.25s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column;">
+      <!-- Quiz Header -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <span id="quizSubjectBadge" style="background: #FFF1F2; color: #BD1B0B; font-weight: 700; font-size: 11px; padding: 4px 12px; border-radius: 999px; border: 1px solid #FFE4E6;">วิชาเตรียมสอบ</span>
+        <button onclick="closeSubjectQuiz()" style="background: #F1F5F9; border: none; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; color: #64748B; cursor: pointer; font-weight: 700;">&times;</button>
+      </div>
+
+      <h3 id="quizTitle" style="margin: 0 0 10px 0; font-size: 17px; font-weight: 800; color: #0F172A; line-height: 1.35;">ชุดข้อสอบ</h3>
+      
+      <!-- Progress Bar Track -->
+      <div style="width: 100%; height: 6px; background: #E2E8F0; border-radius: 999px; overflow: hidden; margin-bottom: 14px;">
+        <div id="quizProgressBar" style="width: 10%; height: 100%; background: linear-gradient(90deg, #BD1B0B, #E11D48); border-radius: 999px; transition: width 0.3s ease;"></div>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <span id="quizStepText" style="font-size: 12px; font-weight: 700; color: #64748B;">ข้อที่ 1 / 10</span>
+      </div>
+
+      <!-- Quiz Body Question & Choices -->
+      <div id="quizBodyContent" style="flex: 1; margin-bottom: 16px;">
+        <!-- Injected dynamically via JS -->
+      </div>
+
+      <!-- Next Button -->
+      <button id="btnNextQuiz" onclick="nextQuizQuestion()" style="display: none; width: 100%; background: #BD1B0B; color: white; border: none; padding: 13px; border-radius: 999px; font-weight: 700; font-size: 14px; cursor: pointer; font-family: inherit; box-shadow: 0 4px 14px rgba(189, 27, 11, 0.25); transition: all 0.2s ease;">
+        ข้อถัดไป ➔
+      </button>
+    </div>
+  </div>
+
   
   <!-- Edit Group Modal -->
   <div class="modal-overlay" id="editGroupModal"

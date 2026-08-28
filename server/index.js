@@ -8032,6 +8032,137 @@ ${contextText ? `คลังข้อมูลอ้างอิง:\n${context
 
 
 
+// GET /api/exams/sets - Fetch exam sets list for Question Bank
+app.get('/api/exams/sets', async (req, res) => {
+  try {
+    const { category } = req.query;
+    const cat = (category || '').trim();
+
+    let searchCat = cat;
+    if (cat === 'สบ' || cat === 'สารบรรณ' || cat === 'งานสารบรรณ') searchCat = 'สารบรรณ';
+    else if (cat === 'ทป' || cat === 'ทั่วไป' || cat === 'ความสามารถทั่วไป') searchCat = 'ทั่วไป';
+    else if (cat === 'กม' || cat === 'กฎหมาย' || cat === 'กฏหมาย') searchCat = 'กฎหมาย';
+    else if (cat === 'คอม' || cat === 'เทคโนโลยีสารสนเทศ') searchCat = 'คอม';
+    else if (cat === 'สังคม') searchCat = 'สังคม';
+    else if (cat === 'ลักษณะที่54') searchCat = 'ลักษณะที่ ๕๔';
+
+    let sets = await prisma.examSet.findMany({
+      where: searchCat ? {
+        OR: [
+          { category: { contains: searchCat } },
+          { subcategory: { contains: searchCat } },
+          { title: { contains: searchCat } }
+        ]
+      } : {},
+      include: { questions: { select: { id: true } } },
+      orderBy: { id: 'asc' }
+    });
+
+    if (sets.length === 0) {
+      // Predefined default sets per subject
+      const defaultSetsMap = {
+        'งานสารบรรณ': [
+          { id: 'sb_1', title: 'ระเบียบสารบรรณ ชุดที่ 1 รวมทุกหมวด', subcategory: 'สารบรรณ_๒๕๒๖', desc: 'ชุดข้อสอบหมวด งานสารบรรณ (จำนวน 30 ข้อ)', questionsCount: 30, timeMinutes: 30, tag: 'ชุดข้อสอบจริง' },
+          { id: 'sb_2', title: 'ระเบียบสารบรรณ ชุดที่ 2 หมวด ๑ ชนิดหนังสือ', subcategory: 'สารบรรณ_๒๕๒๖', desc: 'แนวข้อสอบชนิดหนังสือ หนังสือภายนอก/ภายใน/ประทับตรา', questionsCount: 20, timeMinutes: 20, tag: 'บทเรียนเน้นย้ำ' },
+          { id: 'sb_3', title: 'ระเบียบสารบรรณ ชุดที่ 3 การเก็บ ยืม ทำลาย', subcategory: 'สารบรรณ_๒๕๒๖', desc: 'แนวข้อสอบการเก็บรักษาและอายุการทำลายเอกสาร', questionsCount: 25, timeMinutes: 25, tag: 'เก็งข้อสอบ' },
+          { id: 'sb_4', title: 'ระเบียบสารบรรณ ชุดที่ 4 ตรา มาตรฐานซอง', subcategory: 'สารบรรณ_๒๕๒๖', desc: 'แนวข้อสอบขนาดตราครุฑ มาตรฐานกระดาษและซอง', questionsCount: 20, timeMinutes: 20, tag: 'ชุดข้อสอบจริง' }
+        ],
+        'ลักษณะที่54': [
+          { id: 'l54_1', title: 'ลักษณะที่ ๕๔ งานสารบรรณตำรวจ ชุดที่ 1', subcategory: 'ลักษณะที่ ๕๔', desc: 'ข้อสอบระเบียบการตำรวจไม่เกี่ยวกับคดี ลักษณะที่ ๕๔', questionsCount: 25, timeMinutes: 25, tag: 'ชุดข้อสอบจริง' },
+          { id: 'l54_2', title: 'ลักษณะที่ ๕๔ การรับ-ส่งและระบบอิเล็กทรอนิกส์', subcategory: 'ลักษณะที่ ๕๔', desc: 'แนวข้อสอบระบบสารบรรณอิเล็กทรอนิกส์ ตร.', questionsCount: 20, timeMinutes: 20, tag: 'เก็งข้อสอบ' }
+        ],
+        'ทั่วไป': [
+          { id: 'gen_1', title: 'ความสามารถทั่วไป ชุดที่ 1 (อนุกรมและตัวเลข)', subcategory: 'อนุกรมและมิติสัมพันธ์', desc: 'แนวข้อสอบอนุกรม ตรรกะตัวเลข และคณิตศาสตร์', questionsCount: 30, timeMinutes: 35, tag: 'ชุดข้อสอบจริง' },
+          { id: 'gen_2', title: 'ความสามารถทั่วไป ชุดที่ 2 (เงื่อนไขภาษา/สัญลักษณ์)', subcategory: 'ตรรกศาสตร์และเหตุผล', desc: 'แนวข้อสอบเงื่อนไขภาษาและเงื่อนไขสัญลักษณ์', questionsCount: 25, timeMinutes: 30, tag: 'เก็งข้อสอบ' }
+        ],
+        'กฏหมาย': [
+          { id: 'law_1', title: 'กฎหมายที่ประชาชนควรรู้ ชุดที่ 1 (ป.วิ.อ.)', subcategory: 'ประมวลกฎหมายวิธีพิจารณาความอาญา', desc: 'แนวข้อสอบ ป.วิ.อ. อำนาจการสืบสวนและจับกุม', questionsCount: 30, timeMinutes: 35, tag: 'ชุดข้อสอบจริง' },
+          { id: 'law_2', title: 'กฎหมายที่ประชาชนควรรู้ ชุดที่ 2 (พ.ร.บ.ตำรวจ)', subcategory: 'พ.ร.บ.ตำรวจแห่งชาติ', desc: 'แนวข้อสอบ พ.ร.บ.ตำรวจแห่งชาติ และวินัยตำรวจ', questionsCount: 25, timeMinutes: 30, tag: 'เก็งข้อสอบ' }
+        ],
+        'สังคม': [
+          { id: 'soc_1', title: 'สังคม วัฒนธรรม และจริยธรรม ชุดที่ 1', subcategory: 'สังคมและวัฒนธรรม', desc: 'แนวข้อสอบวัฒนธรรมไทย เศรษฐกิจพอเพียง และประชาคมอาเซียน', questionsCount: 25, timeMinutes: 25, tag: 'ชุดข้อสอบจริง' }
+        ],
+        'คอม': [
+          { id: 'com_1', title: 'เทคโนโลยีสารสนเทศเพื่อการสอบตำรวจ ชุดที่ 1', subcategory: 'คอมพิวเตอร์และระบบสารสนเทศ', desc: 'แนวข้อสอบฮาร์ดแวร์ ซอฟต์แวร์ เครือข่าย และความปลอดภัยไซเบอร์', questionsCount: 30, timeMinutes: 30, tag: 'ชุดข้อสอบจริง' }
+        ]
+      };
+
+      const matchedDefault = defaultSetsMap[cat] || defaultSetsMap['งานสารบรรณ'];
+      return res.json(matchedDefault);
+    }
+
+    const formattedSets = sets.map(s => ({
+      id: s.id,
+      title: s.title,
+      category: s.category,
+      subcategory: s.subcategory,
+      desc: s.desc || `ชุดข้อสอบหมวด ${s.category} (จำนวน ${(s.questions && s.questions.length) ? s.questions.length : (s.totalCount || 30)} ข้อ)`,
+      questionsCount: (s.questions && s.questions.length) ? s.questions.length : (s.totalCount || 30),
+      timeMinutes: Math.max(Math.round(((s.questions && s.questions.length) ? s.questions.length : (s.totalCount || 30)) * 1.1), 15),
+      tag: 'ชุดข้อสอบจริง'
+    }));
+
+    res.json(formattedSets);
+  } catch (err) {
+    console.error('Fetch exam sets error:', err);
+    res.status(500).json({ error: 'เกิดข้อผิดพลาดในการโหลดชุดข้อสอบ: ' + err.message });
+  }
+});
+
+// GET /api/exams/questions - Fetch questions for a specific set
+app.get('/api/exams/questions', async (req, res) => {
+  try {
+    const { subject, setId, count } = req.query;
+    const numCount = parseInt(count) || 10;
+
+    // 1. If numeric setId, try to find in prisma.examSet
+    if (setId && !isNaN(parseInt(setId))) {
+      const set = await prisma.examSet.findUnique({
+        where: { id: parseInt(setId) },
+        include: { questions: true }
+      });
+      if (set && set.questions && set.questions.length > 0) {
+        return res.json(set.questions.map((q) => ({
+          id: q.id,
+          questionText: q.questionText,
+          choices: [q.choice1, q.choice2, q.choice3, q.choice4],
+          correctAnswer: q.correctAnswer || 1,
+          explanation: q.explanation || 'คำอธิบายเฉลยอ้างอิงตามระเบียบและมาตรฐานข้อสอบ'
+        })));
+      }
+    }
+
+    // 2. Fetch from prisma.question
+    const questions = await prisma.question.findMany({
+      where: subject ? { category: { contains: subject } } : {},
+      take: numCount
+    });
+
+    if (questions.length > 0) {
+      return res.json(questions.map((q) => ({
+        id: q.id,
+        questionText: q.questionText,
+        choices: [q.choice1, q.choice2, q.choice3, q.choice4],
+        correctAnswer: q.correctAnswer || 1,
+        explanation: q.explanation || 'คำอธิบายเฉลยอ้างอิงตามระเบียบและมาตรฐานข้อสอบ'
+      })));
+    }
+
+    // 3. Fallback default questions
+    const fallbackQuestions = defaultQuestions[0]?.questions || [];
+    res.json(fallbackQuestions.slice(0, numCount).map((q, idx) => ({
+      id: idx + 1,
+      questionText: q.questionText,
+      choices: [q.choice1, q.choice2, q.choice3, q.choice4],
+      correctAnswer: q.correctAnswer || 1,
+      explanation: q.explanation || 'คำอธิบายเฉลยอ้างอิงตามระเบียบและมาตรฐานข้อสอบตำรวจ'
+    })));
+  } catch (err) {
+    console.error('Fetch questions error:', err);
+    res.status(500).json({ error: 'เกิดข้อผิดพลาดในการโหลดคำถาม: ' + err.message });
+  }
+});
+
 // GET /api/exams/subject-questions - Fetch real questions for Question Bank Mode
 app.get('/api/exams/subject-questions', authenticateToken, async (req, res) => {
   try {
