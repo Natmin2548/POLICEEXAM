@@ -16,7 +16,7 @@
 
     body {
       font-family: 'Kanit', sans-serif;
-      background: #0F172A;
+      background: #090D16;
       color: #F8FAFC;
       min-height: 100vh;
       display: flex;
@@ -26,23 +26,23 @@
 
     /* Top Control Bar */
     .simulator-header {
-      background: #1E293B;
-      border-bottom: 1px solid #334155;
-      padding: 12px 24px;
+      background: #111827;
+      border-bottom: 1px solid #1F2937;
+      padding: 12px 20px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       flex-wrap: wrap;
-      gap: 16px;
+      gap: 12px;
       z-index: 100;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
     }
 
     .brand-title {
       display: flex;
       align-items: center;
-      gap: 10px;
-      font-size: 16px;
+      gap: 8px;
+      font-size: 15px;
       font-weight: 700;
     }
 
@@ -59,16 +59,16 @@
     .controls-group {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       flex-wrap: wrap;
     }
 
     .control-btn {
-      background: #334155;
+      background: #1F2937;
       color: #F8FAFC;
-      border: 1px solid #475569;
-      padding: 8px 14px;
-      border-radius: 12px;
+      border: 1px solid #374151;
+      padding: 7px 13px;
+      border-radius: 10px;
       font-size: 13px;
       font-weight: 600;
       cursor: pointer;
@@ -76,28 +76,40 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      transition: all 0.2s;
+      transition: all 0.15s ease;
     }
 
     .control-btn:hover {
-      background: #475569;
+      background: #374151;
+      border-color: #4B5563;
     }
 
     .control-btn.active {
       background: #BD1B0B;
       border-color: #BD1B0B;
       color: white;
-      box-shadow: 0 0 15px rgba(189, 27, 11, 0.4);
+      box-shadow: 0 0 16px rgba(189, 27, 11, 0.4);
+    }
+
+    .control-btn.btn-dev-login {
+      background: linear-gradient(135deg, #10B981, #059669);
+      border: none;
+      color: white;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+    .control-btn.btn-dev-login:hover {
+      background: linear-gradient(135deg, #059669, #047857);
+      transform: translateY(-1px);
     }
 
     .url-input-wrapper {
       display: flex;
       align-items: center;
-      background: #0F172A;
-      border: 1px solid #334155;
-      border-radius: 12px;
-      padding: 4px 8px;
-      gap: 8px;
+      background: #090D16;
+      border: 1px solid #374151;
+      border-radius: 10px;
+      padding: 3px 6px;
+      gap: 6px;
     }
 
     .url-input {
@@ -105,10 +117,10 @@
       border: none;
       color: #F8FAFC;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 13px;
+      font-size: 12.5px;
       padding: 4px 6px;
       outline: none;
-      width: 220px;
+      width: 180px;
     }
 
     /* Main Simulator Workspace */
@@ -117,8 +129,8 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 40px 20px;
-      background: radial-gradient(circle at center, #1E293B 0%, #0F172A 100%);
+      padding: 30px 20px;
+      background: radial-gradient(circle at 50% 30%, #1E293B 0%, #090D16 100%);
       position: relative;
     }
 
@@ -127,7 +139,7 @@
       background: #18181B;
       border-radius: 54px;
       padding: 12px;
-      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7), 0 0 0 2px #3F3F46, 0 0 0 6px #27272A;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8), 0 0 0 2px #3F3F46, 0 0 0 6px #27272A;
       position: relative;
       transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     }
@@ -141,7 +153,7 @@
       flex-direction: column;
     }
 
-    /* Android Punch Hole & Status Bar */
+    /* Android Punch Hole */
     .device-notch {
       position: absolute;
       top: 10px;
@@ -193,6 +205,25 @@
     .dim-tablet .device-notch {
       display: none;
     }
+
+    /* Helper Banner */
+    .hint-banner {
+      position: absolute;
+      bottom: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(30, 41, 59, 0.85);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #94A3B8;
+      font-size: 12px;
+      padding: 6px 16px;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      pointer-events: none;
+    }
   </style>
 </head>
 <body>
@@ -200,8 +231,8 @@
   <!-- Top Controls -->
   <header class="simulator-header">
     <div class="brand-title">
-      <span>📱 Mobile Simulator & Live Preview</span>
-      <span class="brand-badge">Flutter / Android Mode</span>
+      <span>📱 Simulator & Live Preview</span>
+      <span class="brand-badge">Flutter / Dev Mode</span>
     </div>
 
     <!-- Center Device Selection -->
@@ -217,19 +248,23 @@
       </button>
     </div>
 
-    <!-- URL and Actions -->
+    <!-- Dev Bypass Login & Quick Nav -->
     <div class="controls-group">
+      <button class="control-btn btn-dev-login" onclick="bypassLoginAndOpenHome()" title="เข้าสู่ระบบทันทีเพื่อทดสอบหน้าแอป">
+        ⚡ เข้าสู่ระบบทดสอบ (Dev Login)
+      </button>
+
+      <button class="control-btn" onclick="openBankView()" title="เปิดหน้าคลังข้อสอบ">
+        📚 คลังข้อสอบ
+      </button>
+
       <div class="url-input-wrapper">
-        <span style="color:#64748B; font-size:12px;">URL:</span>
         <input type="text" id="txtUrl" class="url-input" value="/home/index.html" onkeydown="if(event.key==='Enter') navigateUrl()">
         <button onclick="navigateUrl()" style="background:#BD1B0B; border:none; color:white; padding:4px 8px; border-radius:6px; font-size:11px; cursor:pointer; font-weight:700;">ไป</button>
       </div>
 
       <button class="control-btn" onclick="reloadPreview()" title="รีเฟรชหน้าจอ">
         🔄 รีเฟรช
-      </button>
-      <button class="control-btn" onclick="window.open('/home/index.html', '_blank')" title="เปิดแท็บใหม่">
-        🌐 เปิดเต็มจอ
       </button>
     </div>
   </header>
@@ -239,12 +274,32 @@
     <div class="device-chassis" id="deviceChassis">
       <div class="device-notch" id="deviceNotch"></div>
       <div class="device-screen dim-android" id="deviceScreen">
-        <iframe id="previewIframe" src="/home/index.html" class="preview-iframe"></iframe>
+        <iframe id="previewIframe" src="/home/index.html" class="preview-iframe" allow="clipboard-read; clipboard-write;"></iframe>
       </div>
+    </div>
+
+    <div class="hint-banner">
+      💡 เคล็ดลับ: กดปุ่ม <b>⚡ เข้าสู่ระบบทดสอบ (Dev Login)</b> ด้านบนเพื่อเข้าสู่ Dashboard และทดสอบ UI หน้าต่างๆ ได้ทันทีบนคอม
     </div>
   </main>
 
   <script>
+    const mockProfile = {
+      id: 'demo_user_police_001',
+      username: 'ตำรวจทดสอบระบบ',
+      name: 'ผู้หมวดทดสอบ (Dev Mode)',
+      fullName: 'ผู้หมวดทดสอบ (Dev Mode)',
+      email: 'police.dev@policeexam.internal',
+      picture: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+      avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+      xp: 2450,
+      points: 1200,
+      streak: 7,
+      role: 'USER',
+      isAdmin: true
+    };
+    const mockToken = 'mock_jwt_token_for_preview_mode_' + Date.now();
+
     function setDevice(type) {
       const screen = document.getElementById('deviceScreen');
       const notch = document.getElementById('deviceNotch');
@@ -273,6 +328,37 @@
       }
     }
 
+    function bypassLoginAndOpenHome() {
+      try {
+        localStorage.setItem('authToken', mockToken);
+        localStorage.setItem('userProfile', JSON.stringify(mockProfile));
+
+        const iframe = document.getElementById('previewIframe');
+        if (iframe && iframe.contentWindow) {
+          try {
+            iframe.contentWindow.localStorage.setItem('authToken', mockToken);
+            iframe.contentWindow.localStorage.setItem('userProfile', JSON.stringify(mockProfile));
+          } catch(e) {}
+        }
+        
+        document.getElementById('txtUrl').value = '/home/index.html';
+        iframe.src = '/home/index.html';
+      } catch (err) {
+        console.error('Bypass error:', err);
+      }
+    }
+
+    function openBankView() {
+      bypassLoginAndOpenHome();
+      setTimeout(() => {
+        const iframe = document.getElementById('previewIframe');
+        if (iframe && iframe.contentWindow) {
+          const bankBtn = iframe.contentWindow.document.getElementById('btnTabBank');
+          if (bankBtn) bankBtn.click();
+        }
+      }, 500);
+    }
+
     function navigateUrl() {
       const url = document.getElementById('txtUrl').value.trim();
       if (url) {
@@ -284,6 +370,14 @@
       const iframe = document.getElementById('previewIframe');
       iframe.src = iframe.src;
     }
+
+    // Auto-setup Dev session on load so simulator works seamlessly on PC
+    window.addEventListener('DOMContentLoaded', () => {
+      try {
+        localStorage.setItem('authToken', mockToken);
+        localStorage.setItem('userProfile', JSON.stringify(mockProfile));
+      } catch(e) {}
+    });
   </script>
 </body>
 </html>
