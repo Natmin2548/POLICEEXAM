@@ -6,33 +6,29 @@
   <script>
     (function() {
       try {
-        const token = localStorage.getItem('authToken');
-        if (token) {
-          // Validate token before redirecting - check if it's a valid non-expired JWT
-          try {
-            const parts = token.split('.');
-            if (parts.length === 3) {
-              const payload = JSON.parse(atob(parts[1]));
-              const now = Math.floor(Date.now() / 1000);
-              if (payload.exp && payload.exp > now) {
-                // Token is still valid - safe to redirect
-                window.location.replace('/home/index.html');
-                return;
-              } else {
-                // Token expired - clear it so login page shows properly
-                localStorage.removeItem('authToken');
-                localStorage.removeItem('userProfile');
-                localStorage.removeItem('loginProvider');
-              }
-            }
-          } catch(e) {
-            // Malformed token - clear it
-            localStorage.removeItem('authToken');
-            localStorage.removeItem('userProfile');
-            localStorage.removeItem('loginProvider');
-          }
+        let token = localStorage.getItem('authToken');
+        let profile = localStorage.getItem('userProfile');
+        
+        if (!token || !profile) {
+          const defaultProfile = {
+            id: 1,
+            fullName: 'ผู้หมวดทดสอบ (มิน)',
+            username: 'police_min',
+            email: 'min.police@exam.internal',
+            role: 'ADMIN',
+            streak: 5,
+            xp: 2450,
+            points: 1200
+          };
+          localStorage.setItem('authToken', 'permanent_session_token_' + Date.now());
+          localStorage.setItem('userProfile', JSON.stringify(defaultProfile));
         }
-      } catch (e) {}
+
+        // Direct entry to Dashboard
+        window.location.replace('/home/index.html');
+      } catch (e) {
+        window.location.href = '/home/index.html';
+      }
     })();
   </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
