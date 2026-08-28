@@ -2433,6 +2433,7 @@ body {
   display: none;
 }
 
+.filter-pill,
 .filter-pill-btn {
   padding: 7px 16px;
   border-radius: 999px;
@@ -2445,8 +2446,10 @@ body {
   white-space: nowrap;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  font-family: inherit;
 }
 
+.filter-pill.active,
 .filter-pill-btn.active {
   background: #BD1B0B;
   border-color: #BD1B0B;
@@ -2455,6 +2458,7 @@ body {
   box-shadow: 0 4px 14px rgba(189, 27, 11, 0.28);
 }
 
+.filter-pill:active,
 .filter-pill-btn:active {
   transform: scale(0.95);
 }
