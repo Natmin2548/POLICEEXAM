@@ -1232,6 +1232,21 @@ if (communityTabBtn) {
   });
 }
 
+window.openImageCompressorModal = function() {
+  const modal = document.getElementById('imageCompressorModal');
+  if (modal) modal.style.display = 'flex';
+};
+
+window.openVocabArena = function() {
+  const modal = document.getElementById('vocabArenaModal');
+  if (modal) modal.style.display = 'flex';
+};
+
+window.closeVocabArena = function() {
+  const modal = document.getElementById('vocabArenaModal');
+  if (modal) modal.style.display = 'none';
+};
+
 window.showBattleMaintenanceAlert = function(e) {
   if (e && typeof e.preventDefault === 'function') e.preventDefault();
   const modal = document.getElementById('maintenanceModal');
