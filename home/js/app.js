@@ -121,10 +121,9 @@ async function checkSession() {
   }
 
   userProfile = JSON.parse(sessionData);
-  initializeDashboard();
-  loadRealProfile();
-  loadRadarChart();
-  updateStatsTabDetails();
+  if (typeof initializeDashboard === 'function') initializeDashboard();
+  if (typeof loadRealProfile === 'function') loadRealProfile();
+  if (typeof updateStatsTabDetails === 'function') updateStatsTabDetails();
 }
 
 function initializeDashboard() {
@@ -500,8 +499,10 @@ if (btnCloseExamMode) {
 
 async function handleStartExam(mode) {
   if (examModeModal) examModeModal.style.display = 'none';
-  btnStartExam.disabled = true;
-  btnStartExam.querySelector('span').textContent = 'กำลังโหลด...';
+  if (btnStartExam) {
+    btnStartExam.disabled = true;
+    btnStartExam.textContent = 'กำลังโหลด...';
+  }
 
   try {
     const res = await fetch(`${API_BASE}/api/exams/daily?mode=${mode}`, {
@@ -511,7 +512,7 @@ async function handleStartExam(mode) {
     if (res.ok) {
       const data = await res.json();
       const questionCount = data.questions ? data.questions.length : 0;
-      await showCenteredAlert(` พร้อมทำข้อสอบ! มีทั้งหมด ${questionCount} ข้อ\n\n(ฟีเจอร์ทำข้อสอบเต็มรูปแบบจะเปิดในเวอร์ชันหน้า)`);
+      await showCenteredAlert(`🎯 พร้อมทำข้อสอบ! มีทั้งหมด ${questionCount} ข้อ\n\n(เข้าสู่โหมดทำข้อสอบ)`);
     } else {
       await showCenteredAlert('ไม่สามารถโหลดข้อสอบได้ กรุณาลองใหม่');
     }
@@ -519,8 +520,10 @@ async function handleStartExam(mode) {
     console.error('Daily exam fetch error:', err);
     await showCenteredAlert('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
   }
-  btnStartExam.disabled = false;
-  btnStartExam.querySelector('span').textContent = 'ทำข้อสอบ';
+  if (btnStartExam) {
+    btnStartExam.disabled = false;
+    btnStartExam.textContent = 'ทำเลย';
+  }
 }
 
 if (btnExamModeBank) {
