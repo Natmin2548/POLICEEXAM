@@ -896,20 +896,21 @@ if (communityTabBtn) {
   });
 }
 
+window.showBattleMaintenanceAlert = function(e) {
+  if (e && typeof e.preventDefault === 'function') e.preventDefault();
+  const modal = document.getElementById('maintenanceModal');
+  if (modal) modal.style.display = 'flex';
+};
+
+window.closeMaintenanceModal = function() {
+  const modal = document.getElementById('maintenanceModal');
+  if (modal) modal.style.display = 'none';
+};
+
 if (battleTabBtn) {
   battleTabBtn.addEventListener('click', (e) => {
     e.preventDefault();
-    navTabs.forEach(t => t.classList.remove('active'));
-    battleTabBtn.classList.add('active');
-    
-    if (battleView) battleView.classList.add('active');
-    if (homeView) homeView.classList.remove('active');
-    if (communityView) communityView.classList.remove('active');
-    if (statsView) statsView.classList.remove('active');
-    if (profileView) profileView.classList.remove('active');
-    if (questionBankView) questionBankView.classList.remove('active');
-    
-    updateBattleTabDetails();
+    showBattleMaintenanceAlert(e);
   });
 }
 
