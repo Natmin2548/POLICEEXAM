@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mobile Preview & Device Simulator - POLICE EXAM</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Kanit', sans-serif;
+      background: #0F172A;
+      color: #F8FAFC;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* Top Control Bar */
+    .simulator-header {
+      background: #1E293B;
+      border-bottom: 1px solid #334155;
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+      z-index: 100;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .brand-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .brand-badge {
+      background: #BD1B0B;
+      color: white;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 999px;
+      letter-spacing: 0.05em;
+    }
+
+    .controls-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .control-btn {
+      background: #334155;
+      color: #F8FAFC;
+      border: 1px solid #475569;
+      padding: 8px 14px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .control-btn:hover {
+      background: #475569;
+    }
+
+    .control-btn.active {
+      background: #BD1B0B;
+      border-color: #BD1B0B;
+      color: white;
+      box-shadow: 0 0 15px rgba(189, 27, 11, 0.4);
+    }
+
+    .url-input-wrapper {
+      display: flex;
+      align-items: center;
+      background: #0F172A;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 4px 8px;
+      gap: 8px;
+    }
+
+    .url-input {
+      background: transparent;
+      border: none;
+      color: #F8FAFC;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      padding: 4px 6px;
+      outline: none;
+      width: 220px;
+    }
+
+    /* Main Simulator Workspace */
+    .simulator-workspace {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+      background: radial-gradient(circle at center, #1E293B 0%, #0F172A 100%);
+      position: relative;
+    }
+
+    /* Device Chassis & Frame */
+    .device-chassis {
+      background: #18181B;
+      border-radius: 54px;
+      padding: 12px;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7), 0 0 0 2px #3F3F46, 0 0 0 6px #27272A;
+      position: relative;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .device-screen {
+      background: #FFFFFF;
+      border-radius: 44px;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Android Punch Hole & Status Bar */
+    .device-notch {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 14px;
+      height: 14px;
+      background: #000000;
+      border-radius: 50%;
+      z-index: 1000;
+      pointer-events: none;
+    }
+
+    /* Dynamic Island for iPhone */
+    .device-notch.iphone {
+      width: 96px;
+      height: 26px;
+      border-radius: 20px;
+      top: 10px;
+    }
+
+    /* Embedded Frame */
+    .preview-iframe {
+      border: none;
+      width: 100%;
+      height: 100%;
+      background: #F8FAFC;
+    }
+
+    /* Dimensions */
+    .dim-android {
+      width: 392px;
+      height: 830px;
+    }
+
+    .dim-iphone {
+      width: 393px;
+      height: 852px;
+    }
+
+    .dim-tablet {
+      width: 768px;
+      height: 1024px;
+      border-radius: 36px;
+    }
+    .dim-tablet .device-screen {
+      border-radius: 28px;
+    }
+    .dim-tablet .device-notch {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Controls -->
+  <header class="simulator-header">
+    <div class="brand-title">
+      <span>📱 Mobile Simulator & Live Preview</span>
+      <span class="brand-badge">Flutter / Android Mode</span>
+    </div>
+
+    <!-- Center Device Selection -->
+    <div class="controls-group">
+      <button class="control-btn active" id="btnAndroid" onclick="setDevice('android')">
+        🤖 Android (Pixel 8)
+      </button>
+      <button class="control-btn" id="btnIphone" onclick="setDevice('iphone')">
+        🍏 iPhone 15 Pro
+      </button>
+      <button class="control-btn" id="btnTablet" onclick="setDevice('tablet')">
+        📱 iPad Mini
+      </button>
+    </div>
+
+    <!-- URL and Actions -->
+    <div class="controls-group">
+      <div class="url-input-wrapper">
+        <span style="color:#64748B; font-size:12px;">URL:</span>
+        <input type="text" id="txtUrl" class="url-input" value="/home/index.html" onkeydown="if(event.key==='Enter') navigateUrl()">
+        <button onclick="navigateUrl()" style="background:#BD1B0B; border:none; color:white; padding:4px 8px; border-radius:6px; font-size:11px; cursor:pointer; font-weight:700;">ไป</button>
+      </div>
+
+      <button class="control-btn" onclick="reloadPreview()" title="รีเฟรชหน้าจอ">
+        🔄 รีเฟรช
+      </button>
+      <button class="control-btn" onclick="window.open('/home/index.html', '_blank')" title="เปิดแท็บใหม่">
+        🌐 เปิดเต็มจอ
+      </button>
+    </div>
+  </header>
+
+  <!-- Workspace -->
+  <main class="simulator-workspace">
+    <div class="device-chassis" id="deviceChassis">
+      <div class="device-notch" id="deviceNotch"></div>
+      <div class="device-screen dim-android" id="deviceScreen">
+        <iframe id="previewIframe" src="/home/index.html" class="preview-iframe"></iframe>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    function setDevice(type) {
+      const screen = document.getElementById('deviceScreen');
+      const notch = document.getElementById('deviceNotch');
+      const btnAndroid = document.getElementById('btnAndroid');
+      const btnIphone = document.getElementById('btnIphone');
+      const btnTablet = document.getElementById('btnTablet');
+
+      btnAndroid.classList.remove('active');
+      btnIphone.classList.remove('active');
+      btnTablet.classList.remove('active');
+
+      if (type === 'android') {
+        screen.className = 'device-screen dim-android';
+        notch.className = 'device-notch';
+        notch.style.display = 'block';
+        btnAndroid.classList.add('active');
+      } else if (type === 'iphone') {
+        screen.className = 'device-screen dim-iphone';
+        notch.className = 'device-notch iphone';
+        notch.style.display = 'block';
+        btnIphone.classList.add('active');
+      } else if (type === 'tablet') {
+        screen.className = 'device-screen dim-tablet';
+        notch.style.display = 'none';
+        btnTablet.classList.add('active');
+      }
+    }
+
+    function navigateUrl() {
+      const url = document.getElementById('txtUrl').value.trim();
+      if (url) {
+        document.getElementById('previewIframe').src = url;
+      }
+    }
+
+    function reloadPreview() {
+      const iframe = document.getElementById('previewIframe');
+      iframe.src = iframe.src;
+    }
+  </script>
+</body>
+</html>

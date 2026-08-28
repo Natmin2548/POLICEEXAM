@@ -31,6 +31,10 @@ if (fs.existsSync(path.join(__dirname, 'index.html'))) {
   fs.copyFileSync(path.join(__dirname, 'index.html'), path.join(distPath, 'index.html'));
   console.log('Copied index.html');
 }
+if (fs.existsSync(path.join(__dirname, 'preview.html'))) {
+  fs.copyFileSync(path.join(__dirname, 'preview.html'), path.join(distPath, 'preview.html'));
+  console.log('Copied preview.html');
+}
 
 const foldersToCopy = ['css', 'js', 'home'];
 foldersToCopy.forEach(folder => {
