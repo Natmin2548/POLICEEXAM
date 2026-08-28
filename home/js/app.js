@@ -1296,6 +1296,11 @@ const BATTLE_SUBJECT_LIST = [
   'คอมพิวเตอร์'
 ];
 
+function getRandomBattleSubject() {
+  const randIdx = Math.floor(Math.random() * BATTLE_SUBJECT_LIST.length);
+  return BATTLE_SUBJECT_LIST[randIdx];
+}
+
 // Real-Time Matchmaking Engine (No Demo / No Bots)
 let realMatchPollInterval = null;
 let searchingSubject = '';
@@ -1358,6 +1363,7 @@ window.startRealMatchmakingPoll = function(subjectName, isRanked = false) {
 
       if (data.status === 'matched') {
         clearInterval(realMatchPollInterval);
+        currentMatchId = data.matchId;
         const searchModal = document.getElementById('realMatchSearchingModal');
         if (searchModal) searchModal.remove();
 
@@ -1441,7 +1447,7 @@ function showMatchFoundModal(subjectName, opponent, questions) {
   if (btnStart) {
     btnStart.addEventListener('click', () => {
       modal.remove();
-      startLiveBattleArenaWithQuestions(subjectName, opponent, questions);
+      startLiveBattleArenaWithQuestions(subjectName, opponent, questions, { matchId: currentMatchId || null });
     });
   }
 }
@@ -1467,42 +1473,12 @@ window.startRankedBattle = function() {
   openBattleSubjectSelectModal('ranked', '🏆 ประลองจัดอันดับ (±200 แต้ม)');
 };
 
-// Tournament Battle: User selects subject manually after 10s countdown
+// Tournament Battle: Open 8-player room for real users
 window.startTournamentBattle = function() {
   closeBattleHub();
-  let count = 10;
-  const modal = document.createElement('div');
-  modal.style.position = 'fixed';
-  modal.style.top = '0'; modal.style.left = '0'; modal.style.width = '100vw'; modal.style.height = '100vh';
-  modal.style.background = 'rgba(15, 23, 42, 0.9)'; modal.style.zIndex = '9999'; modal.style.display = 'flex';
-  modal.style.alignItems = 'center'; modal.style.justifyContent = 'center'; modal.style.fontFamily = 'Kanit, sans-serif';
-
-  modal.innerHTML = `
-    <div style="background: white; border-radius: 24px; padding: 30px; text-align: center; max-width: 440px; width: 90%; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3);">
-      <div style="font-size: 40px; font-weight: 900; color: #7E22CE; margin-bottom: 8px;" id="lblTourneyCount">10</div>
-      <h3 style="margin: 0 0 8px 0; font-size: 18px; font-weight: 800; color: #1E293B;">👑 เตรียมเปิดศึกลายพรางทัวร์นาเมนต์ (8 คน)!</h3>
-      <p style="font-size: 13px; color: #64748B; margin-bottom: 16px;">กำลังจับคู่ผู้เล่นในทัวร์นาเมนต์ ทั้งหมด 8 คน พร้อมลุยในอีก 10 วินาที...</p>
-      <div style="display: flex; justify-content: center; gap: 6px; flex-wrap: wrap;">
-        <span style="background: #ECFDF5; color: #059669; font-weight: 700; padding: 4px 10px; border-radius: 999px; font-size: 11px;">คุณ (Ready)</span>
-        <span style="background: #F1F5F9; color: #475569; font-weight: 700; padding: 4px 10px; border-radius: 999px; font-size: 11px;">ประสิทธิ์ (Ready)</span>
-        <span style="background: #F1F5F9; color: #475569; font-weight: 700; padding: 4px 10px; border-radius: 999px; font-size: 11px;">วิชัย (Ready)</span>
-        <span style="background: #F1F5F9; color: #475569; font-weight: 700; padding: 4px 10px; border-radius: 999px; font-size: 11px;">อนุชา (Ready)</span>
-        <span style="background: #F1F5F9; color: #475569; font-weight: 700; padding: 4px 10px; border-radius: 999px; font-size: 11px;">สมศักดิ์ (Ready)</span>
-      </div>
-    </div>
-  `;
-  document.body.appendChild(modal);
-
-  const timer = setInterval(() => {
-    count--;
-    const el = document.getElementById('lblTourneyCount');
-    if (el) el.textContent = count;
-    if (count <= 0) {
-      clearInterval(timer);
-      modal.remove();
-      openBattleSubjectSelectModal('tournament', '👑 ศึกลายพรางทัวร์นาเมนต์');
-    }
-  }, 1000);
+  openCustomRoomSetup();
+  const maxSel = document.getElementById('selMaxRoomPlayers');
+  if (maxSel) maxSel.value = '8';
 };
 
 // 3. Custom Room Links
@@ -1694,15 +1670,31 @@ function updateLobbyUI(roomData) {
     `).join('');
   }
 
-  const isHost = userProfile && roomData.hostUserId === userProfile.id;
+  const isHost = userProfile && String(roomData.hostUserId) === String(userProfile.id);
   if (btnStart) {
     if (isHost) {
-      btnStart.style.display = 'block';
-      btnStart.innerHTML = `กดเริ่มประลอง (หมุนสุ่มชุดข้อสอบ!)`;
-      btnStart.onclick = hostTriggerStartDuel;
+      if (players.length < 2) {
+        btnStart.style.display = 'block';
+        btnStart.style.background = '#94A3B8';
+        btnStart.style.cursor = 'not-allowed';
+        btnStart.style.boxShadow = 'none';
+        btnStart.innerHTML = `⏳ รอผู้เล่นเข้าร่วมห้อง... (อย่างน้อย 2 คน)`;
+        btnStart.onclick = function() {
+          showCenteredAlert('ต้องรอให้มีผู้เล่นเข้าร่วมห้องอย่างน้อย 2 คนก่อน จึงจะเริ่มประลองได้ครับ', { title: 'ยังไม่สามารถเริ่มได้' });
+        };
+      } else {
+        btnStart.style.display = 'block';
+        btnStart.style.background = '#10B981';
+        btnStart.style.cursor = 'pointer';
+        btnStart.style.boxShadow = '0 4px 14px rgba(16, 185, 129, 0.4)';
+        btnStart.innerHTML = `⚔️ กดเริ่มประลอง (ผู้เล่นพร้อมแล้ว ${players.length} คน)`;
+        btnStart.onclick = hostTriggerStartDuel;
+      }
     } else {
       btnStart.style.display = 'block';
       btnStart.style.background = '#94A3B8';
+      btnStart.style.cursor = 'not-allowed';
+      btnStart.style.boxShadow = 'none';
       btnStart.innerHTML = `รอหัวหน้าห้องกดเริ่มประลอง...`;
       btnStart.onclick = null;
     }
@@ -1736,6 +1728,10 @@ window.leaveRoomLobby = async function() {
 
 window.hostTriggerStartDuel = async function() {
   if (!currentRoomCode) return;
+  if (!currentRoomData || !currentRoomData.players || currentRoomData.players.length < 2) {
+    showCenteredAlert('ต้องรอให้มีผู้เล่นเข้าร่วมห้องอย่างน้อย 2 คนก่อน จึงจะเริ่มประลองได้ครับ', { title: 'ยังไม่สามารถเริ่มได้' });
+    return;
+  }
   try {
     const token = authToken || localStorage.getItem('authToken');
     const res = await fetch(`${API_BASE}/api/battle/room/start-spin`, {
@@ -1790,8 +1786,8 @@ function showExamSetWheelSpinAnimation(subjectName, selectedSetTitle, questions,
 
   setTimeout(() => {
     modal.remove();
-    const opp = (Array.isArray(players) && players.length > 1) ? players.find(p => p.userId !== (userProfile ? userProfile.id : '')) : null;
-    startLiveBattleArenaWithQuestions(subjectName, opp, questions);
+    const opp = (Array.isArray(players) && players.length > 1) ? players.find(p => String(p.userId) !== String(userProfile ? userProfile.id : '')) : null;
+    startLiveBattleArenaWithQuestions(subjectName, opp, questions, { roomCode: currentRoomCode });
   }, 4200);
 }
 
@@ -1802,7 +1798,7 @@ function checkRoomShareUrlOnLoad() {
   if (roomCode) {
     setTimeout(async () => {
       try {
-        const token = authToken || localStorage.getItem('authToken');
+        const token = authToken || localStorage.getItem('authToken') || userToken;
         const res = await fetch(`${API_BASE}/api/battle/room/join`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
@@ -1818,18 +1814,23 @@ function checkRoomShareUrlOnLoad() {
   }
 }
 
-// 4. Live Battle Duel Runner
+// 4. Live Battle Duel Runner (100% Real Users / No Bots)
+let currentMatchId = null;
+let battleLiveScoreInterval = null;
 let currentBattleState = {
   subject: '',
   questions: [],
   currentIndex: 0,
   playerScore: 0,
   opponentScore: 0,
+  roomCode: null,
+  matchId: null,
   mode: ''
 };
 
-// 4. Live Battle Duel Runner (Real Opponent & Real Subject)
-function startLiveBattleArenaWithQuestions(subjectName, opponent, questions) {
+function startLiveBattleArenaWithQuestions(subjectName, opponent, questions, battleContext = {}) {
+  if (battleLiveScoreInterval) clearInterval(battleLiveScoreInterval);
+
   currentBattleState = {
     subject: subjectName,
     questions,
@@ -1837,6 +1838,8 @@ function startLiveBattleArenaWithQuestions(subjectName, opponent, questions) {
     playerScore: 0,
     opponentScore: 0,
     opponentInfo: opponent,
+    roomCode: battleContext.roomCode || currentRoomCode || null,
+    matchId: battleContext.matchId || currentMatchId || null,
     mode: 'real_match'
   };
 
@@ -1857,6 +1860,57 @@ function startLiveBattleArenaWithQuestions(subjectName, opponent, questions) {
   if (subjTag) subjTag.textContent = `วิชา: ${subjectName}`;
 
   renderCurrentBattleQuestion();
+
+  // Real-time live score sync between real players (No bots)
+  const oppUserId = opponent ? String(opponent.userId) : null;
+  battleLiveScoreInterval = setInterval(async () => {
+    try {
+      const token = authToken || localStorage.getItem('authToken') || userToken;
+      if (currentBattleState.roomCode) {
+        const res = await fetch(`${API_BASE}/api/battle/room/live-score?roomCode=${currentBattleState.roomCode}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.scores) {
+            const myId = userProfile ? String(userProfile.id) : null;
+            if (oppUserId && data.scores[oppUserId]) {
+              currentBattleState.opponentScore = data.scores[oppUserId].score || 0;
+            } else {
+              for (const [uId, sc] of Object.entries(data.scores)) {
+                if (String(uId) !== myId) {
+                  currentBattleState.opponentScore = sc.score || 0;
+                  break;
+                }
+              }
+            }
+            const oScore = document.getElementById('arenaOpponentScore');
+            if (oScore) oScore.textContent = `คะแนน: ${currentBattleState.opponentScore} ข้อ`;
+          }
+        }
+      } else if (currentBattleState.matchId) {
+        const res = await fetch(`${API_BASE}/api/exams/battle/match-status?matchId=${currentBattleState.matchId}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.scores) {
+            const myId = userProfile ? String(userProfile.id) : null;
+            for (const [uId, sc] of Object.entries(data.scores)) {
+              if (String(uId) !== myId) {
+                currentBattleState.opponentScore = sc.score || 0;
+                break;
+              }
+            }
+            const oScore = document.getElementById('arenaOpponentScore');
+            if (oScore) oScore.textContent = `คะแนน: ${currentBattleState.opponentScore} ข้อ`;
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Live score poll error:', e);
+    }
+  }, 1000);
 }
 
 function renderCurrentBattleQuestion() {
@@ -1907,16 +1961,83 @@ window.selectArenaAnswer = function(choiceNum) {
     currentBattleState.playerScore++;
   }
 
-  // Simulated Opponent random answer (70% accuracy)
-  if (Math.random() < 0.7) {
-    currentBattleState.opponentScore++;
-  }
-
+  // Pure real user gameplay: No bot simulation
   currentBattleState.currentIndex++;
   renderCurrentBattleQuestion();
+
+  // Send real score live to server
+  syncMyLiveBattleScore(false);
 };
 
+async function syncMyLiveBattleScore(isFinished = false) {
+  try {
+    const token = authToken || localStorage.getItem('authToken') || userToken;
+    const body = {
+      score: currentBattleState.playerScore,
+      currentIndex: currentBattleState.currentIndex,
+      isFinished
+    };
+
+    if (currentBattleState.roomCode) {
+      body.roomCode = currentBattleState.roomCode;
+      await fetch(`${API_BASE}/api/battle/room/update-score`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(body)
+      });
+    } else if (currentBattleState.matchId) {
+      body.matchId = currentBattleState.matchId;
+      await fetch(`${API_BASE}/api/exams/battle/match-score`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(body)
+      });
+    }
+  } catch (e) {
+    console.error('Sync live score error:', e);
+  }
+}
+
 async function finishLiveBattleDuel() {
+  if (battleLiveScoreInterval) clearInterval(battleLiveScoreInterval);
+
+  // Submit final finished score
+  await syncMyLiveBattleScore(true);
+
+  // Fetch final real opponent score from server
+  try {
+    const token = authToken || localStorage.getItem('authToken') || userToken;
+    if (currentBattleState.roomCode) {
+      const res = await fetch(`${API_BASE}/api/battle/room/live-score?roomCode=${currentBattleState.roomCode}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const myId = userProfile ? String(userProfile.id) : null;
+        for (const [uId, sc] of Object.entries(data.scores || {})) {
+          if (String(uId) !== myId) {
+            currentBattleState.opponentScore = sc.score || 0;
+            break;
+          }
+        }
+      }
+    } else if (currentBattleState.matchId) {
+      const res = await fetch(`${API_BASE}/api/exams/battle/match-status?matchId=${currentBattleState.matchId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const myId = userProfile ? String(userProfile.id) : null;
+        for (const [uId, sc] of Object.entries(data.scores || {})) {
+          if (String(uId) !== myId) {
+            currentBattleState.opponentScore = sc.score || 0;
+            break;
+          }
+        }
+      }
+    }
+  } catch (e) {}
+
   const { playerScore, opponentScore, subject } = currentBattleState;
   const isWinner = playerScore >= opponentScore;
   const modal = document.getElementById('liveBattleArenaModal');
@@ -1924,9 +2045,10 @@ async function finishLiveBattleDuel() {
   if (modal) modal.style.display = 'none';
 
   try {
+    const token = authToken || localStorage.getItem('authToken') || userToken;
     const res = await fetch(`${API_BASE}/api/user/battle-complete`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userToken}` },
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
       body: JSON.stringify({ winner: isWinner, subject })
     });
     const data = await res.json();
@@ -4847,33 +4969,102 @@ let currentSelectedBankSubject = null;
 window.startBankSubject = function(subjectKey) {
   currentSelectedBankSubject = subjectKey;
   
+  const bankMainHeader = document.getElementById('bankMainHeader');
   const subjectsGridPanel = document.getElementById('questionBankSubjectsList');
   const examSetsPanel = document.getElementById('questionBankExamSetsList');
   const titleEl = document.getElementById('currentSubjectTitle');
+  const subtitleEl = document.getElementById('currentSubjectSubtitle');
   const badgeEl = document.getElementById('currentSubjectBadge');
+  const iconEl = document.getElementById('currentSubjectIcon');
 
+  if (bankMainHeader) bankMainHeader.style.display = 'none';
   if (subjectsGridPanel) subjectsGridPanel.style.display = 'none';
   if (examSetsPanel) examSetsPanel.style.display = 'block';
 
-  // Format Subject Title & Badge
-  const displayNames = {
-    'งานสารบรรณ': 'งานสารบรรณ (ระเบียบสำนักนายกรัฐมนตรี)',
-    'ลักษณะที่54': 'ลักษณะที่ ๕๔ งานสารบรรณ (พ.ศ. ๒๕๕๖)',
-    'ทั่วไป': 'ความรู้ความสามารถทั่วไป (คณิต/เหตุผล)',
-    'คณิต': 'ความสามารถทางด้านตัวเลขและคณิตศาสตร์',
-    'สังคม': 'ความรู้รอบตัวและสังคมวัฒนธรรม',
-    'กฏหมาย': 'กฎหมายที่ประชาชนควรรู้และตำรวจปฏิบัติงาน',
-    'คอม': 'คอมพิวเตอร์และเทคโนโลยีสารสนเทศ'
+  // Format Subject Details
+  const subjectMetadata = {
+    'งานสารบรรณ': {
+      title: 'งานสารบรรณ',
+      subtitle: 'ระเบียบสำนักนายกรัฐมนตรี (พ.ศ. ๒๕๒๖ และที่แก้ไขเพิ่มเติม)',
+      badge: 'วิชาหลักสำคัญ',
+      icon: 'สบ',
+      iconBg: '#EFF6FF',
+      iconColor: '#3B82F6'
+    },
+    'ลักษณะที่54': {
+      title: 'ลักษณะที่ ๕๔',
+      subtitle: 'งานสารบรรณตำรวจ (พ.ศ. ๒๕๕๖)',
+      badge: 'วิชาเฉพาะ ตร.',
+      icon: 'ล.54',
+      iconBg: '#FDF2F8',
+      iconColor: '#EC4899'
+    },
+    'ทั่วไป': {
+      title: 'ความสามารถทั่วไป',
+      subtitle: 'คณิตศาสตร์ การคิดคำนวณ และการใช้เหตุผล',
+      badge: 'วิชาหลักสำคัญ',
+      icon: 'ทป',
+      iconBg: '#ECFDF5',
+      iconColor: '#10B981'
+    },
+    'คณิต': {
+      title: 'คณิตศาสตร์ตำรวจ',
+      subtitle: 'การวิเคราะห์ตัวเลข อนุกรม และตรรกศาสตร์',
+      badge: 'วิชาหลักสำคัญ',
+      icon: 'คณ',
+      iconBg: '#ECFDF5',
+      iconColor: '#10B981'
+    },
+    'สังคม': {
+      title: 'สังคมและวัฒนธรรม',
+      subtitle: 'ความรู้รอบตัว ปรัชญาเศรษฐกิจพอเพียง และอาเซียน',
+      badge: 'วิชาความรู้ทั่วไป',
+      icon: 'สค',
+      iconBg: '#EEF2FF',
+      iconColor: '#6366F1'
+    },
+    'กฏหมาย': {
+      title: 'กฎหมายที่ประชาชนควรรู้',
+      subtitle: 'กฎหมายการปฏิบัติงานตำรวจและวิธีพิจารณาความอาญา',
+      badge: 'วิชากฎหมาย',
+      icon: 'กม',
+      iconBg: '#FEF2F2',
+      iconColor: '#EF4444'
+    },
+    'คอม': {
+      title: 'เทคโนโลยีสารสนเทศ',
+      subtitle: 'คอมพิวเตอร์และระบบสารสนเทศเพื่อการสอบ',
+      badge: 'วิชาเทคโนโลยี',
+      icon: 'คอม',
+      iconBg: '#F5F3FF',
+      iconColor: '#8B5CF6'
+    }
   };
 
-  if (titleEl) titleEl.textContent = `วิชา: ${displayNames[subjectKey] || subjectKey}`;
-  if (badgeEl) badgeEl.textContent = subjectKey.includes('สารบรรณ') || subjectKey.includes('54') ? 'วิชาหลักสำคัญ' : 'วิชาเตรียมสอบ';
+  const meta = subjectMetadata[subjectKey] || {
+    title: subjectKey,
+    subtitle: 'แนวข้อสอบตำรวจ',
+    badge: 'วิชาเตรียมสอบ',
+    icon: '📚',
+    iconBg: '#EFF6FF',
+    iconColor: '#2563EB'
+  };
+
+  if (titleEl) titleEl.textContent = meta.title;
+  if (subtitleEl) subtitleEl.textContent = meta.subtitle;
+  if (badgeEl) badgeEl.textContent = meta.badge;
+  if (iconEl) {
+    iconEl.textContent = meta.icon;
+    iconEl.style.background = meta.iconBg;
+    iconEl.style.color = meta.iconColor;
+  }
 
   // Reset to Exam Sets tab by default
   switchSubjectSubtab('examSets');
 
   renderSubjectExamSets(subjectKey);
   renderSubjectStatistics(subjectKey);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
 window.switchSubjectSubtab = function(tabName) {
@@ -4885,47 +5076,46 @@ window.switchSubjectSubtab = function(tabName) {
   if (tabName === 'examSets') {
     if (viewExamSets) viewExamSets.style.display = 'block';
     if (viewStats) viewStats.style.display = 'none';
-
-    if (btnExamSets) {
-      btnExamSets.style.background = '#BD1B0B';
-      btnExamSets.style.color = '#FFFFFF';
-    }
-    if (btnStats) {
-      btnStats.style.background = '#F1F5F9';
-      btnStats.style.color = '#64748B';
-    }
+    if (btnExamSets) btnExamSets.classList.add('active');
+    if (btnStats) btnStats.classList.remove('active');
   } else if (tabName === 'stats') {
     if (viewExamSets) viewExamSets.style.display = 'none';
     if (viewStats) viewStats.style.display = 'block';
-
-    if (btnExamSets) {
-      btnExamSets.style.background = '#F1F5F9';
-      btnExamSets.style.color = '#64748B';
-    }
-    if (btnStats) {
-      btnStats.style.background = '#BD1B0B';
-      btnStats.style.color = '#FFFFFF';
-    }
+    if (btnExamSets) btnExamSets.classList.remove('active');
+    if (btnStats) btnStats.classList.add('active');
   }
 };
 
 window.backToBankSubjects = function() {
+  const bankMainHeader = document.getElementById('bankMainHeader');
   const subjectsGridPanel = document.getElementById('questionBankSubjectsList');
   const examSetsPanel = document.getElementById('questionBankExamSetsList');
 
+  if (bankMainHeader) bankMainHeader.style.display = 'flex';
   if (subjectsGridPanel) subjectsGridPanel.style.display = 'block';
   if (examSetsPanel) examSetsPanel.style.display = 'none';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
 let currentFetchedExamSets = [];
 let activeSubcategoryFilter = 'ALL';
+let currentExamSearchQuery = '';
+
+window.onSearchExamSets = function(query) {
+  currentExamSearchQuery = (query || '').trim().toLowerCase();
+  renderFilteredExamSets(currentSelectedBankSubject);
+};
 
 async function renderSubjectExamSets(subjectKey) {
   const container = document.getElementById('examSetsContainer');
   const countTag = document.getElementById('examSetsCountTag');
+  const searchInput = document.getElementById('txtExamSetSearch');
+  if (searchInput) searchInput.value = '';
+  currentExamSearchQuery = '';
+
   if (!container) return;
 
-  container.innerHTML = '<div style="text-align: center; color: #64748B; padding: 24px; font-size: 13px;">กำลังโหลดข้อมูลชุดข้อสอบ...</div>';
+  container.innerHTML = '<div style="text-align: center; color: #64748B; padding: 36px; font-size: 14px;"><div class="leaderboard-item-loading">กำลังโหลดข้อมูลชุดข้อสอบ... ⏳</div></div>';
 
   try {
     const res = await fetch(`${API_BASE}/api/exams/sets?category=${encodeURIComponent(subjectKey)}`);
@@ -4939,7 +5129,7 @@ async function renderSubjectExamSets(subjectKey) {
 
   } catch (err) {
     console.error('Render exam sets error:', err);
-    container.innerHTML = '<div style="text-align: center; color: #EF4444; padding: 20px; font-size: 13px;">เกิดข้อผิดพลาดในการโหลดชุดข้อสอบ</div>';
+    container.innerHTML = '<div style="text-align: center; color: #EF4444; padding: 24px; font-size: 13px;">เกิดข้อผิดพลาดในการโหลดชุดข้อสอบ</div>';
   }
 }
 
@@ -4958,16 +5148,17 @@ function renderSubcategoryFilterPills(subjectKey, sets) {
   subcatFilterContainer.style.display = 'flex';
   
   let pillsHtml = `
-    <button onclick="filterExamSetsBySubcategory('ALL')" id="subcatPill_ALL" style="padding: 6px 14px; border-radius: 999px; font-size: 12px; font-weight: 700; border: 1px solid #BD1B0B; background: #BD1B0B; color: white; cursor: pointer; transition: all 0.2s; font-family: inherit;">
-      ทั้งหมด
+    <button onclick="filterExamSetsBySubcategory('ALL')" id="subcatPill_ALL" class="filter-pill-btn active">
+      ทั้งหมด (${sets.length})
     </button>
   `;
 
   subcats.forEach(sc => {
     const safeSc = escapeHTML(sc);
+    const count = sets.filter(s => s.subcategory === sc).length;
     pillsHtml += `
-      <button onclick="filterExamSetsBySubcategory('${safeSc}')" id="subcatPill_${safeSc}" style="padding: 6px 14px; border-radius: 999px; font-size: 12px; font-weight: 700; border: 1px solid #CBD5E1; background: #F1F5F9; color: #475569; cursor: pointer; transition: all 0.2s; font-family: inherit;">
-        ${safeSc}
+      <button onclick="filterExamSetsBySubcategory('${safeSc}')" id="subcatPill_${safeSc}" class="filter-pill-btn">
+        ${safeSc} (${count})
       </button>
     `;
   });
@@ -4980,16 +5171,12 @@ window.filterExamSetsBySubcategory = function(subcat) {
 
   const subcatFilterContainer = document.getElementById('subcategoryFilterContainer');
   if (subcatFilterContainer) {
-    const buttons = subcatFilterContainer.querySelectorAll('button');
+    const buttons = subcatFilterContainer.querySelectorAll('.filter-pill-btn');
     buttons.forEach(btn => {
       if (btn.id === `subcatPill_${subcat}`) {
-        btn.style.background = '#BD1B0B';
-        btn.style.borderColor = '#BD1B0B';
-        btn.style.color = '#FFFFFF';
+        btn.classList.add('active');
       } else {
-        btn.style.background = '#F1F5F9';
-        btn.style.borderColor = '#CBD5E1';
-        btn.style.color = '#475569';
+        btn.classList.remove('active');
       }
     });
   }
@@ -5000,35 +5187,71 @@ window.filterExamSetsBySubcategory = function(subcat) {
 function renderFilteredExamSets(subjectKey) {
   const container = document.getElementById('examSetsContainer');
   const countTag = document.getElementById('examSetsCountTag');
+  const progressBar = document.getElementById('subjectProgressBar');
+  const progressLabel = document.getElementById('subjectProgressLabel');
+
   if (!container) return;
 
+  const history = getLocalQuizHistory(subjectKey);
+
+  // Calculate Overall Progress across all fetched sets in this subject
+  if (Array.isArray(currentFetchedExamSets) && currentFetchedExamSets.length > 0) {
+    let completedCount = 0;
+    currentFetchedExamSets.forEach(s => {
+      const hasRecord = history.some(h => {
+        if (!h) return false;
+        if (h.setId && String(h.setId) === String(s.id)) return true;
+        if (h.setType && String(h.setType) === String(s.id)) return true;
+        if (h.setTitle && s.title && h.setTitle.trim().toLowerCase() === s.title.trim().toLowerCase()) return true;
+        return false;
+      });
+      if (hasRecord) completedCount++;
+    });
+
+    const total = currentFetchedExamSets.length;
+    const pct = Math.round((completedCount / total) * 100);
+
+    if (progressBar) progressBar.style.width = `${pct}%`;
+    if (progressLabel) progressLabel.textContent = `${completedCount} / ${total} ชุด (${pct}%)`;
+  } else {
+    if (progressBar) progressBar.style.width = '0%';
+    if (progressLabel) progressLabel.textContent = '0 / 0 ชุด (0%)';
+  }
+
+  // Filter by Subcategory
   let sets = currentFetchedExamSets;
   if (activeSubcategoryFilter !== 'ALL') {
     sets = sets.filter(s => s.subcategory === activeSubcategoryFilter);
+  }
+
+  // Filter by Search Query
+  if (currentExamSearchQuery) {
+    sets = sets.filter(s => {
+      const titleMatch = (s.title || '').toLowerCase().includes(currentExamSearchQuery);
+      const subcatMatch = (s.subcategory || '').toLowerCase().includes(currentExamSearchQuery);
+      const descMatch = (s.desc || '').toLowerCase().includes(currentExamSearchQuery);
+      return titleMatch || subcatMatch || descMatch;
+    });
   }
 
   if (countTag) countTag.textContent = `${sets.length} ชุดข้อสอบ`;
 
   if (!Array.isArray(sets) || sets.length === 0) {
     container.innerHTML = `
-      <div style="background: white; border: 1px dashed #CBD5E1; border-radius: 16px; padding: 32px 20px; text-align: center; grid-column: 1 / -1;">
-        <div style="font-size: 15px; font-weight: 800; color: #475569; margin-bottom: 6px;">ไม่มีชุดข้อสอบในหมวดย่อยนี้</div>
-        <p style="font-size: 13px; color: #94A3B8; margin: 0;">ลองเลือกหมวดย่อยอื่น หรือรอผู้ดูแลระบบเพิ่มชุดข้อสอบใหม่</p>
+      <div style="background: white; border: 1px dashed #CBD5E1; border-radius: 20px; padding: 36px 20px; text-align: center; grid-column: 1 / -1;">
+        <div style="font-size: 28px; margin-bottom: 8px;">🔍</div>
+        <div style="font-size: 15px; font-weight: 800; color: #475569; margin-bottom: 4px;">ไม่พบชุดข้อสอบที่ตรงกับการค้นหา</div>
+        <p style="font-size: 13px; color: #94A3B8; margin: 0;">ลองเปลี่ยนคำค้นหา หรือเลือกหมวดหมู่อื่น</p>
       </div>
     `;
     return;
   }
 
-  const history = getLocalQuizHistory(subjectKey);
-
   container.innerHTML = sets.map(s => {
     const setRecords = history.filter(h => {
       if (!h) return false;
-      // 1. Exact ID match (most reliable)
       if (h.setId && String(h.setId) === String(s.id)) return true;
       if (h.setType && String(h.setType) === String(s.id)) return true;
-      
-      // 2. Exact Title match (strictly exact equal, no loose substring match!)
       if (h.setTitle && s.title) {
         const hTitle = h.setTitle.trim().toLowerCase();
         const sTitle = s.title.trim().toLowerCase();
@@ -5037,38 +5260,45 @@ function renderFilteredExamSets(subjectKey) {
       return false;
     });
 
-    let bestBadge = `<span style="font-size: 11px; background: #F1F5F9; color: #64748B; padding: 4px 10px; border-radius: 999px; font-weight: 600;">ยังไม่ได้ทำ</span>`;
+    let statusBadge = `<span class="exam-status-badge new">✨ ยังไม่ได้ทำ</span>`;
     let btnLabel = 'เริ่มทำข้อสอบ';
+    let isRetake = false;
     
     if (setRecords.length > 0) {
       const maxScore = Math.max(...setRecords.map(r => r.scorePct || 0));
-      bestBadge = `<span style="font-size: 11px; background: #ECFDF5; color: #059669; padding: 4px 10px; border-radius: 999px; font-weight: 700;">ทำแล้ว (สูงสุด ${maxScore}%)</span>`;
+      statusBadge = `<span class="exam-status-badge done">🏆 สูงสุด ${maxScore}%</span>`;
       btnLabel = 'ทำอีกครั้ง';
+      isRetake = true;
     }
 
-    const color = s.color || '#2563EB';
-    const subcatTag = s.subcategory ? `<span style="font-size: 11px; background: #F3E8FF; color: #7E22CE; font-weight: 700; padding: 4px 10px; border-radius: 999px; flex-shrink: 0; margin-left: 4px;">${escapeHTML(s.subcategory)}</span>` : '';
+    const subcatTag = s.subcategory ? `<span class="exam-tag-pill exam-tag-subcat">${escapeHTML(s.subcategory)}</span>` : '';
 
     return `
-      <div style="background: white; border: 1px solid #E2E8F0; border-radius: 18px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); transition: all 0.2s;">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 8px;">
-          <h4 style="margin: 0; font-size: 15px; font-weight: 800; color: #1E293B; line-height: 1.4;">${escapeHTML(s.title)}</h4>
-          <div style="display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end;">
-            <span style="font-size: 11px; background: ${color}15; color: ${color}; font-weight: 700; padding: 4px 10px; border-radius: 999px; flex-shrink: 0;">${escapeHTML(s.tag || 'ชุดข้อสอบ')}</span>
-            ${subcatTag}
+      <div class="exam-set-card">
+        <div>
+          <div class="exam-card-header">
+            <div class="exam-card-tags">
+              <span class="exam-tag-pill exam-tag-primary">${escapeHTML(s.tag || 'ชุดข้อสอบจริง')}</span>
+              ${subcatTag}
+            </div>
+            ${statusBadge}
           </div>
+          
+          <h4 class="exam-card-title">${escapeHTML(s.title)}</h4>
+          <p class="exam-card-desc">${escapeHTML(s.desc || 'ชุดข้อสอบมาตรฐานพร้อมเฉลยละเอียดและคำอธิบาย')}</p>
         </div>
         
-        <p style="font-size: 13px; color: #64748B; margin: 0 0 14px 0; line-height: 1.5;">${escapeHTML(s.desc || '')}</p>
-        
-        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #F1F5F9; padding-top: 14px; flex-wrap: wrap; gap: 10px;">
-          <div style="display: flex; align-items: center; gap: 10px; font-size: 12px; color: #64748B; font-weight: 600; flex-wrap: wrap;">
-            <span>${s.timeMinutes || 60} นาที</span>
-            <span>${s.questionsCount || 0} ข้อ</span>
-            ${bestBadge}
+        <div class="exam-card-footer">
+          <div class="exam-meta-info">
+            <span>⏱️ ${s.timeMinutes || 30} นาที</span>
+            <span>📝 ${s.questionsCount || 30} ข้อ</span>
           </div>
-          <button onclick="launchSelectedExamSet('${subjectKey}', '${s.id}', ${s.questionsCount || 10}, '${escapeHTML(s.title)}')" style="background: ${color}; color: white; border: none; padding: 8px 18px; border-radius: 12px; font-weight: 700; font-size: 13px; cursor: pointer; font-family: inherit; box-shadow: 0 4px 8px ${color}33; transition: all 0.2s;">
-            ${btnLabel}
+          <button onclick="launchSelectedExamSet('${subjectKey}', '${s.id}', ${s.questionsCount || 10}, '${escapeHTML(s.title)}')" class="btn-exam-action ${isRetake ? 'retake' : ''}">
+            <span>${btnLabel}</span>
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
           </button>
         </div>
       </div>

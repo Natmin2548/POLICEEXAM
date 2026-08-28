@@ -5831,76 +5831,721 @@ app.get('/api/battle/room/status', authenticateToken, (req, res) => {
   }
 });
 
-function getCategoryAliases(subject) {
-  const s = (subject || '').toString().toLowerCase();
-  if (s.includes('สารบรรณ') || s.includes('saraban') || s.includes('54')) {
-    return ['saraban', 'งานสารบรรณ', 'ลักษณะที่54', '54', 'ระเบียบงานสารบรรณ'];
+// 3.7. POST /api/battle/room/update-score - Real user live score sync
+app.post('/api/battle/room/update-score', authenticateToken, (req, res) => {
+  try {
+    const { roomCode, score, currentIndex, isFinished } = req.body;
+    const cleanCode = (roomCode || '').trim().toUpperCase();
+    const room = customBattleRooms.get(cleanCode);
+    if (!room) return res.status(404).json({ error: 'ไม่พบห้องประลอง' });
+
+    room.scores = room.scores || {};
+    room.scores[req.user.userId] = {
+      userId: req.user.userId,
+      score: parseInt(score) || 0,
+      currentIndex: parseInt(currentIndex) || 0,
+      isFinished: !!isFinished,
+      updatedAt: Date.now()
+    };
+
+    res.json({ success: true, scores: room.scores });
+  } catch (err) {
+    console.error('Update room score error:', err);
+    res.status(500).json({ error: 'เกิดข้อผิดพลาดในการอัปเดตคะแนน' });
   }
-  if (s.includes('ความสามารถ') || s.includes('ทั่วไป') || s.includes('general') || s.includes('คณิต') || s.includes('อนุกรม')) {
-    return ['general', 'ความสามารถทั่วไป', 'ทั่วไป', 'คณิตศาสตร์', 'ความสามารถทั่วไป (คณิตศาสตร์)'];
+});
+
+// 3.8. GET /api/battle/room/live-score - Get live scores of all real players
+app.get('/api/battle/room/live-score', authenticateToken, (req, res) => {
+  try {
+    const { roomCode } = req.query || {};
+    const cleanCode = (roomCode || '').trim().toUpperCase();
+    const room = customBattleRooms.get(cleanCode);
+    if (!room) return res.status(404).json({ error: 'ไม่พบห้องประลอง' });
+
+    res.json({
+      roomCode: cleanCode,
+      scores: room.scores || {},
+      players: room.players || []
+    });
+  } catch (err) {
+    console.error('Get room live score error:', err);
+    res.status(500).json({ error: 'เกิดข้อผิดพลาดในการดึงคะแนน' });
+  }
+});
+
+// 3.9. POST /api/exams/battle/match-score - 1v1 Matchmaking real score sync
+app.post('/api/exams/battle/match-score', authenticateToken, (req, res) => {
+  try {
+    const { matchId, score, currentIndex, isFinished } = req.body;
+    const match = activeMatches.get(matchId);
+    if (!match) return res.status(404).json({ error: 'ไม่พบการแข่งขันนี้' });
+
+    match.scores = match.scores || {};
+    match.scores[req.user.userId] = {
+      userId: req.user.userId,
+      score: parseInt(score) || 0,
+      currentIndex: parseInt(currentIndex) || 0,
+      isFinished: !!isFinished,
+      updatedAt: Date.now()
+    };
+
+    res.json({ success: true, scores: match.scores });
+  } catch (err) {
+    console.error('Update match score error:', err);
+    res.status(500).json({ error: 'เกิดข้อผิดพลาดในการอัปเดตคะแนน' });
+  }
+});
+
+// 3.10. GET /api/exams/battle/match-status - 1v1 Matchmaking status & real live scores
+app.get('/api/exams/battle/match-status', authenticateToken, (req, res) => {
+  try {
+    const { matchId } = req.query;
+    const match = activeMatches.get(matchId);
+    if (!match) return res.status(404).json({ error: 'ไม่พบการแข่งขันนี้' });
+
+    res.json({
+      matchId,
+      scores: match.scores || {},
+      player1: match.player1,
+      player2: match.player2
+    });
+  } catch (err) {
+    console.error('Get match status error:', err);
+    res.status(500).json({ error: 'เกิดข้อผิดพลาดในการดึงสถานะการแข่งขัน' });
+  }
+});
+
+const AUTHENTIC_SUBJECT_QUESTION_BANKS = {
+  saraban: [
+    {
+      questionText: 'ตามระเบียบสำนักนายกรัฐมนตรีว่าด้วยงานสารบรรณ พ.ศ. 2526 และที่แก้ไขเพิ่มเติม หนังสือราชการมีกี่ชนิด?',
+      choices: ['4 ชนิด', '5 ชนิด', '6 ชนิด', '7 ชนิด'],
+      correctAnswer: 3,
+      explanation: 'หนังสือราชการมี 6 ชนิด ได้แก่ หนังสือภายนอก, หนังสือภายใน, หนังสือประทับตรา, หนังสือสั่งการ, หนังสือประชาสัมพันธ์ และหนังสือที่เจ้าหน้าที่ทำขึ้นหรือรับไว้เป็นหลักฐาน'
+    },
+    {
+      questionText: 'การรับรองสำเนาถูกต้องของเอกสารในสำนักงานตำรวจแห่งชาติ ตาม ปรต. ลักษณะที่ 54 ข้าราชการตำรวจผู้ลงชื่อต้องมียศใดขึ้นไป?',
+      choices: ['สิบตำรวจตรี (ส.ต.ต.) ขึ้นไป', 'ดาบตำรวจ (ด.ต.) ขึ้นไป', 'ร้อยตำรวจตรี (ร.ต.ต.) ขึ้นไป', 'พันตำรวจตรี (พ.ต.ต.) ขึ้นไป'],
+      correctAnswer: 3,
+      explanation: 'ตาม ปรต. ลักษณะที่ 54 ข้อ 3 กำหนดให้ข้าราชการตำรวจชั้นสัญญาบัตรยศ ร้อยตำรวจตรี (ร.ต.ต.) ขึ้นไป ของหน่วยงานเจ้าของเรื่อง เป็นผู้ลงชื่อรับรองสำเนาถูกต้อง'
+    },
+    {
+      questionText: 'หนังสือราชการที่ต้องปฏิบัติให้เร็วกว่าปกติ มีกี่ประเภท ตามระเบียบงานสารบรรณ?',
+      choices: ['2 ประเภท (ด่วน, ด่วนที่สุด)', '3 ประเภท (ด่วน, ด่วนมาก, ด่วนที่สุด)', '4 ประเภท (ด่วน, ด่วนมาก, ด่วนที่สุด, ด่วนพิเศษ)', '5 ประเภท'],
+      correctAnswer: 2,
+      explanation: 'หนังสือที่ต้องปฏิบัติให้เร็วกว่าปกติมี 3 ประเภท คือ ด่วนที่สุด (ปฏิบัติทันทีที่ได้รับ), ด่วนมาก (ปฏิบัติโดยเร็ว), และ ด่วน (ปฏิบัติเร็วกว่าปกติ)'
+    },
+    {
+      questionText: 'หนังสือราชการโดยทั่วไปมีอายุการเก็บรักษาไว้ไม่น้อยกว่ากี่ปี?',
+      choices: ['5 ปี', '10 ปี', '15 ปี', '20 ปี'],
+      correctAnswer: 2,
+      explanation: 'โดยปกติหนังสือราชการให้เก็บรักษาไว้ไม่น้อยกว่า 10 ปี เว้นแต่หนังสือที่ต้องสงวนเป็นความลับ หนังสือที่มีคุณค่าทางประวัติศาสตร์ หรือหนังสือที่ระเบียบกำหนดไว้เป็นอย่างอื่น'
+    },
+    {
+      questionText: 'รหัสตัวพยัญชนะประจำสำนักงานตำรวจแห่งชาติที่ใช้ในโครงสร้างเลขที่หนังสือออกคือข้อใด?',
+      choices: ['ตช', 'สตช', 'ตร', 'ปช'],
+      correctAnswer: 3,
+      explanation: 'รหัสตัวพยัญชนะประจำสำนักงานตำรวจแห่งชาติคือ "ตร" ตามด้วยเลขรหัสประจำส่วนราชการ เช่น ตร 0001/... เป็นต้น'
+    },
+    {
+      questionText: 'ตาม ปรต. ลักษณะที่ 54 การจัดเจ้าหน้าที่ไปรับงานที่ศูนย์รับ-ส่งหนังสือ ตร. (สลก.ตร.) กำหนดไว้วันละกี่ครั้ง?',
+      choices: ['วันละ 1 ครั้ง ก่อน 12.00 น.', 'วันละ 2 ครั้ง (ก่อน 10.00 น. และก่อน 15.00 น.)', 'วันละ 3 ครั้ง เช้า กลางวัน เย็น', 'สัปดาห์ละ 2 ครั้ง'],
+      correctAnswer: 2,
+      explanation: 'ตาม ปรต. ลักษณะที่ 54 กำหนดให้หน่วยงานในสังกัด ตร. ในเขต กทม. จัดเจ้าหน้าที่ไปรับงานวันละ 2 ครั้ง คือ ช่วงเช้าก่อน 10.00 น. และช่วงบ่ายก่อน 15.00 น.'
+    },
+    {
+      questionText: 'การส่งคืนหนังสือที่ส่งผิดหน่วยงาน ตาม ปรต. ลักษณะที่ 54 ผู้ลงชื่อส่งคืนต้องดำรงตำแหน่งไม่ต่ำกว่าตำแหน่งใด?',
+      choices: ['สารวัตร (สว.)', 'รองผู้กำกับการ (รอง ผกก.)', 'ผู้กำกับการ (ผกก.) หรือเทียบเท่า', 'ผู้บังคับการ (ผบก.)'],
+      correctAnswer: 3,
+      explanation: 'การส่งคืนหนังสือที่ไม่ได้อยู่ในหน้าที่ความรับผิดชอบ ต้องทำหนังสือส่งคืนภายในวันเดียวกันหรืออย่างช้าวันรุ่งขึ้น โดยผู้ลงชื่อส่งคืนต้องดำรงตำแหน่งไม่ต่ำกว่า ผกก. หรือเทียบเท่า'
+    },
+    {
+      questionText: 'ไปรษณีย์สนามของตำรวจตระเวนชายแดน พัสดุไปรษณีย์ที่ฝากส่งต้องมีน้ำหนักสูงสุดไม่เกินเท่าใด?',
+      choices: ['2 กิโลกรัม', '3 กิโลกรัม', '5 กิโลกรัม', '10 กิโลกรัม'],
+      correctAnswer: 3,
+      explanation: 'ตาม ปรต. ลักษณะที่ 54 ไปรษณีย์ภัณฑ์และพัสดุไปรษณีย์สนามของ ตชด. ต้องมีน้ำหนักไม่เกิน 5 กิโลกรัมต่อชิ้น'
+    },
+    {
+      questionText: 'คำลงท้ายในหนังสือราชการภายนอกที่ส่งถึงบุคคลธรรมดาทั่วไป ใช้คำว่าอะไร?',
+      choices: ['ด้วยความนับถือ', 'ขอแสดงความนับถือ', 'ขอแสดงความนับถืออย่างยิ่ง', 'ขอแสดงความเคารพอย่างสูง'],
+      correctAnswer: 2,
+      explanation: 'หนังสือราชการภายนอกที่ส่งถึงบุคคลธรรมดาหรือข้าราชการทั่วไป ให้ใช้คำลงท้ายว่า "ขอแสดงความนับถือ"'
+    },
+    {
+      questionText: 'หนังสือประทับตราตามระเบียบงานสารบรรณ ใช้กระดาษชนิดใด?',
+      choices: ['กระดาษบันทึกข้อความ', 'กระดาษตราครุฑ', 'กระดาษขาวธรรมดา', 'กระดาษหัวจดหมาย'],
+      correctAnswer: 2,
+      explanation: 'หนังสือประทับตราใช้ "กระดาษตราครุฑ" และประทับตราชื่อส่วนราชการด้วยหมึกสีแดงแทนการลงชื่อ'
+    },
+    {
+      questionText: 'ตราครุฑสำหรับหนังสือราชการตามระเบียบงานสารบรรณ มี 2 ขนาด คือขนาดความสูงเท่าใด?',
+      choices: ['2.5 ซม. และ 1.0 ซม.', '3.0 ซม. และ 1.5 ซม.', '3.5 ซม. และ 2.0 ซม.', '4.0 ซม. และ 2.0 ซม.'],
+      correctAnswer: 2,
+      explanation: 'ตราครุฑมี 2 ขนาด คือ ขนาดใหญ่สูง 3 เซนติเมตร (สำหรับหนังสือภายนอก/คำสั่ง) และขนาดเล็กสูง 1.5 เซนติเมตร (สำหรับหนังสือภายใน/บันทึกข้อความ)'
+    },
+    {
+      questionText: 'คำย่อของตำแหน่ง "จเรตำรวจแห่งชาติ" ตามระเบียบ ตร. คือข้อใด?',
+      choices: ['จร.ตร.', 'จตช.', 'จเร.ตร.', 'จต.'],
+      correctAnswer: 2,
+      explanation: 'คำย่อตำแหน่ง จเรตำรวจแห่งชาติ คือ "จตช."'
+    }
+  ],
+  general: [
+    {
+      questionText: 'อนุกรม: 2, 5, 10, 17, 26, ... จำนวนถัดไปคือข้อใด?',
+      choices: ['35', '37', '39', '41'],
+      correctAnswer: 2,
+      explanation: 'รูปแบบคือ n^2 + 1: 1^2+1=2, 2^2+1=5, 3^2+1=10, 4^2+1=17, 5^2+1=26, 6^2+1 = 37'
+    },
+    {
+      questionText: 'ผลรวมของเลขจำนวนเต็มตั้งแต่ 1 ถึง 100 เท่ากับเท่าใด?',
+      choices: ['5,000', '5,050', '5,100', '5,150'],
+      correctAnswer: 2,
+      explanation: 'ใช้สูตร n(n+1)/2 = 100 * 101 / 2 = 5,050'
+    },
+    {
+      questionText: 'ถ้า A > B และ B = C ข้อใดถูกต้องที่สุด?',
+      choices: ['A = C', 'A > C', 'A < C', 'สรุปไม่ได้'],
+      correctAnswer: 2,
+      explanation: 'เนื่องจาก B เท่ากับ C ดังนั้นเมื่อ A มากกว่า B ย่อมทำให้ A มากกว่า C ด้วย'
+    },
+    {
+      questionText: 'สินค้าราคาป้าย 1,200 บาท ร้านค้าลดราคาให้ 15% ผู้ซื้อจะต้องจ่ายเงินกี่บาท?',
+      choices: ['1,000 บาท', '1,020 บาท', '1,050 บาท', '1,080 บาท'],
+      correctAnswer: 2,
+      explanation: 'ลด 15% คือลด 1,200 * 0.15 = 180 บาท ดังนั้นราคาที่ต้องจ่าย = 1,200 - 180 = 1,020 บาท'
+    },
+    {
+      questionText: 'นาย ก ขับรถด้วยความเร็วเฉลี่ย 80 กม./ชม. ใช้เวลาเดินทาง 3 ชั่วโมง 30 นาที จะได้ระยะทางเท่าใด?',
+      choices: ['240 กิโลเมตร', '260 กิโลเมตร', '280 กิโลเมตร', '300 กิโลเมตร'],
+      correctAnswer: 3,
+      explanation: 'ระยะทาง = ความเร็ว x เวลา = 80 x 3.5 = 280 กิโลเมตร'
+    },
+    {
+      questionText: 'ปัจจุบันพ่อมีอายุเป็น 3 เท่าของลูก อีก 10 ปีข้างหน้า ผลรวมอายุของทั้งสองคนจะเป็น 68 ปี ปัจจุบันลูกมีอายุกี่ปี?',
+      choices: ['10 ปี', '12 ปี', '14 ปี', '16 ปี'],
+      correctAnswer: 2,
+      explanation: 'ให้ลูกอายุ x ปี พ่ออายุ 3x ปี อีก 10 ปีข้างหน้า: (x+10) + (3x+10) = 68 -> 4x + 20 = 68 -> 4x = 48 -> x = 12 ปี'
+    },
+    {
+      questionText: 'ห.ร.ม. และ ค.ร.น. ของ 12 และ 18 คือข้อใดตามลำดับ?',
+      choices: ['4 และ 36', '6 และ 36', '6 และ 48', '3 และ 36'],
+      correctAnswer: 2,
+      explanation: 'ห.ร.ม. ของ 12 และ 18 คือ 6 ส่วน ค.ร.น. คือ 36'
+    },
+    {
+      questionText: 'ตรรกศาสตร์: คนขยันทุกคนสอบผ่าน, สมศักดิ์สอบไม่ผ่าน ข้อสรุปใดถูกต้อง?',
+      choices: ['สมศักดิ์เป็นคนขยัน', 'สมศักดิ์ไม่ได้เป็นคนขยัน', 'สมศักดิ์ไม่ได้อ่านหนังสือ', 'สรุปแน่นอนไม่ได้'],
+      correctAnswer: 2,
+      explanation: 'จากเงื่อนไข คนขยันทุกคนสอบผ่าน เมื่อสมศักดิ์สอบไม่ผ่าน แสดงว่าสมศักดิ์ไม่ใช่คนขยัน (Contrapositive)'
+    },
+    {
+      questionText: 'มีลูกบอลสีแดง 4 ลูก สีเขียว 6 ลูก สุ่มหยิบลูกบอล 1 ลูก ความน่าจะเป็นที่จะได้ลูกบอลสีแดงเป็นเท่าใด?',
+      choices: ['2/5', '3/5', '1/4', '1/2'],
+      correctAnswer: 1,
+      explanation: 'ความน่าจะเป็น = 4 / (4 + 6) = 4/10 = 2/5'
+    },
+    {
+      questionText: 'เลข 3 จำนวนเรียงกัน ผลรวมของทั้งสามจำนวนเท่ากับ 72 เลขจำนวนที่อยู่ตรงกลางคือข้อใด?',
+      choices: ['22', '23', '24', '25'],
+      correctAnswer: 3,
+      explanation: 'ให้เลขสามจำนวนคือ x-1, x, x+1 -> ผลรวม = 3x = 72 -> x = 24'
+    },
+    {
+      questionText: 'ซื้อของมาราคา 500 บาท ขายไปได้กำไร 20% จะต้องขายไปในราคากี่บาท?',
+      choices: ['550 บาท', '580 บาท', '600 บาท', '620 บาท'],
+      correctAnswer: 3,
+      explanation: 'กำไร 20% ของ 500 = 100 บาท ราคาขาย = 500 + 100 = 600 บาท'
+    },
+    {
+      questionText: 'อนุกรม: 3, 7, 15, 31, 63, ... จำนวนถัดไปคือข้อใด?',
+      choices: ['120', '125', '127', '129'],
+      correctAnswer: 3,
+      explanation: 'รูปแบบคือ x 2 + 1: 3x2+1=7, 7x2+1=15, 15x2+1=31, 31x2+1=63, 63x2+1 = 127'
+    }
+  ],
+  thai: [
+    {
+      questionText: 'ข้อใดเขียนสะกดตัวการันต์ได้ถูกต้องทุกคำ?',
+      choices: ['อนุญาต, ปรากฏ, สังเกต', 'อนุญาติ, ปรากฎ, สังเกตุ', 'อนุญาต, ปรากฎ, สังเกตุ', 'อนุญาติ, ปรากฏ, สังเกต'],
+      correctAnswer: 1,
+      explanation: 'อนุญาต (ไม่มีสระอิ), ปรากฏ (ใช้ ฏ ปฏัก), สังเกต (ไม่มีสระอุ) เป็นคำที่ถูกต้องตามพจนานุกรมฉบับราชบัณฑิตยสถาน'
+    },
+    {
+      questionText: 'คำในข้อใดใช้ลักษณนามว่า "เล่ม" ทุกคำ?',
+      choices: ['หนังสือ, สมุด, ดาบ, เข็ม', 'หนังสือ, ดินสอ, เกวียน, ร่ม', 'ตะปู, ดาบ, เลื่อย, เทียน', 'สมุด, ไม้บรรทัด, ปากกา, ปืน'],
+      correctAnswer: 1,
+      explanation: 'หนังสือ สมุด ดาบ เข็ม เกวียน เทียน ใช้ลักษณนามว่า "เล่ม"'
+    },
+    {
+      questionText: 'สำนวนในข้อใดมีความหมายตรงกับคำว่า "ทำอะไรย่อมได้รับผลเช่นนั้น"?',
+      choices: ['กงเกวียนกำเกวียน', 'หว่านพืชหวังผล', 'ปลูกเรือนตามใจผู้อยู่', 'ขี่ช้างจับตั๊กแตน'],
+      correctAnswer: 1,
+      explanation: '"กงเกวียนกำเกวียน" หมายถึง การกระทำที่ทำสิ่งใดไว้ผลย่อมตามสนองแบบนั้น'
+    },
+    {
+      questionText: 'คำราชาศัพท์ในข้อใดหมายถึง "คำสั่ง" ของพระมหากษัตริย์?',
+      choices: ['พระราโชวาท', 'พระบรมราชโองการ', 'พระราชดำรัส', 'พระราชบัญชา'],
+      correctAnswer: 2,
+      explanation: 'พระบรมราชโองการ ใช้สำหรับคำสั่งของพระมหากษัตริย์'
+    },
+    {
+      questionText: 'คำว่า "มรณภาพ" ใช้สำหรับบุคคลในข้อใด?',
+      choices: ['พระมหากษัตริย์', 'พระภิกษุสงฆ์', 'เจ้านายชั้นผู้ใหญ่', 'ประชาชนทั่วไป'],
+      correctAnswer: 2,
+      explanation: '"มรณภาพ" เป็นคำราชาศัพท์/คำสุภาพสำหรับพระภิกษุสงฆ์ สามเณร'
+    },
+    {
+      questionText: 'ข้อใดเป็นประโยคที่ถูกต้องและชัดเจน ไม่มีความกำกวม?',
+      choices: ['คนขับรถชนต้นไม้บาดเจ็บ', 'ตำรวจจับผู้ร้ายที่ขโมยสร้อยคอทองคำได้อย่างรวดเร็ว', 'เขาเห็นคนกำลังกินข้าวกับสุนัข', 'แม่บอกลูกว่าน้องไม่สบาย'],
+      correctAnswer: 2,
+      explanation: 'ประโยค "ตำรวจจับผู้ร้ายที่ขโมยสร้อยคอทองคำได้อย่างรวดเร็ว" มีโครงสร้างประธาน กริยา กรรม และขยายส่วนชัดเจน ไม่กำกวม'
+    },
+    {
+      questionText: 'สำนวน "ขี่ช้างจับตั๊กแตน" มีความหมายตรงกับข้อใด?',
+      choices: ['ทำงานใหญ่โตเกินความสามารถ', 'ลงทุนมากแต่ได้ผลประโยชน์ตอบแทนน้อย', 'ทำลายทรัพยากรโดยเปล่าประโยชน์', 'แสดงอำนาจข่มขู่ผู้อื่น'],
+      correctAnswer: 2,
+      explanation: 'ขี่ช้างจับตั๊กแตน หมายถึง ลงทุนหรือเสียกำลังมาก แต่ได้ผลตอบแทนเพียงเล็กน้อย'
+    },
+    {
+      questionText: 'คำคู่ใดมีความหมายตรงข้ามกัน (Antonym)?',
+      choices: ['สุจริต - ทุจริต', 'กตัญญู - รู้คุณ', 'ปรีชา - ฉลาด', 'ยุติธรรม - เป็นธรรม'],
+      correctAnswer: 1,
+      explanation: 'สุจริต (ประพฤติดี ชอบธรรม) ตรงข้ามกับ ทุจริต (คดโกง ประพฤติมิชอบ)'
+    },
+    {
+      questionText: 'คำราชาศัพท์ "เสวย" มีความหมายตรงกับคำสามัญว่าอย่างไร?',
+      choices: ['นอนหลับ', 'รับประทาน / กิน', 'เดินเล่น', 'อาบน้ำ'],
+      correctAnswer: 2,
+      explanation: 'เสวย แปลว่า กิน, ดื่ม หรือรับประทาน'
+    },
+    {
+      questionText: 'ข้อใดเขียนสะกดถูกต้องทุกคำ?',
+      choices: ['กะเพรา, กะทัดรัด, ชะลอ', 'กระเพรา, กระทัดรัด, ชลอ', 'กะเพรา, กระทัดรัด, ชะลอ', 'กระเพรา, กะทัดรัด, ชลอ'],
+      correctAnswer: 1,
+      explanation: 'กะเพรา (ไม่มี ร), กะทัดรัด (ไม่มี ร), ชะลอ (มี สระอะ) เขียนถูกต้องตามพจนานุกรม'
+    },
+    {
+      questionText: 'คำว่า "คมนาคม" เป็นคำสมาสที่เกิดจากการสนธิของคำใด?',
+      choices: ['คม + นาคม', 'คมน + อาคม', 'คม + อาคม', 'คมนา + คม'],
+      correctAnswer: 2,
+      explanation: 'คมนาคม เกิดจาก คมน (การไป) + อาคม (การมา) สนธิกันเป็น คมนาคม'
+    },
+    {
+      questionText: 'ข้อใดใช้ภาษาทางการได้ถูกต้องและเหมาะสมที่สุด?',
+      choices: ['หมอฉีดยาให้คนไข้ทุกคนแล้ว', 'แพทย์ได้ให้การรักษาผู้ป่วยทุกรายเรียบร้อยแล้ว', 'ทางสถานีตำรวจขอให้ทุกคนช่วยกันเป็นหูเป็นตา', 'ตำรวจจับโจรได้คาหนังคาเขา'],
+      correctAnswer: 2,
+      explanation: 'ประโยค "แพทย์ได้ให้การรักษาผู้ป่วยทุกรายเรียบร้อยแล้ว" ใช้คำศัพท์ทางการระดับแบบแผนถูกต้อง'
+    }
+  ],
+  english: [
+    {
+      questionText: "Choose the correct word: The police officer asked the driver to ______ his driver's license.",
+      choices: ["show", "showing", "shown", "shows"],
+      correctAnswer: 1,
+      explanation: "โครงสร้าง ask someone to + V.infinitive ดังนั้นใช้ show"
+    },
+    {
+      questionText: "Which sentence is grammatically correct?",
+      choices: ["He don't like coffee.", "She doesn't likes coffee.", "They doesn't like coffee.", "He doesn't like coffee."],
+      correctAnswer: 4,
+      explanation: "ประธานเอกพจน์ He ใช้ doesn't ตามด้วยกริยาช่อง 1 รูปเดิม (like)"
+    },
+    {
+      questionText: "The synonym of the word ASSIST is ______.",
+      choices: ["hinder", "help", "ignore", "prevent"],
+      correctAnswer: 2,
+      explanation: "assist แปลว่า ช่วยเหลือ ตรงกับคำว่า help"
+    },
+    {
+      questionText: "The police ______ the suspect yesterday afternoon.",
+      choices: ["arrest", "arrests", "arrested", "are arresting"],
+      correctAnswer: 3,
+      explanation: "มีคำว่า yesterday บ่งบอกเหตุการณ์ในอดีต (Past Simple Tense) ต้องใช้กริยาช่อง 2 arrested"
+    },
+    {
+      questionText: "If it ______ tomorrow, the police outdoor training will be postponed.",
+      choices: ["rains", "will rain", "rained", "is raining"],
+      correctAnswer: 1,
+      explanation: "First Conditional: If + Present Simple (rains), Future Simple (will be postponed)"
+    },
+    {
+      questionText: "Choose the correct preposition: She has been working at the police department ______ 2018.",
+      choices: ["for", "since", "in", "during"],
+      correctAnswer: 2,
+      explanation: "ใช้ since กับจุดเริ่มต้นของเวลา (since 2018) ใน Present Perfect Tense"
+    },
+    {
+      questionText: "The antonym of the word GUILTY is ______.",
+      choices: ["criminal", "innocent", "suspect", "victim"],
+      correctAnswer: 2,
+      explanation: "guilty แปลว่า มีความผิด ตรงข้ามกับ innocent ที่แปลว่า บริสุทธิ์/ไร้ความผิด"
+    },
+    {
+      questionText: 'Officer: "Can I help you, sir?" - Citizen: "______"',
+      choices: ["Yes, I would like to report a lost wallet.", "No, you cannot.", "I am fine, goodbye.", "Yes, I am a policeman."],
+      correctAnswer: 1,
+      explanation: "การตอบรับเจ้าหน้าที่ตำรวจที่สุภาพและเหมาะสมในสถานการณ์แจ้งความคือ Yes, I would like to report a lost wallet."
+    },
+    {
+      questionText: "The word EVIDENCE means ______ in Thai legal context.",
+      choices: ["พยานหลักฐาน", "คำพิพากษา", "ผู้ต้องหา", "หมายศาล"],
+      correctAnswer: 1,
+      explanation: "evidence แปลว่า พยานหลักฐาน ที่ใช้ในกระบวนการยุติธรรม"
+    },
+    {
+      questionText: "The case ______ by the investigator last week.",
+      choices: ["solved", "was solved", "is solved", "has solved"],
+      correctAnswer: 2,
+      explanation: "Passive Voice ในอดีต (Past Simple): Subject + was/were + V.3 -> was solved"
+    },
+    {
+      questionText: "Please keep quiet, the detective ______ to the witness right now.",
+      choices: ["listens", "listened", "is listening", "has listened"],
+      correctAnswer: 3,
+      explanation: "มีคำว่า right now บ่งบอกเหตุการณ์ที่กำลังดำเนินอยู่ (Present Continuous) จึงใช้ is listening"
+    },
+    {
+      questionText: "Neither the inspector nor the officers ______ in the meeting room.",
+      choices: ["is", "are", "was", "be"],
+      correctAnswer: 2,
+      explanation: "โครงสร้าง Neither...nor ให้ผันกริยาตามประธานตัวหลัง the officers ซึ่งเป็นพหูพจน์ จึงใช้ are"
+    }
+  ],
+  social: [
+    {
+      questionText: 'ประเทศใดไม่ได้อยู่ในกลุ่มผู้ก่อตั้งสมาคมประชาชาติแห่งเอเชียตะวันออกเฉียงใต้ (ASEAN) ในปี พ.ศ. 2510?',
+      choices: ['ไทย', 'อินโดนีเซีย', 'เวียดนาม', 'ฟิลิปปินส์'],
+      correctAnswer: 3,
+      explanation: 'ผู้ก่อตั้งอาเซียน 5 ประเทศแรกในปี 2510 ได้แก่ ไทย อินโดนีเซีย มาเลเซีย ฟิลิปปินส์ และสิงคโปร์ (เวียดนามเข้าร่วมในปี 2538)'
+    },
+    {
+      questionText: 'วันสำคัญทางพระพุทธศาสนาวันใดที่มีเหตุการณ์สำคัญคือ พระสงฆ์ 1,250 รูปมาประชุมกันโดยมิได้นัดหมาย?',
+      choices: ['วันมาฆบูชา', 'วันวิสาขบูชา', 'วันอาสาฬหบูชา', 'วันอัฐมีบูชา'],
+      correctAnswer: 1,
+      explanation: 'วันมาฆบูชา มีเหตุการณ์สำคัญคือ จาตุรงคสันนิบาต พระสงฆ์ 1,250 รูปมาประชุมพร้อมเพรียงกันโดยมิได้นัดหมาย'
+    },
+    {
+      questionText: 'เสาหลักประชาคมอาเซียน (ASEAN Community) ประกอบด้วยกี่เสาหลัก?',
+      choices: ['2 เสาหลัก', '3 เสาหลัก', '4 เสาหลัก', '5 เสาหลัก'],
+      correctAnswer: 2,
+      explanation: '3 เสาหลักอาเซียน ได้แก่ 1. ประชาคมการเมืองและความมั่นคง (APSC) 2. ประชาคมเศรษฐกิจ (AEC) 3. ประชาคมสังคมและวัฒนธรรม (ASCC)'
+    },
+    {
+      questionText: 'สำนักงานเลขาธิการอาเซียน (ASEAN Secretariat) ตั้งอยู่ที่เมืองหลวงของประเทศใด?',
+      choices: ['กรุงเทพฯ ประเทศไทย', 'กัวลาลัมเปอร์ ประเทศมาเลเซีย', 'จาการ์ตา ประเทศอินโดนีเซีย', 'สิงคโปร์'],
+      correctAnswer: 3,
+      explanation: 'สำนักงานเลขาธิการอาเซียนตั้งอยู่ที่ กรุงจาการ์ตา ประเทศอินโดนีเซีย'
+    },
+    {
+      questionText: 'หลักปรัชญาของเศรษฐกิจพอเพียง ประกอบด้วย 3 ห่วง 2 เงื่อนไข ข้อใดไม่ใช่ 3 ห่วง?',
+      choices: ['ความพอประมาณ', 'ความมีเหตุผล', 'การมีภูมิคุ้มกันที่ดี', 'ความร่ำรวย'],
+      correctAnswer: 4,
+      explanation: '3 ห่วง ได้แก่ พอประมาณ มีเหตุผล และมีภูมิคุ้มกันที่ดีในตัว (2 เงื่อนไขคือ ความรู้ และคุณธรรม)'
+    },
+    {
+      questionText: 'วันตำรวจไทย ในปัจจุบันตรงกับวันใดของทุกปี?',
+      choices: ['13 ตุลาคม', '17 ตุลาคม', '23 ตุลาคม', '5 ธันวาคม'],
+      correctAnswer: 2,
+      explanation: 'วันตำรวจไทยปัจจุบันกำหนดให้ตรงกับวันที่ 17 ตุลาคมของทุกปี (วันสถาปนาสำนักงานตำรวจแห่งชาติ)'
+    },
+    {
+      questionText: 'คำขวัญของประชาคมอาเซียน (ASEAN Motto) คือข้อใด?',
+      choices: ['One Vision, One Identity, One Community', 'Peace, Prosperity, People', 'United in Diversity', 'One Region, One Goal'],
+      correctAnswer: 1,
+      explanation: 'คำขวัญอาเซียนคือ "One Vision, One Identity, One Community" (หนึ่งวิสัยทัศน์ หนึ่งเอกลักษณ์ หนึ่งประชาคม)'
+    },
+    {
+      questionText: 'วันอาสาฬหบูชา มีความสำคัญอย่างไรในทางพระพุทธศาสนา?',
+      choices: ['วันประสูติ ตรัสรู้ ปรินิพพาน', 'วันที่มีพระรัตนตรัยครบองค์สามเป็นครั้งแรก', 'วันแสดงโอวาทปาติโมกข์', 'วันถวายพระเพลิงพระพุทธสรีระ'],
+      correctAnswer: 2,
+      explanation: 'วันอาสาฬหบูชา เป็นวันที่พระพุทธเจ้าทรงแสดงปฐมเทศนา (ธัมมจักกัปปวัตตนสูตร) ทำให้เกิดพระสงฆ์องค์แรกและมีพระรัตนตรัยครบ 3 องค์'
+    },
+    {
+      questionText: 'หลักธรรม "อิทธิบาท 4" ซึ่งเป็นหลักธรรมแห่งความสำเร็จ ประกอบด้วยข้อใดบ้าง?',
+      choices: ['ฉันทะ วิริยะ จิตตะ วิมังสา', 'ทาน ศีล ภาวนา สมาธิ', 'เมตตา กรุณา มุทิตา อุเบกขา', 'สัจจะ ทมะ ขันติ จาคัง'],
+      correctAnswer: 1,
+      explanation: 'อิทธิบาท 4 ประกอบด้วย ฉันทะ (ความพอใจรักใคร่), วิริยะ (ความพากเพียร), จิตตะ (ความเอาใจใส่), วิมังสา (การไตร่ตรองทบทวน)'
+    },
+    {
+      questionText: 'รัฐธรรมนูญแห่งราชอาณาจักรไทยฉบับปัจจุบัน คือฉบับพุทธศักราชใด?',
+      choices: ['พ.ศ. 2540', 'พ.ศ. 2550', 'พ.ศ. 2560', 'พ.ศ. 2562'],
+      correctAnswer: 3,
+      explanation: 'รัฐธรรมนูญฉบับปัจจุบันคือ รัฐธรรมนูญแห่งราชอาณาจักรไทย พุทธศักราช 2560 (ฉบับที่ 20)'
+    },
+    {
+      questionText: 'เป้าหมายการพัฒนาที่ยั่งยืน (SDGs) ของสหประชาชาติ มีทั้งหมดกี่เป้าหมาย?',
+      choices: ['10 เป้าหมาย', '15 เป้าหมาย', '17 เป้าหมาย', '20 เป้าหมาย'],
+      correctAnswer: 3,
+      explanation: 'เป้าหมายการพัฒนาที่ยั่งยืน (SDGs) มีทั้งหมด 17 เป้าหมาย ครอบคลุมเศรษฐกิจ สังคม และสิ่งแวดล้อม'
+    },
+    {
+      questionText: 'ข้อใดเป็นมรดกภูมิปัญญาทางวัฒนธรรมของไทยที่ได้รับการขึ้นทะเบียนจาก UNESCO?',
+      choices: ['โขน นวดไทย โนรา สงกรานต์', 'มวยปล้ำ ตะกร้อลอดห่วง', 'การแข่งเรือยาว ลอยกระทง', 'ลิเก งิ้ว หนังตะลุง'],
+      correctAnswer: 1,
+      explanation: 'โขน, นวดไทย, โนรา และประเพณีสงกรานต์ในประเทศไทย ได้รับการขึ้นทะเบียนเป็นมรดกทางวัฒนธรรมที่จับต้องไม่ได้จาก UNESCO'
+    }
+  ],
+  law: [
+    {
+      questionText: 'บิดาแห่งกฎหมายไทย คือบุคคลใด?',
+      choices: ['พระองค์เจ้ารพีพัฒนศักดิ์ (กรมหลวงราชบุรีดิเรกฤทธิ์)', 'สมเด็จกรมพระยาดำรงราชานุภาพ', 'พ่อขุนรามคำแหงมหาราช', 'พระยาแมนปกรณ์นิติธาดา'],
+      correctAnswer: 1,
+      explanation: 'พระเจ้าบรมวงศ์เธอ กรมหลวงราชบุรีดิเรกฤทธิ์ (พระองค์เจ้ารพีพัฒนศักดิ์) ทรงเป็นผู้วางรากฐานกฎหมายและการศาลสมัยใหม่ จึงได้รับการยกย่องเป็นบิดาแห่งกฎหมายไทย'
+    },
+    {
+      questionText: 'กฎหมายสูงสุดในการปกครองประเทศไทยคือข้อใด?',
+      choices: ['ประมวลกฎหมายอาญา', 'รัฐธรรมนูญแห่งราชอาณาจักรไทย', 'พระราชบัญญัติตำรวจแห่งชาติ', 'ประมวลกฎหมายวิธีพิจารณาความอาญา'],
+      correctAnswer: 2,
+      explanation: 'รัฐธรรมนูญเป็นกฎหมายสูงสุด บทบัญญัติใดขัดหรือแย้งต่อรัฐธรรมนูญ บทบัญญัตินั้นเป็นอันใช้บังคับมิได้'
+    },
+    {
+      questionText: 'โทษทางอาญาตามประมวลกฎหมายอาญา มาตรา 18 มี 5 สถาน เรียงจากหนักไปเบาคือข้อใด?',
+      choices: ['ประหารชีวิต, จำคุก, กักขัง, ปรับ, ริบทรัพย์สิน', 'จำคุก, ประหารชีวิต, กักขัง, ริบทรัพย์สิน, ปรับ', 'ประหารชีวิต, กักขัง, จำคุก, ปรับ, ริบทรัพย์สิน', 'ประหารชีวิต, จำคุก, ริบทรัพย์สิน, กักขัง, ปรับ'],
+      correctAnswer: 1,
+      explanation: 'โทษทางอาญา 5 สถานตามมาตรา 18 ได้แก่ 1. ประหารชีวิต 2. จำคุก 3. กักขัง 4. ปรับ 5. ริบทรัพย์สิน'
+    },
+    {
+      questionText: 'ผู้ใดกระทำความผิดอาญาขณะอายุไม่เกินกี่ปี กฎหมายบัญญัติว่าไม่ต้องรับโทษ (ตาม ป.อาญา แก้ไขเพิ่มเติมล่าสุด)?',
+      choices: ['ไม่เกิน 10 ปี', 'ไม่เกิน 12 ปี', 'ไม่เกิน 15 ปี', 'ไม่เกิน 18 ปี'],
+      correctAnswer: 2,
+      explanation: 'ตาม ป.อาญา มาตรา 73 (แก้ไขเพิ่มเติม) เด็กอายุไม่เกิน 12 ปี กระทำการอันกฎหมายบัญญัติเป็นความผิด เด็กนั้นไม่ต้องรับโทษ'
+    },
+    {
+      questionText: 'การกระทำโดย "เจตนา" ตามประมวลกฎหมายอาญา มาตรา 59 หมายถึงข้อใด?',
+      choices: ['กระทำโดยรู้สำนึกและประสงค์ต่อผลหรือย่อมเล็งเห็นผล', 'กระทำโดยปราศจากความระมัดระวัง', 'กระทำโดยรู้เท่าไม่ถึงการณ์', 'กระทำโดยถูกบังคับขู่เข็ญ'],
+      correctAnswer: 1,
+      explanation: 'การกระทำโดยเจตนา ได้แก่ การกระทำโดยรู้สำนึกในการที่กระทำ และในขณะเดียวกันผู้กระทำประสงค์ต่อผล หรือย่อมเล็งเห็นผลของการกระทำนั้น'
+    },
+    {
+      questionText: 'ข้อใดจัดเป็น "ความผิดลหุโทษ" ตามประมวลกฎหมายอาญา?',
+      choices: ['โทษจำคุกไม่เกิน 1 เดือน หรือปรับไม่เกิน 10,000 บาท หรือทั้งจำทั้งปรับ', 'โทษจำคุกไม่เกิน 6 เดือน หรือปรับไม่เกิน 20,000 บาท', 'โทษจำคุกไม่เกิน 1 ปี หรือปรับไม่เกิน 50,000 บาท', 'โทษปรับสถานเดียวไม่เกิน 5,000 บาท'],
+      correctAnswer: 1,
+      explanation: 'ความผิดลหุโทษ คือ ความผิดซึ่งต้องระวางโทษจำคุกไม่เกินหนึ่งเดือน หรือปรับไม่เกินหนึ่งหมื่นบาท หรือทั้งจำทั้งปรับ'
+    },
+    {
+      questionText: 'การจับกุมบุคคลโดยไม่มีหมายจับ เจ้าพนักงานตำรวจสามารถกระทำได้ในกรณีใด?',
+      choices: ['เมื่อพบการกระทำความผิดซึ่งหน้า', 'เมื่อผู้ต้องหามีท่าทางน่าสงสัยในเวลากลางวัน', 'เมื่อมีผู้โทรศัพท์มาแจ้งเบาะแสโดยไม่ระบุชื่อ', 'เมื่อต้องการสอบปากคำผู้ต้องสงสัย'],
+      correctAnswer: 1,
+      explanation: 'ตาม ป.วิ.อาญา เจ้าพนักงานจะจับกุมโดยไม่มีหมายจับได้เมื่อพบบุคคลกำลังกระทำความผิดซึ่งหน้า หรือมีเหตุจำเป็นเร่งด่วนตามที่กฎหมายระบุไว้'
+    },
+    {
+      questionText: 'ข้อใดจัดเป็น "ความผิดอันยอมความได้" (ความผิดต่อส่วนตัว)?',
+      choices: ['ความผิดฐานลักทรัพย์', 'ความผิดฐานหมิ่นประมาท', 'ความผิดฐานชิงทรัพย์', 'ความผิดฐานฆ่าผู้อื่น'],
+      correctAnswer: 2,
+      explanation: 'ความผิดฐานหมิ่นประมาท, ยักยอก, ฉ้อโกง จัดเป็นความผิดต่อส่วนตัวที่ยอมความกันได้ตามกฎหมาย'
+    },
+    {
+      questionText: 'นิติกรรมที่เป็น "โมฆียะ" มีผลทางกฎหมายอย่างไร?',
+      choices: ['ไม่มีผลทางกฎหมายมาตั้งแต่เริ่มต้น', 'มีผลสมบูรณ์จนกว่าจะถูกบอกล้าง', 'มีผลใช้บังคับได้เพียง 1 ปี', 'ต้องรอศาลพิพากษาก่อนจึงมีผล'],
+      correctAnswer: 2,
+      explanation: 'โมฆียะกรรมมีผลสมบูรณ์บังคับได้ตามกฎหมาย จนกว่าจะมีการบอกล้าง (ซึ่งจะทำให้กลายเป็นโมฆะมาแต่เริ่มแรก) หรือให้สัตยาบัน'
+    },
+    {
+      questionText: 'บุคคลย่อมบรรลุนิติภาวะเมื่อมีอายุครบกี่ปีบริบูรณ์ ตาม ป.พ.พ.?',
+      choices: ['18 ปีบริบูรณ์', '20 ปีบริบูรณ์', '21 ปีบริบูรณ์', '25 ปีบริบูรณ์'],
+      correctAnswer: 2,
+      explanation: 'ตามประมวลกฎหมายแพ่งและพาณิชย์ บุคคลบรรลุนิติภาวะเมื่อมีอายุครบ 20 ปีบริบูรณ์ หรือเมื่อทำการสมรสตามกฎหมาย'
+    },
+    {
+      questionText: 'การป้องกันโดยชอบด้วยกฎหมายตาม ป.อาญา มาตรา 68 ผู้กระทำมีผลทางกฎหมายอย่างไร?',
+      choices: ['มีความผิดแต่ไม่ต้องรับโทษ', 'ไม่มีความผิด', 'รับโทษกึ่งหนึ่ง', 'ขึ้นอยู่กับดุลพินิจของศาล'],
+      correctAnswer: 2,
+      explanation: 'การกระทำด้วยการป้องกันโดยชอบด้วยกฎหมาย กฎหมายบัญญัติว่า "ผู้นั้นไม่มีความผิด"'
+    },
+    {
+      questionText: 'อายุความฟ้องคดีอาญาที่มีอัตราโทษประหารชีวิต หรือจำคุกตลอดชีวิต มีกำหนดกี่ปี?',
+      choices: ['10 ปี', '15 ปี', '20 ปี', 'ไม่มีอายุความ'],
+      correctAnswer: 3,
+      explanation: 'ตาม ป.อาญา มาตรา 95 คดีความผิดที่มีระวางโทษประหารชีวิต จำคุกตลอดชีวิต หรือจำคุกยี่สิบปี มีกำหนดอายุความ 20 ปี'
+    }
+  ],
+  computer: [
+    {
+      questionText: 'ปุ่มคีย์ลัดใดใช้ในการคัดลอก (Copy) ข้อความหรือไฟล์ในระบบปฏิบัติการ Windows?',
+      choices: ['Ctrl + X', 'Ctrl + C', 'Ctrl + V', 'Ctrl + Z'],
+      correctAnswer: 2,
+      explanation: 'Ctrl + C คือ Copy (คัดลอก), Ctrl + X คือ Cut (ตัด), Ctrl + V คือ Paste (วาง), Ctrl + Z คือ Undo (ยกเลิก)'
+    },
+    {
+      questionText: 'ข้อใดคือหน่วยความจำหลักของคอมพิวเตอร์ที่ข้อมูลจะสูญหายเมื่อปิดเครื่อง (Volatile Memory)?',
+      choices: ['ROM', 'Hard Disk', 'RAM', 'Flash Drive'],
+      correctAnswer: 3,
+      explanation: 'RAM (Random Access Memory) เป็นหน่วยความจำหลักชั่วคราว ข้อมูลจะหายไปทั้งหมดเมื่อไม่มีกระแสไฟฟ้า'
+    },
+    {
+      questionText: 'โปรโตคอลใดใช้ในการส่งและรับข้อมูลหน้าเว็บไซต์ทั่วไปอย่างปลอดภัยและมีการเข้ารหัส (Encrypted)?',
+      choices: ['HTTP', 'FTP', 'HTTPS', 'SMTP'],
+      correctAnswer: 3,
+      explanation: 'HTTPS (Hypertext Transfer Protocol Secure) มีการเข้ารหัสข้อมูลผ่าน SSL/TLS เพื่อความปลอดภัยในการสื่อสาร'
+    },
+    {
+      questionText: 'ภัยคุกคามทางไซเบอร์ที่ใช้อีเมลหรือเว็บไซต์ปลอมเพื่อหลอกลวงเอาข้อมูลรหัสผ่านหรือข้อมูลส่วนตัว เรียกว่าอะไร?',
+      choices: ['Phishing', 'DDoS Attack', 'Spyware', 'Ransomware'],
+      correctAnswer: 1,
+      explanation: 'Phishing (ฟิชชิง) คือ การหลอกลวงโดยสร้างหน้าเว็บหรืออีเมลเลียนแบบองค์กรที่น่าเชื่อถือเพื่อขโมยข้อมูลสำคัญ'
+    },
+    {
+      questionText: 'อุปกรณ์ใดทำหน้าที่เป็นสมองหลักในการคำนวณและประมวลผลคำสั่งของคอมพิวเตอร์?',
+      choices: ['CPU (Central Processing Unit)', 'GPU', 'Mainboard', 'Power Supply'],
+      correctAnswer: 1,
+      explanation: 'CPU คือ หน่วยประมวลผลกลาง ทำหน้าที่เปรียบเสมือนสมองของคอมพิวเตอร์'
+    },
+    {
+      questionText: 'ในโปรแกรม Microsoft Excel ฟังก์ชันใดใช้สำหรับหา "ค่าเฉลี่ย" ของชุดข้อมูล?',
+      choices: ['=SUM()', '=AVERAGE()', '=COUNT()', '=MAX()'],
+      correctAnswer: 2,
+      explanation: '=AVERAGE() ใช้หาค่าเฉลี่ยเลขคณิต, =SUM() ใช้หาผลรวม, =COUNT() ใช้นับจำนวน'
+    },
+    {
+      questionText: 'ข้อใดไม่ใช่ระบบปฏิบัติการ (Operating System)?',
+      choices: ['Microsoft Windows', 'Linux', 'Microsoft Excel', 'macOS'],
+      correctAnswer: 3,
+      explanation: 'Microsoft Excel เป็นซอฟต์แวร์ประยุกต์ (Application Software) ส่วน Windows, Linux, macOS เป็นระบบปฏิบัติการ'
+    },
+    {
+      questionText: 'หมายเลข IP Address เวอร์ชัน 4 (IPv4) ประกอบด้วยตัวเลขกี่ชุด และมีขนาดกี่บิต?',
+      choices: ['4 ชุด รวม 32 บิต', '4 ชุด รวม 64 บิต', '6 ชุด รวม 128 บิต', '8 ชุด รวม 32 บิต'],
+      correctAnswer: 1,
+      explanation: 'IPv4 ประกอบด้วยตัวเลขฐานสิบ 4 ชุด คั่นด้วยเครื่องหมายจุด (เช่น 192.168.1.1) มีขนาดรวม 32 บิต'
+    },
+    {
+      questionText: 'มัลแวร์ประเภทใดที่ทำการเข้ารหัสล็อกไฟล์ในเครื่องเหยื่อแล้วเรียกค่าไถ่เพื่อแลกกับคีย์ปลดล็อก?',
+      choices: ['Trojan Horse', 'Worm', 'Ransomware', 'Adware'],
+      correctAnswer: 3,
+      explanation: 'Ransomware (มัลแวร์เรียกค่าไถ่) จะเข้ารหัสไฟล์ข้อมูลของเหยื่อและขู่เรียกเงินค่าไถ่'
+    },
+    {
+      questionText: 'บริการจัดเก็บข้อมูลไฟล์ออนไลน์ผ่านเครือข่ายอินเทอร์เน็ต เรียกว่าอะไร?',
+      choices: ['Cloud Storage', 'Local Storage', 'Virtual Memory', 'Cache Memory'],
+      correctAnswer: 1,
+      explanation: 'Cloud Storage (เช่น Google Drive, OneDrive) คือ บริการฝากไฟล์และจัดเก็บข้อมูลออนไลน์บนคลาวด์'
+    },
+    {
+      questionText: 'ปุ่มคีย์ลัด Ctrl + Z ในโปรแกรมส่วนใหญ่มีหน้าที่อะไร?',
+      choices: ['บันทึกไฟล์ (Save)', 'ยกเลิกการกระทำล่าสุด (Undo)', 'พิมพ์เอกสาร (Print)', 'ปิดโปรแกรม (Close)'],
+      correctAnswer: 2,
+      explanation: 'Ctrl + Z ใช้สำหรับคำสั่ง Undo เพื่อยกเลิกหรือย้อนกลับการกระทำล่าสุด'
+    },
+    {
+      questionText: 'หน่วยวัดความเร็วในการรับ-ส่งข้อมูลบนเครือข่ายอินเทอร์เน็ตที่นิยมใช้คือข้อใด?',
+      choices: ['GHz (Gigahertz)', 'Mbps (Megabits per second)', 'DPI (Dots per inch)', 'RPM (Revolutions per minute)'],
+      correctAnswer: 2,
+      explanation: 'Mbps (Megabits per second) คือ หน่วยวัดความเร็วในการถ่ายโอนข้อมูลผ่านเครือข่ายอินเทอร์เน็ต'
+    }
+  ]
+};
+
+function getSubjectKey(subject) {
+  const s = (subject || '').toString().toLowerCase();
+  if (s.includes('สุ่ม') || s.includes('random') || s.includes('all') || !subject) {
+    const allKeys = ['saraban', 'general', 'thai', 'english', 'social', 'law', 'computer'];
+    return allKeys[Math.floor(Math.random() * allKeys.length)];
+  }
+  if (s.includes('สารบรรณ') || s.includes('saraban') || s.includes('54') || s.includes('secretariat') || s.includes('สบ')) {
+    return 'saraban';
+  }
+  if (s.includes('ความสามารถ') || s.includes('ทั่วไป') || s.includes('general') || s.includes('คณิต') || s.includes('อนุกรม') || s.includes('ทป')) {
+    return 'general';
   }
   if (s.includes('ไทย') || s.includes('thai')) {
-    return ['thai', 'ภาษาไทย'];
+    return 'thai';
   }
-  if (s.includes('อังกฤษ') || s.includes('english')) {
-    return ['english', 'ภาษาอังกฤษ'];
+  if (s.includes('อังกฤษ') || s.includes('english') || s.includes('eng')) {
+    return 'english';
   }
-  if (s.includes('สังคม') || s.includes('social') || s.includes('อาเซียน') || s.includes('asean')) {
-    return ['social', 'ความรู้สังคมฯ', 'สังคม', 'ความรู้สังคม วัฒนธรรม และความรู้เกี่ยวกับประชาคมอาเซียน'];
+  if (s.includes('สังคม') || s.includes('social') || s.includes('อาเซียน') || s.includes('asean') || s.includes('วัฒนธรรม')) {
+    return 'social';
   }
-  if (s.includes('กฎหมาย') || s.includes('law') || s.includes('ตำรวจ')) {
-    return ['law', 'กฎหมายตำรวจ', 'กฎหมาย', 'กฎหมายตำรวจ / ความรู้เกี่ยวกับกฎหมายประชาชน'];
+  if (s.includes('กฎหมาย') || s.includes('law') || s.includes('ตำรวจ') || s.includes('กม')) {
+    return 'law';
   }
   if (s.includes('คอม') || s.includes('computer') || s.includes('สารสนเทศ')) {
-    return ['computer', 'คอมพิวเตอร์', 'คอม', 'เทคโนโลยีสารสนเทศ (คอมพิวเตอร์สำนักงาน)'];
+    return 'computer';
   }
-  return [subject];
+  return 'general';
+}
+
+function getCategoryAliases(subject) {
+  const key = getSubjectKey(subject);
+  switch (key) {
+    case 'saraban':
+      return ['secretariat', 'saraban', 'งานสารบรรณ', 'ลักษณะที่54', 'ลักษณะที่ 54', 'ระเบียบงานสารบรรณ', 'สารบรรณ', 'สบ'];
+    case 'general':
+      return ['general', 'ความสามารถทั่วไป', 'ทั่วไป', 'คณิตศาสตร์', 'อนุกรม', 'ความสามารถทั่วไป (คณิตศาสตร์)', 'ทป'];
+    case 'thai':
+      return ['thai', 'ภาษาไทย', 'ไทย'];
+    case 'english':
+      return ['english', 'ภาษาอังกฤษ', 'อังกฤษ', 'eng'];
+    case 'social':
+      return ['social', 'ความรู้สังคมฯ', 'สังคม', 'ความรู้สังคม วัฒนธรรม และความรู้เกี่ยวกับประชาคมอาเซียน', 'ความรู้สังคม', 'อาเซียน', 'asean'];
+    case 'law':
+      return ['law', 'กฎหมายตำรวจ', 'กฎหมาย', 'กฎหมายเบื้องต้น', 'กฎหมายตำรวจ / ความรู้เกี่ยวกับกฎหมายประชาชน', 'กฎหมายประชาชน', 'กม'];
+    case 'computer':
+      return ['computer', 'คอมพิวเตอร์', 'คอม', 'เทคโนโลยีสารสนเทศ (คอมพิวเตอร์สำนักงาน)', 'เทคโนโลยีสารสนเทศ', 'สารสนเทศ'];
+    default:
+      return [subject];
+  }
 }
 
 async function getBattleQuestionsForSubject(subjectName) {
+  const subjectKey = getSubjectKey(subjectName);
   const aliases = getCategoryAliases(subjectName);
   
   // 1. Find matching ExamSets by category aliases
-  const sets = await prisma.examSet.findMany({
-    where: {
-      OR: aliases.map(a => ({
-        category: { contains: a, mode: 'insensitive' }
-      }))
-    },
-    select: { id: true, title: true }
-  });
+  let sets = [];
+  try {
+    sets = await prisma.examSet.findMany({
+      where: {
+        OR: [
+          ...aliases.map(a => ({ category: { contains: a, mode: 'insensitive' } })),
+          ...aliases.map(a => ({ title: { contains: a, mode: 'insensitive' } }))
+        ]
+      },
+      select: { id: true, title: true }
+    });
+  } catch (e) {
+    console.error('ExamSet search error:', e);
+  }
 
-  let chosenTitle = sets.length > 0 ? sets[Math.floor(Math.random() * sets.length)].title : ('ชุดข้อสอบประลองวิชา ' + subjectName);
+  let chosenTitle = sets.length > 0 ? sets[Math.floor(Math.random() * sets.length)].title : ('ข้อสอบจริงวิชา ' + subjectName);
   let setIds = sets.map(s => s.id);
 
   let qList = [];
   if (setIds.length > 0) {
-    qList = await prisma.question.findMany({
-      where: { examSetId: { in: setIds } },
-      include: { examSet: true }
-    });
+    try {
+      qList = await prisma.question.findMany({
+        where: { examSetId: { in: setIds } }
+      });
+    } catch (e) {
+      console.error('Questions fetch error:', e);
+    }
   }
 
-  // 2. If qList is empty or small, search questions by category directly
-  if (qList.length < 5) {
-    qList = await prisma.question.findMany({
-      where: {
-        OR: aliases.map(a => ({
-          examSet: { category: { contains: a, mode: 'insensitive' } }
-        }))
-      },
-      include: { examSet: true }
-    });
+  // 2. If qList is small, search questions by examSet category/title directly
+  if (qList.length < 10) {
+    try {
+      const extraQuestions = await prisma.question.findMany({
+        where: {
+          OR: [
+            ...aliases.map(a => ({ examSet: { category: { contains: a, mode: 'insensitive' } } })),
+            ...aliases.map(a => ({ examSet: { title: { contains: a, mode: 'insensitive' } } }))
+          ]
+        }
+      });
+      for (const eq of extraQuestions) {
+        if (!qList.some(q => q.id === eq.id)) {
+          qList.push(eq);
+        }
+      }
+    } catch (e) {
+      console.error('Extra questions fetch error:', e);
+    }
   }
 
-  // 3. Fallback to any questions if database has no matching sets for this subject yet
-  if (qList.length < 5) {
-    qList = await prisma.question.findMany({ take: 30, include: { examSet: true } });
-  }
-
-  qList = localShuffle(qList).slice(0, 10);
-
-  const formattedQuestions = qList.map(q => ({
+  // Standardize existing DB questions
+  let formattedQuestions = qList.map(q => ({
     id: q.id,
     questionText: q.questionText,
     choices: [q.choice1, q.choice2, q.choice3, q.choice4],
@@ -5908,6 +6553,26 @@ async function getBattleQuestionsForSubject(subjectName) {
     explanation: q.explanation || 'คำอธิบายเฉลยประลอง'
   }));
 
+  // 3. Fallback exclusively to the AUTHENTIC question bank of THAT SPECIFIC SUBJECT (Never mix subjects!)
+  const subjectBank = AUTHENTIC_SUBJECT_QUESTION_BANKS[subjectKey] || AUTHENTIC_SUBJECT_QUESTION_BANKS.general;
+  if (formattedQuestions.length < 10) {
+    const shuffledBank = localShuffle(subjectBank);
+    for (let i = 0; i < shuffledBank.length && formattedQuestions.length < 10; i++) {
+      const bq = shuffledBank[i];
+      // Check if duplicate question text already exists in formattedQuestions
+      if (!formattedQuestions.some(fq => fq.questionText === bq.questionText)) {
+        formattedQuestions.push({
+          id: `auth-${subjectKey}-${Date.now()}-${i}`,
+          questionText: bq.questionText,
+          choices: bq.choices,
+          correctAnswer: bq.correctAnswer,
+          explanation: bq.explanation
+        });
+      }
+    }
+  }
+
+  formattedQuestions = localShuffle(formattedQuestions).slice(0, 10);
   return { chosenTitle, questions: formattedQuestions };
 }
 
@@ -5917,8 +6582,12 @@ app.post('/api/battle/room/start-spin', authenticateToken, async (req, res) => {
   const room = customBattleRooms.get((roomCode || '').trim().toUpperCase());
 
   if (!room) return res.status(404).json({ error: 'ไม่พบห้องประลอง' });
-  if (room.hostUserId !== req.user.userId) {
+  if (String(room.hostUserId) !== String(req.user.userId)) {
     return res.status(403).json({ error: 'เฉพาะหัวหน้าห้องเท่านั้นที่กดเริ่มประลองได้' });
+  }
+
+  if (!room.players || room.players.length < 2) {
+    return res.status(400).json({ error: 'ต้องมีผู้เล่นเข้าร่วมห้องอย่างน้อย 2 คนจึงจะเริ่มประลองได้' });
   }
 
   try {
