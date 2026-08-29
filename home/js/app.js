@@ -5346,30 +5346,30 @@ let currentFetchedExamSets = [];
 
 const BANK_SUBJECT_CHAPTERS = {
   'งานสารบรรณ': [
-    'รวมทุกบท (ข้อสอบครบ ๑๒ บท)',
-    'บทที่ 1 ชนิดของหนังสือราชการ',
-    'บทที่ 2 มาตรฐานแบบพิมพ์และตราครุฑ',
+    'รวมทุกบท (ข้อสอบรวม ๑๒ บท)',
+    'บทที่ 1 บทนำและนิยาม',
+    'บทที่ 2 มาตรฐานแบบพิมพ์ ตราครุฑ',
     'บทที่ 3 หนังสือภายนอก หนังสือภายใน หนังสือประทับตรา',
-    'บทที่ 4 หนังสือสั่งการ (คำสั่ง ข้อบังคับ ระเบียบ)',
-    'บทที่ 5 หนังสือประชาสัมพันธ์ (ประกาศ แถลงการณ์ ข่าว)',
+    'บทที่ 4 หนังสือสั่งการ',
+    'บทที่ 5 หนังสือประชาสัมพันธ์',
     'บทที่ 6 หนังสือที่เจ้าหน้าที่จัดทำขึ้นหรือรับไว้เป็นหลักฐาน',
-    'บทที่ 7 เบ็ดเตล็ด สำเนาคู่ฉบับ หนังสือเวียน',
-    'บทที่ 8 การรับและส่งหนังสือ',
+    'บทที่ 7 เบ็ดเตล็ด สำเนา สำเนาคู่ฉบับ หนังสือเวียน',
+    'บทที่ 8 การรับส่งหนังสือ',
     'บทที่ 9 การเก็บรักษา',
     'บทที่ 10 การยืม',
     'บทที่ 11 การทำลาย',
     'บทที่ 12 ระบบสารบรรณอิเล็กทรอนิกส์'
   ],
   'ลักษณะที่54': [
-    'รวมทุกบท (สารบรรณตำรวจ ๕๔)',
-    'บทที่ 1 นิยามและอำนาจลงนาม',
+    'รวมทุกบท (ข้อสอบรวม ลักษณะ ๕๔)',
+    'บทที่ 1 นิยามและอำนาจลงนาม ตร.',
     'บทที่ 2 รหัสพยัญชนะ ตร.',
     'บทที่ 3 คำขึ้นต้น คำลงท้าย และยศตำรวจ',
-    'บทที่ 4 ส่วนราชการเจ้าของเรื่อง',
+    'บทที่ 4 ส่วนราชการเจ้าของเรื่อง ตร.',
     'บทที่ 5 การเสนอหนังสือ 5 หัวข้อ',
     'บทที่ 6 การรับส่งหนังสือ ตร.',
-    'บทที่ 7 หนังสือลับและการรักษาความปลอดภัย',
-    'บทที่ 8 การเก็บรักษาและทำลาย'
+    'บทที่ 7 หนังสือลับและการรักษาความปลอดภัย ตร.',
+    'บทที่ 8 การเก็บรักษาและทำลาย ตร.'
   ],
   'ทั่วไป': [
     'รวมทุกบท (ความสามารถทั่วไป)',
@@ -5401,6 +5401,13 @@ const BANK_SUBJECT_CHAPTERS = {
     'บทที่ 4 พ.ร.บ.คอมพิวเตอร์และไซเบอร์'
   ]
 };
+
+function extractChapterNumber(str) {
+  if (!str) return 999;
+  if (str.includes('รวมทุกบท') || str.includes('รวมข้อสอบ')) return 0;
+  const match = str.match(/บทที่\s*(\d+)/i) || str.match(/(\d+)/);
+  return match ? parseInt(match[1], 10) : 999;
+}
 
 // Step 1 -> Step 2: Open Chapters List
 window.startBankSubject = async function(subjectKey) {
@@ -5487,32 +5494,44 @@ window.startBankSubject = async function(subjectKey) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
-// Render Chapter Cards (Step 2)
+// Render Chapter Cards (Step 2 - Strictly Ordered 1 to 12 with NO Duplicates)
 function renderSubjectChaptersGrid(subjectKey) {
   const container = document.getElementById('chaptersContainer');
   const countBadge = document.getElementById('chaptersCountBadge');
   if (!container) return;
 
-  const defaultChapters = BANK_SUBJECT_CHAPTERS[subjectKey] || ['รวมทุกบท'];
+  // 1. Get Canonical List of Chapters
+  const canonicalList = BANK_SUBJECT_CHAPTERS[subjectKey] || BANK_SUBJECT_CHAPTERS['งานสารบรรณ'];
   
-  // Also collect dynamic subcategories from fetched sets
-  const fetchedSubcats = currentFetchedExamSets.map(s => s.subcategory).filter(Boolean);
-  const combinedChapters = Array.from(new Set([...defaultChapters, ...fetchedSubcats]));
+  // 2. Filter / Sort: Ensure Index 0 is Master, then 1..12 strictly in ascending order
+  const masterChapter = canonicalList.find(c => c.includes('รวม')) || canonicalList[0];
+  const lessonChapters = canonicalList.filter(c => !c.includes('รวม'));
+  lessonChapters.sort((a, b) => extractChapterNumber(a) - extractChapterNumber(b));
 
-  if (countBadge) countBadge.textContent = `${combinedChapters.length} หมวดหมู่`;
+  const sortedChapters = [masterChapter, ...lessonChapters];
 
-  container.innerHTML = combinedChapters.map((ch, idx) => {
-    // Count sets in this chapter
+  if (countBadge) countBadge.textContent = `${lessonChapters.length} บทเรียน`;
+
+  container.innerHTML = sortedChapters.map((ch, idx) => {
+    const isMaster = idx === 0 || ch.includes('รวม');
+    const chNum = extractChapterNumber(ch);
+
+    // Count matching sets from DB
     const matchingSets = currentFetchedExamSets.filter(s => {
-      if (idx === 0 || ch.includes('รวมทุกบท')) return true;
-      if (s.subcategory && (s.subcategory.includes(ch) || ch.includes(s.subcategory))) return true;
-      if (s.title && s.title.includes(ch.replace(/บทที่\s*\d+\s*/, ''))) return true;
+      if (isMaster) return true;
+      const sNum = extractChapterNumber(s.subcategory || s.title);
+      if (sNum === chNum && chNum !== 999) return true;
+      const cleanCh = ch.replace(/บทที่\s*\d+\s*/, '').trim();
+      if (s.title && cleanCh && s.title.includes(cleanCh)) return true;
+      if (s.subcategory && cleanCh && s.subcategory.includes(cleanCh)) return true;
       return false;
     });
 
-    const isMaster = idx === 0 || ch.includes('รวมทุกบท');
+    const setCount = matchingSets.length;
     const icon = isMaster ? '📚' : '📑';
-    const setCountText = matchingSets.length > 0 ? `${matchingSets.length} ชุดข้อสอบพร้อมทำ` : 'แบบทดสอบประจำบทเรียน';
+    const setCountText = isMaster
+      ? `รวมข้อสอบทุกบท (${currentFetchedExamSets.length || 12} ชุด)`
+      : (setCount > 0 ? `${setCount} ชุดข้อสอบพร้อมสอบ` : 'แบบทดสอบประจำบท');
 
     return `
       <button class="chapter-item-card" onclick="selectBankChapter('${subjectKey}', '${ch.replace(/'/g, "\\'")}')">
@@ -5550,7 +5569,7 @@ window.selectBankChapter = function(subjectKey, chapterName) {
   const badgeEl = document.getElementById('currentChapterBadge');
   const iconEl = document.getElementById('currentChapterIcon');
 
-  const isMaster = chapterName.includes('รวมทุกบท');
+  const isMaster = chapterName.includes('รวม');
 
   if (titleEl) titleEl.textContent = chapterName;
   if (subtitleEl) subtitleEl.textContent = `วิชา ${subjectKey}`;
@@ -5568,17 +5587,23 @@ function renderFilteredExamSetsForChapter(subjectKey, chapterName) {
   if (!container) return;
 
   const history = getLocalQuizHistory(subjectKey);
-  const isMaster = chapterName.includes('รวมทุกบท');
+  const isMaster = chapterName.includes('รวม');
+  const chNum = extractChapterNumber(chapterName);
 
   let sets = currentFetchedExamSets.filter(s => {
     if (isMaster) return true;
-    if (s.subcategory && (s.subcategory.includes(chapterName) || chapterName.includes(s.subcategory))) return true;
+    const sNum = extractChapterNumber(s.subcategory || s.title);
+    if (sNum === chNum && chNum !== 999) return true;
     const cleanChapter = chapterName.replace(/บทที่\s*\d+\s*/, '').trim();
     if (s.title && cleanChapter && s.title.includes(cleanChapter)) return true;
+    if (s.subcategory && cleanChapter && s.subcategory.includes(cleanChapter)) return true;
     return false;
   });
 
-  // If no specific set found, create a dynamic single set for this chapter
+  // Sort sets strictly by chapter number
+  sets.sort((a, b) => extractChapterNumber(a.subcategory || a.title) - extractChapterNumber(b.subcategory || b.title));
+
+  // If no specific set found in DB, provide standard exam set for this chapter
   if (sets.length === 0) {
     sets = [{
       id: `set_${encodeURIComponent(chapterName)}`,
@@ -5593,7 +5618,7 @@ function renderFilteredExamSetsForChapter(subjectKey, chapterName) {
 
   if (countTag) countTag.textContent = `${sets.length} ชุดข้อสอบ`;
 
-  container.innerHTML = sets.map((s, idx) => {
+  container.innerHTML = sets.map((s) => {
     const setRecords = history.filter(h => {
       if (!h) return false;
       if (h.setId && String(h.setId) === String(s.id)) return true;
