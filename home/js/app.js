@@ -5874,6 +5874,8 @@ function renderCurrentQuizQuestion() {
   const { questions, currentIndex, userAnswers } = currentQuizState;
   const bodyContent = document.getElementById('quizBodyContent');
   const stepText = document.getElementById('quizStepText');
+  const answeredLabel = document.getElementById('quizAnsweredCountLabel');
+  const btnPrev = document.getElementById('btnPrevQuiz');
   const btnNext = document.getElementById('btnNextQuiz');
   const progressBar = document.getElementById('quizProgressBar');
 
@@ -5883,21 +5885,35 @@ function renderCurrentQuizQuestion() {
   }
 
   const q = questions[currentIndex];
-  const progressPct = Math.round(((currentIndex + 1) / questions.length) * 100);
+  const total = questions.length;
+  const answeredCount = Object.keys(userAnswers).length;
+  const progressPct = Math.round(((currentIndex + 1) / total) * 100);
+
   if (progressBar) progressBar.style.width = `${progressPct}%`;
-  if (stepText) stepText.textContent = `ข้อที่ ${currentIndex + 1} / ${questions.length}`;
+  if (stepText) stepText.textContent = `ข้อที่ ${currentIndex + 1} / ${total}`;
+  if (answeredLabel) answeredLabel.textContent = `ทำแล้ว ${answeredCount}/${total} ข้อ`;
 
   const selectedAnswer = userAnswers[currentIndex];
   const isAnswered = selectedAnswer !== undefined;
 
+  // Prev / Next button states
+  if (btnPrev) {
+    btnPrev.disabled = currentIndex === 0;
+    btnPrev.style.opacity = currentIndex === 0 ? '0.4' : '1';
+    btnPrev.style.cursor = currentIndex === 0 ? 'default' : 'pointer';
+  }
+
   if (btnNext) {
-    btnNext.style.display = isAnswered ? 'block' : 'none';
-    btnNext.textContent = (currentIndex === questions.length - 1) ? 'ดูสรุปผลคะแนน' : 'ข้อถัดไป ➔';
+    if (currentIndex === total - 1) {
+      btnNext.textContent = answeredCount === total ? 'ดูสรุปผลคะแนน 🏆' : 'ส่งข้อสอบ / สรุปผล 🏆';
+    } else {
+      btnNext.textContent = 'ข้อถัดไป ➔';
+    }
   }
 
   let choicesHtml = q.choices.map((choiceText, idx) => {
     const choiceNum = idx + 1;
-    let btnStyle = 'background: #F8FAFC; border: 1px solid #E2E8F0; color: #1E293B;';
+    let btnStyle = 'background: #F8FAFC; border: 1.5px solid #E2E8F0; color: #1E293B;';
     
     if (isAnswered) {
       if (choiceNum === q.correctAnswer) {
@@ -5910,7 +5926,7 @@ function renderCurrentQuizQuestion() {
     }
 
     return `
-      <button onclick="selectQuizAnswer(${choiceNum})" ${isAnswered ? 'disabled' : ''} style="${btnStyle} width: 100%; text-align: left; padding: 14px 18px; border-radius: 14px; font-size: 14px; font-family: inherit; margin-bottom: 10px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 12px; line-height: 1.5;">
+      <button onclick="selectQuizAnswer(${choiceNum})" ${isAnswered ? 'disabled' : ''} style="${btnStyle} width: 100%; text-align: left; padding: 13px 16px; border-radius: 14px; font-size: 14px; font-family: inherit; margin-bottom: 8px; cursor: ${isAnswered ? 'default' : 'pointer'}; transition: all 0.15s; display: flex; align-items: center; gap: 12px; line-height: 1.45;">
         <span style="width: 28px; height: 28px; border-radius: 50%; background: rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; flex-shrink: 0;">${choiceNum}</span>
         <span>${escapeHTML(choiceText)}</span>
       </button>
@@ -5921,8 +5937,8 @@ function renderCurrentQuizQuestion() {
   if (isAnswered && q.explanation) {
     const isCorrect = selectedAnswer === q.correctAnswer;
     explanationHtml = `
-      <div style="margin-top: 16px; background: ${isCorrect ? '#EFF6FF' : '#FFFBEB'}; border: 1px solid ${isCorrect ? '#BFDBFE' : '#FDE68A'}; border-radius: 14px; padding: 16px; font-size: 13px; color: ${isCorrect ? '#1E40AF' : '#92400E'};">
-        <strong style="display: block; margin-bottom: 4px;">เฉลยคำอธิบาย:</strong>
+      <div style="margin-top: 14px; background: ${isCorrect ? '#ECFDF5' : '#FFFBEB'}; border: 1px solid ${isCorrect ? '#A7F3D0' : '#FDE68A'}; border-radius: 14px; padding: 14px; font-size: 13px; color: ${isCorrect ? '#065F46' : '#92400E'};">
+        <strong style="display: block; margin-bottom: 3px;">💡 คำอธิบายเฉลย:</strong>
         ${escapeHTML(q.explanation)}
       </div>
     `;
@@ -5930,7 +5946,7 @@ function renderCurrentQuizQuestion() {
 
   bodyContent.innerHTML = `
     <div>
-      <h3 style="font-size: 16px; font-weight: 800; color: #1E293B; line-height: 1.6; margin-top: 0; margin-bottom: 20px;">
+      <h3 style="font-size: 15.5px; font-weight: 800; color: #1E293B; line-height: 1.55; margin-top: 0; margin-bottom: 16px;">
         ${currentIndex + 1}. ${escapeHTML(q.questionText)}
       </h3>
       <div>
@@ -5939,10 +5955,56 @@ function renderCurrentQuizQuestion() {
       ${explanationHtml}
     </div>
   `;
+
+  // Render question number buttons 1 to N
+  renderQuizQuestionNavGrid();
 }
+
+function renderQuizQuestionNavGrid() {
+  const { questions, currentIndex, userAnswers } = currentQuizState;
+  const navGrid = document.getElementById('quizQuestionNavGrid');
+  if (!navGrid || !questions) return;
+
+  navGrid.innerHTML = questions.map((q, idx) => {
+    const qNum = idx + 1;
+    const isCurrent = idx === currentIndex;
+    const ans = userAnswers[idx];
+    const isAnswered = ans !== undefined;
+
+    let style = 'width: 34px; height: 34px; border-radius: 10px; font-size: 12px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: all 0.15s; font-family: inherit;';
+
+    if (isCurrent) {
+      style += 'border: 2px solid #BD1B0B; background: #FEF2F2; color: #BD1B0B; font-weight: 800; transform: scale(1.08); box-shadow: 0 2px 8px rgba(189,27,11,0.25);';
+    } else if (isAnswered) {
+      if (ans === q.correctAnswer) {
+        style += 'border: 1.5px solid #10B981; background: #ECFDF5; color: #059669;';
+      } else {
+        style += 'border: 1.5px solid #EF4444; background: #FEF2F2; color: #DC2626;';
+      }
+    } else {
+      style += 'border: 1.5px solid #E2E8F0; background: #FFFFFF; color: #64748B;';
+    }
+
+    return `
+      <button onclick="goToQuizQuestion(${idx})" style="${style}" title="ข้อที่ ${qNum} ${isAnswered ? '(ทำแล้ว)' : '(ยังไม่ได้ทำ)'}">
+        ${qNum}
+      </button>
+    `;
+  }).join('');
+}
+
+window.goToQuizQuestion = function(index) {
+  if (!currentQuizState.questions || index < 0 || index >= currentQuizState.questions.length) return;
+  currentQuizState.currentIndex = index;
+  renderCurrentQuizQuestion();
+};
 
 window.selectQuizAnswer = function(choiceNum) {
   const { currentIndex, questions } = currentQuizState;
+  
+  // If already answered, ignore
+  if (currentQuizState.userAnswers[currentIndex] !== undefined) return;
+
   currentQuizState.userAnswers[currentIndex] = choiceNum;
 
   if (choiceNum === questions[currentIndex].correctAnswer) {
@@ -5952,9 +6014,20 @@ window.selectQuizAnswer = function(choiceNum) {
   renderCurrentQuizQuestion();
 };
 
+window.prevQuizQuestion = function() {
+  if (currentQuizState.currentIndex > 0) {
+    currentQuizState.currentIndex--;
+    renderCurrentQuizQuestion();
+  }
+};
+
 window.nextQuizQuestion = function() {
-  currentQuizState.currentIndex++;
-  renderCurrentQuizQuestion();
+  if (currentQuizState.currentIndex < currentQuizState.questions.length - 1) {
+    currentQuizState.currentIndex++;
+    renderCurrentQuizQuestion();
+  } else {
+    renderQuizResults();
+  }
 };
 
 function renderQuizResults() {
