@@ -2126,37 +2126,21 @@ body {
   transform: scale(0.92);
 }
 
-/* Bank Hero Banner - Ultra-Modern Luxury Design */
-.bank-hero-banner {
-  position: relative;
-  overflow: hidden;
-  background: linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #0F172A 100%);
-  border-radius: 24px;
-  padding: 22px 20px 18px 20px;
-  margin-bottom: 22px;
-  box-shadow: 0 12px 32px -8px rgba(15, 23, 42, 0.25), 0 4px 12px rgba(189, 27, 11, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #FFFFFF;
-}
-
-.bank-hero-glow {
-  position: absolute;
-  top: -40px;
-  right: -40px;
-  width: 180px;
-  height: 180px;
-  background: radial-gradient(circle, rgba(189, 27, 11, 0.35) 0%, rgba(220, 38, 38, 0) 70%);
-  border-radius: 50%;
-  pointer-events: none;
-  filter: blur(20px);
+/* Bank Hero Banner - Pure White & Crimson Red */
+.bank-hero-banner-white {
+  background: #FFFFFF;
+  border-radius: 20px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 20px -2px rgba(189, 27, 11, 0.05), 0 1px 3px rgba(0, 0, 0, 0.02);
+  border: 1.5px solid #FEE2E2;
 }
 
 .bank-hero-top {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   gap: 12px;
-  margin-bottom: 10px;
 }
 
 .bank-hero-title-group {
@@ -2165,7 +2149,7 @@ body {
   gap: 14px;
 }
 
-.bank-hero-icon-badge {
+.bank-hero-icon-badge-red {
   width: 44px;
   height: 44px;
   border-radius: 14px;
@@ -2174,127 +2158,68 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 6px 16px rgba(189, 27, 11, 0.4);
+  box-shadow: 0 4px 14px rgba(189, 27, 11, 0.28);
   flex-shrink: 0;
 }
 
-.bank-hero-icon-badge svg {
+.bank-hero-icon-badge-red svg {
   width: 22px;
   height: 22px;
 }
 
-.bank-hero-subtitle-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 11px;
-  font-weight: 700;
-  color: #F87171;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 2px;
-}
-
-.bank-hero-subtitle-tag .pulse-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #EF4444;
-  box-shadow: 0 0 8px #EF4444;
-  animation: pulseDot 2s infinite ease-in-out;
-}
-
-@keyframes pulseDot {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.4); opacity: 0.6; }
-}
-
-.bank-hero-main-title {
+.bank-hero-title-red {
   margin: 0;
-  font-size: 20px;
+  font-size: 19px;
   font-weight: 800;
-  color: #FFFFFF;
+  color: #1E293B;
   letter-spacing: -0.02em;
   line-height: 1.25;
 }
 
-.bank-hero-badge-pill {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+.bank-hero-subtitle-clean {
+  margin: 3px 0 0 0;
+  color: #64748B;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.bank-hero-badge-pill-red {
+  background: #FEF2F2;
+  border: 1.5px solid #FECACA;
   border-radius: 999px;
   padding: 6px 14px;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   flex-shrink: 0;
 }
 
-.badge-count-num {
+.badge-count-num-red {
   font-size: 15px;
   font-weight: 900;
-  color: #F87171;
+  color: #BD1B0B;
 }
 
-.badge-count-label {
-  font-size: 11px;
-  font-weight: 600;
-  color: #E2E8F0;
-}
-
-.bank-hero-desc {
-  margin: 0 0 14px 0;
-  font-size: 12.5px;
-  line-height: 1.5;
-  color: #94A3B8;
-}
-
-.bank-hero-chips-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.bank-hero-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
-  padding: 5px 10px;
-  font-size: 11px;
-  font-weight: 600;
-  color: #CBD5E1;
-  transition: all 0.2s ease;
-}
-
-.bank-hero-chip svg {
-  color: #38BDF8;
-}
-
-.bank-hero-chip:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #FFFFFF;
+.badge-count-label-red {
+  font-size: 12px;
+  font-weight: 700;
+  color: #BD1B0B;
 }
 
 @media (max-width: 480px) {
-  .bank-hero-banner {
-    padding: 18px 16px 14px 16px;
-    border-radius: 20px;
+  .bank-hero-banner-white {
+    padding: 14px 14px;
+    border-radius: 18px;
   }
-  .bank-hero-main-title {
-    font-size: 18px;
+  .bank-hero-title-red {
+    font-size: 17px;
   }
-  .bank-hero-desc {
+  .bank-hero-subtitle-clean {
     font-size: 12px;
   }
-  .bank-hero-chips-row {
-    gap: 6px;
-  }
-  .bank-hero-chip {
-    padding: 4px 8px;
-    font-size: 10.5px;
+  .bank-hero-icon-badge-red {
+    width: 38px;
+    height: 38px;
   }
 }
 

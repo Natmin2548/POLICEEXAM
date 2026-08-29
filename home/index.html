@@ -32,7 +32,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <!-- Stylesheet -->
-  <link rel="stylesheet" href="css/style.css?v=30">
+  <link rel="stylesheet" href="css/style.css?v=31">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
   <!-- Cropper.js -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
@@ -164,8 +164,8 @@
       box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
     }
   </style>
-  <script src="vocab-data.js?v=30" defer></script>
-  <script src="js/app.js?v=30" defer></script>
+  <script src="vocab-data.js?v=31" defer></script>
+  <script src="js/app.js?v=31" defer></script>
 </head>
 
 <body>
@@ -838,13 +838,11 @@
       <!-- statsView was moved to homeView -->
       <!-- Question Bank View Content -->
       <div id="questionBankView" class="tab-view">
-        <!-- Main Library Header Banner (Ultra-Modern Apple Glassmorphism Design) -->
-        <section id="bankMainHeader" class="bank-hero-banner">
-          <div class="bank-hero-glow"></div>
-          
+        <!-- Main Library Header Banner (Clean White & Crimson Red Design) -->
+        <section id="bankMainHeader" class="bank-hero-banner-white">
           <div class="bank-hero-top">
             <div class="bank-hero-title-group">
-              <div class="bank-hero-icon-badge">
+              <div class="bank-hero-icon-badge-red">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
                   <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
@@ -853,44 +851,14 @@
                 </svg>
               </div>
               <div>
-                <div class="bank-hero-subtitle-tag">
-                  <span class="pulse-dot"></span>
-                  <span>คลังข้อสอบเสมือนจริง</span>
-                </div>
-                <h2 class="bank-hero-main-title">คลังข้อสอบนายสิบตำรวจ</h2>
+                <h2 class="bank-hero-title-red">คลังข้อสอบนายสิบตำรวจ</h2>
+                <p class="bank-hero-subtitle-clean">เลือกหมวดวิชาเพื่อเริ่มฝึกฝนข้อสอบจริง</p>
               </div>
             </div>
 
-            <div class="bank-hero-badge-pill">
-              <span class="badge-count-num">6</span>
-              <span class="badge-count-label">หมวดวิชา</span>
-            </div>
-          </div>
-
-          <p class="bank-hero-desc">
-            เลือกหมวดวิชาเพื่อเริ่มฝึกฝนข้อสอบจริง พร้อมเฉลยละเอียดและจับเวลาเสมือนสอบจริงทุกชุด
-          </p>
-
-          <div class="bank-hero-chips-row">
-            <div class="bank-hero-chip">
-              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                <polyline points="22 4 12 14.01 9 11.01"/>
-              </svg>
-              <span>ระเบียบข้อสอบ 2569</span>
-            </div>
-            <div class="bank-hero-chip">
-              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5">
-                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-              </svg>
-              <span>จับเวลา & คิดคะแนนทันที</span>
-            </div>
-            <div class="bank-hero-chip">
-              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5">
-                <circle cx="12" cy="12" r="10"/>
-                <path d="M12 6v6l4 2"/>
-              </svg>
-              <span>เฉลยละเอียดทุกข้อ</span>
+            <div class="bank-hero-badge-pill-red">
+              <span class="badge-count-num-red">6</span>
+              <span class="badge-count-label-red">หมวดวิชา</span>
             </div>
           </div>
         </section>
