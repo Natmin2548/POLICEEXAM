@@ -5897,6 +5897,9 @@ function renderCurrentQuizQuestion() {
   if (stepText) stepText.textContent = `ข้อที่ ${currentIndex + 1} / ${total}`;
   if (answeredLabel) answeredLabel.textContent = `ทำแล้ว ${answeredCount}/${total} ข้อ`;
 
+  const selectedAnswer = userAnswers[currentIndex];
+  const isAnswered = selectedAnswer !== undefined;
+
   const actionRow = document.getElementById('quizActionButtonsRow');
   const navContainer = document.getElementById('quizNavContainer');
   if (actionRow) actionRow.style.display = 'flex';
