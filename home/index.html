@@ -32,7 +32,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <!-- Stylesheet -->
-  <link rel="stylesheet" href="css/style.css?v=35">
+  <link rel="stylesheet" href="css/style.css?v=36">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
   <!-- Cropper.js -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
@@ -164,8 +164,8 @@
       box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
     }
   </style>
-  <script src="vocab-data.js?v=35" defer></script>
-  <script src="js/app.js?v=35" defer></script>
+  <script src="vocab-data.js?v=36" defer></script>
+  <script src="js/app.js?v=36" defer></script>
 </head>
 
 <body>
@@ -1164,13 +1164,13 @@
         <!-- Injected dynamically via JS -->
       </div>
 
-      <!-- Bottom Prev / Next Action Controls -->
-      <div id="quizActionButtonsRow" style="display: flex; gap: 8px; margin-bottom: 14px;">
-        <button id="btnPrevQuiz" onclick="prevQuizQuestion()" style="flex: 1; background: #F8FAFC; color: #475569; border: 1.5px solid #E2E8F0; padding: 11px; border-radius: 999px; font-weight: 700; font-size: 13px; cursor: pointer; font-family: inherit; transition: all 0.15s ease;">
-          ‹ ข้อก่อนหน้า
+      <!-- Bottom Prev / Next Action Controls (Left: ข้อก่อนหน้า | Right: ข้อถัดไป) -->
+      <div id="quizActionButtonsRow" style="display: flex; gap: 10px; margin-bottom: 14px; width: 100%;">
+        <button id="btnPrevQuiz" onclick="prevQuizQuestion()" style="flex: 1; background: #F8FAFC; color: #475569; border: 1.5px solid #CBD5E1; padding: 12px 10px; border-radius: 999px; font-weight: 700; font-size: 13.5px; cursor: pointer; font-family: inherit; transition: all 0.15s ease; display: flex; align-items: center; justify-content: center; gap: 4px;">
+          <span>‹ ข้อก่อนหน้า</span>
         </button>
-        <button id="btnNextQuiz" onclick="nextQuizQuestion()" style="flex: 1.5; background: #BD1B0B; color: white; border: none; padding: 11px; border-radius: 999px; font-weight: 700; font-size: 13px; cursor: pointer; font-family: inherit; box-shadow: 0 4px 12px rgba(189, 27, 11, 0.25); transition: all 0.15s ease;">
-          ข้อถัดไป ➔
+        <button id="btnNextQuiz" onclick="nextQuizQuestion()" style="flex: 1; background: #BD1B0B; color: white; border: none; padding: 12px 10px; border-radius: 999px; font-weight: 700; font-size: 13.5px; cursor: pointer; font-family: inherit; box-shadow: 0 4px 12px rgba(189, 27, 11, 0.25); transition: all 0.15s ease; display: flex; align-items: center; justify-content: center; gap: 4px;">
+          <span>ข้อถัดไป ›</span>
         </button>
       </div>
 

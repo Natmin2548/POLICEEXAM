@@ -5907,7 +5907,7 @@ function renderCurrentQuizQuestion() {
     if (currentIndex === total - 1) {
       btnNext.textContent = answeredCount === total ? 'ดูสรุปผลคะแนน 🏆' : 'ส่งข้อสอบ / สรุปผล 🏆';
     } else {
-      btnNext.textContent = 'ข้อถัดไป ➔';
+      btnNext.textContent = 'ข้อถัดไป ›';
     }
   }
 
