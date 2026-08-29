@@ -7668,20 +7668,44 @@ app.post('/api/admin/exams/preview-ai', authenticateToken, async (req, res) => {
     let contextText = '';
     if (docId && docId !== 'ALL' && docId !== 'ALL_2526' && docId !== 'ALL_54') {
       const doc = await prisma.knowledgeDocument.findUnique({ where: { id: parseInt(docId) } });
-      if (doc) contextText = `[เอกสารอ้างอิง: ${doc.title}]
-${doc.content}`;
-    } else if (knowledgeBase === 'สารบรรณ_๒๕๒๖' || docId === 'ALL_2526') {
-      const docs = await prisma.knowledgeDocument.findMany({ where: { category: { contains: 'ระเบียบสำนักนายก' } } });
-      contextText = docs.map(d => `[${d.title}]
-${d.content}`).join('\n\n');
-    } else if (knowledgeBase === 'สารบรรณ_๕๔' || docId === 'ALL_54') {
-      const docs = await prisma.knowledgeDocument.findMany({ where: { category: { contains: 'ลักษณะที่ ๕๔' } } });
-      contextText = docs.map(d => `[${d.title}]
-${d.content}`).join('\n\n');
-    } else if (knowledgeBase === 'ALL_SARABAN' || subject === 'งานสารบรรณ') {
+      if (doc) contextText = `[เอกสารอ้างอิง: ${doc.title}]\n${doc.content}`;
+    }
+    
+    if (!contextText && (knowledgeBase === 'สารบรรณ_๒๕๒๖' || docId === 'ALL_2526' || subject === 'งานสารบรรณ_๒๕๒๖')) {
+      try {
+        const docs = await prisma.knowledgeDocument.findMany({ where: { category: { contains: 'ระเบียบสำนักนายก' } } });
+        if (docs && docs.length > 0) {
+          contextText = docs.map(d => `[${d.title}]\n${d.content}`).join('\n\n');
+        } else {
+          const p = path.join(__dirname, 'data', 'saraban_full.json');
+          if (fs.existsSync(p)) {
+            const raw = JSON.parse(fs.readFileSync(p, 'utf8'));
+            contextText = raw.map(d => `[${d.title}]\n${d.content}`).join('\n\n');
+          }
+        }
+      } catch (e) {
+        console.error('Fetch 2526 error:', e);
+      }
+    } else if (!contextText && (knowledgeBase === 'สารบรรณ_๕๔' || docId === 'ALL_54' || subject === 'สารบรรณตำรวจ_๕๔')) {
+      try {
+        const docs = await prisma.knowledgeDocument.findMany({ where: { category: { contains: 'ลักษณะที่ ๕๔' } } });
+        if (docs && docs.length > 0) {
+          contextText = docs.map(d => `[${d.title}]\n${d.content}`).join('\n\n');
+        } else {
+          const p = path.join(__dirname, 'data', 'police_saraban_54.json');
+          if (fs.existsSync(p)) {
+            const raw = JSON.parse(fs.readFileSync(p, 'utf8'));
+            contextText = raw.map(d => `[${d.title}]\n${d.content}`).join('\n\n');
+          }
+        }
+      } catch (e) {
+        console.error('Fetch 54 error:', e);
+      }
+    } else if (!contextText && (knowledgeBase === 'ALL_SARABAN' || subject === 'งานสารบรรณ')) {
       const docs = await prisma.knowledgeDocument.findMany({});
-      contextText = docs.map(d => `[${d.title}]
-${d.content}`).join('\n\n');
+      if (docs && docs.length > 0) {
+        contextText = docs.map(d => `[${d.title}]\n${d.content}`).join('\n\n');
+      }
     }
 
     let apiKey = (req.body.apiKey || process.env.GEMINI_API_KEY || '').trim().replace(/^['"]|['"]$/g, '');

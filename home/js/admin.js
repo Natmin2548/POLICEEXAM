@@ -261,8 +261,8 @@ function closeAddExamModal() {
 }
 
 const SUBJECT_CHAPTERS = {
-  'งานสารบรรณ': [
-    { value: 'ALL', label: '📚 รวมทุกบท (ข้อสอบรวมทุกหมวดสารบรรณ)' },
+  'งานสารบรรณ_๒๕๒๖': [
+    { value: 'ALL', label: '📚 รวมทุกบท (ระเบียบสารบรรณ ๒๕๒๖ และแก้ไขเพิ่มเติม)' },
     { value: 'บทที่ 1 บทนำและนิยาม', label: 'บทที่ 1 บทนำและนิยาม' },
     { value: 'บทที่ 2 มาตรฐานแบบพิมพ์ ตราครุฑ', label: 'บทที่ 2 มาตรฐานแบบพิมพ์ ตราครุฑ' },
     { value: 'บทที่ 3 หนังสือภายนอก หนังสือภายใน หนังสือประทับตรา', label: 'บทที่ 3 หนังสือภายนอก หนังสือภายใน หนังสือประทับตรา' },
@@ -275,6 +275,17 @@ const SUBJECT_CHAPTERS = {
     { value: 'บทที่ 10 การยืม', label: 'บทที่ 10 การยืมหนังสือราชการ' },
     { value: 'บทที่ 11 การทำลาย', label: 'บทที่ 11 การทำลายหนังสือราชการ' },
     { value: 'บทที่ 12 ระบบสารบรรณอิเล็กทรอนิกส์', label: 'บทที่ 12 ระบบสารบรรณอิเล็กทรอนิกส์ (e-Saraban)' }
+  ],
+  'สารบรรณตำรวจ_๕๔': [
+    { value: 'ALL', label: '📚 รวมทุกบท (ประมวลระเบียบการตำรวจ ลักษณะที่ ๕๔)' },
+    { value: 'บทที่ ๑: บทนำ และขอบเขตงานสารบรรณตำรวจ', label: 'บทที่ ๑: บทนำ และขอบเขตงานสารบรรณตำรวจ' },
+    { value: 'บทที่ ๑-๒: การลงชื่อ การสั่งการ และการใช้บันทึกข้อความ', label: 'บทที่ ๑-๒: การลงชื่อ การสั่งการ และการใช้บันทึกข้อความ' },
+    { value: 'บทที่ ๒-๓: เลขที่คำสั่งในบันทึกข้อความ และการเสนอ ผบ.ตร. (๕ หัวข้อ)', label: 'บทที่ ๒-๓: เลขที่คำสั่งในบันทึกข้อความ และการเสนอ ผบ.ตร. (๕ หัวข้อ)' },
+    { value: 'บทที่ ๔-๖: ศูนย์รับส่งหนังสือ ตร. และการรับรองสำเนา (ร.ต.ต.ขึ้นไป)', label: 'บทที่ ๔-๖: ศูนย์รับส่งหนังสือ ตร. และการรับรองสำเนา (ร.ต.ต.ขึ้นไป)' },
+    { value: 'บทที่ ๗: เลขที่หนังสือออก และรหัสประจำหน่วยงาน ตร (ตร ๐๐๐๑-๐๐๓๖)', label: 'บทที่ ๗: เลขที่หนังสือออก และรหัสประจำหน่วยงาน ตร (ตร ๐๐๐๑-๐๐๓๖)' },
+    { value: 'บทที่ ๘: คำย่อยศและตำแหน่งข้าราชการตำรวจ (ไทย)', label: 'บทที่ ๘: คำย่อยศและตำแหน่งข้าราชการตำรวจ (ไทย)' },
+    { value: 'บทที่ ๘: คำย่อยศและตำแหน่งข้าราชการตำรวจ (English Abbreviations)', label: 'บทที่ ๘: คำย่อยศและตำแหน่งข้าราชการตำรวจ (English Abbreviations)' },
+    { value: 'บทที่ ๑๐-๑๑: ประกาศเจ้าพนักงานจราจร และไปรษณีย์สนามตำรวจชายแดน', label: 'บทที่ ๑๐-๑๑: ประกาศเจ้าพนักงานจราจร และไปรษณีย์สนามตำรวจชายแดน' }
   ],
   'ทั่วไป': [
     { value: 'ALL', label: '📚 รวมทุกหมวดความสามารถทั่วไป' },
@@ -315,16 +326,24 @@ const SUBJECT_CHAPTERS = {
   ]
 };
 
+function getSubjectDisplayName(subject) {
+  if (subject === 'งานสารบรรณ_๒๕๒๖') return 'ระเบียบสารบรรณ (๒๕๒๖)';
+  if (subject === 'สารบรรณตำรวจ_๕๔') return 'สารบรรณตำรวจ ลักษณะที่ ๕๔';
+  return subject;
+}
+
 function onSubjectChange() {
   const subjectSelect = document.getElementById('examSubject');
-  const subject = subjectSelect ? subjectSelect.value : 'งานสารบรรณ';
+  const subject = subjectSelect ? subjectSelect.value : 'งานสารบรรณ_๒๕๒๖';
   const chapterSelect = document.getElementById('sarabanChapterSelect');
   const chapterLabel = document.getElementById('chapterSelectLabel');
   const kbSelect = document.getElementById('knowledgeBaseSelect');
 
   if (chapterLabel) {
-    if (subject === 'งานสารบรรณ') {
-      chapterLabel.textContent = '2. เลือกหมวดหมู่ระเบียบสารบรรณ (12 บท)';
+    if (subject === 'งานสารบรรณ_๒๕๒๖') {
+      chapterLabel.textContent = '2. เลือกหมวดหมู่ระเบียบสารบรรณ ๒๕๒๖ (12 บท)';
+    } else if (subject === 'สารบรรณตำรวจ_๕๔') {
+      chapterLabel.textContent = '2. เลือกบทเรียนสารบรรณตำรวจ ลักษณะที่ ๕๔';
     } else {
       chapterLabel.textContent = `2. เลือกหมวดหมู่ / บทเรียนวิชา${subject}`;
     }
@@ -342,8 +361,10 @@ function onSubjectChange() {
 
   if (kbSelect) {
     kbSelect.innerHTML = '';
-    if (subject === 'งานสารบรรณ') {
-      kbSelect.innerHTML = `<option value="ALL_SARABAN">📚 ดึงจากคลังงานสารบรรณทั้งหมด</option>`;
+    if (subject === 'งานสารบรรณ_๒๕๒๖') {
+      kbSelect.innerHTML = `<option value="สารบรรณ_๒๕๒๖">📖 ระเบียบสำนักนายกฯ งานสารบรรณ พ.ศ. ๒๕๒๖</option>`;
+    } else if (subject === 'สารบรรณตำรวจ_๕๔') {
+      kbSelect.innerHTML = `<option value="สารบรรณ_๕๔">👮 ประมวลระเบียบการตำรวจ ลักษณะที่ ๕๔</option>`;
     } else {
       kbSelect.innerHTML = `<option value="GENERAL">⚖️ คลังข้อสอบวิชา ${subject}</option>`;
     }
@@ -373,23 +394,24 @@ window.selectQuestionCount = function(count) {
 
 function onSarabanChapterChange() {
   const subjectSelect = document.getElementById('examSubject');
-  const subject = subjectSelect ? subjectSelect.value : 'งานสารบรรณ';
+  const subject = subjectSelect ? subjectSelect.value : 'งานสารบรรณ_๒๕๒๖';
   const chapterSelect = document.getElementById('sarabanChapterSelect');
   const titleInput = document.getElementById('examTitle');
   const subcatInput = document.getElementById('examSubcategory');
   
   if (!chapterSelect) return;
   const val = chapterSelect.value;
+  const displayName = getSubjectDisplayName(subject);
 
   if (val === 'ALL') {
-    if (subcatInput) subcatInput.value = `รวมทุกหมวด${subject}`;
+    if (subcatInput) subcatInput.value = `รวมทุกหมวด ${displayName}`;
     if (titleInput) {
-      titleInput.value = `แบบทดสอบ${subject} (รวมทุกหมวด)`;
+      titleInput.value = `แบบทดสอบ${displayName} (รวมทุกหมวด)`;
     }
   } else {
     if (subcatInput) subcatInput.value = val;
     if (titleInput) {
-      titleInput.value = `แบบทดสอบ${subject}: ${val}`;
+      titleInput.value = `แบบทดสอบ${displayName}: ${val}`;
     }
   }
 }
