@@ -32,7 +32,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <!-- Stylesheet -->
-  <link rel="stylesheet" href="css/style.css?v=29">
+  <link rel="stylesheet" href="css/style.css?v=30">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
   <!-- Cropper.js -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
@@ -164,8 +164,8 @@
       box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
     }
   </style>
-  <script src="vocab-data.js?v=29" defer></script>
-  <script src="js/app.js?v=29" defer></script>
+  <script src="vocab-data.js?v=30" defer></script>
+  <script src="js/app.js?v=30" defer></script>
 </head>
 
 <body>
@@ -900,6 +900,7 @@
           <div class="bank-subjects-grid">
             <!-- 1. สารบรรณ -->
             <button class="subject-card" onclick="startBankSubject('งานสารบรรณ')">
+              <span class="subject-mini-badge badge-blue">12 บทเรียน</span>
               <div class="subject-card-icon" style="background: #EFF6FF; color: #2563EB;">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 26px; height: 26px;">
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -910,12 +911,13 @@
                 </svg>
               </div>
               <span class="subject-card-title">งานสารบรรณ</span>
-              <span class="subject-card-hint">ระเบียบสำนักนายกฯ</span>
+              <span class="subject-card-hint">ระเบียบสำนักนายกฯ ๒๕๒๖</span>
               <div class="subject-card-tag">เริ่มฝึกฝน ›</div>
             </button>
 
             <!-- 2. ความสามารถทั่วไป -->
             <button class="subject-card" onclick="startBankSubject('ทั่วไป')">
+              <span class="subject-mini-badge badge-green">คำนวณ & ตรรกะ</span>
               <div class="subject-card-icon" style="background: #ECFDF5; color: #059669;">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 26px; height: 26px;">
                   <circle cx="12" cy="12" r="10"></circle>
@@ -924,12 +926,13 @@
                 </svg>
               </div>
               <span class="subject-card-title">ความสามารถทั่วไป</span>
-              <span class="subject-card-hint">คณิตศาสตร์และเหตุผล</span>
+              <span class="subject-card-hint">อนุกรม ร้อยละ คำนวณ</span>
               <div class="subject-card-tag">เริ่มฝึกฝน ›</div>
             </button>
 
             <!-- 3. สังคม -->
             <button class="subject-card" onclick="startBankSubject('สังคม')">
+              <span class="subject-mini-badge badge-purple">ความรู้รอบตัว</span>
               <div class="subject-card-icon" style="background: #F5F3FF; color: #7C3AED;">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 26px; height: 26px;">
                   <circle cx="12" cy="12" r="10"></circle>
@@ -938,24 +941,26 @@
                 </svg>
               </div>
               <span class="subject-card-title">สังคมและวัฒนธรรม</span>
-              <span class="subject-card-hint">ความรู้รอบตัวและ AEC</span>
+              <span class="subject-card-hint">AEC ศาสนา และข่าวสาร</span>
               <div class="subject-card-tag">เริ่มฝึกฝน ›</div>
             </button>
 
             <!-- 4. กฎหมาย -->
             <button class="subject-card" onclick="startBankSubject('กฏหมาย')">
+              <span class="subject-mini-badge badge-red">กฎหมายตำรวจ</span>
               <div class="subject-card-icon" style="background: #FEF2F2; color: #DC2626;">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 26px; height: 26px;">
                   <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
                 </svg>
               </div>
               <span class="subject-card-title">กฎหมายที่ควรรู้</span>
-              <span class="subject-card-hint">กฎหมายตำรวจและ ป.วิ.อ.</span>
+              <span class="subject-card-hint">พ.ร.บ.ตำรวจ & ป.วิ.อ.</span>
               <div class="subject-card-tag">เริ่มฝึกฝน ›</div>
             </button>
 
             <!-- 5. คอมพิวเตอร์ -->
             <button class="subject-card" onclick="startBankSubject('คอม')">
+              <span class="subject-mini-badge badge-cyan">IT & ไซเบอร์</span>
               <div class="subject-card-icon" style="background: #ECFEFF; color: #0891B2;">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 26px; height: 26px;">
                   <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
@@ -964,12 +969,13 @@
                 </svg>
               </div>
               <span class="subject-card-title">เทคโนโลยีสารสนเทศ</span>
-              <span class="subject-card-hint">คอมพิวเตอร์เพื่อการสอบ</span>
+              <span class="subject-card-hint">พ.ร.บ.คอมฯ & ระบบเครือข่าย</span>
               <div class="subject-card-tag">เริ่มฝึกฝน ›</div>
             </button>
 
             <!-- 6. ลักษณะที่ 54 -->
             <button class="subject-card" onclick="startBankSubject('ลักษณะที่54')">
+              <span class="subject-mini-badge badge-pink">ระเบียบเฉพาะ ตร.</span>
               <div class="subject-card-icon" style="background: #FDF2F8; color: #BE185D;">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 26px; height: 26px;">
                   <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
