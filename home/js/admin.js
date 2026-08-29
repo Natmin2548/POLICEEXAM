@@ -260,34 +260,96 @@ function closeAddExamModal() {
   document.getElementById('addExamModal').style.display = 'none';
 }
 
+const SUBJECT_CHAPTERS = {
+  'งานสารบรรณ': [
+    { value: 'ALL', label: '📚 รวมทุกบท (ข้อสอบรวมทุกหมวดสารบรรณ)' },
+    { value: 'บทที่ 1 บทนำและนิยาม', label: 'บทที่ 1 บทนำและนิยาม' },
+    { value: 'บทที่ 2 มาตรฐานแบบพิมพ์ ตราครุฑ', label: 'บทที่ 2 มาตรฐานแบบพิมพ์ ตราครุฑ' },
+    { value: 'บทที่ 3 หนังสือภายนอก หนังสือภายใน หนังสือประทับตรา', label: 'บทที่ 3 หนังสือภายนอก หนังสือภายใน หนังสือประทับตรา' },
+    { value: 'บทที่ 4 หนังสือสั่งการ', label: 'บทที่ 4 หนังสือสั่งการ (คำสั่ง ข้อบังคับ ระเบียบ)' },
+    { value: 'บทที่ 5 หนังสือประชาสัมพันธ์', label: 'บทที่ 5 หนังสือประชาสัมพันธ์ (ประกาศ แถลงการณ์ ข่าว)' },
+    { value: 'บทที่ 6 หนังสือที่เจ้าหน้าที่จัดทำขึ้นหรือรับไว้เป็นหลักฐาน', label: 'บทที่ 6 หนังสือที่เจ้าหน้าที่จัดทำขึ้นหรือรับไว้เป็นหลักฐาน' },
+    { value: 'บทที่ 7 เบ็ดเตล็ด สำเนา สำเนาคู่ฉบับ หนังสือเวียน', label: 'บทที่ 7 เบ็ดเตล็ด สำเนา สำเนาคู่ฉบับ หนังสือเวียน' },
+    { value: 'บทที่ 8 การรับส่งหนังสือ', label: 'บทที่ 8 การรับและส่งหนังสือ' },
+    { value: 'บทที่ 9 การเก็บรักษา', label: 'บทที่ 9 การเก็บรักษาหนังสือราชการ' },
+    { value: 'บทที่ 10 การยืม', label: 'บทที่ 10 การยืมหนังสือราชการ' },
+    { value: 'บทที่ 11 การทำลาย', label: 'บทที่ 11 การทำลายหนังสือราชการ' },
+    { value: 'บทที่ 12 ระบบสารบรรณอิเล็กทรอนิกส์', label: 'บทที่ 12 ระบบสารบรรณอิเล็กทรอนิกส์ (e-Saraban)' }
+  ],
+  'ทั่วไป': [
+    { value: 'ALL', label: '📚 รวมทุกหมวดความสามารถทั่วไป' },
+    { value: 'อนุกรมและมิติสัมพันธ์ตัวเลข', label: 'อนุกรมและมิติสัมพันธ์ตัวเลข' },
+    { value: 'ร้อยละ กำไรขาดทุน และโจทย์คำนวณ', label: 'ร้อยละ กำไรขาดทุน และโจทย์คำนวณ' },
+    { value: 'ตรรกศาสตร์และเงื่อนไขภาษา / สัญลักษณ์', label: 'ตรรกศาสตร์และเงื่อนไขภาษา / สัญลักษณ์' },
+    { value: 'ความน่าจะเป็นและสถิติพื้นฐาน', label: 'ความน่าจะเป็นและสถิติพื้นฐาน' }
+  ],
+  'สังคม': [
+    { value: 'ALL', label: '📚 รวมทุกหมวดสังคมและจริยธรรม' },
+    { value: 'ประชาคมอาเซียน (AEC)', label: 'ประชาคมอาเซียน (AEC)' },
+    { value: 'ศาสนา วัฒนธรรม และเศรษฐกิจพอเพียง', label: 'ศาสนา วัฒนธรรม และเศรษฐกิจพอเพียง' },
+    { value: 'ข่าวสารและเหตุการณ์สำคัญปัจจุบัน', label: 'ข่าวสารและเหตุการณ์สำคัญปัจจุบัน' }
+  ],
+  'กฏหมาย': [
+    { value: 'ALL', label: '📚 รวมทุกหมวดกฎหมายตำรวจ' },
+    { value: 'พ.ร.บ.ตำรวจแห่งชาติ พ.ศ. ๒๕๖๕', label: 'พ.ร.บ.ตำรวจแห่งชาติ พ.ศ. ๒๕๖๕' },
+    { value: 'กฎหมายวิธีพิจารณาความอาญา (ป.วิ.อ.)', label: 'กฎหมายวิธีพิจารณาความอาญา (ป.วิ.อ.)' },
+    { value: 'กฎหมายอาญาและสิทธิมนุษยชน', label: 'กฎหมายอาญาและสิทธิมนุษยชน' }
+  ],
+  'คอม': [
+    { value: 'ALL', label: '📚 รวมทุกหมวดคอมพิวเตอร์และสารสนเทศ' },
+    { value: 'พ.ร.บ.คอมพิวเตอร์ และความมั่นคงไซเบอร์', label: 'พ.ร.บ.คอมพิวเตอร์ และความมั่นคงไซเบอร์' },
+    { value: 'ระบบเครือข่าย ซอฟต์แวร์ และฮาร์ดแวร์', label: 'ระบบเครือข่าย ซอฟต์แวร์ และฮาร์ดแวร์' },
+    { value: 'เทคโนโลยี AI และนวัตกรรมดิจิทัล', label: 'เทคโนโลยี AI และนวัตกรรมดิจิทัล' }
+  ],
+  'ภาษาไทย': [
+    { value: 'ALL', label: '📚 รวมทุกหมวดภาษาไทย' },
+    { value: 'การใช้คำ ความหมาย และคำราชาศัพท์', label: 'การใช้คำ ความหมาย และคำราชาศัพท์' },
+    { value: 'การสะกดคำ การแต่งประโยค และสำนวนไทย', label: 'การสะกดคำ การแต่งประโยค และสำนวนไทย' },
+    { value: 'การอ่านจับใจความและบทความ', label: 'การอ่านจับใจความและบทความ' }
+  ],
+  'ภาษาอังกฤษ': [
+    { value: 'ALL', label: '📚 รวมทุกหมวดภาษาอังกฤษ' },
+    { value: 'Vocabulary (คำศัพท์ตำรวจและทั่วไป)', label: 'Vocabulary (คำศัพท์ตำรวจและทั่วไป)' },
+    { value: 'Grammar & Structure (ไวยากรณ์และโครงสร้าง)', label: 'Grammar & Structure (ไวยากรณ์และโครงสร้าง)' },
+    { value: 'Conversation & Reading (บทสนทนาและการอ่าน)', label: 'Conversation & Reading (บทสนทนาและการอ่าน)' }
+  ]
+};
+
 function onSubjectChange() {
-  const subject = document.getElementById('examSubject').value;
+  const subjectSelect = document.getElementById('examSubject');
+  const subject = subjectSelect ? subjectSelect.value : 'งานสารบรรณ';
+  const chapterSelect = document.getElementById('sarabanChapterSelect');
+  const chapterLabel = document.getElementById('chapterSelectLabel');
   const kbSelect = document.getElementById('knowledgeBaseSelect');
-  const sarabanGroup = document.getElementById('sarabanChapterGroup');
 
-  if (subject === 'งานสารบรรณ') {
-    if (sarabanGroup) sarabanGroup.style.display = 'block';
-    onSarabanChapterChange();
-  } else {
-    if (sarabanGroup) sarabanGroup.style.display = 'none';
+  if (chapterLabel) {
+    if (subject === 'งานสารบรรณ') {
+      chapterLabel.textContent = '2. เลือกหมวดหมู่ระเบียบสารบรรณ (12 บท)';
+    } else {
+      chapterLabel.textContent = `2. เลือกหมวดหมู่ / บทเรียนวิชา${subject}`;
+    }
   }
 
-  kbSelect.innerHTML = '';
-
-  if (subject === 'งานสารบรรณ') {
-    kbSelect.innerHTML = `
-      <option value="ALL_SARABAN">📚 ดึงจากคลังงานสารบรรณทั้งหมด (๒๕๒๖ + ๕๔)</option>
-      <option value="สารบรรณ_๒๕๒๖">📖 ระเบียบสำนักนายกฯ งานสารบรรณ พ.ศ. ๒๕๒๖</option>
-      <option value="สารบรรณ_๕๔">👮 ประมวลระเบียบการตำรวจ ลักษณะที่ ๕๔ (พ.ศ. ๒๕๕๖)</option>
-    `;
-  } else {
-    kbSelect.innerHTML = `
-      <option value="GENERAL">⚖️ คลังข้อสอบตามมาตรฐานวิชา ${subject}</option>
-      <option value="NONE">⚙️ ไม่อ้างอิงคลังระเบียบเฉพาะ</option>
-    `;
+  if (chapterSelect) {
+    chapterSelect.innerHTML = '';
+    const chapters = SUBJECT_CHAPTERS[subject] || [
+      { value: 'ALL', label: `📚 รวมทุกหมวดในวิชา${subject}` }
+    ];
+    chapters.forEach(ch => {
+      chapterSelect.innerHTML += `<option value="${ch.value}">${ch.label}</option>`;
+    });
   }
 
-  onKnowledgeBaseChange();
+  if (kbSelect) {
+    kbSelect.innerHTML = '';
+    if (subject === 'งานสารบรรณ') {
+      kbSelect.innerHTML = `<option value="ALL_SARABAN">📚 ดึงจากคลังงานสารบรรณทั้งหมด</option>`;
+    } else {
+      kbSelect.innerHTML = `<option value="GENERAL">⚖️ คลังข้อสอบวิชา ${subject}</option>`;
+    }
+  }
+
+  onSarabanChapterChange();
 }
 
 window.selectQuestionCount = function(count) {
@@ -310,6 +372,8 @@ window.selectQuestionCount = function(count) {
 };
 
 function onSarabanChapterChange() {
+  const subjectSelect = document.getElementById('examSubject');
+  const subject = subjectSelect ? subjectSelect.value : 'งานสารบรรณ';
   const chapterSelect = document.getElementById('sarabanChapterSelect');
   const titleInput = document.getElementById('examTitle');
   const subcatInput = document.getElementById('examSubcategory');
@@ -318,14 +382,14 @@ function onSarabanChapterChange() {
   const val = chapterSelect.value;
 
   if (val === 'ALL') {
-    if (subcatInput) subcatInput.value = 'รวมทุกหมวดสารบรรณ';
+    if (subcatInput) subcatInput.value = `รวมทุกหมวด${subject}`;
     if (titleInput) {
-      titleInput.value = 'แบบทดสอบงานสารบรรณ (รวมทุกหมวด)';
+      titleInput.value = `แบบทดสอบ${subject} (รวมทุกหมวด)`;
     }
   } else {
     if (subcatInput) subcatInput.value = val;
     if (titleInput) {
-      titleInput.value = `แบบทดสอบงานสารบรรณ: ${val}`;
+      titleInput.value = `แบบทดสอบ${subject}: ${val}`;
     }
   }
 }

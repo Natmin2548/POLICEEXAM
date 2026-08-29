@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Dashboard - POLICEEXAM</title>
   <link rel="stylesheet" href="css/admin.css">
-  <script src="js/admin.js?v=31" defer></script>
+  <script src="js/admin.js?v=32" defer></script>
 </head>
 <body>
 
@@ -273,32 +273,36 @@
 
       <form id="addExamForm" onsubmit="event.preventDefault(); generateAIExamPreview();">
         
-        <!-- 1. เลือกหมวดหมู่ระเบียบสารบรรณ (12 บท) -->
+        <!-- 1. เลือกวิชาหลัก -->
         <div class="form-group" style="margin-bottom: 16px;">
-          <label style="font-size: 13px; font-weight: 700; color: #1E293B; display: block; margin-bottom: 8px;">
-            1. เลือกหมวดหมู่ระเบียบสารบรรณ
+          <label for="examSubject" style="font-size: 13px; font-weight: 700; color: #1E293B; display: block; margin-bottom: 8px;">
+            1. เลือกวิชาหลัก
           </label>
-          <select id="sarabanChapterSelect" onchange="onSarabanChapterChange()" style="width: 100%; padding: 13px 14px; border-radius: 14px; border: 1.5px solid #E2E8F0; background: #F8FAFC; font-size: 14px; font-weight: 600; color: #0F172A; outline: none; font-family: inherit; box-sizing: border-box;">
-            <option value="ALL">📚 รวมทุกบท (ข้อสอบรวมทุกหมวดสารบรรณ)</option>
-            <option value="บทที่ 1 บทนำและนิยาม">บทที่ 1 บทนำและนิยาม</option>
-            <option value="บทที่ 2 มาตรฐานแบบพิมพ์ ตราครุฑ">บทที่ 2 มาตรฐานแบบพิมพ์ ตราครุฑ</option>
-            <option value="บทที่ 3 หนังสือภายนอก หนังสือภายใน หนังสือประทับตรา">บทที่ 3 หนังสือภายนอก หนังสือภายใน หนังสือประทับตรา</option>
-            <option value="บทที่ 4 หนังสือสั่งการ">บทที่ 4 หนังสือสั่งการ (คำสั่ง ข้อบังคับ ระเบียบ)</option>
-            <option value="บทที่ 5 หนังสือประชาสัมพันธ์">บทที่ 5 หนังสือประชาสัมพันธ์ (ประกาศ แถลงการณ์ ข่าว)</option>
-            <option value="บทที่ 6 หนังสือที่เจ้าหน้าที่จัดทำขึ้นหรือรับไว้เป็นหลักฐาน">บทที่ 6 หนังสือที่เจ้าหน้าที่จัดทำขึ้นหรือรับไว้เป็นหลักฐาน</option>
-            <option value="บทที่ 7 เบ็ดเตล็ด สำเนา สำเนาคู่ฉบับ หนังสือเวียน">บทที่ 7 เบ็ดเตล็ด สำเนา สำเนาคู่ฉบับ หนังสือเวียน</option>
-            <option value="บทที่ 8 การรับส่งหนังสือ">บทที่ 8 การรับและส่งหนังสือ</option>
-            <option value="บทที่ 9 การเก็บรักษา">บทที่ 9 การเก็บรักษาหนังสือราชการ</option>
-            <option value="บทที่ 10 การยืม">บทที่ 10 การยืมหนังสือราชการ</option>
-            <option value="บทที่ 11 การทำลาย">บทที่ 11 การทำลายหนังสือราชการ</option>
-            <option value="บทที่ 12 ระบบสารบรรณอิเล็กทรอนิกส์">บทที่ 12 ระบบสารบรรณอิเล็กทรอนิกส์ (e-Saraban)</option>
+          <select id="examSubject" onchange="onSubjectChange()" style="width: 100%; padding: 13px 14px; border-radius: 14px; border: 1.5px solid #E2E8F0; background: #F8FAFC; font-size: 14px; font-weight: 600; color: #0F172A; outline: none; font-family: inherit; box-sizing: border-box;" required>
+            <option value="งานสารบรรณ" selected>📑 งานสารบรรณ (ระเบียบ ๒๕๒๖ / ลักษณะ ๕๔)</option>
+            <option value="ทั่วไป">🧮 ความสามารถทั่วไป (คณิตศาสตร์และเหตุผล)</option>
+            <option value="สังคม">🌏 สังคมและจริยธรรมตำรวจ</option>
+            <option value="กฏหมาย">⚖️ กฎหมายที่ประชาชนควรรู้</option>
+            <option value="คอม">💻 คอมพิวเตอร์และสารสนเทศ (IT)</option>
+            <option value="ภาษาไทย">🇹🇭 ภาษาไทย</option>
+            <option value="ภาษาอังกฤษ">🇬🇧 ภาษาอังกฤษ</option>
           </select>
         </div>
 
-        <!-- 2. ปุ่มเลือกจำนวนข้อสอบ (Touch Pills) -->
+        <!-- 2. เลือกหมวดหมู่ / บทเรียน -->
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label for="sarabanChapterSelect" id="chapterSelectLabel" style="font-size: 13px; font-weight: 700; color: #1E293B; display: block; margin-bottom: 8px;">
+            2. เลือกหมวดหมู่ระเบียบสารบรรณ (12 บท)
+          </label>
+          <select id="sarabanChapterSelect" onchange="onSarabanChapterChange()" style="width: 100%; padding: 13px 14px; border-radius: 14px; border: 1.5px solid #E2E8F0; background: #F8FAFC; font-size: 14px; font-weight: 600; color: #0F172A; outline: none; font-family: inherit; box-sizing: border-box;">
+            <!-- Populated dynamically based on subject -->
+          </select>
+        </div>
+
+        <!-- 3. ปุ่มเลือกจำนวนข้อสอบ (Touch Pills) -->
         <div class="form-group" style="margin-bottom: 16px;">
           <label style="font-size: 13px; font-weight: 700; color: #1E293B; display: block; margin-bottom: 8px;">
-            2. จำนวนข้อสอบที่ต้องการ
+            3. จำนวนข้อสอบที่ต้องการ
           </label>
           <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;">
             <button type="button" class="btn-count-pill" onclick="selectQuestionCount(5)" id="btnCount5" style="padding: 11px 0; border-radius: 12px; border: 1.5px solid #E2E8F0; background: #F8FAFC; font-weight: 700; font-size: 13px; color: #475569; cursor: pointer; transition: all 0.15s;">5 ข้อ</button>
@@ -309,17 +313,16 @@
           <input type="hidden" id="examNumQuestions" value="10">
         </div>
 
-        <!-- 3. ชื่อชุดข้อสอบ (Auto-filled) -->
+        <!-- 4. ชื่อชุดข้อสอบ (Auto-filled) -->
         <div class="form-group" style="margin-bottom: 16px;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-            <label style="font-size: 13px; font-weight: 700; color: #1E293B;">3. ชื่อชุดข้อสอบ</label>
+            <label style="font-size: 13px; font-weight: 700; color: #1E293B;">4. ชื่อชุดข้อสอบ</label>
             <span style="font-size: 11px; color: #10B981; font-weight: 600;">⚡ ตั้งให้อัตโนมัติ</span>
           </div>
           <input type="text" id="examTitle" value="แบบทดสอบงานสารบรรณ (รวมทุกหมวด)" placeholder="ชื่อชุดข้อสอบ..." style="width: 100%; padding: 12px 14px; border-radius: 14px; border: 1.5px solid #E2E8F0; background: #F8FAFC; font-size: 13px; font-weight: 600; color: #1E293B; outline: none; font-family: inherit; box-sizing: border-box;" required>
         </div>
 
         <!-- Hidden values for clean UI -->
-        <input type="hidden" id="examSubject" value="งานสารบรรณ">
         <input type="hidden" id="knowledgeBaseSelect" value="ALL_SARABAN">
         <input type="hidden" id="knowledgeDocSelect" value="ALL">
         <input type="hidden" id="examSubcategory" value="รวมทุกหมวดสารบรรณ">
@@ -328,22 +331,9 @@
         <!-- Advanced Options Collapsible -->
         <details style="margin-bottom: 18px; font-size: 12px; color: #64748B;">
           <summary style="cursor: pointer; font-weight: 600; color: #475569; padding: 4px 0; outline: none;">
-            ⚙️ ตัวเลือกเพิ่มเติม (เปลี่ยนวิชา / ใส่ API Key)
+            ⚙️ ตัวเลือกเพิ่มเติม (ใส่ Gemini API Key)
           </summary>
           <div style="padding: 12px; background: #F8FAFC; border-radius: 12px; border: 1px solid #E2E8F0; margin-top: 8px; display: flex; flex-direction: column; gap: 10px;">
-            <div>
-              <label style="font-size: 11px; font-weight: 600;">เลือกวิชาอื่น:</label>
-              <select id="examSubjectAdvance" onchange="document.getElementById('examSubject').value = this.value; onSubjectChange();" style="width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 12px;">
-                <option value="งานสารบรรณ" selected>งานสารบรรณ</option>
-                <option value="ทั่วไป">ความสามารถทั่วไป</option>
-                <option value="คณิต">คณิตศาสตร์</option>
-                <option value="สังคม">สังคมและจริยธรรม</option>
-                <option value="กฏหมาย">กฎหมาย</option>
-                <option value="คอม">คอมพิวเตอร์ (IT)</option>
-                <option value="ภาษาไทย">ภาษาไทย</option>
-                <option value="ภาษาอังกฤษ">ภาษาอังกฤษ</option>
-              </select>
-            </div>
             <div>
               <label style="font-size: 11px; font-weight: 600;">Gemini API Key (เฉพาะเครื่องนี้):</label>
               <input type="text" id="adminGeminiApiKey" placeholder="วาง Gemini API Key..." onchange="localStorage.setItem('admin_gemini_key', this.value.trim())" style="width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 12px; box-sizing: border-box;">
