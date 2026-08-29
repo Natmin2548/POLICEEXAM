@@ -838,13 +838,61 @@
       <!-- statsView was moved to homeView -->
       <!-- Question Bank View Content -->
       <div id="questionBankView" class="tab-view">
-        <!-- Main Library Header (Visible on Subjects list) -->
-        <section id="bankMainHeader" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-end; padding: 4px 4px 0 4px;">
-          <div>
-            <h2 style="margin: 0; font-size: 20px; font-weight: 800; color: #0F172A; letter-spacing: -0.02em;">คลังข้อสอบ</h2>
-            <p style="margin: 3px 0 0 0; color: #64748B; font-size: 13px;">เลือกวิชาเพื่อเริ่มฝึกฝนข้อสอบจริง</p>
+        <!-- Main Library Header Banner (Ultra-Modern Apple Glassmorphism Design) -->
+        <section id="bankMainHeader" class="bank-hero-banner">
+          <div class="bank-hero-glow"></div>
+          
+          <div class="bank-hero-top">
+            <div class="bank-hero-title-group">
+              <div class="bank-hero-icon-badge">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                  <path d="M9 7h6"/>
+                  <path d="M9 11h6"/>
+                </svg>
+              </div>
+              <div>
+                <div class="bank-hero-subtitle-tag">
+                  <span class="pulse-dot"></span>
+                  <span>คลังข้อสอบเสมือนจริง</span>
+                </div>
+                <h2 class="bank-hero-main-title">คลังข้อสอบนายสิบตำรวจ</h2>
+              </div>
+            </div>
+
+            <div class="bank-hero-badge-pill">
+              <span class="badge-count-num">6</span>
+              <span class="badge-count-label">หมวดวิชา</span>
+            </div>
           </div>
-          <span style="font-size: 12px; font-weight: 700; color: #BD1B0B; background: #FFF1F2; padding: 4px 12px; border-radius: 999px; border: 1px solid #FFE4E6;">6 หมวดวิชา</span>
+
+          <p class="bank-hero-desc">
+            เลือกหมวดวิชาเพื่อเริ่มฝึกฝนข้อสอบจริง พร้อมเฉลยละเอียดและจับเวลาเสมือนสอบจริงทุกชุด
+          </p>
+
+          <div class="bank-hero-chips-row">
+            <div class="bank-hero-chip">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                <polyline points="22 4 12 14.01 9 11.01"/>
+              </svg>
+              <span>ระเบียบข้อสอบ 2569</span>
+            </div>
+            <div class="bank-hero-chip">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+              </svg>
+              <span>จับเวลา & คิดคะแนนทันที</span>
+            </div>
+            <div class="bank-hero-chip">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M12 6v6l4 2"/>
+              </svg>
+              <span>เฉลยละเอียดทุกข้อ</span>
+            </div>
+          </div>
         </section>
 
         <!-- Subjects List Grid (Apple Luxury Vector Cards) -->
