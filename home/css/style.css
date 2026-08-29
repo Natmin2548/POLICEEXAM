@@ -2340,10 +2340,10 @@ body {
 /* Apple-Style Subject Detail Header Hero Card & Tabs */
 .subject-detail-header-card {
   background: #FFFFFF;
-  border: 1px solid rgba(226, 232, 240, 0.9);
-  border-radius: 26px;
-  padding: 22px 20px;
-  box-shadow: 0 4px 22px -2px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02);
+  border: 1.5px solid #FEE2E2;
+  border-radius: 24px;
+  padding: 20px 18px;
+  box-shadow: 0 4px 20px -2px rgba(189, 27, 11, 0.05), 0 1px 3px rgba(0, 0, 0, 0.02);
   margin-bottom: 20px;
   display: flex;
   flex-direction: column;
@@ -2362,7 +2362,7 @@ body {
   align-items: center;
   gap: 6px;
   background: #F8FAFC;
-  border: 1px solid #E2E8F0;
+  border: 1.5px solid #E2E8F0;
   padding: 6px 14px;
   border-radius: 999px;
   font-size: 12.5px;
@@ -2372,15 +2372,20 @@ body {
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+.btn-subject-back:hover {
+  border-color: #BD1B0B;
+  color: #BD1B0B;
+  background: #FEF2F2;
+}
+
 .btn-subject-back:active {
   transform: scale(0.94);
-  background: #F1F5F9;
 }
 
 .subject-tag-badge {
-  background: #FFF1F2;
+  background: #FEF2F2;
   color: #BD1B0B;
-  border: 1px solid #FFE4E6;
+  border: 1.5px solid #FECACA;
   font-size: 11px;
   font-weight: 700;
   padding: 4px 12px;
@@ -2395,16 +2400,18 @@ body {
 }
 
 .subject-icon-box {
-  width: 52px;
-  height: 52px;
-  border-radius: 18px;
+  width: 48px;
+  height: 48px;
+  border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 22px;
   font-weight: 800;
   flex-shrink: 0;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4px 12px rgba(189, 27, 11, 0.15);
+  background: linear-gradient(135deg, #BD1B0B, #E11D48) !important;
+  color: #FFFFFF !important;
 }
 
 .subject-title-text {
@@ -2426,20 +2433,20 @@ body {
 /* Sleek Apple Subject Progress Overview Bar */
 .subject-progress-container {
   background: #F8FAFC;
-  border: 1px solid rgba(226, 232, 240, 0.9);
-  border-radius: 18px;
-  padding: 14px 16px;
+  border: 1px solid #E2E8F0;
+  border-radius: 16px;
+  padding: 12px 14px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .subject-progress-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 12.5px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 700;
   color: #475569;
 }
 
@@ -2451,7 +2458,7 @@ body {
 
 .subject-progress-track {
   width: 100%;
-  height: 8px;
+  height: 7px;
   background: #E2E8F0;
   border-radius: 999px;
   overflow: hidden;
@@ -2488,13 +2495,14 @@ body {
   border: none;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: inherit;
 }
 
 .subtab-item.active {
   background: #FFFFFF;
   color: #BD1B0B;
   font-weight: 700;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .subtab-item:active {
@@ -2511,10 +2519,10 @@ body {
   width: 100%;
   padding: 12px 16px 12px 42px;
   border-radius: 999px;
-  border: 1.5px solid rgba(226, 232, 240, 0.95);
+  border: 1.5px solid #FEE2E2;
   background: #FFFFFF;
   font-family: inherit;
-  font-size: 13.5px;
+  font-size: 13px;
   outline: none;
   box-sizing: border-box;
   color: #0F172A;
@@ -2557,7 +2565,7 @@ body {
   border-radius: 999px;
   font-size: 12.5px;
   font-weight: 600;
-  border: 1px solid #E2E8F0;
+  border: 1.5px solid #FEE2E2;
   background: #FFFFFF;
   color: #475569;
   cursor: pointer;
@@ -2573,7 +2581,7 @@ body {
   border-color: #BD1B0B;
   color: #FFFFFF;
   font-weight: 700;
-  box-shadow: 0 4px 14px rgba(189, 27, 11, 0.28);
+  box-shadow: 0 4px 12px rgba(189, 27, 11, 0.28);
 }
 
 .filter-pill:active,
@@ -2597,10 +2605,10 @@ body {
 
 .exam-set-card {
   background: #FFFFFF;
-  border: 1px solid rgba(226, 232, 240, 0.9);
-  border-radius: 24px;
-  padding: 20px 20px;
-  box-shadow: 0 4px 22px -2px rgba(15, 23, 42, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+  border: 1.5px solid rgba(226, 232, 240, 0.9);
+  border-radius: 22px;
+  padding: 18px 18px;
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   display: flex;
   flex-direction: column;
@@ -2609,8 +2617,8 @@ body {
 
 .exam-set-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 14px 30px -4px rgba(15, 23, 42, 0.07);
-  border-color: #CBD5E1;
+  box-shadow: 0 12px 28px -4px rgba(189, 27, 11, 0.08);
+  border-color: #FECACA;
 }
 
 .exam-set-card:active {
@@ -2641,14 +2649,15 @@ body {
 }
 
 .exam-tag-primary {
-  background: #EFF6FF;
-  color: #2563EB;
+  background: #FEF2F2;
+  color: #BD1B0B;
+  border: 1px solid #FECACA;
 }
 
 .exam-tag-subcat {
-  background: #FFF1F2;
-  color: #BD1B0B;
-  border: 1px solid #FFE4E6;
+  background: #F8FAFC;
+  color: #475569;
+  border: 1px solid #E2E8F0;
 }
 
 .exam-status-badge {
@@ -2660,14 +2669,14 @@ body {
 
 .exam-status-badge.done {
   background: #ECFDF5;
-  color: #059669;
+  color: #047857;
   border: 1px solid #A7F3D0;
 }
 
 .exam-status-badge.new {
-  background: #F8FAFC;
-  color: #64748B;
-  border: 1px solid #E2E8F0;
+  background: #FFFBEB;
+  color: #B45309;
+  border: 1px solid #FDE68A;
 }
 
 .exam-card-title {
