@@ -5869,8 +5869,11 @@ window.closeSubjectQuiz = function() {
   const modal = document.getElementById('subjectQuizModal');
   if (modal) modal.style.display = 'none';
   if (currentSelectedBankSubject) {
-    renderSubjectExamSets(currentSelectedBankSubject);
-    renderSubjectStatistics(currentSelectedBankSubject);
+    if (currentSelectedChapter && currentSelectedChapter !== 'ALL') {
+      renderFilteredExamSetsForChapter(currentSelectedBankSubject, currentSelectedChapter);
+    } else {
+      renderSubjectChaptersGrid(currentSelectedBankSubject);
+    }
   }
 };
 
