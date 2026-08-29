@@ -5778,6 +5778,9 @@ window.startBankSubjectQuiz = async function(subjectKey, setId, questionsCount, 
   const bodyContent = document.getElementById('quizBodyContent');
   const stepText = document.getElementById('quizStepText');
   const btnNext = document.getElementById('btnNextQuiz');
+  const btnPrev = document.getElementById('btnPrevQuiz');
+  const actionRow = document.getElementById('quizActionButtonsRow');
+  const navContainer = document.getElementById('quizNavContainer');
   const progressBar = document.getElementById('quizProgressBar');
 
   if (!modal || !bodyContent) return;
@@ -5786,7 +5789,8 @@ window.startBankSubjectQuiz = async function(subjectKey, setId, questionsCount, 
   if (badgeEl) badgeEl.textContent = subjectKey;
   if (titleEl) titleEl.textContent = setTitle || 'ทำข้อสอบ';
   if (stepText) stepText.textContent = 'กำลังโหลดข้อสอบ...';
-  if (btnNext) btnNext.style.display = 'none';
+  if (actionRow) actionRow.style.display = 'none';
+  if (navContainer) navContainer.style.display = 'none';
   if (progressBar) progressBar.style.width = '5%';
 
   bodyContent.innerHTML = '<div style="text-align: center; color: #64748B; padding: 40px; font-size: 14px;">กำลังดาวน์โหลดชุดข้อสอบจากระบบ...</div>';
@@ -5893,21 +5897,26 @@ function renderCurrentQuizQuestion() {
   if (stepText) stepText.textContent = `ข้อที่ ${currentIndex + 1} / ${total}`;
   if (answeredLabel) answeredLabel.textContent = `ทำแล้ว ${answeredCount}/${total} ข้อ`;
 
-  const selectedAnswer = userAnswers[currentIndex];
-  const isAnswered = selectedAnswer !== undefined;
+  const actionRow = document.getElementById('quizActionButtonsRow');
+  const navContainer = document.getElementById('quizNavContainer');
+  if (actionRow) actionRow.style.display = 'flex';
+  if (navContainer) navContainer.style.display = 'block';
 
-  // Prev / Next button states
+  // Prev / Next button states (Left: ‹ ข้อก่อนหน้า | Right: ข้อถัดไป ›)
   if (btnPrev) {
+    btnPrev.style.display = 'flex';
     btnPrev.disabled = currentIndex === 0;
-    btnPrev.style.opacity = currentIndex === 0 ? '0.4' : '1';
-    btnPrev.style.cursor = currentIndex === 0 ? 'default' : 'pointer';
+    btnPrev.style.opacity = currentIndex === 0 ? '0.35' : '1';
+    btnPrev.style.cursor = currentIndex === 0 ? 'not-allowed' : 'pointer';
+    btnPrev.innerHTML = '<span>‹ ข้อก่อนหน้า</span>';
   }
 
   if (btnNext) {
+    btnNext.style.display = 'flex';
     if (currentIndex === total - 1) {
-      btnNext.textContent = answeredCount === total ? 'ดูสรุปผลคะแนน 🏆' : 'ส่งข้อสอบ / สรุปผล 🏆';
+      btnNext.innerHTML = `<span>${answeredCount === total ? 'ดูสรุปผลคะแนน 🏆' : 'ส่งข้อสอบ / สรุปผล 🏆'}</span>`;
     } else {
-      btnNext.textContent = 'ข้อถัดไป ›';
+      btnNext.innerHTML = '<span>ข้อถัดไป ›</span>';
     }
   }
 
@@ -6037,7 +6046,10 @@ function renderQuizResults() {
   const btnNext = document.getElementById('btnNextQuiz');
   const progressBar = document.getElementById('quizProgressBar');
 
-  if (btnNext) btnNext.style.display = 'none';
+  const actionRow = document.getElementById('quizActionButtonsRow');
+  const navContainer = document.getElementById('quizNavContainer');
+  if (actionRow) actionRow.style.display = 'none';
+  if (navContainer) navContainer.style.display = 'none';
   if (stepText) stepText.textContent = 'สรุปผลสอบ';
   if (progressBar) progressBar.style.width = '100%';
 
