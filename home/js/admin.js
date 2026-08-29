@@ -182,38 +182,189 @@ async function toggleUserRole(id, currentRole) {
 }
 
 // ==========================================
-// Exams View
+// Exams View (Filtered by Subject & Chapter + Auto Set Numbering)
 // ==========================================
+let allLoadedExams = [];
+let currentExamFilterSubject = 'ALL';
+let currentExamFilterChapter = 'ALL';
+let currentExamFilterSearch = '';
+
 async function loadExams() {
   try {
     const res = await fetch(`${API_BASE}/api/admin/exams`, {
       headers: { 'Authorization': `Bearer ${authToken}` }
     });
     if (res.ok) {
-      const exams = await res.json();
-      const tbody = document.getElementById('examsTableBody');
-      tbody.innerHTML = '';
-      
-      exams.forEach(ex => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${ex.id}</td>
-          <td>${ex.title}</td>
-          <td>${ex.category}</td>
-          <td>${ex.totalCount}</td>
-          <td><span class="badge badge-user">${ex.status}</span></td>
-          <td class="action-buttons">
-            <button class="btn btn-outline" style="background: #EEF2FF; color: #4F46E5; border: 1px solid #C7D2FE;" onclick="openAppendModal(${ex.id}, '${escapeHTML(ex.title)}', ${ex.totalCount})">➕ เพิ่มข้อสอบ</button>
-            <button class="btn btn-danger" onclick="confirmDelete('exam', ${ex.id})">ลบ</button>
-          </td>
-        `;
-        tbody.appendChild(tr);
-      });
+      allLoadedExams = await res.json();
+      updateFilterChapterDropdown();
+      renderExamsWithFilters();
     }
   } catch (err) {
     console.error('Exams load error:', err);
   }
 }
+
+function updateFilterChapterDropdown() {
+  const chapterSelect = document.getElementById('filterExamChapter');
+  if (!chapterSelect) return;
+
+  const subject = currentExamFilterSubject;
+  chapterSelect.innerHTML = '<option value="ALL">ทุกหมวดหมู่ (All Chapters)</option>';
+
+  if (subject !== 'ALL') {
+    const chapters = SUBJECT_CHAPTERS[subject] || [];
+    chapters.forEach(ch => {
+      if (ch.value !== 'ALL') {
+        chapterSelect.innerHTML += `<option value="${ch.value}">${ch.label}</option>`;
+      }
+    });
+  } else {
+    // Collect all unique subcategories from loaded exams
+    const allSubcats = Array.from(new Set(allLoadedExams.map(e => e.subcategory).filter(Boolean)));
+    allSubcats.forEach(sub => {
+      chapterSelect.innerHTML += `<option value="${sub}">${sub}</option>`;
+    });
+  }
+}
+
+function renderExamsWithFilters() {
+  const tbody = document.getElementById('examsTableBody');
+  const summaryEl = document.getElementById('examsCountSummary');
+  if (!tbody) return;
+
+  tbody.innerHTML = '';
+
+  const filtered = allLoadedExams.filter(ex => {
+    // 1. Subject Filter
+    if (currentExamFilterSubject !== 'ALL') {
+      const isSubMatch = ex.category === currentExamFilterSubject || 
+        (currentExamFilterSubject.includes('สารบรรณ') && ex.category && ex.category.includes('สารบรรณ')) ||
+        (currentExamFilterSubject === 'งานสารบรรณ_๒๕๒๖' && ex.category && (ex.category.includes('๒๕๒๖') || ex.category === 'งานสารบรรณ')) ||
+        (currentExamFilterSubject === 'สารบรรณตำรวจ_๕๔' && ex.category && (ex.category.includes('๕๔') || ex.category === 'ลักษณะที่54'));
+      if (!isSubMatch) return false;
+    }
+
+    // 2. Chapter Filter
+    if (currentExamFilterChapter !== 'ALL') {
+      const cleanFilter = currentExamFilterChapter.replace(/บทที่\s*\d+\s*/, '').trim();
+      const matchSubcat = ex.subcategory && (ex.subcategory === currentExamFilterChapter || ex.subcategory.includes(cleanFilter));
+      const matchTitle = ex.title && cleanFilter && ex.title.includes(cleanFilter);
+      if (!matchSubcat && !matchTitle) return false;
+    }
+
+    // 3. Search Filter
+    if (currentExamFilterSearch) {
+      const q = currentExamFilterSearch.toLowerCase();
+      const matchText = (ex.title && ex.title.toLowerCase().includes(q)) ||
+        (ex.subcategory && ex.subcategory.toLowerCase().includes(q)) ||
+        (ex.category && ex.category.toLowerCase().includes(q)) ||
+        (String(ex.id).includes(q));
+      if (!matchText) return false;
+    }
+
+    return true;
+  });
+
+  if (summaryEl) {
+    summaryEl.textContent = `พบทั้งหมด ${filtered.length} ชุดข้อสอบ (จากคลังทั้งหมด ${allLoadedExams.length} ชุด)`;
+  }
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" style="text-align: center; padding: 32px; color: #94A3B8;">
+          <div style="font-size: 28px; margin-bottom: 8px;">📂</div>
+          <div style="font-weight: 600; font-size: 14px;">ไม่พบชุดข้อสอบตามเงื่อนไขที่เลือก</div>
+          <button onclick="resetExamFilters()" class="btn btn-outline" style="margin-top: 10px; font-size: 12px;">ล้างตัวกรองทั้งหมด</button>
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  filtered.forEach(ex => {
+    const tr = document.createElement('tr');
+    
+    // Subject badge styling
+    let subjectBadgeStyle = 'background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE;';
+    if (ex.category && (ex.category.includes('สารบรรณ') || ex.category.includes('๒๕๒๖'))) {
+      subjectBadgeStyle = 'background: #FEF2F2; color: #BD1B0B; border: 1px solid #FECACA;';
+    } else if (ex.category && (ex.category.includes('๕๔') || ex.category.includes('ตำรวจ'))) {
+      subjectBadgeStyle = 'background: #FDF4FF; color: #86198F; border: 1px solid #F5D0FE;';
+    } else if (ex.category && ex.category.includes('กฎหมาย')) {
+      subjectBadgeStyle = 'background: #ECFDF5; color: #047857; border: 1px solid #A7F3D0;';
+    }
+
+    const subcatText = ex.subcategory || 'รวมทุกหมวด';
+
+    tr.innerHTML = `
+      <td style="font-weight: 700; color: #64748B;">#${ex.id}</td>
+      <td style="font-weight: 700; color: #0F172A; max-width: 260px;">
+        <div style="line-height: 1.4;">${escapeHTML(ex.title)}</div>
+      </td>
+      <td>
+        <span style="display: inline-block; padding: 3px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; ${subjectBadgeStyle}">
+          ${escapeHTML(ex.category || 'ทั่วไป')}
+        </span>
+      </td>
+      <td>
+        <span style="display: inline-block; padding: 3px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; background: #F1F5F9; color: #334155; border: 1px solid #CBD5E1;">
+          ${escapeHTML(subcatText)}
+        </span>
+      </td>
+      <td style="text-align: center; font-weight: 700; color: #0F172A;">
+        ${ex.totalCount || 0} ข้อ
+      </td>
+      <td style="text-align: center;">
+        <span class="badge ${ex.status === 'PUBLISHED' ? 'badge-user' : 'badge-admin'}" style="${ex.status === 'PUBLISHED' ? 'background: #ECFDF5; color: #059669;' : 'background: #FFFBEB; color: #D97706;'}">
+          ${ex.status === 'PUBLISHED' ? 'เปิดสอบ' : 'ฉบับร่าง'}
+        </span>
+      </td>
+      <td class="action-buttons" style="text-align: right;">
+        <button class="btn btn-outline" style="background: #EEF2FF; color: #4F46E5; border: 1px solid #C7D2FE; padding: 6px 10px; font-size: 11.5px;" onclick="openAppendModal(${ex.id}, '${escapeHTML(ex.title)}', ${ex.totalCount})">➕ เพิ่มข้อสอบ</button>
+        <button class="btn btn-danger" style="padding: 6px 10px; font-size: 11.5px;" onclick="confirmDelete('exam', ${ex.id})">🗑️ ลบ</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+window.onFilterExamSubjectChange = function() {
+  const select = document.getElementById('filterExamSubject');
+  currentExamFilterSubject = select ? select.value : 'ALL';
+  currentExamFilterChapter = 'ALL';
+  updateFilterChapterDropdown();
+  renderExamsWithFilters();
+};
+
+window.onFilterExamChapterChange = function() {
+  const select = document.getElementById('filterExamChapter');
+  currentExamFilterChapter = select ? select.value : 'ALL';
+  renderExamsWithFilters();
+};
+
+window.onFilterExamSearchChange = function() {
+  const input = document.getElementById('filterExamSearch');
+  currentExamFilterSearch = input ? input.value.trim() : '';
+  renderExamsWithFilters();
+};
+
+window.resetExamFilters = function() {
+  currentExamFilterSubject = 'ALL';
+  currentExamFilterChapter = 'ALL';
+  currentExamFilterSearch = '';
+  
+  const subSelect = document.getElementById('filterExamSubject');
+  const chSelect = document.getElementById('filterExamChapter');
+  const searchInput = document.getElementById('filterExamSearch');
+
+  if (subSelect) subSelect.value = 'ALL';
+  if (chSelect) chSelect.value = 'ALL';
+  if (searchInput) searchInput.value = '';
+
+  updateFilterChapterDropdown();
+  renderExamsWithFilters();
+};
 
 // ==========================================
 // Cascading Dropdowns & AI Exam Generator Logic
@@ -403,15 +554,35 @@ function onSarabanChapterChange() {
   const val = chapterSelect.value;
   const displayName = getSubjectDisplayName(subject);
 
+  // Calculate automatic set number (ชุดที่ 1, ชุดที่ 2...) for the same subject & category/chapter
+  const matchingExistingSets = allLoadedExams.filter(ex => {
+    const isSameSubject = ex.category === subject || 
+      (subject.includes('สารบรรณ') && ex.category && ex.category.includes('สารบรรณ')) ||
+      (subject === 'งานสารบรรณ_๒๕๒๖' && ex.category && (ex.category.includes('๒๕๒๖') || ex.category === 'งานสารบรรณ')) ||
+      (subject === 'สารบรรณตำรวจ_๕๔' && ex.category && (ex.category.includes('๕๔') || ex.category === 'ลักษณะที่54'));
+    if (!isSameSubject) return false;
+
+    if (val === 'ALL') {
+      return !ex.subcategory || ex.subcategory.includes('รวมทุก') || ex.title.includes('รวมทุก');
+    }
+
+    const cleanVal = val.replace(/บทที่\s*\d+\s*/, '').trim();
+    if (ex.subcategory && (ex.subcategory === val || ex.subcategory.includes(cleanVal))) return true;
+    if (ex.title && cleanVal && ex.title.includes(cleanVal)) return true;
+    return false;
+  });
+
+  const nextSetNum = matchingExistingSets.length + 1;
+
   if (val === 'ALL') {
     if (subcatInput) subcatInput.value = `รวมทุกหมวด ${displayName}`;
     if (titleInput) {
-      titleInput.value = `แบบทดสอบ${displayName} (รวมทุกหมวด)`;
+      titleInput.value = `แบบทดสอบ${displayName} (รวมทุกหมวด) (ชุดที่ ${nextSetNum})`;
     }
   } else {
     if (subcatInput) subcatInput.value = val;
     if (titleInput) {
-      titleInput.value = `แบบทดสอบ${displayName}: ${val}`;
+      titleInput.value = `แบบทดสอบ${displayName}: ${val} (ชุดที่ ${nextSetNum})`;
     }
   }
 }

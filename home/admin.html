@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Dashboard - POLICEEXAM</title>
   <link rel="stylesheet" href="css/admin.css">
-  <script src="js/admin.js?v=34" defer></script>
+  <script src="js/admin.js?v=35" defer></script>
 </head>
 <body>
 
@@ -109,25 +109,71 @@
       <!-- Exams View -->
       <div id="viewExams" class="tab-view">
         <div class="table-container">
-          <div class="table-header-row">
-            <div class="table-title">Manage Exam Sets</div>
-            <button class="btn btn-primary" onclick="showAddExamModal()">+ เพิ่มชุดข้อสอบ</button>
+          <div class="table-header-row" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+            <div>
+              <div class="table-title" style="margin-bottom: 4px;">Manage Exam Sets (คลังชุดข้อสอบ)</div>
+              <p style="margin: 0; font-size: 13px; color: #64748B;">แยกวิชา และแยกหมวดหมู่ชุดข้อสอบ พร้อมระบบใส่เลขชุดอัตโนมัติ (ชุดที่ 1, ชุดที่ 2...)</p>
+            </div>
+            <button class="btn btn-primary" onclick="showAddExamModal()" style="background: #BD1B0B; border: none; padding: 10px 18px; border-radius: 12px; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+              <span>+ เพิ่มชุดข้อสอบใหม่</span>
+            </button>
           </div>
-          <table>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Title</th>
-                <th>Category</th>
-                <th>Questions</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody id="examsTableBody">
-              <!-- Exams populated via JS -->
-            </tbody>
-          </table>
+
+          <!-- Filters Bar: แยกวิชา & แยกหมวดหมู่ -->
+          <div style="background: #F8FAFC; border: 1.5px solid #E2E8F0; border-radius: 16px; padding: 14px 16px; margin-bottom: 18px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
+            <div style="flex: 1.2; min-width: 180px;">
+              <label style="display: block; font-size: 11.5px; font-weight: 700; color: #475569; margin-bottom: 4px;">🔍 1. กรองตามวิชา:</label>
+              <select id="filterExamSubject" onchange="onFilterExamSubjectChange()" style="width: 100%; padding: 9px 12px; border-radius: 10px; border: 1.5px solid #CBD5E1; font-size: 13px; font-family: inherit; font-weight: 600; background: white; outline: none;">
+                <option value="ALL">ทุกวิชา (All Subjects)</option>
+                <option value="งานสารบรรณ">📜 ระเบียบสารบรรณ (๒๕๒๖)</option>
+                <option value="ลักษณะที่54">📑 สารบรรณตำรวจ (ลักษณะ ๕๔)</option>
+                <option value="ทั่วไป">🧠 ความสามารถทั่วไป (คณิตศาสตร์)</option>
+                <option value="สังคม">🏛️ สังคม วัฒนธรรม และอาเซียน</option>
+                <option value="กฏหมาย">⚖️ กฎหมายที่ควรรู้</option>
+                <option value="คอม">💻 เทคโนโลยีสารสนเทศ</option>
+              </select>
+            </div>
+
+            <div style="flex: 1.5; min-width: 180px;">
+              <label style="display: block; font-size: 11.5px; font-weight: 700; color: #475569; margin-bottom: 4px;">📑 2. กรองตามหมวดหมู่ / บทเรียน:</label>
+              <select id="filterExamChapter" onchange="onFilterExamChapterChange()" style="width: 100%; padding: 9px 12px; border-radius: 10px; border: 1.5px solid #CBD5E1; font-size: 13px; font-family: inherit; font-weight: 600; background: white; outline: none;">
+                <option value="ALL">ทุกหมวดหมู่ (All Chapters)</option>
+              </select>
+            </div>
+
+            <div style="flex: 1; min-width: 150px;">
+              <label style="display: block; font-size: 11.5px; font-weight: 700; color: #475569; margin-bottom: 4px;">🔎 3. ค้นหาชื่อชุดข้อสอบ:</label>
+              <input type="text" id="filterExamSearch" placeholder="พิมพ์คำค้นหา..." oninput="onFilterExamSearchChange()" style="width: 100%; padding: 9px 12px; border-radius: 10px; border: 1.5px solid #CBD5E1; font-size: 13px; font-family: inherit; box-sizing: border-box; outline: none;">
+            </div>
+
+            <div style="align-self: flex-end;">
+              <button onclick="resetExamFilters()" class="btn btn-outline" style="padding: 9px 14px; border-radius: 10px; font-size: 12.5px; font-weight: 600; height: 38px;">ล้างตัวกรอง</button>
+            </div>
+          </div>
+
+          <!-- Counter badge -->
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 0 4px;">
+            <span id="examsCountSummary" style="font-size: 13px; font-weight: 700; color: #475569;">พบทั้งหมด 0 ชุดข้อสอบ</span>
+          </div>
+
+          <div style="overflow-x: auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width: 50px;">ID</th>
+                  <th>ชื่อชุดข้อสอบ (Title)</th>
+                  <th>วิชา (Subject)</th>
+                  <th>หมวดหมู่ / บท (Chapter)</th>
+                  <th style="text-align: center;">จำนวนข้อ</th>
+                  <th style="text-align: center;">สถานะ</th>
+                  <th style="text-align: right;">การจัดการ</th>
+                </tr>
+              </thead>
+              <tbody id="examsTableBody">
+                <!-- Exams populated via JS -->
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
