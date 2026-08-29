@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Dashboard - POLICEEXAM</title>
   <link rel="stylesheet" href="css/admin.css">
-  <script src="js/admin.js?v=30" defer></script>
+  <script src="js/admin.js?v=31" defer></script>
 </head>
 <body>
 
@@ -253,118 +253,117 @@
 
 
 
-  <!-- Add Exam Set Modal (สร้างข้อสอบจากคลังข้อมูล) -->
-  <div class="modal-overlay" id="addExamModal">
-    <div class="modal-content" style="max-width: 580px;">
-      <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px; color: var(--primary-color);">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-        </svg>
-        📚 สร้างข้อสอบจากคลังข้อมูล (Gemini AI)
-      </h3>
+  <!-- Add Exam Set Modal (สร้างข้อสอบจากคลังข้อมูล - Mobile First Ultra-Clean) -->
+  <div class="modal-overlay" id="addExamModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(10px); z-index: 10000; align-items: center; justify-content: center; padding: 16px;">
+    <div class="modal-card" style="background: white; max-width: 460px; width: 100%; padding: 24px 20px; border-radius: 24px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1); max-height: 90vh; overflow-y: auto;">
+      
+      <!-- Header -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="width: 42px; height: 42px; border-radius: 12px; background: #FEF2F2; color: #BD1B0B; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+            📑
+          </div>
+          <div>
+            <h3 style="font-size: 17px; font-weight: 800; color: #1E293B; margin: 0;">สร้างข้อสอบด้วย AI</h3>
+            <p style="font-size: 12px; color: #64748B; margin: 2px 0 0 0;">เลือกหมวดแล้วสั่ง AI ออกข้อสอบทันที</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeAddExamModal()" style="background: #F1F5F9; border: none; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; cursor: pointer; color: #64748B;">✕</button>
+      </div>
 
       <form id="addExamForm" onsubmit="event.preventDefault(); generateAIExamPreview();">
-        <!-- 1. เลือกวิชา -->
-        <div class="form-group">
-          <label for="examSubject">1. เลือกวิชาหลัก</label>
-          <select id="examSubject" class="form-input" onchange="onSubjectChange()" required>
-            <option value="งานสารบรรณ">งานสารบรรณ (ระเบียบ ๒๕๒๖ / ลักษณะ ๕๔)</option>
-            <option value="ทั่วไป">ความสามารถทั่วไป (คณิตศาสตร์และเหตุผล)</option>
-            <option value="คณิต">คณิตศาสตร์ (คิดเลขเร็ว/คำนวณ)</option>
-            <option value="สังคม">สังคมและจริยธรรมตำรวจ</option>
-            <option value="กฏหมาย">กฎหมายที่ประชาชนควรรู้และตำรวจปฏิบัติงาน</option>
-            <option value="คอม">คอมพิวเตอร์และเทคโนโลยีสารสนเทศ (IT)</option>
-            <option value="ภาษาไทย">ภาษาไทย</option>
-            <option value="ภาษาอังกฤษ">ภาษาอังกฤษ</option>
-          </select>
-        </div>
-
-        <!-- หมวดหมู่ระเบียบสารบรรณ (12 บท) เฉพาะวิชางานสารบรรณ -->
-        <div class="form-group" id="sarabanChapterGroup" style="margin-top: -4px; margin-bottom: 16px;">
-          <label for="sarabanChapterSelect" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-            <span style="font-weight: 700; color: #BD1B0B;">📑 เลือกหมวดหมู่ระเบียบสารบรรณ (12 บท)</span>
-            <span style="font-size: 11px; color: #64748B;">AI จะออกข้อสอบตามบทที่เลือก</span>
+        
+        <!-- 1. เลือกหมวดหมู่ระเบียบสารบรรณ (12 บท) -->
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label style="font-size: 13px; font-weight: 700; color: #1E293B; display: block; margin-bottom: 8px;">
+            1. เลือกหมวดหมู่ระเบียบสารบรรณ
           </label>
-          <select id="sarabanChapterSelect" class="form-input" onchange="onSarabanChapterChange()" style="border: 1.5px solid #BD1B0B; background: #FFF5F5; font-weight: 600; color: #1E293B; border-radius: 10px; padding: 10px 12px;">
+          <select id="sarabanChapterSelect" onchange="onSarabanChapterChange()" style="width: 100%; padding: 13px 14px; border-radius: 14px; border: 1.5px solid #E2E8F0; background: #F8FAFC; font-size: 14px; font-weight: 600; color: #0F172A; outline: none; font-family: inherit; box-sizing: border-box;">
             <option value="ALL">📚 รวมทุกบท (ข้อสอบรวมทุกหมวดสารบรรณ)</option>
             <option value="บทที่ 1 บทนำและนิยาม">บทที่ 1 บทนำและนิยาม</option>
             <option value="บทที่ 2 มาตรฐานแบบพิมพ์ ตราครุฑ">บทที่ 2 มาตรฐานแบบพิมพ์ ตราครุฑ</option>
             <option value="บทที่ 3 หนังสือภายนอก หนังสือภายใน หนังสือประทับตรา">บทที่ 3 หนังสือภายนอก หนังสือภายใน หนังสือประทับตรา</option>
-            <option value="บทที่ 4 หนังสือสั่งการ">บทที่ 4 หนังสือสั่งการ</option>
-            <option value="บทที่ 5 หนังสือประชาสัมพันธ์">บทที่ 5 หนังสือประชาสัมพันธ์</option>
+            <option value="บทที่ 4 หนังสือสั่งการ">บทที่ 4 หนังสือสั่งการ (คำสั่ง ข้อบังคับ ระเบียบ)</option>
+            <option value="บทที่ 5 หนังสือประชาสัมพันธ์">บทที่ 5 หนังสือประชาสัมพันธ์ (ประกาศ แถลงการณ์ ข่าว)</option>
             <option value="บทที่ 6 หนังสือที่เจ้าหน้าที่จัดทำขึ้นหรือรับไว้เป็นหลักฐาน">บทที่ 6 หนังสือที่เจ้าหน้าที่จัดทำขึ้นหรือรับไว้เป็นหลักฐาน</option>
             <option value="บทที่ 7 เบ็ดเตล็ด สำเนา สำเนาคู่ฉบับ หนังสือเวียน">บทที่ 7 เบ็ดเตล็ด สำเนา สำเนาคู่ฉบับ หนังสือเวียน</option>
-            <option value="บทที่ 8 การรับส่งหนังสือ">บทที่ 8 การรับส่งหนังสือ</option>
-            <option value="บทที่ 9 การเก็บรักษา">บทที่ 9 การเก็บรักษา</option>
-            <option value="บทที่ 10 การยืม">บทที่ 10 การยืม</option>
-            <option value="บทที่ 11 การทำลาย">บทที่ 11 การทำลาย</option>
-            <option value="บทที่ 12 ระบบสารบรรณอิเล็กทรอนิกส์">บทที่ 12 ระบบสารบรรณอิเล็กทรอนิกส์</option>
+            <option value="บทที่ 8 การรับส่งหนังสือ">บทที่ 8 การรับและส่งหนังสือ</option>
+            <option value="บทที่ 9 การเก็บรักษา">บทที่ 9 การเก็บรักษาหนังสือราชการ</option>
+            <option value="บทที่ 10 การยืม">บทที่ 10 การยืมหนังสือราชการ</option>
+            <option value="บทที่ 11 การทำลาย">บทที่ 11 การทำลายหนังสือราชการ</option>
+            <option value="บทที่ 12 ระบบสารบรรณอิเล็กทรอนิกส์">บทที่ 12 ระบบสารบรรณอิเล็กทรอนิกส์ (e-Saraban)</option>
           </select>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-          <!-- 2. เลือกคลังข้อมูล -->
-          <div class="form-group">
-            <label for="knowledgeBaseSelect">2. เลือกคลังข้อมูล</label>
-            <select id="knowledgeBaseSelect" class="form-input" onchange="onKnowledgeBaseChange()" required>
-              <!-- Populated dynamically based on subject -->
-            </select>
-          </div>
-
-          <!-- 3. เลือกหมวดย่อย / หนังสือในคลัง -->
-          <div class="form-group">
-            <label for="knowledgeDocSelect">3. เลือกหมวดย่อย / เรื่องในคลัง</label>
-            <select id="knowledgeDocSelect" class="form-input" required>
-              <!-- Populated dynamically based on knowledge base -->
-            </select>
-          </div>
-        </div>
-
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-          <div class="form-group">
-            <label for="examTitle">ชื่อชุดข้อสอบ</label>
-            <input type="text" id="examTitle" class="form-input" placeholder="เช่น ชุดข้อสอบอนุกรม ชุดที่ ๑" required>
-          </div>
-          <div class="form-group">
-            <label for="examSubcategory">หมวดย่อย (Subcategory)</label>
-            <input type="text" id="examSubcategory" class="form-input" placeholder="เช่น หมวดอนุกรม, หมวดการคำนวณ, หมวดรับส่งหนังสือ">
-          </div>
-        </div>
-
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-          <div class="form-group">
-            <label for="examNumQuestions">จำนวนข้อสอบที่ต้องการสร้าง</label>
-            <input type="number" id="examNumQuestions" class="form-input" min="1" max="50" value="10" required>
-          </div>
-
-          <div class="form-group">
-            <label for="examStatus">สถานะการบันทึกเริ่มต้น</label>
-            <select id="examStatus" class="form-input">
-              <option value="PUBLISHED">อนุมัติและเปิดใช้งาน (Published)</option>
-              <option value="DRAFT">บันทึกเป็นฉบับร่าง (Draft)</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- 4. Gemini API Key -->
-        <div class="form-group" style="margin-top: 12px; background: #F8FAFC; padding: 12px; border-radius: 8px; border: 1px solid #E2E8F0;">
-          <label for="adminGeminiApiKey" style="display: flex; justify-content: space-between; align-items: center; font-weight: 600; color: #1E293B;">
-            <span>🔑 Gemini API Key (สำหรับสั่งงาน AI)</span>
-            <span style="font-size: 11px; color: #10B981;">💾 บันทึกในเครื่องอัตโนมัติ</span>
+        <!-- 2. ปุ่มเลือกจำนวนข้อสอบ (Touch Pills) -->
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label style="font-size: 13px; font-weight: 700; color: #1E293B; display: block; margin-bottom: 8px;">
+            2. จำนวนข้อสอบที่ต้องการ
           </label>
-          <input type="text" id="adminGeminiApiKey" class="form-input" placeholder="วาง Gemini API Key ของคุณที่นี่ (เช่น AQ.Ab8... หรือ AIzaSy...)" onchange="localStorage.setItem('admin_gemini_key', this.value.trim())" style="font-family: monospace; font-size: 13px;">
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;">
+            <button type="button" class="btn-count-pill" onclick="selectQuestionCount(5)" id="btnCount5" style="padding: 11px 0; border-radius: 12px; border: 1.5px solid #E2E8F0; background: #F8FAFC; font-weight: 700; font-size: 13px; color: #475569; cursor: pointer; transition: all 0.15s;">5 ข้อ</button>
+            <button type="button" class="btn-count-pill active" onclick="selectQuestionCount(10)" id="btnCount10" style="padding: 11px 0; border-radius: 12px; border: 1.5px solid #BD1B0B; background: #FEF2F2; font-weight: 700; font-size: 13px; color: #BD1B0B; cursor: pointer; transition: all 0.15s;">10 ข้อ</button>
+            <button type="button" class="btn-count-pill" onclick="selectQuestionCount(15)" id="btnCount15" style="padding: 11px 0; border-radius: 12px; border: 1.5px solid #E2E8F0; background: #F8FAFC; font-weight: 700; font-size: 13px; color: #475569; cursor: pointer; transition: all 0.15s;">15 ข้อ</button>
+            <button type="button" class="btn-count-pill" onclick="selectQuestionCount(20)" id="btnCount20" style="padding: 11px 0; border-radius: 12px; border: 1.5px solid #E2E8F0; background: #F8FAFC; font-weight: 700; font-size: 13px; color: #475569; cursor: pointer; transition: all 0.15s;">20 ข้อ</button>
+          </div>
+          <input type="hidden" id="examNumQuestions" value="10">
         </div>
 
-        <div id="aiProgressInfo" style="display: none; background: #FFF1F2; border: 1px solid #FECACA; border-radius: 8px; padding: 12px; margin-bottom: 16px; font-size: 13px; color: #BD1B0B; text-align: center;">
-          ⏳ <strong>Gemini 2.5 Flash กำลังดึงคลังข้อมูลและสร้างข้อสอบ...</strong><br>
-          <span style="font-size: 11px; opacity: 0.8;">ขั้นตอนนี้อาจใช้เวลาประมาณ 5-15 วินาที</span>
+        <!-- 3. ชื่อชุดข้อสอบ (Auto-filled) -->
+        <div class="form-group" style="margin-bottom: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <label style="font-size: 13px; font-weight: 700; color: #1E293B;">3. ชื่อชุดข้อสอบ</label>
+            <span style="font-size: 11px; color: #10B981; font-weight: 600;">⚡ ตั้งให้อัตโนมัติ</span>
+          </div>
+          <input type="text" id="examTitle" value="แบบทดสอบงานสารบรรณ (รวมทุกหมวด)" placeholder="ชื่อชุดข้อสอบ..." style="width: 100%; padding: 12px 14px; border-radius: 14px; border: 1.5px solid #E2E8F0; background: #F8FAFC; font-size: 13px; font-weight: 600; color: #1E293B; outline: none; font-family: inherit; box-sizing: border-box;" required>
         </div>
 
-        <div class="modal-actions">
-          <button type="button" class="btn btn-outline" onclick="closeAddExamModal()">ยกเลิก</button>
-          <button type="submit" id="btnSubmitGenerateExam" class="btn btn-primary" style="display: flex; align-items: center; gap: 6px;">
-            <span>🤖 สั่ง Gemini ออกข้อสอบและตรวจพรีวิว</span>
+        <!-- Hidden values for clean UI -->
+        <input type="hidden" id="examSubject" value="งานสารบรรณ">
+        <input type="hidden" id="knowledgeBaseSelect" value="ALL_SARABAN">
+        <input type="hidden" id="knowledgeDocSelect" value="ALL">
+        <input type="hidden" id="examSubcategory" value="รวมทุกหมวดสารบรรณ">
+        <input type="hidden" id="examStatus" value="PUBLISHED">
+
+        <!-- Advanced Options Collapsible -->
+        <details style="margin-bottom: 18px; font-size: 12px; color: #64748B;">
+          <summary style="cursor: pointer; font-weight: 600; color: #475569; padding: 4px 0; outline: none;">
+            ⚙️ ตัวเลือกเพิ่มเติม (เปลี่ยนวิชา / ใส่ API Key)
+          </summary>
+          <div style="padding: 12px; background: #F8FAFC; border-radius: 12px; border: 1px solid #E2E8F0; margin-top: 8px; display: flex; flex-direction: column; gap: 10px;">
+            <div>
+              <label style="font-size: 11px; font-weight: 600;">เลือกวิชาอื่น:</label>
+              <select id="examSubjectAdvance" onchange="document.getElementById('examSubject').value = this.value; onSubjectChange();" style="width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 12px;">
+                <option value="งานสารบรรณ" selected>งานสารบรรณ</option>
+                <option value="ทั่วไป">ความสามารถทั่วไป</option>
+                <option value="คณิต">คณิตศาสตร์</option>
+                <option value="สังคม">สังคมและจริยธรรม</option>
+                <option value="กฏหมาย">กฎหมาย</option>
+                <option value="คอม">คอมพิวเตอร์ (IT)</option>
+                <option value="ภาษาไทย">ภาษาไทย</option>
+                <option value="ภาษาอังกฤษ">ภาษาอังกฤษ</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size: 11px; font-weight: 600;">Gemini API Key (เฉพาะเครื่องนี้):</label>
+              <input type="text" id="adminGeminiApiKey" placeholder="วาง Gemini API Key..." onchange="localStorage.setItem('admin_gemini_key', this.value.trim())" style="width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 12px; box-sizing: border-box;">
+            </div>
+          </div>
+        </details>
+
+        <!-- AI Progress Info -->
+        <div id="aiProgressInfo" style="display: none; background: #FFF1F2; border: 1px solid #FECACA; border-radius: 14px; padding: 12px; margin-bottom: 16px; font-size: 13px; color: #BD1B0B; text-align: center;">
+          <div style="font-weight: 700; margin-bottom: 2px;">⏳ Gemini AI กำลังอ่านเนื้อหาและสร้างข้อสอบ...</div>
+          <span style="font-size: 11px; opacity: 0.85;">อาจใช้เวลาประมาณ 5-15 วินาที</span>
+        </div>
+
+        <!-- Big Touch Friendly Action Buttons -->
+        <div style="display: flex; gap: 10px;">
+          <button type="button" onclick="closeAddExamModal()" style="flex: 1; padding: 13px; border-radius: 14px; border: 1.5px solid #E2E8F0; background: white; font-weight: 700; color: #64748B; font-size: 14px; cursor: pointer;">
+            ยกเลิก
+          </button>
+          <button type="submit" id="btnSubmitGenerateExam" style="flex: 2; padding: 13px; border-radius: 14px; border: none; background: #BD1B0B; color: white; font-weight: 800; font-size: 14px; cursor: pointer; box-shadow: 0 4px 12px rgba(189, 27, 11, 0.25); display: flex; align-items: center; justify-content: center; gap: 6px;">
+            <span>🤖 สั่ง AI สร้างข้อสอบ</span>
           </button>
         </div>
       </form>

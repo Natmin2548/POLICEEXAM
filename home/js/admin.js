@@ -290,6 +290,25 @@ function onSubjectChange() {
   onKnowledgeBaseChange();
 }
 
+window.selectQuestionCount = function(count) {
+  const input = document.getElementById('examNumQuestions');
+  if (input) input.value = count;
+  ['5', '10', '15', '20'].forEach(c => {
+    const btn = document.getElementById(`btnCount${c}`);
+    if (btn) {
+      if (parseInt(c) === count) {
+        btn.style.borderColor = '#BD1B0B';
+        btn.style.backgroundColor = '#FEF2F2';
+        btn.style.color = '#BD1B0B';
+      } else {
+        btn.style.borderColor = '#E2E8F0';
+        btn.style.backgroundColor = '#F8FAFC';
+        btn.style.color = '#475569';
+      }
+    }
+  });
+};
+
 function onSarabanChapterChange() {
   const chapterSelect = document.getElementById('sarabanChapterSelect');
   const titleInput = document.getElementById('examTitle');
@@ -300,12 +319,12 @@ function onSarabanChapterChange() {
 
   if (val === 'ALL') {
     if (subcatInput) subcatInput.value = 'รวมทุกหมวดสารบรรณ';
-    if (titleInput && (!titleInput.value || titleInput.value.startsWith('แบบทดสอบงานสารบรรณ:'))) {
+    if (titleInput) {
       titleInput.value = 'แบบทดสอบงานสารบรรณ (รวมทุกหมวด)';
     }
   } else {
     if (subcatInput) subcatInput.value = val;
-    if (titleInput && (!titleInput.value || titleInput.value.startsWith('แบบทดสอบงานสารบรรณ:'))) {
+    if (titleInput) {
       titleInput.value = `แบบทดสอบงานสารบรรณ: ${val}`;
     }
   }
