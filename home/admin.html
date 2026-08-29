@@ -281,6 +281,29 @@
           </select>
         </div>
 
+        <!-- หมวดหมู่ระเบียบสารบรรณ (12 บท) เฉพาะวิชางานสารบรรณ -->
+        <div class="form-group" id="sarabanChapterGroup" style="margin-top: -4px; margin-bottom: 16px;">
+          <label for="sarabanChapterSelect" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <span style="font-weight: 700; color: #BD1B0B;">📑 เลือกหมวดหมู่ระเบียบสารบรรณ (12 บท)</span>
+            <span style="font-size: 11px; color: #64748B;">AI จะออกข้อสอบตามบทที่เลือก</span>
+          </label>
+          <select id="sarabanChapterSelect" class="form-input" onchange="onSarabanChapterChange()" style="border: 1.5px solid #BD1B0B; background: #FFF5F5; font-weight: 600; color: #1E293B; border-radius: 10px; padding: 10px 12px;">
+            <option value="ALL">📚 รวมทุกบท (ข้อสอบรวมทุกหมวดสารบรรณ)</option>
+            <option value="บทที่ 1 บทนำและนิยาม">บทที่ 1 บทนำและนิยาม</option>
+            <option value="บทที่ 2 มาตรฐานแบบพิมพ์ ตราครุฑ">บทที่ 2 มาตรฐานแบบพิมพ์ ตราครุฑ</option>
+            <option value="บทที่ 3 หนังสือภายนอก หนังสือภายใน หนังสือประทับตรา">บทที่ 3 หนังสือภายนอก หนังสือภายใน หนังสือประทับตรา</option>
+            <option value="บทที่ 4 หนังสือสั่งการ">บทที่ 4 หนังสือสั่งการ</option>
+            <option value="บทที่ 5 หนังสือประชาสัมพันธ์">บทที่ 5 หนังสือประชาสัมพันธ์</option>
+            <option value="บทที่ 6 หนังสือที่เจ้าหน้าที่จัดทำขึ้นหรือรับไว้เป็นหลักฐาน">บทที่ 6 หนังสือที่เจ้าหน้าที่จัดทำขึ้นหรือรับไว้เป็นหลักฐาน</option>
+            <option value="บทที่ 7 เบ็ดเตล็ด สำเนา สำเนาคู่ฉบับ หนังสือเวียน">บทที่ 7 เบ็ดเตล็ด สำเนา สำเนาคู่ฉบับ หนังสือเวียน</option>
+            <option value="บทที่ 8 การรับส่งหนังสือ">บทที่ 8 การรับส่งหนังสือ</option>
+            <option value="บทที่ 9 การเก็บรักษา">บทที่ 9 การเก็บรักษา</option>
+            <option value="บทที่ 10 การยืม">บทที่ 10 การยืม</option>
+            <option value="บทที่ 11 การทำลาย">บทที่ 11 การทำลาย</option>
+            <option value="บทที่ 12 ระบบสารบรรณอิเล็กทรอนิกส์">บทที่ 12 ระบบสารบรรณอิเล็กทรอนิกส์</option>
+          </select>
+        </div>
+
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
           <!-- 2. เลือกคลังข้อมูล -->
           <div class="form-group">

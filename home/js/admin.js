@@ -259,6 +259,14 @@ function closeAddExamModal() {
 function onSubjectChange() {
   const subject = document.getElementById('examSubject').value;
   const kbSelect = document.getElementById('knowledgeBaseSelect');
+  const sarabanGroup = document.getElementById('sarabanChapterGroup');
+
+  if (subject === 'งานสารบรรณ') {
+    if (sarabanGroup) sarabanGroup.style.display = 'block';
+    onSarabanChapterChange();
+  } else {
+    if (sarabanGroup) sarabanGroup.style.display = 'none';
+  }
 
   kbSelect.innerHTML = '';
 
@@ -276,6 +284,27 @@ function onSubjectChange() {
   }
 
   onKnowledgeBaseChange();
+}
+
+function onSarabanChapterChange() {
+  const chapterSelect = document.getElementById('sarabanChapterSelect');
+  const titleInput = document.getElementById('examTitle');
+  const subcatInput = document.getElementById('examSubcategory');
+  
+  if (!chapterSelect) return;
+  const val = chapterSelect.value;
+
+  if (val === 'ALL') {
+    if (subcatInput) subcatInput.value = 'รวมทุกหมวดสารบรรณ';
+    if (titleInput && (!titleInput.value || titleInput.value.startsWith('แบบทดสอบงานสารบรรณ:'))) {
+      titleInput.value = 'แบบทดสอบงานสารบรรณ (รวมทุกหมวด)';
+    }
+  } else {
+    if (subcatInput) subcatInput.value = val;
+    if (titleInput && (!titleInput.value || titleInput.value.startsWith('แบบทดสอบงานสารบรรณ:'))) {
+      titleInput.value = `แบบทดสอบงานสารบรรณ: ${val}`;
+    }
+  }
 }
 
 function onKnowledgeBaseChange() {
