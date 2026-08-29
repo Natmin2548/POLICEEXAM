@@ -508,25 +508,7 @@ window.startStreakChallenge = function(trackKey) {
   }
 };
 
-if (btnExamModeBank) {
-  btnExamModeBank.addEventListener('click', () => {
-    if (examModeModal) examModeModal.style.display = 'none';
-    
-    // Hide other views
-    if (homeView) homeView.classList.remove('active');
-    if (communityView) communityView.classList.remove('active');
-    if (battleView) battleView.classList.remove('active');
-    if (statsView) statsView.classList.remove('active');
-    if (profileView) profileView.classList.remove('active');
-    if (questionBankView) questionBankView.classList.remove('active');
-    
-    // Show Question Bank view
-    if (questionBankView) questionBankView.classList.add('active');
-    
-    // Deselect bottom tabs
-    navTabs.forEach(t => t.classList.remove('active'));
-  });
-}
+
 
 // Handle subject selection from Question Bank
 
