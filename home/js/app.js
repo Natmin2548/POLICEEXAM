@@ -485,55 +485,28 @@ if (btnNotification && notifBadge) {
 }
 
 // 3. Start Exam (calls real daily exam API)
-const btnStartExam = document.getElementById('btnStartExam');
-const examModeModal = document.getElementById('examModeModal');
-const btnCloseExamMode = document.getElementById('btnCloseExamMode');
-const btnExamModeBank = document.getElementById('btnExamModeBank');
-const btnExamModePretest = document.getElementById('btnExamModePretest');
-const progressBarFill = document.getElementById('progressBarFill');
-const progressCountText = document.getElementById('progressCountText');
-const progressPercentText = document.getElementById('progressPercentText');
+// ==========================================
+// Daily Streak Challenge & Police Track Selection
+// ==========================================
+window.openPoliceTrackModal = function() {
+  const modal = document.getElementById('selectPoliceTrackModal');
+  if (modal) modal.style.display = 'flex';
+};
 
-if (btnStartExam) {
-  btnStartExam.addEventListener('click', () => {
-    if (examModeModal) examModeModal.style.display = 'flex';
-  });
-}
+window.closePoliceTrackModal = function() {
+  const modal = document.getElementById('selectPoliceTrackModal');
+  if (modal) modal.style.display = 'none';
+};
 
-if (btnCloseExamMode) {
-  btnCloseExamMode.addEventListener('click', () => {
-    if (examModeModal) examModeModal.style.display = 'none';
-  });
-}
-
-async function handleStartExam(mode) {
-  if (examModeModal) examModeModal.style.display = 'none';
-  if (btnStartExam) {
-    btnStartExam.disabled = true;
-    btnStartExam.textContent = 'กำลังโหลด...';
+window.startStreakChallenge = function(trackKey) {
+  closePoliceTrackModal();
+  
+  if (trackKey === 'ปราบปราม') {
+    startBankSubjectQuiz('สายปราบปราม', 'streak_prab', 10, 'แบบทดสอบประจำวัน: สายปราบปราม (นปพ./ปป.)');
+  } else {
+    startBankSubjectQuiz('สายอำนวยการ/พฐ.', 'streak_amnuay', 10, 'แบบทดสอบประจำวัน: สายอำนวยการ / พิสูจน์หลักฐาน (อก./พฐ.)');
   }
-
-  try {
-    const res = await fetch(`${API_BASE}/api/exams/daily?mode=${mode}`, {
-      headers: { 'Authorization': `Bearer ${authToken}` }
-    });
-
-    if (res.ok) {
-      const data = await res.json();
-      const questionCount = data.questions ? data.questions.length : 0;
-      await showCenteredAlert(`🎯 พร้อมทำข้อสอบ! มีทั้งหมด ${questionCount} ข้อ\n\n(เข้าสู่โหมดทำข้อสอบ)`);
-    } else {
-      await showCenteredAlert('ไม่สามารถโหลดข้อสอบได้ กรุณาลองใหม่');
-    }
-  } catch (err) {
-    console.error('Daily exam fetch error:', err);
-    await showCenteredAlert('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
-  }
-  if (btnStartExam) {
-    btnStartExam.disabled = false;
-    btnStartExam.textContent = 'ทำเลย';
-  }
-}
+};
 
 if (btnExamModeBank) {
   btnExamModeBank.addEventListener('click', () => {
@@ -6103,6 +6076,21 @@ function saveQuizHistoryRecord(record) {
     if (!Array.isArray(list)) list = [];
     list.unshift(record);
     localStorage.setItem('userQuizHistory', JSON.stringify(list.slice(0, 50)));
+
+    // If this was a daily streak exam, increment streak!
+    if (record.setId && String(record.setId).startsWith('streak_')) {
+      if (typeof userProfile !== 'undefined' && userProfile) {
+        userProfile.streak = (userProfile.streak || 0) + 1;
+        const greetingStreakTitle = document.getElementById('greetingStreakTitle');
+        const greetingStreakSubtitle = document.getElementById('greetingStreakSubtitle');
+        if (greetingStreakTitle) {
+          greetingStreakTitle.innerHTML = `${userProfile.streak} วันติดต่อกัน! 🔥`;
+        }
+        if (greetingStreakSubtitle) {
+          greetingStreakSubtitle.textContent = 'ยอดเยี่ยม! คุณทำข้อสอบรักษา streak สำเร็จแล้ว 🎉';
+        }
+      }
+    }
   } catch (e) {
     console.error('Save quiz record error:', e);
   }
