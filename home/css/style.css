@@ -2330,6 +2330,102 @@ body {
   gap: 4px;
 }
 
+/* Chapter Cards Grid (Step 2: Chapter Selection) */
+.chapters-list-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+@media (min-width: 640px) {
+  .chapters-list-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+}
+
+.chapter-item-card {
+  background: #FFFFFF;
+  border: 1.5px solid #FEE2E2;
+  border-radius: 18px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(189, 27, 11, 0.03);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  text-align: left;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.chapter-item-card:hover {
+  transform: translateY(-2px);
+  border-color: #BD1B0B;
+  box-shadow: 0 8px 20px rgba(189, 27, 11, 0.08);
+  background: #FFFBFB;
+}
+
+.chapter-item-card:active {
+  transform: scale(0.98);
+}
+
+.chapter-item-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.chapter-icon-pill {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: #FEF2F2;
+  color: #BD1B0B;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+  border: 1px solid #FECACA;
+}
+
+.chapter-title-bold {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1E293B;
+  line-height: 1.35;
+  margin-bottom: 2px;
+}
+
+.chapter-meta-sub {
+  font-size: 11.5px;
+  color: #64748B;
+  font-weight: 500;
+}
+
+.chapter-arrow-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #FEF2F2;
+  color: #BD1B0B;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.chapter-item-card:hover .chapter-arrow-btn {
+  background: #BD1B0B;
+  color: #FFFFFF;
+}
+
 .subject-card:hover .subject-card-tag {
   background: #BD1B0B;
   color: #FFFFFF;

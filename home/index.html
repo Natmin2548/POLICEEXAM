@@ -32,7 +32,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <!-- Stylesheet -->
-  <link rel="stylesheet" href="css/style.css?v=32">
+  <link rel="stylesheet" href="css/style.css?v=33">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
   <!-- Cropper.js -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
@@ -164,8 +164,8 @@
       box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
     }
   </style>
-  <script src="vocab-data.js?v=32" defer></script>
-  <script src="js/app.js?v=32" defer></script>
+  <script src="vocab-data.js?v=33" defer></script>
+  <script src="js/app.js?v=33" defer></script>
 </head>
 
 <body>
@@ -956,92 +956,81 @@
           </div>
         </div>
 
-        <!-- Subject Detail Panel with Sub-tab Switching (Hidden initially) -->
-        <div id="questionBankExamSetsList" style="display: none;">
-          <!-- Top Subject Header Hero Card -->
+        <!-- Step 2: Chapters / Subcategories Directory Panel (Clean & Structured) -->
+        <div id="questionBankChaptersList" style="display: none;">
+          <!-- Top Subject Header -->
           <div class="subject-detail-header-card">
             <div class="subject-header-top">
               <button onclick="backToBankSubjects()" class="btn-subject-back">
                 <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                   <polyline points="15 18 9 12 15 6"/>
                 </svg>
-                <span>เลือกวิชา</span>
+                <span>เลือกวิชาอื่น</span>
               </button>
-              <span id="currentSubjectBadge" class="subject-tag-badge">วิชาหลักสำคัญ</span>
+              <span id="currentSubjectChapterBadge" class="subject-tag-badge">วิชาหลักสำคัญ</span>
             </div>
 
             <div class="subject-title-wrapper">
-              <div id="currentSubjectIcon" class="subject-icon-box" style="background: #EFF6FF; color: #2563EB;">
-                📚
+              <div id="currentSubjectChapterIcon" class="subject-icon-box">
+                📑
               </div>
               <div style="flex: 1;">
-                <h2 id="currentSubjectTitle" class="subject-title-text">งานสารบรรณ</h2>
-                <p id="currentSubjectSubtitle" class="subject-subtitle-text">ระเบียบสำนักนายกรัฐมนตรี</p>
+                <h2 id="currentSubjectChapterTitle" class="subject-title-text">งานสารบรรณ</h2>
+                <p id="currentSubjectChapterSubtitle" class="subject-subtitle-text">เลือกหมวดหมู่หรือบทเรียนที่ต้องการฝึกฝน</p>
               </div>
-            </div>
-
-            <!-- Sleek Apple Progress Overview -->
-            <div class="subject-progress-container" id="subjectProgressOverview">
-              <div class="subject-progress-header">
-                <span style="display: flex; align-items: center; gap: 6px;">
-                  <span>📊</span> <span>ความคืบหน้าการฝึกฝน</span>
-                </span>
-                <span id="subjectProgressLabel" class="subject-progress-percent">0 / 0 ชุด (0%)</span>
-              </div>
-              <div class="subject-progress-track">
-                <div id="subjectProgressBar" class="subject-progress-fill" style="width: 0%;"></div>
-              </div>
-            </div>
-
-            <!-- iOS-Style Segmented Control (ชุดข้อสอบ / สถิติคะแนน) -->
-            <div class="subject-subtabs-control">
-              <button id="btnSubjectSubtabExamSets" class="subtab-item active" onclick="switchSubjectSubtab('examSets')">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-                </svg>
-                <span>ชุดข้อสอบ</span>
-              </button>
-              <button id="btnSubjectSubtabStats" class="subtab-item" onclick="switchSubjectSubtab('stats')">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <line x1="18" y1="20" x2="18" y2="10"/>
-                  <line x1="12" y1="20" x2="12" y2="4"/>
-                  <line x1="6" y1="20" x2="6" y2="14"/>
-                </svg>
-                <span>สถิติคะแนน</span>
-              </button>
             </div>
           </div>
 
-          <!-- SUBTAB 1: Available Exam Sets View -->
-          <div id="subjectSubtabExamSetsView" style="display: block;">
-            <!-- Apple-Style Search Input for Many Chapters & Sets -->
-            <div class="apple-search-box">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="11" cy="11" r="8"></circle>
-                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-              </svg>
-              <input type="text" id="txtExamSetSearch" oninput="onSearchExamSets(this.value)" placeholder="ค้นหาบทเรียน หมวดหมู่ หรือชื่อชุดข้อสอบ...">
+          <!-- Section Label -->
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding: 0 4px;">
+            <h3 style="margin: 0; font-size: 15px; font-weight: 800; color: #1E293B;">
+              หมวดหมู่ / บทเรียนในวิชานี้
+            </h3>
+            <span id="chaptersCountBadge" style="font-size: 12px; color: #BD1B0B; font-weight: 700; background: #FEF2F2; padding: 3px 10px; border-radius: 999px; border: 1px solid #FECACA;">12 บทเรียน</span>
+          </div>
+
+          <!-- Chapters Directory Grid -->
+          <div class="chapters-list-grid" id="chaptersContainer">
+            <!-- Dynamically populated via JS -->
+          </div>
+        </div>
+
+        <!-- Step 3: Exam Sets for the Selected Chapter -->
+        <div id="questionBankExamSetsList" style="display: none;">
+          <div class="subject-detail-header-card">
+            <div class="subject-header-top">
+              <button onclick="backToBankChapters()" class="btn-subject-back">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="15 18 9 12 15 6"/>
+                </svg>
+                <span>กลับไปเลือกหมวด</span>
+              </button>
+              <span id="currentChapterBadge" class="subject-tag-badge">แบบทดสอบรายบท</span>
             </div>
 
-            <!-- Dynamic Subcategory / Chapter Filter Pills Rail -->
-            <div id="subcategoryFilterContainer" class="filter-pills-scroll">
-              <!-- Dynamically populated via JS -->
-            </div>
-
-            <!-- Header and Counter -->
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding: 0 4px;">
-              <h3 style="margin: 0; font-size: 15px; font-weight: 800; color: #1E293B;">
-                ชุดข้อสอบในวิชานี้
-              </h3>
-              <span id="examSetsCountTag" style="font-size: 12px; color: #64748B; font-weight: 600; background: #F1F5F9; padding: 3px 10px; border-radius: 999px;">0 ชุดข้อสอบ</span>
-            </div>
-
-            <!-- Grid Layout for Cards -->
-            <div class="exam-sets-grid" id="examSetsContainer">
-              <!-- Dynamically populated via JS -->
+            <div class="subject-title-wrapper">
+              <div id="currentChapterIcon" class="subject-icon-box">
+                📝
+              </div>
+              <div style="flex: 1;">
+                <h2 id="currentChapterTitle" class="subject-title-text">บทที่ 10 การยืม</h2>
+                <p id="currentChapterSubtitle" class="subject-subtitle-text">ชุดข้อสอบในหมวดนี้</p>
+              </div>
             </div>
           </div>
+
+          <!-- Section Label -->
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding: 0 4px;">
+            <h3 style="margin: 0; font-size: 15px; font-weight: 800; color: #1E293B;">
+              ชุดข้อสอบที่พร้อมสอบ
+            </h3>
+            <span id="examSetsCountTag" style="font-size: 12px; color: #64748B; font-weight: 600; background: #F1F5F9; padding: 3px 10px; border-radius: 999px;">1 ชุดข้อสอบ</span>
+          </div>
+
+          <div class="exam-sets-grid" id="examSetsContainer">
+            <!-- Dynamically populated via JS -->
+          </div>
+        </div>
 
           <!-- SUBTAB 2: Subject Score Statistics View -->
           <div id="subjectSubtabStatsView" style="display: none;">

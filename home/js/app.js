@@ -5338,24 +5338,83 @@ function compressImage(img, originalSize) {
 }
 
 // ==========================================
-// Question Bank Subject & Exam Sets Selection Logic
+// Question Bank Subject & Exam Sets Selection Logic (Clean 3-Step Hierarchy)
 // ==========================================
 let currentSelectedBankSubject = null;
+let currentSelectedChapter = 'ALL';
+let currentFetchedExamSets = [];
 
-window.startBankSubject = function(subjectKey) {
+const BANK_SUBJECT_CHAPTERS = {
+  'งานสารบรรณ': [
+    'รวมทุกบท (ข้อสอบครบ ๑๒ บท)',
+    'บทที่ 1 ชนิดของหนังสือราชการ',
+    'บทที่ 2 มาตรฐานแบบพิมพ์และตราครุฑ',
+    'บทที่ 3 หนังสือภายนอก หนังสือภายใน หนังสือประทับตรา',
+    'บทที่ 4 หนังสือสั่งการ (คำสั่ง ข้อบังคับ ระเบียบ)',
+    'บทที่ 5 หนังสือประชาสัมพันธ์ (ประกาศ แถลงการณ์ ข่าว)',
+    'บทที่ 6 หนังสือที่เจ้าหน้าที่จัดทำขึ้นหรือรับไว้เป็นหลักฐาน',
+    'บทที่ 7 เบ็ดเตล็ด สำเนาคู่ฉบับ หนังสือเวียน',
+    'บทที่ 8 การรับและส่งหนังสือ',
+    'บทที่ 9 การเก็บรักษา',
+    'บทที่ 10 การยืม',
+    'บทที่ 11 การทำลาย',
+    'บทที่ 12 ระบบสารบรรณอิเล็กทรอนิกส์'
+  ],
+  'ลักษณะที่54': [
+    'รวมทุกบท (สารบรรณตำรวจ ๕๔)',
+    'บทที่ 1 นิยามและอำนาจลงนาม',
+    'บทที่ 2 รหัสพยัญชนะ ตร.',
+    'บทที่ 3 คำขึ้นต้น คำลงท้าย และยศตำรวจ',
+    'บทที่ 4 ส่วนราชการเจ้าของเรื่อง',
+    'บทที่ 5 การเสนอหนังสือ 5 หัวข้อ',
+    'บทที่ 6 การรับส่งหนังสือ ตร.',
+    'บทที่ 7 หนังสือลับและการรักษาความปลอดภัย',
+    'บทที่ 8 การเก็บรักษาและทำลาย'
+  ],
+  'ทั่วไป': [
+    'รวมทุกบท (ความสามารถทั่วไป)',
+    'บทที่ 1 อนุกรมและรูปแบบตัวเลข',
+    'บทที่ 2 คณิตศาสตร์พื้นฐานและสมการ',
+    'บทที่ 3 ร้อยละ เปอร์เซ็นต์ และกำไรขาดทุน',
+    'บทที่ 4 ตรรกศาสตร์และการใช้เหตุผล',
+    'บทที่ 5 อุปมาอุปไมย'
+  ],
+  'สังคม': [
+    'รวมทุกบท (สังคมและวัฒนธรรม)',
+    'บทที่ 1 สังคม วัฒนธรรม และจริยธรรม',
+    'บทที่ 2 ปรัชญาเศรษฐกิจพอเพียง',
+    'บทที่ 3 ประชาคมอาเซียน (AEC)',
+    'บทที่ 4 ข่าวสารและเหตุการณ์สำคัญ'
+  ],
+  'กฏหมาย': [
+    'รวมทุกบท (กฎหมายที่ควรรู้)',
+    'บทที่ 1 พ.ร.บ.ตำรวจแห่งชาติ',
+    'บทที่ 2 ประมวลกฎหมายวิธีพิจารณาความอาญา',
+    'บทที่ 3 ประมวลกฎหมายอาญา',
+    'บทที่ 4 กฎหมายปกครองและสิทธิมนุษยชน'
+  ],
+  'คอม': [
+    'รวมทุกบท (เทคโนโลยีสารสนเทศ)',
+    'บทที่ 1 คอมพิวเตอร์พื้นฐานและฮาร์ดแวร์',
+    'บทที่ 2 ซอฟต์แวร์และระบบปฏิบัติการ',
+    'บทที่ 3 ระบบเครือข่ายและอินเทอร์เน็ต',
+    'บทที่ 4 พ.ร.บ.คอมพิวเตอร์และไซเบอร์'
+  ]
+};
+
+// Step 1 -> Step 2: Open Chapters List
+window.startBankSubject = async function(subjectKey) {
   currentSelectedBankSubject = subjectKey;
   
   const bankMainHeader = document.getElementById('bankMainHeader');
   const subjectsGridPanel = document.getElementById('questionBankSubjectsList');
+  const chaptersPanel = document.getElementById('questionBankChaptersList');
   const examSetsPanel = document.getElementById('questionBankExamSetsList');
-  const titleEl = document.getElementById('currentSubjectTitle');
-  const subtitleEl = document.getElementById('currentSubjectSubtitle');
-  const badgeEl = document.getElementById('currentSubjectBadge');
-  const iconEl = document.getElementById('currentSubjectIcon');
 
   if (bankMainHeader) bankMainHeader.style.display = 'none';
   if (subjectsGridPanel) subjectsGridPanel.style.display = 'none';
-  if (examSetsPanel) examSetsPanel.style.display = 'block';
+  if (examSetsPanel) examSetsPanel.style.display = 'none';
+  if (chaptersPanel) chaptersPanel.style.display = 'block';
 
   // Format Subject Details
   const subjectMetadata = {
@@ -5363,57 +5422,37 @@ window.startBankSubject = function(subjectKey) {
       title: 'งานสารบรรณ',
       subtitle: 'ระเบียบสำนักนายกรัฐมนตรี (พ.ศ. ๒๕๒๖ และที่แก้ไขเพิ่มเติม)',
       badge: 'วิชาหลักสำคัญ',
-      icon: '📜',
-      iconBg: '#EFF6FF',
-      iconColor: '#2563EB'
+      icon: '📜'
     },
     'ลักษณะที่54': {
       title: 'ลักษณะที่ ๕๔',
       subtitle: 'งานสารบรรณตำรวจ (พ.ศ. ๒๕๕๖)',
       badge: 'วิชาเฉพาะ ตร.',
-      icon: '📑',
-      iconBg: '#FDF2F8',
-      iconColor: '#BE185D'
+      icon: '📑'
     },
     'ทั่วไป': {
       title: 'ความสามารถทั่วไป',
       subtitle: 'คณิตศาสตร์ การคิดคำนวณ และการใช้เหตุผล',
       badge: 'วิชาหลักสำคัญ',
-      icon: '🧠',
-      iconBg: '#ECFDF5',
-      iconColor: '#059669'
-    },
-    'คณิต': {
-      title: 'คณิตศาสตร์ตำรวจ',
-      subtitle: 'การวิเคราะห์ตัวเลข อนุกรม และตรรกศาสตร์',
-      badge: 'วิชาหลักสำคัญ',
-      icon: '🔢',
-      iconBg: '#ECFDF5',
-      iconColor: '#059669'
+      icon: '🧠'
     },
     'สังคม': {
       title: 'สังคมและวัฒนธรรม',
       subtitle: 'ความรู้รอบตัว ปรัชญาเศรษฐกิจพอเพียง และอาเซียน',
       badge: 'วิชาความรู้ทั่วไป',
-      icon: '🏛️',
-      iconBg: '#F5F3FF',
-      iconColor: '#7C3AED'
+      icon: '🏛️'
     },
     'กฏหมาย': {
-      title: 'กฎหมายที่ประชาชนควรรู้',
-      subtitle: 'กฎหมายการปฏิบัติงานตำรวจและวิธีพิจารณาความอาญา',
+      title: 'กฎหมายที่ควรรู้',
+      subtitle: 'กฎหมายตำรวจและวิธีพิจารณาความอาญา',
       badge: 'วิชากฎหมาย',
-      icon: '⚖️',
-      iconBg: '#FEF2F2',
-      iconColor: '#DC2626'
+      icon: '⚖️'
     },
     'คอม': {
       title: 'เทคโนโลยีสารสนเทศ',
       subtitle: 'คอมพิวเตอร์และระบบสารสนเทศเพื่อการสอบ',
       badge: 'วิชาเทคโนโลยี',
-      icon: '💻',
-      iconBg: '#ECFEFF',
-      iconColor: '#0891B2'
+      icon: '💻'
     }
   };
 
@@ -5421,218 +5460,145 @@ window.startBankSubject = function(subjectKey) {
     title: subjectKey,
     subtitle: 'แนวข้อสอบตำรวจ',
     badge: 'วิชาเตรียมสอบ',
-    icon: '📚',
-    iconBg: '#EFF6FF',
-    iconColor: '#2563EB'
+    icon: '📚'
   };
+
+  const titleEl = document.getElementById('currentSubjectChapterTitle');
+  const subtitleEl = document.getElementById('currentSubjectChapterSubtitle');
+  const badgeEl = document.getElementById('currentSubjectChapterBadge');
+  const iconEl = document.getElementById('currentSubjectChapterIcon');
 
   if (titleEl) titleEl.textContent = meta.title;
   if (subtitleEl) subtitleEl.textContent = meta.subtitle;
   if (badgeEl) badgeEl.textContent = meta.badge;
-  if (iconEl) {
-    iconEl.textContent = meta.icon;
-    iconEl.style.background = meta.iconBg;
-    iconEl.style.color = meta.iconColor;
-  }
+  if (iconEl) iconEl.textContent = meta.icon;
 
-  // Reset to Exam Sets tab by default
-  switchSubjectSubtab('examSets');
-
-  renderSubjectExamSets(subjectKey);
-  renderSubjectStatistics(subjectKey);
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-};
-
-window.switchSubjectSubtab = function(tabName) {
-  const btnExamSets = document.getElementById('btnSubjectSubtabExamSets');
-  const btnStats = document.getElementById('btnSubjectSubtabStats');
-  const viewExamSets = document.getElementById('subjectSubtabExamSetsView');
-  const viewStats = document.getElementById('subjectSubtabStatsView');
-
-  if (tabName === 'examSets') {
-    if (viewExamSets) viewExamSets.style.display = 'block';
-    if (viewStats) viewStats.style.display = 'none';
-    if (btnExamSets) btnExamSets.classList.add('active');
-    if (btnStats) btnStats.classList.remove('active');
-  } else if (tabName === 'stats') {
-    if (viewExamSets) viewExamSets.style.display = 'none';
-    if (viewStats) viewStats.style.display = 'block';
-    if (btnExamSets) btnExamSets.classList.remove('active');
-    if (btnStats) btnStats.classList.add('active');
-  }
-};
-
-window.backToBankSubjects = function() {
-  const bankMainHeader = document.getElementById('bankMainHeader');
-  const subjectsGridPanel = document.getElementById('questionBankSubjectsList');
-  const examSetsPanel = document.getElementById('questionBankExamSetsList');
-
-  if (bankMainHeader) bankMainHeader.style.display = 'flex';
-  if (subjectsGridPanel) subjectsGridPanel.style.display = 'block';
-  if (examSetsPanel) examSetsPanel.style.display = 'none';
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-};
-
-let currentFetchedExamSets = [];
-let activeSubcategoryFilter = 'ALL';
-let currentExamSearchQuery = '';
-
-window.onSearchExamSets = function(query) {
-  currentExamSearchQuery = (query || '').trim().toLowerCase();
-  renderFilteredExamSets(currentSelectedBankSubject);
-};
-
-async function renderSubjectExamSets(subjectKey) {
-  const container = document.getElementById('examSetsContainer');
-  const countTag = document.getElementById('examSetsCountTag');
-  const searchInput = document.getElementById('txtExamSetSearch');
-  if (searchInput) searchInput.value = '';
-  currentExamSearchQuery = '';
-
-  if (!container) return;
-
-  container.innerHTML = '<div style="text-align: center; color: #64748B; padding: 36px; font-size: 14px;"><div class="leaderboard-item-loading">กำลังโหลดข้อมูลชุดข้อสอบ... ⏳</div></div>';
-
+  // Fetch sets from API
   try {
     const res = await fetch(`${API_BASE}/api/exams/sets?category=${encodeURIComponent(subjectKey)}`);
     const sets = res.ok ? await res.json() : [];
-
     currentFetchedExamSets = Array.isArray(sets) ? sets : [];
-    activeSubcategoryFilter = 'ALL';
-
-    renderSubcategoryFilterPills(subjectKey, currentFetchedExamSets);
-    renderFilteredExamSets(subjectKey);
-
   } catch (err) {
-    console.error('Render exam sets error:', err);
-    container.innerHTML = '<div style="text-align: center; color: #EF4444; padding: 24px; font-size: 13px;">เกิดข้อผิดพลาดในการโหลดชุดข้อสอบ</div>';
-  }
-}
-
-function renderSubcategoryFilterPills(subjectKey, sets) {
-  const subcatFilterContainer = document.getElementById('subcategoryFilterContainer');
-  if (!subcatFilterContainer) return;
-
-  const subcats = Array.from(new Set(sets.map(s => s.subcategory).filter(Boolean)));
-
-  if (subcats.length === 0) {
-    subcatFilterContainer.style.display = 'none';
-    subcatFilterContainer.innerHTML = '';
-    return;
+    currentFetchedExamSets = [];
   }
 
-  subcatFilterContainer.style.display = 'flex';
-  
-  let pillsHtml = `
-    <button onclick="filterExamSetsBySubcategory('ALL')" id="subcatPill_ALL" class="filter-pill-btn active">
-      ทั้งหมด (${sets.length})
-    </button>
-  `;
-
-  subcats.forEach(sc => {
-    const safeSc = escapeHTML(sc);
-    const count = sets.filter(s => s.subcategory === sc).length;
-    pillsHtml += `
-      <button onclick="filterExamSetsBySubcategory('${safeSc}')" id="subcatPill_${safeSc}" class="filter-pill-btn">
-        ${safeSc} (${count})
-      </button>
-    `;
-  });
-
-  subcatFilterContainer.innerHTML = pillsHtml;
-}
-
-window.filterExamSetsBySubcategory = function(subcat) {
-  activeSubcategoryFilter = subcat;
-
-  const subcatFilterContainer = document.getElementById('subcategoryFilterContainer');
-  if (subcatFilterContainer) {
-    const buttons = subcatFilterContainer.querySelectorAll('.filter-pill-btn');
-    buttons.forEach(btn => {
-      if (btn.id === `subcatPill_${subcat}`) {
-        btn.classList.add('active');
-      } else {
-        btn.classList.remove('active');
-      }
-    });
-  }
-
-  renderFilteredExamSets(currentSelectedBankSubject);
+  // Render Chapters Grid
+  renderSubjectChaptersGrid(subjectKey);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
-function renderFilteredExamSets(subjectKey) {
+// Render Chapter Cards (Step 2)
+function renderSubjectChaptersGrid(subjectKey) {
+  const container = document.getElementById('chaptersContainer');
+  const countBadge = document.getElementById('chaptersCountBadge');
+  if (!container) return;
+
+  const defaultChapters = BANK_SUBJECT_CHAPTERS[subjectKey] || ['รวมทุกบท'];
+  
+  // Also collect dynamic subcategories from fetched sets
+  const fetchedSubcats = currentFetchedExamSets.map(s => s.subcategory).filter(Boolean);
+  const combinedChapters = Array.from(new Set([...defaultChapters, ...fetchedSubcats]));
+
+  if (countBadge) countBadge.textContent = `${combinedChapters.length} หมวดหมู่`;
+
+  container.innerHTML = combinedChapters.map((ch, idx) => {
+    // Count sets in this chapter
+    const matchingSets = currentFetchedExamSets.filter(s => {
+      if (idx === 0 || ch.includes('รวมทุกบท')) return true;
+      if (s.subcategory && (s.subcategory.includes(ch) || ch.includes(s.subcategory))) return true;
+      if (s.title && s.title.includes(ch.replace(/บทที่\s*\d+\s*/, ''))) return true;
+      return false;
+    });
+
+    const isMaster = idx === 0 || ch.includes('รวมทุกบท');
+    const icon = isMaster ? '📚' : '📑';
+    const setCountText = matchingSets.length > 0 ? `${matchingSets.length} ชุดข้อสอบพร้อมทำ` : 'แบบทดสอบประจำบทเรียน';
+
+    return `
+      <button class="chapter-item-card" onclick="selectBankChapter('${subjectKey}', '${ch.replace(/'/g, "\\'")}')">
+        <div class="chapter-item-left">
+          <div class="chapter-icon-pill">
+            ${icon}
+          </div>
+          <div>
+            <div class="chapter-title-bold">${escapeHTML(ch)}</div>
+            <div class="chapter-meta-sub">${setCountText}</div>
+          </div>
+        </div>
+        <div class="chapter-arrow-btn">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+        </div>
+      </button>
+    `;
+  }).join('');
+}
+
+// Step 2 -> Step 3: Open Exam Sets for Selected Chapter
+window.selectBankChapter = function(subjectKey, chapterName) {
+  currentSelectedChapter = chapterName;
+
+  const chaptersPanel = document.getElementById('questionBankChaptersList');
+  const examSetsPanel = document.getElementById('questionBankExamSetsList');
+
+  if (chaptersPanel) chaptersPanel.style.display = 'none';
+  if (examSetsPanel) examSetsPanel.style.display = 'block';
+
+  const titleEl = document.getElementById('currentChapterTitle');
+  const subtitleEl = document.getElementById('currentChapterSubtitle');
+  const badgeEl = document.getElementById('currentChapterBadge');
+  const iconEl = document.getElementById('currentChapterIcon');
+
+  const isMaster = chapterName.includes('รวมทุกบท');
+
+  if (titleEl) titleEl.textContent = chapterName;
+  if (subtitleEl) subtitleEl.textContent = `วิชา ${subjectKey}`;
+  if (badgeEl) badgeEl.textContent = isMaster ? 'ข้อสอบรวม' : 'แบบทดสอบประจำบท';
+  if (iconEl) iconEl.textContent = isMaster ? '📚' : '📝';
+
+  renderFilteredExamSetsForChapter(subjectKey, chapterName);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+// Render Exam Sets inside Selected Chapter (Step 3)
+function renderFilteredExamSetsForChapter(subjectKey, chapterName) {
   const container = document.getElementById('examSetsContainer');
   const countTag = document.getElementById('examSetsCountTag');
-  const progressBar = document.getElementById('subjectProgressBar');
-  const progressLabel = document.getElementById('subjectProgressLabel');
-
   if (!container) return;
 
   const history = getLocalQuizHistory(subjectKey);
+  const isMaster = chapterName.includes('รวมทุกบท');
 
-  // Calculate Overall Progress across all fetched sets in this subject
-  if (Array.isArray(currentFetchedExamSets) && currentFetchedExamSets.length > 0) {
-    let completedCount = 0;
-    currentFetchedExamSets.forEach(s => {
-      const hasRecord = history.some(h => {
-        if (!h) return false;
-        if (h.setId && String(h.setId) === String(s.id)) return true;
-        if (h.setType && String(h.setType) === String(s.id)) return true;
-        if (h.setTitle && s.title && h.setTitle.trim().toLowerCase() === s.title.trim().toLowerCase()) return true;
-        return false;
-      });
-      if (hasRecord) completedCount++;
-    });
+  let sets = currentFetchedExamSets.filter(s => {
+    if (isMaster) return true;
+    if (s.subcategory && (s.subcategory.includes(chapterName) || chapterName.includes(s.subcategory))) return true;
+    const cleanChapter = chapterName.replace(/บทที่\s*\d+\s*/, '').trim();
+    if (s.title && cleanChapter && s.title.includes(cleanChapter)) return true;
+    return false;
+  });
 
-    const total = currentFetchedExamSets.length;
-    const pct = Math.round((completedCount / total) * 100);
-
-    if (progressBar) progressBar.style.width = `${pct}%`;
-    if (progressLabel) progressLabel.textContent = `${completedCount} / ${total} ชุด (${pct}%)`;
-  } else {
-    if (progressBar) progressBar.style.width = '0%';
-    if (progressLabel) progressLabel.textContent = '0 / 0 ชุด (0%)';
-  }
-
-  // Filter by Subcategory
-  let sets = currentFetchedExamSets;
-  if (activeSubcategoryFilter !== 'ALL') {
-    sets = sets.filter(s => s.subcategory === activeSubcategoryFilter);
-  }
-
-  // Filter by Search Query
-  if (currentExamSearchQuery) {
-    sets = sets.filter(s => {
-      const titleMatch = (s.title || '').toLowerCase().includes(currentExamSearchQuery);
-      const subcatMatch = (s.subcategory || '').toLowerCase().includes(currentExamSearchQuery);
-      const descMatch = (s.desc || '').toLowerCase().includes(currentExamSearchQuery);
-      return titleMatch || subcatMatch || descMatch;
-    });
+  // If no specific set found, create a dynamic single set for this chapter
+  if (sets.length === 0) {
+    sets = [{
+      id: `set_${encodeURIComponent(chapterName)}`,
+      title: `แบบทดสอบ${subjectKey}: ${chapterName}`,
+      desc: `ชุดข้อสอบมาตรฐานพร้อมเฉลยละเอียดและจับเวลาสำหรับ ${chapterName}`,
+      subcategory: chapterName,
+      timeMinutes: 20,
+      questionsCount: 15,
+      tag: 'ชุดข้อสอบจริง'
+    }];
   }
 
   if (countTag) countTag.textContent = `${sets.length} ชุดข้อสอบ`;
 
-  if (!Array.isArray(sets) || sets.length === 0) {
-    container.innerHTML = `
-      <div style="background: white; border: 1px dashed #CBD5E1; border-radius: 20px; padding: 36px 20px; text-align: center; grid-column: 1 / -1;">
-        <div style="font-size: 28px; margin-bottom: 8px;">🔍</div>
-        <div style="font-size: 15px; font-weight: 800; color: #475569; margin-bottom: 4px;">ไม่พบชุดข้อสอบที่ตรงกับการค้นหา</div>
-        <p style="font-size: 13px; color: #94A3B8; margin: 0;">ลองเปลี่ยนคำค้นหา หรือเลือกหมวดหมู่อื่น</p>
-      </div>
-    `;
-    return;
-  }
-
-  container.innerHTML = sets.map(s => {
+  container.innerHTML = sets.map((s, idx) => {
     const setRecords = history.filter(h => {
       if (!h) return false;
       if (h.setId && String(h.setId) === String(s.id)) return true;
       if (h.setType && String(h.setType) === String(s.id)) return true;
-      if (h.setTitle && s.title) {
-        const hTitle = h.setTitle.trim().toLowerCase();
-        const sTitle = s.title.trim().toLowerCase();
-        if (hTitle === sTitle) return true;
-      }
+      if (h.setTitle && s.title && h.setTitle.trim().toLowerCase() === s.title.trim().toLowerCase()) return true;
       return false;
     });
 
@@ -5647,15 +5613,13 @@ function renderFilteredExamSets(subjectKey) {
       isRetake = true;
     }
 
-    const subcatTag = s.subcategory ? `<span class="exam-tag-pill exam-tag-subcat">${escapeHTML(s.subcategory)}</span>` : '';
-
     return `
       <div class="exam-set-card">
         <div>
           <div class="exam-card-header">
             <div class="exam-card-tags">
               <span class="exam-tag-pill exam-tag-primary">${escapeHTML(s.tag || 'ชุดข้อสอบจริง')}</span>
-              ${subcatTag}
+              <span class="exam-tag-pill exam-tag-subcat">${escapeHTML(s.subcategory || chapterName)}</span>
             </div>
             ${statusBadge}
           </div>
@@ -5666,10 +5630,10 @@ function renderFilteredExamSets(subjectKey) {
         
         <div class="exam-card-footer">
           <div class="exam-meta-info">
-            <span>⏱️ ${s.timeMinutes || 30} นาที</span>
-            <span>📝 ${s.questionsCount || 30} ข้อ</span>
+            <span>⏱️ ${s.timeMinutes || 24} นาที</span>
+            <span>📝 ${s.questionsCount || 20} ข้อ</span>
           </div>
-          <button onclick="launchSelectedExamSet('${subjectKey}', '${s.id}', ${s.questionsCount || 10}, '${escapeHTML(s.title)}')" class="btn-exam-action ${isRetake ? 'retake' : ''}">
+          <button onclick="launchSelectedExamSet('${subjectKey}', '${s.id}', ${s.questionsCount || 20}, '${escapeHTML(s.title)}')" class="btn-exam-action ${isRetake ? 'retake' : ''}">
             <span>${btnLabel}</span>
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -5681,6 +5645,30 @@ function renderFilteredExamSets(subjectKey) {
     `;
   }).join('');
 }
+
+// Back to Step 2 (Chapters)
+window.backToBankChapters = function() {
+  const chaptersPanel = document.getElementById('questionBankChaptersList');
+  const examSetsPanel = document.getElementById('questionBankExamSetsList');
+
+  if (examSetsPanel) examSetsPanel.style.display = 'none';
+  if (chaptersPanel) chaptersPanel.style.display = 'block';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+// Back to Step 1 (Subjects)
+window.backToBankSubjects = function() {
+  const bankMainHeader = document.getElementById('bankMainHeader');
+  const subjectsGridPanel = document.getElementById('questionBankSubjectsList');
+  const chaptersPanel = document.getElementById('questionBankChaptersList');
+  const examSetsPanel = document.getElementById('questionBankExamSetsList');
+
+  if (chaptersPanel) chaptersPanel.style.display = 'none';
+  if (examSetsPanel) examSetsPanel.style.display = 'none';
+  if (subjectsGridPanel) subjectsGridPanel.style.display = 'block';
+  if (bankMainHeader) bankMainHeader.style.display = 'flex';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
 
 function getLocalQuizHistory(subjectKey) {
   try {
