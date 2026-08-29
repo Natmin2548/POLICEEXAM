@@ -376,7 +376,7 @@ function onSubjectChange() {
 window.selectQuestionCount = function(count) {
   const input = document.getElementById('examNumQuestions');
   if (input) input.value = count;
-  ['5', '10', '15', '20'].forEach(c => {
+  ['10', '20', '30', '40', '50'].forEach(c => {
     const btn = document.getElementById(`btnCount${c}`);
     if (btn) {
       if (parseInt(c) === count) {
