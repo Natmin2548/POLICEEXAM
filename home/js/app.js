@@ -112,28 +112,22 @@ let authToken = null;
 
 async function checkSession() {
   authToken = localStorage.getItem('authToken');
-  let sessionData = localStorage.getItem('userProfile');
+  const sessionData = localStorage.getItem('userProfile');
 
-  if (!authToken || !sessionData) {
-    userProfile = {
-      id: 1,
-      fullName: 'ผู้หมวดทดสอบ (มิน)',
-      username: 'police_min',
-      email: 'min.police@exam.internal',
-      role: 'ADMIN',
-      streak: 5,
-      xp: 2450,
-      points: 1200
-    };
-    authToken = 'test_dev_token_' + Date.now();
-    localStorage.setItem('authToken', authToken);
-    localStorage.setItem('userProfile', JSON.stringify(userProfile));
-  } else {
-    try {
-      userProfile = JSON.parse(sessionData);
-    } catch(e) {
-      userProfile = { id: 1, fullName: 'ผู้หมวดทดสอบ (มิน)', role: 'ADMIN' };
-    }
+  if (!authToken || !sessionData || authToken.startsWith('test_dev_') || authToken.startsWith('dev_')) {
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('userProfile');
+    window.location.replace('/index.html');
+    return;
+  }
+
+  try {
+    userProfile = JSON.parse(sessionData);
+  } catch(e) {
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('userProfile');
+    window.location.replace('/index.html');
+    return;
   }
 
   if (typeof initializeDashboard === 'function') initializeDashboard();

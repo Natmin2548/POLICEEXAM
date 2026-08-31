@@ -47,17 +47,15 @@ async function initAdmin() {
     }
 
     if (!currentUserProfile) {
-      currentUserProfile = {
-        id: 1,
-        fullName: 'ผู้หมวดทดสอบ (มิน)',
-        username: 'police_min',
-        role: 'ADMIN'
-      };
-      localStorage.setItem('userProfile', JSON.stringify(currentUserProfile));
+      alert('ไม่พบข้อมูลผู้ใช้งาน กรุณาเข้าสู่ระบบใหม่อีกครั้ง');
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('userProfile');
+      window.location.href = '/index.html';
+      return;
     }
 
     currentUser = currentUserProfile;
-    document.getElementById('adminUserInfo').textContent = `Admin: ${currentUser.username}`;
+    document.getElementById('adminUserInfo').textContent = `Admin: ${currentUser.username || currentUser.fullName || currentUser.email || 'Admin'}`;
     
     // Setup Navigation
     setupTabs();

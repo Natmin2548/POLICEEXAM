@@ -6,23 +6,16 @@
   <script>
     (function() {
       try {
-        let token = localStorage.getItem('authToken');
-        let profile = localStorage.getItem('userProfile');
-        if (!token || !profile) {
-          const defaultTestProfile = {
-            id: 1,
-            fullName: 'ผู้หมวดทดสอบ (มิน)',
-            username: 'police_min',
-            email: 'min.police@exam.internal',
-            role: 'ADMIN',
-            streak: 5,
-            xp: 2450,
-            points: 1200
-          };
-          localStorage.setItem('authToken', 'test_dev_token_' + Date.now());
-          localStorage.setItem('userProfile', JSON.stringify(defaultTestProfile));
+        const token = localStorage.getItem('authToken');
+        const profile = localStorage.getItem('userProfile');
+        if (!token || !profile || token.startsWith('test_dev_') || token.startsWith('dev_')) {
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('userProfile');
+          window.location.replace('/index.html');
         }
-      } catch (e) {}
+      } catch (e) {
+        window.location.replace('/index.html');
+      }
     })();
   </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -164,8 +157,8 @@
       box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
     }
   </style>
-  <script src="vocab-data.js?v=41" defer></script>
-  <script src="js/app.js?v=41" defer></script>
+  <script src="vocab-data.js?v=42" defer></script>
+  <script src="js/app.js?v=42" defer></script>
 </head>
 
 <body>

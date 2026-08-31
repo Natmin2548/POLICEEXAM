@@ -6,29 +6,14 @@
   <script>
     (function() {
       try {
-        let token = localStorage.getItem('authToken');
-        let profile = localStorage.getItem('userProfile');
+        const token = localStorage.getItem('authToken');
+        const profile = localStorage.getItem('userProfile');
         
-        if (!token || !profile) {
-          const defaultProfile = {
-            id: 1,
-            fullName: 'ผู้หมวดทดสอบ (มิน)',
-            username: 'police_min',
-            email: 'min.police@exam.internal',
-            role: 'ADMIN',
-            streak: 5,
-            xp: 2450,
-            points: 1200
-          };
-          localStorage.setItem('authToken', 'permanent_session_token_' + Date.now());
-          localStorage.setItem('userProfile', JSON.stringify(defaultProfile));
+        // If user is already authenticated with a real session, redirect to Dashboard
+        if (token && profile && !token.startsWith('dev_') && !token.startsWith('test_')) {
+          window.location.replace('/home/index.html');
         }
-
-        // Direct entry to Dashboard
-        window.location.replace('/home/index.html');
-      } catch (e) {
-        window.location.href = '/home/index.html';
-      }
+      } catch (e) {}
     })();
   </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -42,7 +27,7 @@
   <!-- Google Identity Services SDK -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <!-- External Application Script -->
-  <script src="js/app.js?v=12" defer></script>
+  <script src="js/app.js?v=13" defer></script>
 </head>
 
 <body>
@@ -182,12 +167,7 @@
 
       <!-- Google Sign-In Button Container -->
       <div id="googleSignInButtonLogin" class="google-signin-container"
-        style="display: flex; justify-content: center; margin: 8px 0 12px 0;"></div>
-
-      <!-- Quick Direct Entry (Dev / Bypass) -->
-      <a href="home/index.html" onclick="localStorage.setItem('authToken', 'dev_' + Date.now()); localStorage.setItem('userProfile', JSON.stringify({ id: 1, fullName: 'ผู้หมวดทดสอบ (มิน)', username: 'police_min', role: 'ADMIN', streak: 5, xp: 2450, points: 1200 }));" style="display: block; width: 100%; padding: 12px; border-radius: 14px; background: #F8FAFC; border: 1px solid #E2E8F0; color: #334155; font-weight: 700; font-size: 13.5px; text-decoration: none; text-align: center; transition: all 0.2s;">
-        ⚡ เข้าสู่ระบบทันที (โหมดทดสอบ)
-      </a>
+        style="display: flex; justify-content: center; margin: 12px 0 8px 0;"></div>
 
       <p style="margin-top: 14px; font-size: 12px; color: #94A3B8; line-height: 1.5;">
         ระบบจะเชื่อมต่อข้อมูลคะแนนและประวัติการสอบของคุณโดยอัตโนมัติ
