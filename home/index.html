@@ -229,117 +229,117 @@
 
       <div id="homeView" class="tab-view active">
         <!-- Daily Challenge Banner -->
-        <section class="target-card" onclick="openPoliceTrackModal()" style="background: linear-gradient(135deg, #A81308 0%, #780B04 60%, #4D0602 100%); border-radius: 24px; padding: 26px 30px; color: white; margin-bottom: 22px; cursor: pointer; transition: transform 0.15s ease; position: relative; overflow: hidden; box-shadow: 0 12px 32px -4px rgba(168, 19, 8, 0.35);">
+        <section class="target-card" onclick="openPoliceTrackModal()" style="background: linear-gradient(135deg, #A81308 0%, #780B04 60%, #4D0602 100%); color: white; cursor: pointer; transition: transform 0.15s ease; position: relative; overflow: hidden; box-shadow: 0 12px 32px -4px rgba(168, 19, 8, 0.35);">
           <!-- Decorative Background Circles -->
           <div style="position: absolute; top: -30px; right: -20px; width: 180px; height: 180px; border-radius: 50%; background: rgba(0,0,0,0.18);"></div>
           <div style="position: absolute; bottom: -50px; right: 100px; width: 140px; height: 140px; border-radius: 50%; background: rgba(255,255,255,0.03);"></div>
 
           <div style="position: relative; z-index: 2; max-width: 580px;">
             <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-              <div style="background: rgba(255,255,255,0.18); width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 17px;">
+              <div style="background: rgba(255,255,255,0.18); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0;">
                 🔥
               </div>
-              <span style="font-size: 11.5px; font-weight: 700; color: rgba(255,255,255,0.85); letter-spacing: 0.08em; text-transform: uppercase;">DAILY CHALLENGE</span>
+              <span style="font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.85); letter-spacing: 0.08em; text-transform: uppercase;">DAILY CHALLENGE</span>
             </div>
             
-            <h2 id="greetingStreakTitle" style="margin: 0 0 4px 0; font-size: 22px; font-weight: 800; color: #FFFFFF; letter-spacing: -0.01em;">0 วันติดต่อกัน!</h2>
-            <p id="greetingStreakSubtitle" style="margin: 0 0 16px 0; font-size: 13px; color: rgba(255,255,255,0.85); line-height: 1.4;">ทำข้อสอบวันนี้เพื่อรักษา Streak และพัฒนาความแม่นยำของคุณ</p>
+            <h2 id="greetingStreakTitle" style="margin: 0 0 4px 0; font-size: 20px; font-weight: 800; color: #FFFFFF; letter-spacing: -0.01em;">0 วันติดต่อกัน!</h2>
+            <p id="greetingStreakSubtitle" style="margin: 0 0 14px 0; font-size: 12.5px; color: rgba(255,255,255,0.85); line-height: 1.4;">ทำข้อสอบวันนี้เพื่อรักษา Streak และพัฒนาความแม่นยำของคุณ</p>
 
-            <button id="btnStartExam" onclick="event.stopPropagation(); openPoliceTrackModal();" style="background: #FFFFFF; color: #991007; border: none; padding: 10px 24px; border-radius: 999px; font-weight: 700; font-family: inherit; font-size: 13.5px; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,0.18); display: inline-flex; align-items: center; gap: 6px; transition: transform 0.15s ease;">
+            <button id="btnStartExam" onclick="event.stopPropagation(); openPoliceTrackModal();" style="background: #FFFFFF; color: #991007; border: none; padding: 9px 22px; border-radius: 999px; font-weight: 700; font-family: inherit; font-size: 13px; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,0.18); display: inline-flex; align-items: center; gap: 6px; transition: transform 0.15s ease;">
               <span>⚡</span> เริ่มทำข้อสอบทันที
             </button>
           </div>
         </section>
 
         <!-- 2x2 Action Grid -->
-        <section class="action-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 26px;">
+        <section class="action-grid">
           <!-- 1. บีบอัดรูป -->
-          <button onclick="openImageCompressorModal()" style="background: #F0FDF4; border: 1px solid #DCFCE7; border-radius: 20px; padding: 18px 20px; display: flex; align-items: center; gap: 16px; text-align: left; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease;">
-            <div style="width: 44px; height: 44px; border-radius: 14px; background: #FFFFFF; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.03); flex-shrink: 0;">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 22px; height: 22px;">
+          <button class="action-card-btn" onclick="openImageCompressorModal()" style="background: #F0FDF4; border: 1px solid #DCFCE7;">
+            <div class="action-icon-box" style="background: #FFFFFF; box-shadow: 0 2px 6px rgba(0,0,0,0.03);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
                 <circle cx="8.5" cy="8.5" r="1.5"></circle>
                 <polyline points="21 15 16 10 5 21"></polyline>
               </svg>
             </div>
-            <div>
-              <h3 style="margin: 0; font-size: 15px; font-weight: 700; color: #0F172A;">บีบอัดรูป</h3>
-              <p style="margin: 2px 0 0 0; font-size: 12px; color: #64748B;">ลดขนาดไฟล์สมัครสอบตำรวจ</p>
+            <div style="min-width: 0;">
+              <h3 class="action-title" style="color: #0F172A;">บีบอัดรูป</h3>
+              <p class="action-subtitle" style="color: #64748B;">ลดขนาดไฟล์สมัครสอบตำรวจ</p>
             </div>
           </button>
 
           <!-- 2. คลังข้อสอบ -->
-          <button onclick="document.getElementById('btnTabBank').click()" style="background: #EFF6FF; border: 1px solid #DBEAFE; border-radius: 20px; padding: 18px 20px; display: flex; align-items: center; gap: 16px; text-align: left; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease;">
-            <div style="width: 44px; height: 44px; border-radius: 14px; background: #FFFFFF; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.03); flex-shrink: 0;">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 22px; height: 22px;">
+          <button class="action-card-btn" onclick="document.getElementById('btnTabBank').click()" style="background: #EFF6FF; border: 1px solid #DBEAFE;">
+            <div class="action-icon-box" style="background: #FFFFFF; box-shadow: 0 2px 6px rgba(0,0,0,0.03);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
                 <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
               </svg>
             </div>
-            <div>
-              <h3 style="margin: 0; font-size: 15px; font-weight: 700; color: #0F172A;">คลังข้อสอบ</h3>
-              <p style="margin: 2px 0 0 0; font-size: 12px; color: #64748B;">6 หมวดวิชาพร้อมบทเรียน</p>
+            <div style="min-width: 0;">
+              <h3 class="action-title" style="color: #0F172A;">คลังข้อสอบ</h3>
+              <p class="action-subtitle" style="color: #64748B;">6 หมวดวิชาพร้อมบทเรียน</p>
             </div>
           </button>
 
           <!-- 3. แบทเทิล -->
-          <button onclick="showBattleMaintenanceAlert(event)" style="background: #FFF7ED; border: 1px solid #FFEDD5; border-radius: 20px; padding: 18px 20px; display: flex; align-items: center; gap: 16px; text-align: left; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease;">
-            <div style="width: 44px; height: 44px; border-radius: 14px; background: #FFFFFF; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.03); flex-shrink: 0;">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#EA580C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 22px; height: 22px;">
+          <button class="action-card-btn" onclick="showBattleMaintenanceAlert(event)" style="background: #FFF7ED; border: 1px solid #FFEDD5;">
+            <div class="action-icon-box" style="background: #FFFFFF; box-shadow: 0 2px 6px rgba(0,0,0,0.03);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#EA580C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5" />
                 <line x1="13" y1="19" x2="19" y2="13" />
                 <line x1="16" y1="22" x2="22" y2="16" />
                 <line x1="3" y1="21" x2="10" y2="14" />
               </svg>
             </div>
-            <div>
-              <h3 style="margin: 0; font-size: 15px; font-weight: 700; color: #0F172A;">แบทเทิล</h3>
-              <p style="margin: 2px 0 0 0; font-size: 12px; color: #64748B;">ดวลข้อสอบ 1v1 & อันดับ</p>
+            <div style="min-width: 0;">
+              <h3 class="action-title" style="color: #0F172A;">แบทเทิล</h3>
+              <p class="action-subtitle" style="color: #64748B;">ดวลข้อสอบ 1v1 & อันดับ</p>
             </div>
           </button>
 
           <!-- 4. คลังคำศัพท์ -->
-          <button onclick="openVocabArena()" style="background: #FAF5FF; border: 1px solid #F3E8FF; border-radius: 20px; padding: 18px 20px; display: flex; align-items: center; gap: 16px; text-align: left; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease;">
-            <div style="width: 44px; height: 44px; border-radius: 14px; background: #FFFFFF; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.03); flex-shrink: 0;">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 22px; height: 22px;">
+          <button class="action-card-btn" onclick="openVocabArena()" style="background: #FAF5FF; border: 1px solid #F3E8FF;">
+            <div class="action-icon-box" style="background: #FFFFFF; box-shadow: 0 2px 6px rgba(0,0,0,0.03);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
                 <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
               </svg>
             </div>
-            <div>
-              <h3 style="margin: 0; font-size: 15px; font-weight: 700; color: #0F172A;">คลังคำศัพท์</h3>
-              <p style="margin: 2px 0 0 0; font-size: 12px; color: #64748B;">Flashcards อังกฤษ-ตำรวจ</p>
+            <div style="min-width: 0;">
+              <h3 class="action-title" style="color: #7C3AED;">คลังคำศัพท์</h3>
+              <p class="action-subtitle" style="color: #64748B;">Flashcards อังกฤษ-ตำรวจ</p>
             </div>
           </button>
         </section>
 
         <!-- Section Title: ผลการเรียนรู้ & จุดอ่อน -->
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 28px; margin-bottom: 14px;">
-          <h3 style="margin: 0; font-size: 17px; font-weight: 800; color: #0F172A;">ผลการเรียนรู้ & จุดอ่อน</h3>
-          <span style="font-size: 12px; color: #94A3B8;" id="statsLastUpdateText">อัปเดตล่าสุด: วันนี้</span>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 24px; margin-bottom: 12px;">
+          <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #0F172A;">ผลการเรียนรู้ & จุดอ่อน</h3>
+          <span style="font-size: 11.5px; color: #94A3B8;" id="statsLastUpdateText">อัปเดตล่าสุด: วันนี้</span>
         </div>
 
-        <!-- 2 Column Analytics Grid (Top Row) -->
-        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 14px;">
+        <!-- 2 Column Analytics Grid (Responsive 1-col on Mobile, 2-col on Tablet/PC) -->
+        <div class="analytics-grid-2col">
           <!-- Card 1: ความเชี่ยวชาญรายวิชา (Radar) -->
-          <div style="background: white; border-radius: 20px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.02); border: 1px solid #F1F5F9;">
+          <div class="stat-card-box" style="background: white; border-radius: 20px; padding: 18px; box-shadow: 0 1px 4px rgba(0,0,0,0.02); border: 1px solid #F1F5F9;">
             <h4 style="margin: 0; font-size: 14px; font-weight: 700; color: #0F172A;">ความเชี่ยวชาญรายวิชา</h4>
-            <span style="font-size: 11px; color: #94A3B8; display: block; margin-bottom: 12px;">Subject Mastery</span>
+            <span style="font-size: 11px; color: #94A3B8; display: block; margin-bottom: 10px;">Subject Mastery</span>
             <div style="position: relative; height: 210px;">
               <canvas id="statsRadarChartCanvas"></canvas>
             </div>
           </div>
 
           <!-- Card 2: คะแนนรายวิชา (Bar) -->
-          <div style="background: white; border-radius: 20px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.02); border: 1px solid #F1F5F9; display: flex; flex-direction: column; justify-content: space-between;">
+          <div class="stat-card-box" style="background: white; border-radius: 20px; padding: 18px; box-shadow: 0 1px 4px rgba(0,0,0,0.02); border: 1px solid #F1F5F9; display: flex; flex-direction: column; justify-content: space-between;">
             <div>
               <h4 style="margin: 0; font-size: 14px; font-weight: 700; color: #0F172A;">คะแนนรายวิชา</h4>
-              <span style="font-size: 11px; color: #94A3B8; display: block; margin-bottom: 12px;">Score by Subject</span>
+              <span style="font-size: 11px; color: #94A3B8; display: block; margin-bottom: 10px;">Score by Subject</span>
               <div style="position: relative; height: 165px;">
                 <canvas id="statsBarChartCanvas"></canvas>
               </div>
             </div>
-            <div style="display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; margin-top: 8px; font-size: 10px; font-weight: 600; color: #64748B;">
+            <div style="display: flex; justify-content: center; gap: 5px; flex-wrap: wrap; margin-top: 8px; font-size: 9.5px; font-weight: 600; color: #64748B;">
               <span style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: 999px; background: #F8FAFC;"><span style="width: 5px; height: 5px; border-radius: 50%; background: #BD1B0B;"></span>สารบรรณ</span>
               <span style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: 999px; background: #F8FAFC;"><span style="width: 5px; height: 5px; border-radius: 50%; background: #BD1B0B;"></span>คำนวณ</span>
               <span style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: 999px; background: #F8FAFC;"><span style="width: 5px; height: 5px; border-radius: 50%; background: #BD1B0B;"></span>สังคม</span>
@@ -351,18 +351,18 @@
         </div>
 
         <!-- Full Width Card: พัฒนาการ 8 สัปดาห์ (Line) -->
-        <div style="background: white; border-radius: 20px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.02); border: 1px solid #F1F5F9; margin-bottom: 24px;">
-          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+        <div style="background: white; border-radius: 20px; padding: 18px; box-shadow: 0 1px 4px rgba(0,0,0,0.02); border: 1px solid #F1F5F9; margin-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
             <div>
               <h4 style="margin: 0; font-size: 14px; font-weight: 700; color: #0F172A;">พัฒนาการ 8 สัปดาห์</h4>
               <span style="font-size: 11px; color: #94A3B8;">8-Week Score Progression</span>
             </div>
             <div style="text-align: right;">
-              <span style="font-size: 19px; font-weight: 800; color: #BD1B0B; display: block; line-height: 1;" id="statOverallPercent">0%</span>
+              <span style="font-size: 18px; font-weight: 800; color: #BD1B0B; display: block; line-height: 1;" id="statOverallPercent">0%</span>
               <span style="font-size: 10.5px; font-weight: 700; color: #16A34A;" id="statOverallProgression">▲ +0% พัฒนาการ</span>
             </div>
           </div>
-          <div style="position: relative; height: 150px;">
+          <div style="position: relative; height: 145px;">
             <canvas id="statsLineChartCanvas"></canvas>
           </div>
         </div>
