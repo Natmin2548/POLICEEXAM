@@ -165,23 +165,23 @@
   <header class="navbar" style="position: sticky; top: 0; z-index: 100; background: rgba(255,255,255,0.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid #F1F5F9; padding: 14px 0;">
     <div class="nav-container" style="display: flex; justify-content: space-between; align-items: center; max-width: 1080px; margin: 0 auto; padding: 0 24px;">
       
-      <!-- Left: Logo & Greeting -->
-      <div style="display: flex; align-items: center; gap: 16px;">
+      <!-- Left: Logo -->
+      <div style="display: flex; align-items: center;">
         <a href="#" onclick="if(document.getElementById('btnTabHome')) document.getElementById('btnTabHome').click(); return false;" style="display: flex; align-items: center; gap: 8px; text-decoration: none;">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="#BD1B0B" stroke="#BD1B0B" stroke-width="0">
             <path d="M12 2L3 6v6c0 5.3 3.9 10.2 9 11.4C17.1 22.2 21 17.3 21 12V6L12 2z" />
           </svg>
           <span style="font-size: 17px; font-weight: 900; letter-spacing: -0.02em; color: #0F172A;">POLICE<span style="color: #BD1B0B;">EXAM</span></span>
         </a>
-        <div style="width: 1px; height: 28px; background: #E2E8F0;"></div>
-        <div class="nav-greeting" style="display: flex; flex-direction: column;">
-          <span class="greeting-subtitle" style="font-size: 11.5px; color: #94A3B8; font-weight: 500; line-height: 1;">สวัสดีตอนเช้า</span>
-          <h1 class="greeting-title" id="greetingName" style="font-size: 15px; font-weight: 800; color: #0F172A; margin: 3px 0 0 0;">มิน</h1>
-        </div>
       </div>
 
-      <!-- Right: User Avatar -->
-      <div class="header-actions" style="display: flex; align-items: center; gap: 12px;">
+      <!-- Right: Greeting & User Avatar -->
+      <div class="header-actions" style="display: flex; align-items: center; gap: 10px;">
+        <div class="nav-greeting" style="display: flex; flex-direction: column; text-align: right;">
+          <span class="greeting-subtitle" style="font-size: 11px; color: #94A3B8; font-weight: 500; line-height: 1;">สวัสดีตอนเช้า</span>
+          <h1 class="greeting-title" id="greetingName" style="font-size: 14.5px; font-weight: 800; color: #0F172A; margin: 3px 0 0 0;">มิน</h1>
+        </div>
+
         <!-- User Profile Dropdown Anchor -->
         <div class="profile-menu-container" style="position: relative;">
           <button class="btn-profile-menu" id="btnProfileMenu" onclick="const d = document.getElementById('profileDropdown'); if(d) d.classList.toggle('active'); event.stopPropagation();" aria-label="Profile Menu" style="width: 38px; height: 38px; border-radius: 50%; overflow: hidden; border: 1.5px solid #E2E8F0; padding: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; background: none;">
