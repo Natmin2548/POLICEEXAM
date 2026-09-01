@@ -855,240 +855,299 @@
       <!-- statsView was moved to homeView -->
       <!-- Question Bank View Content -->
       <div id="questionBankView" class="tab-view">
-        <!-- Main Library Header Banner (Clean White & Crimson Red Design) -->
-        <section id="bankMainHeader" class="bank-hero-banner-white">
-          <div class="bank-hero-top">
-            <div class="bank-hero-title-group">
-              <div class="bank-hero-icon-badge-red">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-                  <path d="M9 7h6"/>
-                  <path d="M9 11h6"/>
-                </svg>
+        <!-- ==========================================
+             SCREEN 1: 6 Main Subject Categories Grid
+             ========================================== -->
+        <div id="questionBankSubjectsList">
+          <!-- Header Banner -->
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div style="width: 44px; height: 44px; border-radius: 14px; background: #FFF1F2; border: 1.5px solid #FFE4E6; display: flex; align-items: center; justify-content: center; font-size: 20px; color: #BD1B0B;">
+                📄
               </div>
               <div>
-                <h2 class="bank-hero-title-red">คลังข้อสอบนายสิบตำรวจ</h2>
-                <p class="bank-hero-subtitle-clean">เลือกหมวดวิชาเพื่อเริ่มฝึกฝนข้อสอบจริง</p>
+                <h2 style="margin: 0; font-size: 19px; font-weight: 800; color: #0F172A;">คลังข้อสอบนายสิบตำรวจ</h2>
+                <p style="margin: 2px 0 0 0; font-size: 12px; color: #64748B;">เลือกหมวดวิชาเพื่อเริ่มฝึกฝนข้อสอบจริง</p>
               </div>
             </div>
-
-            <div class="bank-hero-badge-pill-red">
-              <span class="badge-count-num-red">6</span>
-              <span class="badge-count-label-red">หมวดวิชา</span>
+            <div style="background: #FFF1F2; border: 1px solid #FFE4E6; color: #BD1B0B; font-weight: 700; font-size: 11.5px; padding: 5px 14px; border-radius: 999px;">
+              6 หมวดวิชาหลัก
             </div>
           </div>
-        </section>
 
-        <!-- Subjects List Grid (Apple Luxury Vector Cards) -->
-        <div id="questionBankSubjectsList">
-          <div class="bank-subjects-grid">
+          <!-- Search Bar -->
+          <div style="position: relative; margin-bottom: 20px;">
+            <span style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); font-size: 15px; color: #94A3B8;">🔍</span>
+            <input type="text" id="txtSearchSubjects" oninput="filterBankSubjects(this.value)" placeholder="ค้นหาวิชา หรือหัวข้อ..." style="width: 100%; padding: 13px 16px 13px 44px; border-radius: 16px; border: 1px solid #E2E8F0; background: #FFFFFF; font-size: 13.5px; font-family: inherit; outline: none; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+          </div>
+
+          <!-- 6 Subjects Grid -->
+          <div class="bank-subjects-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px;">
             <!-- 1. สารบรรณ -->
-            <button class="subject-card" onclick="startBankSubject('งานสารบรรณ')">
-              <span class="subject-mini-badge badge-blue">12 บทเรียน</span>
-              <div class="subject-card-icon" style="background: #EFF6FF; color: #2563EB;">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 26px; height: 26px;">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                  <polyline points="14 2 14 8 20 8"></polyline>
-                  <line x1="16" y1="13" x2="8" y2="13"></line>
-                  <line x1="16" y1="17" x2="8" y2="17"></line>
-                  <polyline points="10 9 9 9 8 9"></polyline>
-                </svg>
+            <div class="subject-card-item" onclick="startBankSubject('งานสารบรรณ')" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 22px; padding: 22px 20px; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease; position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between;">
+              <div style="position: absolute; top: 0; right: 0; width: 80px; height: 80px; border-radius: 0 0 0 80px; background: #F0F7FF; opacity: 0.7; pointer-events: none;"></div>
+              <div>
+                <div style="width: 44px; height: 44px; border-radius: 14px; background: #F0F7FF; display: flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 14px;">
+                  📄
+                </div>
+                <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #0F172A;">งานสารบรรณ</h3>
+                <p style="margin: 4px 0 16px 0; font-size: 12px; color: #64748B;">ระเบียบสำนักนายกฯ ๒๕๒๖</p>
               </div>
-              <span class="subject-card-title">งานสารบรรณ</span>
-              <span class="subject-card-hint">ระเบียบสำนักนายกฯ ๒๕๒๖</span>
-              <div class="subject-card-tag">เริ่มฝึกฝน ›</div>
-            </button>
+              <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px solid #F8FAFC;">
+                <span style="background: #EFF6FF; color: #2563EB; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px; display: inline-flex; align-items: center; gap: 4px;">
+                  📄 12 บทเรียน
+                </span>
+                <span style="color: #2563EB; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px;">
+                  เริ่มฝึกฝน ›
+                </span>
+              </div>
+            </div>
 
             <!-- 2. ความสามารถทั่วไป -->
-            <button class="subject-card" onclick="startBankSubject('ทั่วไป')">
-              <span class="subject-mini-badge badge-green">คำนวณ & ตรรกะ</span>
-              <div class="subject-card-icon" style="background: #ECFDF5; color: #059669;">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 26px; height: 26px;">
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
-                  <line x1="12" y1="17" x2="12.01" y2="17"></line>
-                </svg>
+            <div class="subject-card-item" onclick="startBankSubject('ทั่วไป')" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 22px; padding: 22px 20px; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease; position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between;">
+              <div style="position: absolute; top: 0; right: 0; width: 80px; height: 80px; border-radius: 0 0 0 80px; background: #ECFDF5; opacity: 0.7; pointer-events: none;"></div>
+              <div>
+                <div style="width: 44px; height: 44px; border-radius: 14px; background: #ECFDF5; display: flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 14px;">
+                  🧮
+                </div>
+                <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #0F172A;">ความสามารถทั่วไป</h3>
+                <p style="margin: 4px 0 16px 0; font-size: 12px; color: #64748B;">อนุกรม ร้อยละ ตรรกศาสตร์ & คำนวณ</p>
               </div>
-              <span class="subject-card-title">ความสามารถทั่วไป</span>
-              <span class="subject-card-hint">อนุกรม ร้อยละ คำนวณ</span>
-              <div class="subject-card-tag">เริ่มฝึกฝน ›</div>
-            </button>
+              <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px solid #F8FAFC;">
+                <span style="background: #ECFDF5; color: #059669; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px; display: inline-flex; align-items: center; gap: 4px;">
+                  📄 8 บทเรียน
+                </span>
+                <span style="color: #059669; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px;">
+                  เริ่มฝึกฝน ›
+                </span>
+              </div>
+            </div>
 
             <!-- 3. สังคม -->
-            <button class="subject-card" onclick="startBankSubject('สังคม')">
-              <span class="subject-mini-badge badge-purple">ความรู้รอบตัว</span>
-              <div class="subject-card-icon" style="background: #F5F3FF; color: #7C3AED;">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 26px; height: 26px;">
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <line x1="2" y1="12" x2="22" y2="12"></line>
-                  <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-                </svg>
+            <div class="subject-card-item" onclick="startBankSubject('สังคม')" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 22px; padding: 22px 20px; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease; position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between;">
+              <div style="position: absolute; top: 0; right: 0; width: 80px; height: 80px; border-radius: 0 0 0 80px; background: #FFF7ED; opacity: 0.7; pointer-events: none;"></div>
+              <div>
+                <div style="width: 44px; height: 44px; border-radius: 14px; background: #FFF7ED; display: flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 14px;">
+                  🌍
+                </div>
+                <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #0F172A;">สังคมและวัฒนธรรม</h3>
+                <p style="margin: 4px 0 16px 0; font-size: 12px; color: #64748B;">AEC ศาสนา และเหตุการณ์ปัจจุบัน</p>
               </div>
-              <span class="subject-card-title">สังคมและวัฒนธรรม</span>
-              <span class="subject-card-hint">AEC ศาสนา และข่าวสาร</span>
-              <div class="subject-card-tag">เริ่มฝึกฝน ›</div>
-            </button>
+              <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px solid #F8FAFC;">
+                <span style="background: #FFF7ED; color: #EA580C; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px; display: inline-flex; align-items: center; gap: 4px;">
+                  📄 6 บทเรียน
+                </span>
+                <span style="color: #EA580C; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px;">
+                  เริ่มฝึกฝน ›
+                </span>
+              </div>
+            </div>
 
             <!-- 4. กฎหมาย -->
-            <button class="subject-card" onclick="startBankSubject('กฏหมาย')">
-              <span class="subject-mini-badge badge-red">กฎหมายตำรวจ</span>
-              <div class="subject-card-icon" style="background: #FEF2F2; color: #DC2626;">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 26px; height: 26px;">
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                </svg>
+            <div class="subject-card-item" onclick="startBankSubject('กฏหมาย')" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 22px; padding: 22px 20px; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease; position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between;">
+              <div style="position: absolute; top: 0; right: 0; width: 80px; height: 80px; border-radius: 0 0 0 80px; background: #FAF5FF; opacity: 0.7; pointer-events: none;"></div>
+              <div>
+                <div style="width: 44px; height: 44px; border-radius: 14px; background: #FAF5FF; display: flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 14px;">
+                  ⚖️
+                </div>
+                <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #0F172A;">กฎหมายที่ควรรู้</h3>
+                <p style="margin: 4px 0 16px 0; font-size: 12px; color: #64748B;">พ.ร.บ.ตำรวจ และ ป.วิ.อาญา</p>
               </div>
-              <span class="subject-card-title">กฎหมายที่ควรรู้</span>
-              <span class="subject-card-hint">พ.ร.บ.ตำรวจ & ป.วิ.อ.</span>
-              <div class="subject-card-tag">เริ่มฝึกฝน ›</div>
-            </button>
+              <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px solid #F8FAFC;">
+                <span style="background: #FAF5FF; color: #7C3AED; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px; display: inline-flex; align-items: center; gap: 4px;">
+                  📄 15 บทเรียน
+                </span>
+                <span style="color: #7C3AED; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px;">
+                  เริ่มฝึกฝน ›
+                </span>
+              </div>
+            </div>
 
             <!-- 5. คอมพิวเตอร์ -->
-            <button class="subject-card" onclick="startBankSubject('คอม')">
-              <span class="subject-mini-badge badge-cyan">IT & ไซเบอร์</span>
-              <div class="subject-card-icon" style="background: #ECFEFF; color: #0891B2;">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 26px; height: 26px;">
-                  <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
-                  <line x1="8" y1="21" x2="16" y2="21"></line>
-                  <line x1="12" y1="17" x2="12" y2="21"></line>
-                </svg>
+            <div class="subject-card-item" onclick="startBankSubject('คอม')" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 22px; padding: 22px 20px; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease; position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between;">
+              <div style="position: absolute; top: 0; right: 0; width: 80px; height: 80px; border-radius: 0 0 0 80px; background: #F0FDF4; opacity: 0.7; pointer-events: none;"></div>
+              <div>
+                <div style="width: 44px; height: 44px; border-radius: 14px; background: #F0FDF4; display: flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 14px;">
+                  💻
+                </div>
+                <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #0F172A;">เทคโนโลยีสารสนเทศ</h3>
+                <p style="margin: 4px 0 16px 0; font-size: 12px; color: #64748B;">พ.ร.บ.คอมฯ และความรู้ไซเบอร์</p>
               </div>
-              <span class="subject-card-title">เทคโนโลยีสารสนเทศ</span>
-              <span class="subject-card-hint">พ.ร.บ.คอมฯ & ระบบเครือข่าย</span>
-              <div class="subject-card-tag">เริ่มฝึกฝน ›</div>
-            </button>
+              <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px solid #F8FAFC;">
+                <span style="background: #F0FDF4; color: #16A34A; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px; display: inline-flex; align-items: center; gap: 4px;">
+                  📄 9 บทเรียน
+                </span>
+                <span style="color: #16A34A; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px;">
+                  เริ่มฝึกฝน ›
+                </span>
+              </div>
+            </div>
 
             <!-- 6. ลักษณะที่ 54 -->
-            <button class="subject-card" onclick="startBankSubject('ลักษณะที่54')">
-              <span class="subject-mini-badge badge-pink">ระเบียบเฉพาะ ตร.</span>
-              <div class="subject-card-icon" style="background: #FDF2F8; color: #BE185D;">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 26px; height: 26px;">
-                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                </svg>
+            <div class="subject-card-item" onclick="startBankSubject('ลักษณะที่54')" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 22px; padding: 22px 20px; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease; position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between;">
+              <div style="position: absolute; top: 0; right: 0; width: 80px; height: 80px; border-radius: 0 0 0 80px; background: #FFF1F2; opacity: 0.7; pointer-events: none;"></div>
+              <div>
+                <div style="width: 44px; height: 44px; border-radius: 14px; background: #FFF1F2; display: flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 14px;">
+                  📋
+                </div>
+                <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #0F172A;">ลักษณะที่ ๕๔</h3>
+                <p style="margin: 4px 0 16px 0; font-size: 12px; color: #64748B;">ระเบียบสารบรรณตำรวจ ๒๕๕๖</p>
               </div>
-              <span class="subject-card-title">ลักษณะที่ ๕๔</span>
-              <span class="subject-card-hint">งานสารบรรณตำรวจ ๒๕๕๖</span>
-              <div class="subject-card-tag">เริ่มฝึกฝน ›</div>
+              <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px solid #F8FAFC;">
+                <span style="background: #FFF1F2; color: #BD1B0B; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px; display: inline-flex; align-items: center; gap: 4px;">
+                  📄 10 บทเรียน
+                </span>
+                <span style="color: #BD1B0B; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px;">
+                  เริ่มฝึกฝน ›
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==========================================
+             SCREEN 2: Chapters List + Sub-tabs (บทเรียน / สถิติรายวิชา)
+             ========================================== -->
+        <div id="questionBankChaptersList" style="display: none;">
+          <!-- Top Back Link -->
+          <button onclick="backToBankSubjects()" style="background: none; border: none; padding: 0 0 12px 0; display: inline-flex; align-items: center; gap: 6px; color: #475569; font-weight: 700; font-size: 13.5px; cursor: pointer; font-family: inherit;">
+            <span style="font-size: 16px;">‹</span> <span>เลือกวิชาอื่น</span>
+          </button>
+
+          <!-- Subject Hero Card (Light Soft Blue) -->
+          <div class="subject-detail-header-card" style="background: #F0F7FF; border: 1px solid #E0EEFF; border-radius: 22px; padding: 22px; margin-bottom: 18px; display: flex; align-items: center; gap: 18px;">
+            <div id="currentSubjectChapterIcon" style="width: 52px; height: 52px; border-radius: 16px; background: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 26px; box-shadow: 0 2px 6px rgba(0,0,0,0.04); flex-shrink: 0;">
+              📄
+            </div>
+            <div style="flex: 1; min-width: 0;">
+              <h2 id="currentSubjectChapterTitle" style="margin: 0; font-size: 18px; font-weight: 800; color: #0F172A;">งานสารบรรณ</h2>
+              <p id="currentSubjectChapterSubtitle" style="margin: 3px 0 10px 0; font-size: 12px; color: #64748B;">ระเบียบสำนักนายกฯ ๒๕๒๖</p>
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <span id="chaptersCountBadge" style="background: #EFF6FF; color: #2563EB; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px;">12 บทเรียน</span>
+                <span id="chaptersCompletedBadge" style="font-size: 11.5px; color: #64748B; font-weight: 600;">✓ 3/6 บท</span>
+                <span style="font-size: 11.5px; color: #64748B; font-weight: 600;">• 420 ข้อ</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sub-Tab Switcher (บทเรียน / สถิติรายวิชา) -->
+          <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 14px; padding: 4px; display: flex; gap: 4px; margin-bottom: 16px;">
+            <button id="btnSubjectSubtabExamSets" onclick="switchSubjectSubtab('examSets')" style="flex: 1; padding: 10px; border-radius: 10px; border: none; font-weight: 700; font-size: 13.5px; font-family: inherit; cursor: pointer; transition: all 0.15s ease; background: #FFFFFF; color: #0F172A; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
+              บทเรียน
+            </button>
+            <button id="btnSubjectSubtabStats" onclick="switchSubjectSubtab('stats')" style="flex: 1; padding: 10px; border-radius: 10px; border: none; font-weight: 700; font-size: 13.5px; font-family: inherit; cursor: pointer; transition: all 0.15s ease; background: transparent; color: #64748B;">
+              สถิติรายวิชา
             </button>
           </div>
-        </div>
 
-        <!-- Step 2: Chapters / Subcategories Directory Panel (Clean & Structured) -->
-        <div id="questionBankChaptersList" style="display: none;">
-          <!-- Top Subject Header -->
-          <div class="subject-detail-header-card">
-            <div class="subject-header-top">
-              <button onclick="backToBankSubjects()" class="btn-subject-back">
-                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="15 18 9 12 15 6"/>
-                </svg>
-                <span>เลือกวิชาอื่น</span>
-              </button>
-              <span id="currentSubjectChapterBadge" class="subject-tag-badge">วิชาหลักสำคัญ</span>
-            </div>
-
-            <div class="subject-title-wrapper">
-              <div id="currentSubjectChapterIcon" class="subject-icon-box">
-                📑
-              </div>
-              <div style="flex: 1;">
-                <h2 id="currentSubjectChapterTitle" class="subject-title-text">งานสารบรรณ</h2>
-                <p id="currentSubjectChapterSubtitle" class="subject-subtitle-text">เลือกหมวดหมู่หรือบทเรียนที่ต้องการฝึกฝน</p>
-              </div>
+          <!-- Tab 1: Chapters Directory List -->
+          <div id="subjectSubtabExamSetsView">
+            <div class="chapters-list-grid" id="chaptersContainer" style="display: flex; flex-direction: column; gap: 10px;">
+              <!-- Dynamically populated via JS -->
             </div>
           </div>
 
-          <!-- Section Label -->
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding: 0 4px;">
-            <h3 style="margin: 0; font-size: 15px; font-weight: 800; color: #1E293B;">
-              หมวดหมู่ / บทเรียนในวิชานี้
-            </h3>
-            <span id="chaptersCountBadge" style="font-size: 12px; color: #BD1B0B; font-weight: 700; background: #FEF2F2; padding: 3px 10px; border-radius: 999px; border: 1px solid #FECACA;">12 บทเรียน</span>
-          </div>
-
-          <!-- Chapters Directory Grid -->
-          <div class="chapters-list-grid" id="chaptersContainer">
-            <!-- Dynamically populated via JS -->
-          </div>
-        </div>
-
-        <!-- Step 3: Exam Sets for the Selected Chapter -->
-        <div id="questionBankExamSetsList" style="display: none;">
-          <div class="subject-detail-header-card">
-            <div class="subject-header-top">
-              <button onclick="backToBankChapters()" class="btn-subject-back">
-                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="15 18 9 12 15 6"/>
-                </svg>
-                <span>กลับไปเลือกหมวด</span>
-              </button>
-              <span id="currentChapterBadge" class="subject-tag-badge">แบบทดสอบรายบท</span>
-            </div>
-
-            <div class="subject-title-wrapper">
-              <div id="currentChapterIcon" class="subject-icon-box">
-                📝
-              </div>
-              <div style="flex: 1;">
-                <h2 id="currentChapterTitle" class="subject-title-text">บทที่ 10 การยืม</h2>
-                <p id="currentChapterSubtitle" class="subject-subtitle-text">ชุดข้อสอบในหมวดนี้</p>
-              </div>
-            </div>
-          </div>
-
-          <!-- Section Label -->
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding: 0 4px;">
-            <h3 style="margin: 0; font-size: 15px; font-weight: 800; color: #1E293B;">
-              ชุดข้อสอบที่พร้อมสอบ
-            </h3>
-            <span id="examSetsCountTag" style="font-size: 12px; color: #64748B; font-weight: 600; background: #F1F5F9; padding: 3px 10px; border-radius: 999px;">1 ชุดข้อสอบ</span>
-          </div>
-
-          <div class="exam-sets-grid" id="examSetsContainer">
-            <!-- Dynamically populated via JS -->
-          </div>
-        </div>
-
-          <!-- SUBTAB 2: Subject Score Statistics View -->
+          <!-- Tab 2: Subject Stats 2x2 Grid -->
           <div id="subjectSubtabStatsView" style="display: none;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; padding: 0 4px;">
-              <h3 style="margin: 0; font-size: 15px; font-weight: 800; color: #1E293B;">
-                สถิติคะแนนและพัฒนาการรายวิชา
-              </h3>
-            </div>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px;">
+              <!-- 1. คะแนนสูงสุด -->
+              <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 18px; padding: 18px; position: relative;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                  <span style="font-size: 12px; color: #64748B; font-weight: 600;">คะแนนสูงสุด</span>
+                  <span style="font-size: 16px;">🏆</span>
+                </div>
+                <div style="font-size: 24px; font-weight: 900; color: #16A34A; line-height: 1;">
+                  <span id="subjStatBestScore">0</span> <span style="font-size: 13px; color: #94A3B8; font-weight: 600;">/100</span>
+                </div>
+                <div style="height: 4px; background: #F1F5F9; border-radius: 999px; margin-top: 14px; overflow: hidden;">
+                  <div id="subjStatBestBar" style="height: 100%; width: 0%; background: #16A34A; border-radius: 999px;"></div>
+                </div>
+              </div>
 
-            <!-- Stats Summary Cards Grid -->
-            <div style="background: white; border-radius: 20px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-bottom: 20px; border: 1px solid #E2E8F0;">
-              <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; text-align: center;">
-                <div style="background: #FEF2F2; border-radius: 16px; padding: 16px 10px; border: 1px solid #FEE2E2;">
-                  <div style="font-size: 26px; font-weight: 900; color: #BD1B0B; line-height: 1;" id="subjStatBestScore">0%</div>
-                  <div style="font-size: 12px; font-weight: 600; color: #64748B; margin-top: 6px;">คะแนนสูงสุด</div>
+              <!-- 2. จำนวนครั้งที่ทำ -->
+              <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 18px; padding: 18px; position: relative;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                  <span style="font-size: 12px; color: #64748B; font-weight: 600;">จำนวนครั้งที่ทำ</span>
+                  <span style="font-size: 16px;">📝</span>
                 </div>
-                <div style="background: #EFF6FF; border-radius: 16px; padding: 16px 10px; border: 1px solid #DBEAFE;">
-                  <div style="font-size: 26px; font-weight: 900; color: #2563EB; line-height: 1;" id="subjStatAttempts">0 ครั้ง</div>
-                  <div style="font-size: 12px; font-weight: 600; color: #64748B; margin-top: 6px;">จำนวนครั้งที่ทำ</div>
+                <div style="font-size: 24px; font-weight: 900; color: #2563EB; line-height: 1;">
+                  <span id="subjStatAttempts">0</span> <span style="font-size: 13px; color: #64748B; font-weight: 600;">ครั้ง</span>
                 </div>
-                <div style="background: #ECFDF5; border-radius: 16px; padding: 16px 10px; border: 1px solid #D1FAE5;">
-                  <div style="font-size: 26px; font-weight: 900; color: #10B981; line-height: 1;" id="subjStatAvgScore">0%</div>
-                  <div style="font-size: 12px; font-weight: 600; color: #64748B; margin-top: 6px;">คะแนนเฉลี่ย</div>
+              </div>
+
+              <!-- 3. คะแนนเฉลี่ย -->
+              <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 18px; padding: 18px; position: relative;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                  <span style="font-size: 12px; color: #64748B; font-weight: 600;">คะแนนเฉลี่ย</span>
+                  <span style="font-size: 16px;">📊</span>
                 </div>
-                <div style="background: #FFFBEB; border-radius: 16px; padding: 16px 10px; border: 1px solid #FEF3C7;">
-                  <div style="font-size: 17px; font-weight: 800; color: #D97706; line-height: 1.3;" id="subjStatMastery">มือใหม่</div>
-                  <div style="font-size: 12px; font-weight: 600; color: #64748B; margin-top: 6px;">ระดับความชำนาญ</div>
+                <div style="font-size: 24px; font-weight: 900; color: #EA580C; line-height: 1;">
+                  <span id="subjStatAvgScore">0</span> <span style="font-size: 13px; color: #64748B; font-weight: 600;">%</span>
+                </div>
+                <div style="height: 4px; background: #F1F5F9; border-radius: 999px; margin-top: 14px; overflow: hidden;">
+                  <div id="subjStatAvgBar" style="height: 100%; width: 0%; background: #EA580C; border-radius: 999px;"></div>
+                </div>
+              </div>
+
+              <!-- 4. ระดับความชำนาญ -->
+              <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 18px; padding: 18px; position: relative;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                  <span style="font-size: 12px; color: #64748B; font-weight: 600;">ระดับความชำนาญ</span>
+                  <span style="font-size: 16px;">⭐</span>
+                </div>
+                <div style="font-size: 22px; font-weight: 900; color: #16A34A; line-height: 1;" id="subjStatMastery">
+                  ดีมาก
                 </div>
               </div>
             </div>
-
-            <!-- History Card List -->
-            <div style="background: white; border-radius: 20px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-bottom: 40px; border: 1px solid #E2E8F0;">
-              <h4 style="margin: 0 0 14px 0; font-size: 14px; font-weight: 700; color: #1E293B;">ประวัติการทำข้อสอบล่าสุดวิชานี้</h4>
-              <div id="subjHistoryListContainer" style="display: flex; flex-direction: column; gap: 10px; max-height: 320px; overflow-y: auto;">
-                <div style="text-align: center; color: #94A3B8; font-size: 13px; padding: 20px 0;">ยังไม่มีประวัติการทำข้อสอบในวิชานี้</div>
-              </div>
-            </div>
-
           </div>
         </div>
+
+        <!-- ==========================================
+             SCREEN 3: Exam Sets for Selected Chapter
+             ========================================== -->
+        <div id="questionBankExamSetsList" style="display: none;">
+          <!-- Top Back Link -->
+          <button onclick="backToBankChapters()" style="background: none; border: none; padding: 0 0 12px 0; display: inline-flex; align-items: center; gap: 6px; color: #475569; font-weight: 700; font-size: 13.5px; cursor: pointer; font-family: inherit;">
+            <span style="font-size: 16px;">‹</span> <span>กลับไปเลือกหมวด</span>
+          </button>
+
+          <!-- Dark Navy Hero Card -->
+          <div style="background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%); color: white; border-radius: 22px; padding: 22px; margin-bottom: 20px; display: flex; align-items: center; gap: 16px; box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.3);">
+            <div style="width: 48px; height: 48px; border-radius: 14px; background: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0;">
+              📄
+            </div>
+            <div style="flex: 1; min-width: 0;">
+              <span id="currentChapterSubtitle" style="font-size: 11.5px; color: #94A3B8; font-weight: 600; display: block;">งานสารบรรณ</span>
+              <h2 id="currentChapterTitle" style="margin: 2px 0 6px 0; font-size: 17px; font-weight: 800; color: #FFFFFF;">บทที่ 1 การรับ-ส่งหนังสือ</h2>
+              <div style="display: flex; align-items: center; gap: 10px; font-size: 12px; color: #CBD5E1;">
+                <span id="currentChapterQuestionsCount">📄 45 ข้อทั้งหมด</span>
+                <span id="examSetsCountTag">3 ชุดข้อสอบ</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section Label -->
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding: 0 2px;">
+            <h3 style="margin: 0; font-size: 15px; font-weight: 800; color: #0F172A;">
+              ชุดข้อสอบพร้อมสอบ
+            </h3>
+            <span id="examSetsCompletionTag" style="font-size: 12px; color: #64748B; font-weight: 600;">3/3 ชุด</span>
+          </div>
+
+          <!-- Exam Sets List -->
+          <div class="exam-sets-grid" id="examSetsContainer" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px;">
+            <!-- Dynamically populated via JS -->
+          </div>
+
+          <!-- Tip Banner -->
+          <div style="background: #FEFCE8; border: 1px solid #FEF08A; border-radius: 16px; padding: 14px 18px; display: flex; align-items: center; gap: 10px; color: #854D0E; font-size: 12.5px; font-weight: 600; margin-bottom: 24px;">
+            <span>💡</span>
+            <span>ทำให้ครบทุกชุดเพื่อปลดล็อกสถิติและ AI วิเคราะห์จุดอ่อน</span>
+          </div>
+        </div>
+
+      </div> <!-- Close questionBankView -->
       </div>
     </div>
   </main>

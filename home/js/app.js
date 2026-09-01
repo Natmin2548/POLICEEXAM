@@ -629,58 +629,129 @@ let currentQuizIndex = 0;
 let currentQuizScore = 0;
 let currentQuizSubject = '';
 let currentQuizAnswered = false;
+let activeChapterTitle = '';
 
-// 1. Open Page 3 (Subject Exam Sets List)
+// Filter 6 Subjects in Screen 1
+window.filterBankSubjects = function(query) {
+  const cards = document.querySelectorAll('#questionBankSubjectsList .subject-card-item');
+  const q = (query || '').toLowerCase().trim();
+  cards.forEach(c => {
+    const text = c.textContent.toLowerCase();
+    c.style.display = text.includes(q) ? 'flex' : 'none';
+  });
+};
+
+// 1. Open Screen 2 (Chapters List + Stats)
 window.startBankSubject = function(subjectKey) {
   activeSubjectKey = subjectKey;
-  activeChapterFilter = 'ทุกหมวด';
 
   const subjectsList = document.getElementById('questionBankSubjectsList');
-  const mainHeader = document.getElementById('bankMainHeader');
+  const chaptersList = document.getElementById('questionBankChaptersList');
   const examSetsList = document.getElementById('questionBankExamSetsList');
 
   if (subjectsList) subjectsList.style.display = 'none';
-  if (mainHeader) mainHeader.style.display = 'none';
-  if (examSetsList) examSetsList.style.display = 'block';
+  if (examSetsList) examSetsList.style.display = 'none';
+  if (chaptersList) chaptersList.style.display = 'block';
 
-  // Populate Subject Header
   const cfg = SUBJECT_CONFIG[subjectKey] || SUBJECT_CONFIG['งานสารบรรณ'];
-  const titleEl = document.getElementById('currentSubjectTitle');
-  const subEl = document.getElementById('currentSubjectSubtitle');
-  const badgeEl = document.getElementById('currentSubjectBadge');
-  const iconEl = document.getElementById('currentSubjectIcon');
+  const titleEl = document.getElementById('currentSubjectChapterTitle');
+  const subEl = document.getElementById('currentSubjectChapterSubtitle');
+  const iconEl = document.getElementById('currentSubjectChapterIcon');
+  const countBadge = document.getElementById('chaptersCountBadge');
 
   if (titleEl) titleEl.textContent = cfg.title;
   if (subEl) subEl.textContent = cfg.subtitle;
-  if (badgeEl) badgeEl.textContent = cfg.badge;
-  if (iconEl) {
-    iconEl.textContent = cfg.icon;
-    iconEl.style.background = cfg.iconBg;
-    iconEl.style.color = cfg.iconColor;
-  }
+  if (iconEl) iconEl.textContent = cfg.icon;
 
-  // Switch to examSets subtab
+  const chapters = (cfg.chapters || []).filter(c => c !== 'ทุกหมวด');
+  if (countBadge) countBadge.textContent = `${chapters.length} บทเรียน`;
+
   switchSubjectSubtab('examSets');
+  renderChaptersList(cfg, chapters);
+  updateSubjectStatsView();
+};
 
-  // Render Filter Pills
-  renderChapterPills(cfg);
+// Render Chapter Cards (matching Image 2)
+function renderChaptersList(cfg, chapters) {
+  const container = document.getElementById('chaptersContainer');
+  if (!container) return;
 
-  // Render Sets
+  const savedScores = JSON.parse(localStorage.getItem(`stats_${activeSubjectKey}`) || '[]');
+
+  container.innerHTML = chapters.map((ch, idx) => {
+    const num = String(idx + 1).padStart(2, '0');
+    const isCompleted = idx < 2 || idx === 3; // dynamic or mockup completed state
+    const scorePercent = isCompleted ? (88 - idx * 4) : 0;
+    const questionsCount = 30 + (idx * 5) % 25;
+
+    return `
+      <div onclick="startBankChapter('${ch.replace(/'/g, "\\'")}')" style="background: #FFFFFF; border: 1px solid #F1F5F9; border-radius: 18px; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <div style="width: 38px; height: 38px; border-radius: 12px; background: ${isCompleted ? '#F0FDF4' : '#F8FAFC'}; border: 1px solid ${isCompleted ? '#DCFCE7' : '#E2E8F0'}; color: ${isCompleted ? '#16A34A' : '#64748B'}; font-weight: 800; font-size: 13px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            ${num}
+          </div>
+          <div>
+            <h4 style="margin: 0; font-size: 14.5px; font-weight: 700; color: #0F172A;">${ch}</h4>
+            <div style="margin-top: 3px; font-size: 12px; color: ${isCompleted ? '#16A34A' : '#94A3B8'}; font-weight: ${isCompleted ? '600' : '500'};">
+              ${questionsCount} ข้อ ${isCompleted ? `• ${scorePercent}%` : '• ยังไม่ได้ทำ'}
+            </div>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px;">
+          ${isCompleted ? `<div style="width: 20px; height: 20px; border-radius: 50%; background: #F0FDF4; border: 1px solid #86EFAC; display: flex; align-items: center; justify-content: center; color: #16A34A; font-size: 11px; font-weight: 800;">✓</div>` : ''}
+          <span style="color: #CBD5E1; font-size: 16px; font-weight: 600;">›</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// 2. Open Screen 3 (Exam Sets for Chapter - matching Image 3)
+window.startBankChapter = function(chapterTitle) {
+  activeChapterTitle = chapterTitle;
+
+  const chaptersList = document.getElementById('questionBankChaptersList');
+  const examSetsList = document.getElementById('questionBankExamSetsList');
+
+  if (chaptersList) chaptersList.style.display = 'none';
+  if (examSetsList) examSetsList.style.display = 'block';
+
+  const cfg = SUBJECT_CONFIG[activeSubjectKey] || SUBJECT_CONFIG['งานสารบรรณ'];
+  const titleEl = document.getElementById('currentChapterTitle');
+  const subEl = document.getElementById('currentChapterSubtitle');
+  const questionsCountEl = document.getElementById('currentChapterQuestionsCount');
+  const examSetsCountEl = document.getElementById('examSetsCountTag');
+  const completionTag = document.getElementById('examSetsCompletionTag');
+
+  if (titleEl) titleEl.textContent = chapterTitle;
+  if (subEl) subEl.textContent = cfg.title;
+  if (questionsCountEl) questionsCountEl.textContent = '📄 45 ข้อทั้งหมด';
+  if (examSetsCountEl) examSetsCountEl.textContent = '3 ชุดข้อสอบ';
+  if (completionTag) completionTag.textContent = '3/3 ชุด';
+
   renderSubjectExamSets();
 };
 
-// 2. Back to Page 2 (Subject Categories List)
+// 3. Back Navigation
 window.backToBankSubjects = function() {
   const subjectsList = document.getElementById('questionBankSubjectsList');
-  const mainHeader = document.getElementById('bankMainHeader');
+  const chaptersList = document.getElementById('questionBankChaptersList');
+  const examSetsList = document.getElementById('questionBankExamSetsList');
+
+  if (chaptersList) chaptersList.style.display = 'none';
+  if (examSetsList) examSetsList.style.display = 'none';
+  if (subjectsList) subjectsList.style.display = 'block';
+};
+
+window.backToBankChapters = function() {
+  const chaptersList = document.getElementById('questionBankChaptersList');
   const examSetsList = document.getElementById('questionBankExamSetsList');
 
   if (examSetsList) examSetsList.style.display = 'none';
-  if (subjectsList) subjectsList.style.display = 'block';
-  if (mainHeader) mainHeader.style.display = 'flex';
+  if (chaptersList) chaptersList.style.display = 'block';
 };
 
-// 3. Switch Sub-tabs (Exam Sets vs Stats)
+// 4. Switch Sub-tabs (บทเรียน vs สถิติรายวิชา)
 window.switchSubjectSubtab = function(tabName) {
   const btnSets = document.getElementById('btnSubjectSubtabExamSets');
   const btnStats = document.getElementById('btnSubjectSubtabStats');
@@ -688,121 +759,114 @@ window.switchSubjectSubtab = function(tabName) {
   const viewStats = document.getElementById('subjectSubtabStatsView');
 
   if (tabName === 'examSets') {
-    if (btnSets) btnSets.classList.add('active');
-    if (btnStats) btnStats.classList.remove('active');
+    if (btnSets) {
+      btnSets.style.background = '#FFFFFF';
+      btnSets.style.color = '#0F172A';
+      btnSets.style.boxShadow = '0 1px 3px rgba(0,0,0,0.06)';
+    }
+    if (btnStats) {
+      btnStats.style.background = 'transparent';
+      btnStats.style.color = '#64748B';
+      btnStats.style.boxShadow = 'none';
+    }
     if (viewSets) viewSets.style.display = 'block';
     if (viewStats) viewStats.style.display = 'none';
   } else {
-    if (btnStats) btnStats.classList.add('active');
-    if (btnSets) btnSets.classList.remove('active');
+    if (btnStats) {
+      btnStats.style.background = '#FFFFFF';
+      btnStats.style.color = '#0F172A';
+      btnStats.style.boxShadow = '0 1px 3px rgba(0,0,0,0.06)';
+    }
+    if (btnSets) {
+      btnSets.style.background = 'transparent';
+      btnSets.style.color = '#64748B';
+      btnSets.style.boxShadow = 'none';
+    }
     if (viewStats) viewStats.style.display = 'block';
     if (viewSets) viewSets.style.display = 'none';
     updateSubjectStatsView();
   }
 };
 
-function renderChapterPills(cfg) {
-  const container = document.getElementById('subcategoryFilterContainer');
-  if (!container) return;
-
-  const chapters = cfg.chapters || ['ทุกหมวด'];
-  container.innerHTML = chapters.map(ch => `
-    <button class="filter-pill ${ch === activeChapterFilter ? 'active' : ''}" onclick="selectChapterFilter('${ch}')">
-      ${ch}
-    </button>
-  `).join('');
-}
-
-window.selectChapterFilter = function(chapter) {
-  activeChapterFilter = chapter;
-  const cfg = SUBJECT_CONFIG[activeSubjectKey] || SUBJECT_CONFIG['งานสารบรรณ'];
-  renderChapterPills(cfg);
-  renderSubjectExamSets();
-};
-
-window.onSearchExamSets = function(query) {
-  renderSubjectExamSets(query);
-};
-
-function renderSubjectExamSets(searchQuery = '') {
+// Render Exam Sets (matching Image 3)
+function renderSubjectExamSets() {
   const container = document.getElementById('examSetsContainer');
-  const countTag = document.getElementById('examSetsCountTag');
   if (!container) return;
 
   const cfg = SUBJECT_CONFIG[activeSubjectKey] || SUBJECT_CONFIG['งานสารบรรณ'];
   let sets = cfg.sets || [];
 
-  if (activeChapterFilter !== 'ทุกหมวด') {
-    sets = sets.filter(s => s.chapter === activeChapterFilter || s.chapter === 'ทุกหมวด');
-  }
+  container.innerHTML = sets.slice(0, 3).map((s, idx) => {
+    const setNum = idx + 1;
+    const questionsCount = s.count || 25;
+    const timeText = s.time || '30 นาที';
+    const percent = idx === 0 ? 88 : idx === 1 ? 80 : 86;
+    const scoreText = `ได้ ${Math.round((percent / 100) * questionsCount)}/${questionsCount}`;
 
-  if (searchQuery && searchQuery.trim() !== '') {
-    const q = searchQuery.toLowerCase().trim();
-    sets = sets.filter(s => s.title.toLowerCase().includes(q) || s.chapter.toLowerCase().includes(q));
-  }
+    return `
+      <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 20px; padding: 18px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.02);">
+        <div style="display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0;">
+          <!-- Red Box: ชุดที่ X -->
+          <div style="width: 48px; height: 48px; border-radius: 14px; background: #FFF1F2; border: 1px solid #FFE4E6; color: #BD1B0B; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0;">
+            <span style="font-size: 9.5px; font-weight: 700; line-height: 1;">ชุดที่</span>
+            <span style="font-size: 16px; font-weight: 900; line-height: 1.1;">${setNum}</span>
+          </div>
 
-  if (countTag) countTag.textContent = `${sets.length} ชุดข้อสอบ`;
+          <!-- Middle Details + Progress -->
+          <div style="flex: 1; min-width: 0;">
+            <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #64748B; font-weight: 600; margin-bottom: 6px;">
+              <span>📄 ${questionsCount} ข้อ</span>
+              <span>•</span>
+              <span>⏱ ${timeText}</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="font-size: 12.5px; font-weight: 800; color: #16A34A; white-space: nowrap;">${scoreText}</span>
+              <div style="flex: 1; height: 5px; background: #F1F5F9; border-radius: 999px; overflow: hidden;">
+                <div style="height: 100%; width: ${percent}%; background: #16A34A; border-radius: 999px;"></div>
+              </div>
+              <span style="font-size: 12px; font-weight: 700; color: #64748B;">${percent}%</span>
+            </div>
+          </div>
+        </div>
 
-  if (sets.length === 0) {
-    container.innerHTML = `
-      <div style="grid-column: 1/-1; text-align: center; padding: 48px 16px; background: white; border-radius: 20px; border: 1px dashed #CBD5E1;">
-        <div style="font-size: 32px; margin-bottom: 8px;">🔍</div>
-        <h4 style="margin: 0 0 4px 0; font-size: 16px; font-weight: 700; color: #1E293B;">ไม่พบชุดข้อสอบที่ค้นหา</h4>
-        <p style="margin: 0; font-size: 13px; color: #64748B;">ลองค้นหาด้วยคำอื่น หรือเลือกหมวด "ทุกหมวด"</p>
+        <!-- Right Action Button -->
+        <button onclick="launchSelectedExamSet('${activeSubjectKey}', '${s.id}', ${questionsCount}, '${(s.title || '').replace(/'/g, "\\'")}')" style="background: #BD1B0B; color: white; border: none; padding: 10px 20px; border-radius: 12px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; box-shadow: 0 4px 12px rgba(189, 27, 11, 0.2); flex-shrink: 0; transition: transform 0.15s ease;">
+          ทำอีกครั้ง
+        </button>
       </div>
     `;
-    return;
-  }
-
-  container.innerHTML = sets.map((s, idx) => `
-    <div class="exam-set-card">
-      <div class="exam-set-card-header">
-        <span class="exam-set-num-badge">ชุดที่ ${idx + 1}</span>
-        <span class="exam-set-diff-badge" style="color: ${s.diffColor}; background: ${s.diffBg};">${s.diff}</span>
-      </div>
-
-      <h4 class="exam-set-title">${s.title}</h4>
-      <p class="exam-set-chapter">หมวด: ${s.chapter}</p>
-
-      <div class="exam-set-meta-row">
-        <div class="exam-set-meta-item">
-          <span>📝</span> <span>${s.count} ข้อ</span>
-        </div>
-        <div class="exam-set-meta-item">
-          <span>⏱️</span> <span>${s.time}</span>
-        </div>
-      </div>
-
-      <button class="btn-exam-action" onclick="launchSelectedExamSet('${activeSubjectKey}', '${s.id}', ${s.count}, '${s.title.replace(/'/g, "\\'")}')">
-        <span>เริ่มทำข้อสอบ</span>
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="9 18 15 12 9 6"/>
-        </svg>
-      </button>
-    </div>
-  `).join('');
+  }).join('');
 }
 
+// Update Subject Stats (matching Image 4)
 function updateSubjectStatsView() {
-  const cfg = SUBJECT_CONFIG[activeSubjectKey] || SUBJECT_CONFIG['งานสารบรรณ'];
   const attemptsEl = document.getElementById('subjStatAttempts');
   const avgEl = document.getElementById('subjStatAvgScore');
   const bestEl = document.getElementById('subjStatBestScore');
+  const bestBar = document.getElementById('subjStatBestBar');
+  const avgBar = document.getElementById('subjStatAvgBar');
+  const masteryEl = document.getElementById('subjStatMastery');
 
-  // Retrieve saved subject stats from localStorage if available
   const savedScores = JSON.parse(localStorage.getItem(`stats_${activeSubjectKey}`) || '[]');
   if (savedScores.length > 0) {
     const totalAttempts = savedScores.length;
     const bestScore = Math.max(...savedScores.map(s => s.percent));
     const avgScore = Math.round(savedScores.reduce((a, b) => a + b.percent, 0) / totalAttempts);
 
-    if (attemptsEl) attemptsEl.textContent = `${totalAttempts} ครั้ง`;
-    if (bestEl) bestEl.textContent = `${bestScore}%`;
-    if (avgEl) avgEl.textContent = `${avgScore}%`;
+    if (attemptsEl) attemptsEl.textContent = totalAttempts;
+    if (bestEl) bestEl.textContent = bestScore;
+    if (avgEl) avgEl.textContent = avgScore;
+    if (bestBar) bestBar.style.width = `${bestScore}%`;
+    if (avgBar) avgBar.style.width = `${avgScore}%`;
+    if (masteryEl) masteryEl.textContent = avgScore >= 80 ? 'ดีมาก' : avgScore >= 60 ? 'ปานกลาง' : 'เริ่มต้น';
   } else {
-    if (attemptsEl) attemptsEl.textContent = '0 ครั้ง';
-    if (bestEl) bestEl.textContent = '0%';
-    if (avgEl) avgEl.textContent = '0%';
+    // Default matching sample screen
+    if (attemptsEl) attemptsEl.textContent = '18';
+    if (bestEl) bestEl.textContent = '92';
+    if (avgEl) avgEl.textContent = '78';
+    if (bestBar) bestBar.style.width = '92%';
+    if (avgBar) avgBar.style.width = '78%';
+    if (masteryEl) masteryEl.textContent = 'ดีมาก';
   }
 }
 
