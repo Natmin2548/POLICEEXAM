@@ -227,33 +227,33 @@
 
   <!-- Main Dashboard Content -->
   <main class="dashboard-main">
-    <div class="container" style="max-width: 1080px; margin: 0 auto; padding: 0 24px;">
+    <div class="container" style="max-width: 960px; margin: 0 auto; padding: 0 20px;">
 
       <div id="homeView" class="tab-view active">
-        <!-- Daily Streak Hero Banner Matching Screenshot -->
-        <section class="target-card" onclick="openPoliceTrackModal()" style="background: linear-gradient(135deg, #A81308 0%, #780B04 60%, #4D0602 100%); border-radius: 24px; padding: 24px 28px; color: white; margin-bottom: 22px; cursor: pointer; transition: transform 0.15s ease; position: relative; overflow: hidden; box-shadow: 0 12px 32px -4px rgba(168, 19, 8, 0.35);">
-          <!-- Decorative Circles -->
+        <!-- Daily Challenge Banner -->
+        <section class="target-card" onclick="openPoliceTrackModal()" style="background: linear-gradient(135deg, #A81308 0%, #780B04 60%, #4D0602 100%); border-radius: 24px; padding: 26px 30px; color: white; margin-bottom: 22px; cursor: pointer; transition: transform 0.15s ease; position: relative; overflow: hidden; box-shadow: 0 12px 32px -4px rgba(168, 19, 8, 0.35);">
+          <!-- Decorative Background Circles -->
           <div style="position: absolute; top: -30px; right: -20px; width: 180px; height: 180px; border-radius: 50%; background: rgba(0,0,0,0.18);"></div>
           <div style="position: absolute; bottom: -50px; right: 100px; width: 140px; height: 140px; border-radius: 50%; background: rgba(255,255,255,0.03);"></div>
 
-          <div style="position: relative; z-index: 2; max-width: 540px;">
+          <div style="position: relative; z-index: 2; max-width: 580px;">
             <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
               <div style="background: rgba(255,255,255,0.18); width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 17px;">
                 🔥
               </div>
-              <span style="font-size: 11.5px; font-weight: 700; color: rgba(255,255,255,0.85); letter-spacing: 0.08em; text-transform: uppercase;">DAILY STREAK</span>
+              <span style="font-size: 11.5px; font-weight: 700; color: rgba(255,255,255,0.85); letter-spacing: 0.08em; text-transform: uppercase;">DAILY CHALLENGE</span>
             </div>
             
             <h2 id="greetingStreakTitle" style="margin: 0 0 4px 0; font-size: 22px; font-weight: 800; color: #FFFFFF; letter-spacing: -0.01em;">0 วันติดต่อกัน!</h2>
-            <p id="greetingStreakSubtitle" style="margin: 0 0 16px 0; font-size: 13px; color: rgba(255,255,255,0.82); line-height: 1.4;">ทำข้อสอบวันนี้เพื่อรักษา Streak ของคุณ</p>
+            <p id="greetingStreakSubtitle" style="margin: 0 0 16px 0; font-size: 13px; color: rgba(255,255,255,0.85); line-height: 1.4;">ทำข้อสอบวันนี้เพื่อรักษา Streak และพัฒนาความแม่นยำของคุณ</p>
 
-            <button id="btnStartExam" onclick="event.stopPropagation(); openPoliceTrackModal();" style="background: #FFFFFF; color: #991007; border: none; padding: 9px 22px; border-radius: 999px; font-weight: 700; font-family: inherit; font-size: 13px; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,0.18); display: inline-flex; align-items: center; gap: 6px; transition: transform 0.15s ease;">
+            <button id="btnStartExam" onclick="event.stopPropagation(); openPoliceTrackModal();" style="background: #FFFFFF; color: #991007; border: none; padding: 10px 24px; border-radius: 999px; font-weight: 700; font-family: inherit; font-size: 13.5px; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,0.18); display: inline-flex; align-items: center; gap: 6px; transition: transform 0.15s ease;">
               <span>⚡</span> เริ่มทำข้อสอบทันที
             </button>
           </div>
         </section>
 
-        <!-- 2x2 Action Grid Matching Screenshot -->
+        <!-- 2x2 Action Grid -->
         <section class="action-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 26px;">
           <!-- 1. บีบอัดรูป -->
           <button onclick="openImageCompressorModal()" style="background: #F0FDF4; border: 1px solid #DCFCE7; border-radius: 20px; padding: 18px 20px; display: flex; align-items: center; gap: 16px; text-align: left; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease;">
@@ -266,7 +266,7 @@
             </div>
             <div>
               <h3 style="margin: 0; font-size: 15px; font-weight: 700; color: #0F172A;">บีบอัดรูป</h3>
-              <p style="margin: 2px 0 0 0; font-size: 12px; color: #64748B;">ลดขนาดไฟล์สมัครสอบ</p>
+              <p style="margin: 2px 0 0 0; font-size: 12px; color: #64748B;">ลดขนาดไฟล์สมัครสอบตำรวจ</p>
             </div>
           </button>
 
@@ -280,7 +280,7 @@
             </div>
             <div>
               <h3 style="margin: 0; font-size: 15px; font-weight: 700; color: #0F172A;">คลังข้อสอบ</h3>
-              <p style="margin: 2px 0 0 0; font-size: 12px; color: #64748B;">6 วิชาสำหรับสอบตำรวจ</p>
+              <p style="margin: 2px 0 0 0; font-size: 12px; color: #64748B;">6 หมวดวิชาพร้อมบทเรียน</p>
             </div>
           </button>
 
@@ -296,7 +296,7 @@
             </div>
             <div>
               <h3 style="margin: 0; font-size: 15px; font-weight: 700; color: #0F172A;">แบทเทิล</h3>
-              <p style="margin: 2px 0 0 0; font-size: 12px; color: #64748B;">1v1 & Leaderboard</p>
+              <p style="margin: 2px 0 0 0; font-size: 12px; color: #64748B;">ดวลข้อสอบ 1v1 & อันดับ</p>
             </div>
           </button>
 
@@ -315,9 +315,9 @@
           </button>
         </section>
 
-        <!-- Section Title: ผลการเรียนรู้ -->
+        <!-- Section Title: ผลการเรียนรู้ & จุดอ่อน -->
         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 28px; margin-bottom: 14px;">
-          <h3 style="margin: 0; font-size: 17px; font-weight: 800; color: #0F172A;">ผลการเรียนรู้</h3>
+          <h3 style="margin: 0; font-size: 17px; font-weight: 800; color: #0F172A;">ผลการเรียนรู้ & จุดอ่อน</h3>
           <span style="font-size: 12px; color: #94A3B8;" id="statsLastUpdateText">อัปเดตล่าสุด: วันนี้</span>
         </div>
 
@@ -342,12 +342,12 @@
               </div>
             </div>
             <div style="display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; margin-top: 8px; font-size: 10px; font-weight: 600; color: #64748B;">
-              <span style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: 999px; background: #F8FAFC;"><span style="width: 5px; height: 5px; border-radius: 50%; background: #BD1B0B;"></span>กฎหมาย</span>
+              <span style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: 999px; background: #F8FAFC;"><span style="width: 5px; height: 5px; border-radius: 50%; background: #BD1B0B;"></span>สารบรรณ</span>
               <span style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: 999px; background: #F8FAFC;"><span style="width: 5px; height: 5px; border-radius: 50%; background: #BD1B0B;"></span>คำนวณ</span>
-              <span style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: 999px; background: #F8FAFC;"><span style="width: 5px; height: 5px; border-radius: 50%; background: #BD1B0B;"></span>ภาษาไทย</span>
               <span style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: 999px; background: #F8FAFC;"><span style="width: 5px; height: 5px; border-radius: 50%; background: #BD1B0B;"></span>สังคม</span>
-              <span style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: 999px; background: #F8FAFC;"><span style="width: 5px; height: 5px; border-radius: 50%; background: #BD1B0B;"></span>สัมภาษณ์/วินัย</span>
-              <span style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: 999px; background: #F8FAFC;"><span style="width: 5px; height: 5px; border-radius: 50%; background: #BD1B0B;"></span>ทะเบียน</span>
+              <span style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: 999px; background: #F8FAFC;"><span style="width: 5px; height: 5px; border-radius: 50%; background: #BD1B0B;"></span>กฎหมาย</span>
+              <span style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: 999px; background: #F8FAFC;"><span style="width: 5px; height: 5px; border-radius: 50%; background: #BD1B0B;"></span>ไอที/คอม</span>
+              <span style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: 999px; background: #F8FAFC;"><span style="width: 5px; height: 5px; border-radius: 50%; background: #BD1B0B;"></span>ลักษณะ๕๔</span>
             </div>
           </div>
         </div>
@@ -361,7 +361,7 @@
             </div>
             <div style="text-align: right;">
               <span style="font-size: 19px; font-weight: 800; color: #BD1B0B; display: block; line-height: 1;" id="statOverallPercent">0%</span>
-              <span style="font-size: 10.5px; font-weight: 700; color: #16A34A;" id="statOverallProgression">▲ +0% จากเดิม</span>
+              <span style="font-size: 10.5px; font-weight: 700; color: #16A34A;" id="statOverallProgression">▲ +0% พัฒนาการ</span>
             </div>
           </div>
           <div style="position: relative; height: 150px;">
@@ -2140,7 +2140,7 @@
           radarChart = new Chart(radarCanvas.getContext('2d'), {
             type: 'radar',
             data: {
-              labels: ['กฎหมาย', 'คำนวณ', 'ภาษาไทย', 'สังคม', 'สัมภาษณ์/วินัย', 'ทะเบียน'],
+              labels: ['สารบรรณ', 'คำนวณ', 'สังคม', 'กฎหมาย', 'ไอที/คอม', 'ลักษณะ๕๔'],
               datasets: [{
                 data: scores,
                 backgroundColor: 'rgba(189, 27, 11, 0.10)',
@@ -2180,7 +2180,7 @@
           barChart = new Chart(barCanvas.getContext('2d'), {
             type: 'bar',
             data: {
-              labels: ['กฎหมาย', 'คำนวณ', 'ภาษาไทย', 'สังคม', 'สัมภาษณ์', 'ทะเบียน'],
+              labels: ['สารบรรณ', 'คำนวณ', 'สังคม', 'กฎหมาย', 'ไอที/คอม', 'ลักษณะ๕๔'],
               datasets: [{
                 data: scores,
                 backgroundColor: '#BD1B0B',
