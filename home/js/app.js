@@ -2571,33 +2571,6 @@ function updateStatsTabDetails() {
       }
     });
   }
-        pointRadius: 5,
-        pointHoverRadius: 7,
-        tension: 0.35,
-        fill: true
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      scales: {
-        x: {
-          grid: { display: false },
-          ticks: { font: { family: 'Kanit', size: 12 }, color: '#64748b' }
-        },
-        y: {
-          grid: { borderDash: [5, 5], color: '#f1f5f9' },
-          min: avg === 0 ? 0 : Math.max(Math.min(...lineData) - 10, 0),
-          max: avg === 0 ? 100 : Math.min(Math.max(...lineData) + 10, 100),
-          ticks: { stepSize: 15, font: { family: 'Kanit', size: 11 }, color: '#94a3b8' }
-        }
-      },
-      plugins: {
-        legend: { display: false }
-      }
-    }
-  });
-  } // End of Chart check
 
   // 6. Generate AI Recommendations (Pick 3 subjects with lowest scores)
   const recsContainer = document.getElementById('aiRecsListContainer');
