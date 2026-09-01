@@ -157,8 +157,6 @@
       box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
     }
   </style>
-  <script src="vocab-data.js?v=42" defer></script>
-  <script src="js/app.js?v=42" defer></script>
 </head>
 
 <body>
@@ -194,8 +192,8 @@
         </a>
 
         <!-- User Profile Dropdown Anchor -->
-        <div class="profile-menu-container">
-          <button class="btn-profile-menu" id="btnProfileMenu" aria-label="Profile Menu" style="width: 38px; height: 38px; border-radius: 50%; overflow: hidden; border: 1.5px solid #E2E8F0; padding: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; background: none;">
+        <div class="profile-menu-container" style="position: relative;">
+          <button class="btn-profile-menu" id="btnProfileMenu" onclick="const d = document.getElementById('profileDropdown'); if(d) d.classList.toggle('active'); event.stopPropagation();" aria-label="Profile Menu" style="width: 38px; height: 38px; border-radius: 50%; overflow: hidden; border: 1.5px solid #E2E8F0; padding: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; background: none;">
             <img src="" alt="Google Avatar" class="header-avatar" id="headerAvatar" style="width: 100%; height: 100%; object-fit: cover; display: none;">
             <div class="default-avatar" id="defaultAvatar" style="width: 100%; height: 100%; background: linear-gradient(135deg, #BD1B0B 0%, #7A1107 100%); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 15px;">ม</div>
           </button>
@@ -213,7 +211,7 @@
               </svg>
               <span>จัดการระบบ (Admin Panel)</span>
             </a>
-            <a href="#" class="dropdown-item" id="btnDropdownLogout">
+            <a href="#" class="dropdown-item" id="btnDropdownLogout" onclick="if(typeof handleLogout === 'function') handleLogout(); else { localStorage.clear(); window.location.href='/'; } return false;">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
               </svg>

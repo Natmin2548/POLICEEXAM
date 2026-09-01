@@ -161,18 +161,19 @@ function initializeDashboard() {
 
   if (userProfile) {
     const displayName = userProfile.fullName || userProfile.name || userProfile.username || 'ผู้ใช้งาน';
-    greetingName.textContent = displayName;
-    dropdownUserName.textContent = displayName;
-    dropdownUserEmail.textContent = userProfile.email || '';
+    if (greetingName) greetingName.textContent = displayName;
+    if (dropdownUserName) dropdownUserName.textContent = displayName;
+    if (dropdownUserEmail) dropdownUserEmail.textContent = userProfile.email || '';
 
-    if (userProfile.faceImage) {
-      headerAvatar.src = userProfile.faceImage;
+    const avatarUrl = userProfile.faceImage || userProfile.picture || userProfile.avatar || userProfile.photoURL || userProfile.profileImage;
+    if (avatarUrl && headerAvatar) {
+      headerAvatar.src = avatarUrl;
       headerAvatar.style.display = 'block';
-      defaultAvatar.style.display = 'none';
-    } else {
+      if (defaultAvatar) defaultAvatar.style.display = 'none';
+    } else if (defaultAvatar) {
       const initial = displayName.charAt(0);
       defaultAvatar.textContent = initial;
-      headerAvatar.style.display = 'none';
+      if (headerAvatar) headerAvatar.style.display = 'none';
       defaultAvatar.style.display = 'flex';
     }
   }
