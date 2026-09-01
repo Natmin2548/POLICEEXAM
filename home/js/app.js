@@ -671,35 +671,42 @@ window.startBankSubject = function(subjectKey) {
   updateSubjectStatsView();
 };
 
-// Render Chapter Cards (matching Image 2)
+// Render Chapter Cards (100% matching Image 2)
 function renderChaptersList(cfg, chapters) {
   const container = document.getElementById('chaptersContainer');
   if (!container) return;
 
-  const savedScores = JSON.parse(localStorage.getItem(`stats_${activeSubjectKey}`) || '[]');
-
   container.innerHTML = chapters.map((ch, idx) => {
     const num = String(idx + 1).padStart(2, '0');
-    const isCompleted = idx < 2 || idx === 3; // dynamic or mockup completed state
-    const scorePercent = isCompleted ? (88 - idx * 4) : 0;
-    const questionsCount = 30 + (idx * 5) % 25;
+    const isCompleted = idx < 2 || idx === 3; // matching Image 2 states: 01 (88%), 02 (76%), 03 (ยังไม่ได้ทำ), 04 (92%), 05 (ยังไม่ได้ทำ), 06 (ยังไม่ได้ทำ)
+    const scorePercent = idx === 0 ? 88 : idx === 1 ? 76 : idx === 3 ? 92 : 0;
+    const questionsCount = idx === 0 ? 45 : idx === 1 ? 38 : idx === 2 ? 32 : idx === 3 ? 50 : idx === 4 ? 28 : 40;
 
     return `
-      <div onclick="startBankChapter('${ch.replace(/'/g, "\\'")}')" style="background: #FFFFFF; border: 1px solid #F1F5F9; border-radius: 18px; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
-        <div style="display: flex; align-items: center; gap: 14px;">
-          <div style="width: 38px; height: 38px; border-radius: 12px; background: ${isCompleted ? '#F0FDF4' : '#F8FAFC'}; border: 1px solid ${isCompleted ? '#DCFCE7' : '#E2E8F0'}; color: ${isCompleted ? '#16A34A' : '#64748B'}; font-weight: 800; font-size: 13px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+      <div onclick="startBankChapter('${ch.replace(/'/g, "\\'")}')" style="background: #FFFFFF; border: 1.5px solid #F1F5F9; border-radius: 20px; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.02); margin-bottom: 2px;">
+        <div style="display: flex; align-items: center; gap: 16px;">
+          <!-- Number Badge -->
+          <div style="width: 44px; height: 44px; border-radius: 14px; background: ${isCompleted ? '#F0FDF4' : '#F8FAFC'}; border: 1.5px solid ${isCompleted ? '#86EFAC' : '#E2E8F0'}; color: ${isCompleted ? '#16A34A' : '#64748B'}; font-weight: 900; font-size: 15px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
             ${num}
           </div>
+
+          <!-- Title & Subtitle -->
           <div>
-            <h4 style="margin: 0; font-size: 14.5px; font-weight: 700; color: #0F172A;">${ch}</h4>
-            <div style="margin-top: 3px; font-size: 12px; color: ${isCompleted ? '#16A34A' : '#94A3B8'}; font-weight: ${isCompleted ? '600' : '500'};">
-              ${questionsCount} ข้อ ${isCompleted ? `• ${scorePercent}%` : '• ยังไม่ได้ทำ'}
+            <h4 style="margin: 0; font-size: 15px; font-weight: 800; color: #0F172A; letter-spacing: -0.01em;">${ch}</h4>
+            <div style="margin-top: 4px; font-size: 12.5px; color: #64748B;">
+              ${questionsCount} ข้อ &nbsp;•&nbsp; ${isCompleted ? `<span style="color: #16A34A; font-weight: 800;">${scorePercent}%</span>` : `<span style="color: #94A3B8;">ยังไม่ได้ทำ</span>`}
             </div>
           </div>
         </div>
-        <div style="display: flex; align-items: center; gap: 6px;">
-          ${isCompleted ? `<div style="width: 20px; height: 20px; border-radius: 50%; background: #F0FDF4; border: 1px solid #86EFAC; display: flex; align-items: center; justify-content: center; color: #16A34A; font-size: 11px; font-weight: 800;">✓</div>` : ''}
-          <span style="color: #CBD5E1; font-size: 16px; font-weight: 600;">›</span>
+
+        <!-- Right Side: Check Circle + Chevron -->
+        <div style="display: flex; align-items: center; gap: 8px;">
+          ${isCompleted ? `
+            <div style="width: 22px; height: 22px; border-radius: 50%; border: 1.8px solid #16A34A; display: flex; align-items: center; justify-content: center; color: #16A34A; font-size: 12px; font-weight: 900;">
+              ✓
+            </div>
+          ` : ''}
+          <span style="color: #CBD5E1; font-size: 18px; font-weight: 600;">›</span>
         </div>
       </div>
     `;
