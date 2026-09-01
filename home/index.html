@@ -239,65 +239,63 @@
     <div class="container" style="max-width: 900px;">
 
       <div id="homeView" class="tab-view active">
-        <!-- Search Bar -->
-        <div class="search-bar-container" style="margin-bottom: 20px; margin-top: 10px;">
-          <div style="position: relative;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position: absolute; left: 16px; top: 12px; width: 18px; height: 18px;">
-              <circle cx="11" cy="11" r="8"></circle>
-              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-            </svg>
-            <input type="text" placeholder="ค้นหาข้อสอบ วิชา หรือเพื่อน..." style="width: 100%; padding: 11px 16px 11px 44px; border-radius: 999px; border: 1px solid #E2E8F0; background: #F8FAFC; font-family: inherit; font-size: 13.5px; outline: none; box-sizing: border-box; color: #0F172A; transition: border-color 0.2s;">
-          </div>
-        </div>
+        <!-- Streak Card (Daily Challenge Banner Matching Screenshot) -->
+        <section class="target-card" onclick="openPoliceTrackModal()" style="background: linear-gradient(135deg, #A81308 0%, #780B04 60%, #4D0602 100%); border-radius: 24px; padding: 24px 28px; color: white; margin-bottom: 24px; cursor: pointer; transition: transform 0.15s ease; position: relative; overflow: hidden; box-shadow: 0 12px 32px -4px rgba(168, 19, 8, 0.35);">
+          <!-- Decorative Background Circles -->
+          <div style="position: absolute; top: -30px; right: -20px; width: 180px; height: 180px; border-radius: 50%; background: rgba(0,0,0,0.18);"></div>
+          <div style="position: absolute; bottom: -50px; right: 100px; width: 140px; height: 140px; border-radius: 50%; background: rgba(255,255,255,0.03);"></div>
 
-        <!-- Red Streak Card (Daily Challenge) -->
-        <section class="target-card" onclick="openPoliceTrackModal()" style="background: linear-gradient(135deg, #BD1B0B 0%, #8B0F06 60%, #6B0A04 100%); border-radius: 24px; padding: 24px 26px; color: white; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 30px -5px rgba(189, 27, 11, 0.35); border: none; margin-bottom: 24px; cursor: pointer; transition: transform 0.15s ease; position: relative; overflow: hidden;">
-          <div style="position: absolute; top: -40px; right: -20px; width: 140px; height: 140px; border-radius: 50%; background: rgba(255,255,255,0.06);"></div>
-          <div style="position: absolute; bottom: -30px; right: 80px; width: 90px; height: 90px; border-radius: 50%; background: rgba(255,255,255,0.04);"></div>
+          <div style="position: relative; z-index: 2; max-width: 540px;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+              <div style="background: rgba(255,255,255,0.18); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px;">
+                🔥
+              </div>
+              <span style="font-size: 12px; font-weight: 700; color: rgba(255,255,255,0.85); letter-spacing: 0.08em; text-transform: uppercase;">DAILY CHALLENGE</span>
+            </div>
+            
+            <h2 id="greetingStreakTitle" style="margin: 0 0 6px 0; font-size: 22px; font-weight: 800; color: #FFFFFF; letter-spacing: -0.01em;">0 วันติดต่อกัน!</h2>
+            <p id="greetingStreakSubtitle" style="margin: 0 0 18px 0; font-size: 13px; color: rgba(255,255,255,0.82); line-height: 1.4;">ทำข้อสอบวันนี้เพื่อรักษา Streak และพัฒนาความแม่นยำของคุณ</p>
 
-          <div style="display: flex; align-items: center; gap: 14px; position: relative; z-index: 1;">
-            <div style="background: rgba(255,255,255,0.15); width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px;">
-              🔥
-            </div>
-            <div>
-              <span style="font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.7); letter-spacing: 0.06em; text-transform: uppercase; display: block; margin-bottom: 2px;">Daily Challenge</span>
-              <h2 id="greetingStreakTitle" style="margin: 0; font-size: 18px; font-weight: 800; display: flex; align-items: center; gap: 6px;">0 วันติดต่อกัน! 🔥</h2>
-              <span id="greetingStreakSubtitle" style="font-size: 12.5px; opacity: 0.85; margin-top: 3px; display: block;">ทำข้อสอบวันนี้เพื่อสะสม streak และพัฒนาความแม่นยำ</span>
-            </div>
+            <button id="btnStartExam" onclick="event.stopPropagation(); openPoliceTrackModal();" style="background: #FFFFFF; color: #991007; border: none; padding: 10px 22px; border-radius: 999px; font-weight: 700; font-family: inherit; font-size: 13.5px; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,0.18); display: inline-flex; align-items: center; gap: 6px; transition: transform 0.15s ease;">
+              <span>⚡</span> เริ่มทำข้อสอบทันที
+            </button>
           </div>
-          <button id="btnStartExam" onclick="event.stopPropagation(); openPoliceTrackModal();" style="background: white; color: #BD1B0B; border: none; padding: 11px 24px; border-radius: 999px; font-weight: 700; font-family: inherit; font-size: 13.5px; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,0.15); flex-shrink: 0; position: relative; z-index: 1; transition: transform 0.15s ease;">
-            ทำเลย ⚡
-          </button>
         </section>
 
-        <!-- Action Grid (4 Buttons) -->
-        <section class="action-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 28px;">
-          <!-- บีบอัดรูป -->
-          <button onclick="openImageCompressorModal()" style="background: #F0FDF4; border: 1px solid #DCFCE7; border-radius: 18px; padding: 16px 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease;">
-            <div style="width: 40px; height: 40px; border-radius: 12px; background: white; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.04);">
+        <!-- 2x2 Action Grid Matching Screenshot -->
+        <section class="action-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 28px;">
+          <!-- 1. บีบอัดรูป -->
+          <button onclick="openImageCompressorModal()" style="background: #F0FDF4; border: 1px solid #DCFCE7; border-radius: 20px; padding: 18px 20px; display: flex; align-items: center; gap: 16px; text-align: left; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease;">
+            <div style="width: 44px; height: 44px; border-radius: 14px; background: #FFFFFF; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.03); flex-shrink: 0;">
               <svg viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 22px; height: 22px;">
                 <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
                 <circle cx="8.5" cy="8.5" r="1.5"></circle>
                 <polyline points="21 15 16 10 5 21"></polyline>
               </svg>
             </div>
-            <span style="font-size: 13px; font-weight: 700; color: #15803D; font-family: inherit;">บีบอัดรูป</span>
+            <div>
+              <h3 style="margin: 0; font-size: 15px; font-weight: 700; color: #0F172A;">บีบอัดรูป</h3>
+              <p style="margin: 2px 0 0 0; font-size: 12px; color: #64748B;">ลดขนาดไฟล์สมัครสอบตำรวจ</p>
+            </div>
           </button>
 
-          <!-- คลังข้อสอบ -->
-          <button onclick="document.getElementById('btnTabBank').click()" style="background: #EFF6FF; border: 1px solid #DBEAFE; border-radius: 18px; padding: 16px 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease;">
-            <div style="width: 40px; height: 40px; border-radius: 12px; background: white; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.04);">
+          <!-- 2. คลังข้อสอบ -->
+          <button onclick="document.getElementById('btnTabBank').click()" style="background: #EFF6FF; border: 1px solid #DBEAFE; border-radius: 20px; padding: 18px 20px; display: flex; align-items: center; gap: 16px; text-align: left; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease;">
+            <div style="width: 44px; height: 44px; border-radius: 14px; background: #FFFFFF; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.03); flex-shrink: 0;">
               <svg viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 22px; height: 22px;">
                 <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
                 <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
               </svg>
             </div>
-            <span style="font-size: 13px; font-weight: 700; color: #1D4ED8; font-family: inherit;">คลังข้อสอบ</span>
+            <div>
+              <h3 style="margin: 0; font-size: 15px; font-weight: 700; color: #0F172A;">คลังข้อสอบ</h3>
+              <p style="margin: 2px 0 0 0; font-size: 12px; color: #64748B;">6 หมวดวิชาพร้อมบทเรียน</p>
+            </div>
           </button>
 
-          <!-- แบทเทิล -->
-          <button onclick="showBattleMaintenanceAlert(event)" style="background: #FFF7ED; border: 1px solid #FFEDD5; border-radius: 18px; padding: 16px 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease;">
-            <div style="width: 40px; height: 40px; border-radius: 12px; background: white; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.04);">
+          <!-- 3. แบทเทิล -->
+          <button onclick="showBattleMaintenanceAlert(event)" style="background: #FFF7ED; border: 1px solid #FFEDD5; border-radius: 20px; padding: 18px 20px; display: flex; align-items: center; gap: 16px; text-align: left; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease;">
+            <div style="width: 44px; height: 44px; border-radius: 14px; background: #FFFFFF; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.03); flex-shrink: 0;">
               <svg viewBox="0 0 24 24" fill="none" stroke="#EA580C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 22px; height: 22px;">
                 <polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5" />
                 <line x1="13" y1="19" x2="19" y2="13" />
@@ -305,69 +303,118 @@
                 <line x1="3" y1="21" x2="10" y2="14" />
               </svg>
             </div>
-            <span style="font-size: 13px; font-weight: 700; color: #C2410C; font-family: inherit;">แบทเทิล</span>
+            <div>
+              <h3 style="margin: 0; font-size: 15px; font-weight: 700; color: #0F172A;">แบทเทิล</h3>
+              <p style="margin: 2px 0 0 0; font-size: 12px; color: #64748B;">ดวลข้อสอบ 1v1 & อันดับ</p>
+            </div>
           </button>
 
-          <!-- คำศัพท์ -->
-          <button onclick="openVocabArena()" style="background: #FAF5FF; border: 1px solid #F3E8FF; border-radius: 18px; padding: 16px 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease;">
-            <div style="width: 40px; height: 40px; border-radius: 12px; background: white; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.04);">
+          <!-- 4. คลังคำศัพท์ -->
+          <button onclick="openVocabArena()" style="background: #FAF5FF; border: 1px solid #F3E8FF; border-radius: 20px; padding: 18px 20px; display: flex; align-items: center; gap: 16px; text-align: left; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease;">
+            <div style="width: 44px; height: 44px; border-radius: 14px; background: #FFFFFF; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.03); flex-shrink: 0;">
               <svg viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 22px; height: 22px;">
-                <path d="M12 3c-4.4 0-8 2.2-8 5s3.6 5 8 5 8-2.2 8-5-3.6-5-8-5z" />
-                <path d="M4 8v5c0 2.8 3.6 5 8 5s8-2.2 8-5V8" />
-                <path d="M4 13v5c0 2.8 3.6 5 8 5s8-2.2 8-5v-5" />
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
               </svg>
             </div>
-            <span style="font-size: 13px; font-weight: 700; color: #6D28D9; font-family: inherit;">คำศัพท์</span>
+            <div>
+              <h3 style="margin: 0; font-size: 15px; font-weight: 700; color: #0F172A;">คลังคำศัพท์</h3>
+              <p style="margin: 2px 0 0 0; font-size: 12px; color: #64748B;">Flashcards อังกฤษ-ตำรวจ</p>
+            </div>
           </button>
         </section>
 
+        <!-- Section Title: ผลการเรียนรู้ & จุดอ่อน -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 32px; margin-bottom: 16px;">
+          <h3 style="margin: 0; font-size: 18px; font-weight: 800; color: #0F172A;">ผลการเรียนรู้ & จุดอ่อน</h3>
+          <span style="font-size: 12px; color: #94A3B8;" id="statsLastUpdateText">อัปเดตล่าสุด: วันนี้</span>
+        </div>
 
-        <!-- Stats Section (Apple Minimalist Analytics) -->
-        <section class="stats-section" style="margin-top: 24px; margin-bottom: 24px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
-            <h3 style="margin: 0; font-size: 17px; font-weight: 800; color: #0F172A;">รายงานผลการเรียนรู้ & จุดอ่อน</h3>
-            <span style="font-size: 12px; color: #94A3B8;" id="statsLastUpdateText">อัปเดต วันนี้</span>
-          </div>
-          
-          <div style="display: flex; flex-direction: column; gap: 14px;">
-            <!-- Card 1: Radar Chart -->
-            <div style="background: white; border-radius: 20px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.02); border: 1px solid #F1F5F9;">
-              <h4 style="margin: 0 0 14px 0; font-size: 14px; font-weight: 700; color: #0F172A;">ภาพรวมรายวิชา (Subject Mastery)</h4>
-              <div style="position: relative; height: 260px;">
-                <canvas id="statsRadarChartCanvas"></canvas>
-              </div>
+        <!-- 2 Column Analytics Grid (Top Row) -->
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 16px;">
+          <!-- Card 1: ความเชี่ยวชาญรายวิชา (Radar) -->
+          <div style="background: white; border-radius: 20px; padding: 22px; box-shadow: 0 1px 4px rgba(0,0,0,0.02); border: 1px solid #F1F5F9;">
+            <h4 style="margin: 0; font-size: 15px; font-weight: 700; color: #0F172A;">ความเชี่ยวชาญรายวิชา</h4>
+            <span style="font-size: 11.5px; color: #94A3B8; display: block; margin-bottom: 14px;">Subject Mastery</span>
+            <div style="position: relative; height: 230px;">
+              <canvas id="statsRadarChartCanvas"></canvas>
             </div>
+          </div>
 
-            <!-- Card 2: Bar Chart -->
-            <div style="background: white; border-radius: 20px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.02); border: 1px solid #F1F5F9;">
-              <h4 style="margin: 0 0 14px 0; font-size: 14px; font-weight: 700; color: #0F172A;">คะแนนแยกวิชา (Score by Subject)</h4>
-              <div style="position: relative; height: 240px;">
+          <!-- Card 2: คะแนนรายวิชา (Bar) -->
+          <div style="background: white; border-radius: 20px; padding: 22px; box-shadow: 0 1px 4px rgba(0,0,0,0.02); border: 1px solid #F1F5F9; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <h4 style="margin: 0; font-size: 15px; font-weight: 700; color: #0F172A;">คะแนนรายวิชา</h4>
+              <span style="font-size: 11.5px; color: #94A3B8; display: block; margin-bottom: 14px;">Score by Subject</span>
+              <div style="position: relative; height: 185px;">
                 <canvas id="statsBarChartCanvas"></canvas>
               </div>
-              <div style="display: flex; justify-content: center; gap: 16px; margin-top: 14px; font-size: 12px; font-weight: 600; color: #64748B;">
-                <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 8px; height: 8px; border-radius: 50%; background-color: #10B981;"></span>ดีมาก</span>
-                <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 8px; height: 8px; border-radius: 50%; background-color: #F59E0B;"></span>พอใช้</span>
-                <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 8px; height: 8px; border-radius: 50%; background-color: #EF4444;"></span>ปรับปรุง</span>
+            </div>
+            <div style="display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-top: 10px; font-size: 10.5px; font-weight: 600; color: #64748B;">
+              <span style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 999px; background: #F8FAFC;"><span style="width: 6px; height: 6px; border-radius: 50%; background: #BD1B0B;"></span>สารบรรณ</span>
+              <span style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 999px; background: #F8FAFC;"><span style="width: 6px; height: 6px; border-radius: 50%; background: #BD1B0B;"></span>คำนวณ</span>
+              <span style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 999px; background: #F8FAFC;"><span style="width: 6px; height: 6px; border-radius: 50%; background: #BD1B0B;"></span>สังคม</span>
+              <span style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 999px; background: #F8FAFC;"><span style="width: 6px; height: 6px; border-radius: 50%; background: #BD1B0B;"></span>กฎหมาย</span>
+              <span style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 999px; background: #F8FAFC;"><span style="width: 6px; height: 6px; border-radius: 50%; background: #BD1B0B;"></span>ไอที/คอม</span>
+              <span style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 999px; background: #F8FAFC;"><span style="width: 6px; height: 6px; border-radius: 50%; background: #BD1B0B;"></span>ลักษณะ๕๔</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Full Width Card: พัฒนาการ 8 สัปดาห์ (Line) -->
+        <div style="background: white; border-radius: 20px; padding: 22px; box-shadow: 0 1px 4px rgba(0,0,0,0.02); border: 1px solid #F1F5F9; margin-bottom: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+            <div>
+              <h4 style="margin: 0; font-size: 15px; font-weight: 700; color: #0F172A;">พัฒนาการ 8 สัปดาห์</h4>
+              <span style="font-size: 11.5px; color: #94A3B8;">8-Week Score Progression</span>
+            </div>
+            <div style="text-align: right;">
+              <span style="font-size: 20px; font-weight: 800; color: #BD1B0B; display: block; line-height: 1;">84%</span>
+              <span style="font-size: 11px; font-weight: 700; color: #16A34A;">▲ +22% พัฒนาการ</span>
+            </div>
+          </div>
+          <div style="position: relative; height: 160px;">
+            <canvas id="statsLineChartCanvas"></canvas>
+          </div>
+        </div>
+
+        <!-- Full Width Card: AI แนะนำแนวทางอ่านสอบ -->
+        <div style="background: white; border-radius: 20px; padding: 22px; box-shadow: 0 1px 4px rgba(0,0,0,0.02); border: 1px solid #F1F5F9; margin-bottom: 24px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div style="width: 32px; height: 32px; border-radius: 10px; background: #FEF2F2; color: #BD1B0B; display: flex; align-items: center; justify-content: center; font-size: 16px;">
+                💡
               </div>
+              <div>
+                <h4 style="margin: 0; font-size: 15px; font-weight: 700; color: #0F172A;">AI แนะนำแนวทางอ่านสอบ</h4>
+                <span style="font-size: 11.5px; color: #94A3B8;">Smart Study Advice</span>
+              </div>
+            </div>
+            <span style="background: #FDF2F1; color: #BD1B0B; border: 1px solid #FBCFCB; padding: 2px 10px; border-radius: 999px; font-size: 11px; font-weight: 800;">AI</span>
+          </div>
+
+          <div id="aiRecsListContainer" style="display: flex; flex-direction: column; gap: 10px;">
+            <!-- Advice 1: สำคัญมาก -->
+            <div style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 14px; background: #F8FAFC; border: 1px solid #F1F5F9;">
+              <span style="background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; flex-shrink: 0;">สำคัญมาก</span>
+              <span style="font-size: 13px; color: #334155;">วิชา ไอที/คอมพิวเตอร์ ควรทบทวน พ.ร.บ.คอมพิวเตอร์ และระบบความมั่นคงปลอดภัยไซเบอร์</span>
             </div>
 
-            <!-- Card 3: Line Chart (8-Week Progress) -->
-            <div style="background: white; border-radius: 20px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.02); border: 1px solid #F1F5F9;">
-              <h4 style="margin: 0 0 14px 0; font-size: 14px; font-weight: 700; color: #0F172A;">พัฒนาการ 8 สัปดาห์ (Score Progression)</h4>
-              <div style="position: relative; height: 200px;">
-                <canvas id="statsLineChartCanvas"></canvas>
-              </div>
+            <!-- Advice 2: แนะนำ -->
+            <div style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 14px; background: #F8FAFC; border: 1px solid #F1F5F9;">
+              <span style="background: #FFFBEB; color: #D97706; border: 1px solid #FDE68A; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; flex-shrink: 0;">แนะนำ</span>
+              <span style="font-size: 13px; color: #334155;">วิชา สังคมฯ ควรติดตามเหตุการณ์ปัจจุบันปี 2568-2569 และความสัมพันธ์อาเซียน</span>
             </div>
 
-            <!-- Card 4: AI Recommendations -->
-            <div style="background: white; border-radius: 20px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.02); border: 1px solid #F1F5F9;">
-              <h4 style="margin: 0 0 14px 0; font-size: 14px; font-weight: 700; color: #0F172A; display: flex; align-items: center; gap: 8px;">
-                <span>💡</span> AI แนะนำแนวทางการอ่านสอบ
-              </h4>
-              <div id="aiRecsListContainer">
-                <div style="color: #94A3B8; font-size: 13px; text-align: center; padding: 12px;">กำลังวิเคราะห์คะแนน...</div>
-              </div>
+            <!-- Advice 3: ทำต่อเนื่อง -->
+            <div style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 14px; background: #F8FAFC; border: 1px solid #F1F5F9;">
+              <span style="background: #F0FDF4; color: #16A34A; border: 1px solid #DCFCE7; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; flex-shrink: 0;">ทำต่อเนื่อง</span>
+              <span style="font-size: 13px; color: #334155;">วิชา งานสารบรรณ และ ลักษณะที่ ๕๔ มีความแม่นยำสูง (>85%) รักษาระดับไว้ได้ดีเยี่ยม</span>
             </div>
+          </div>
+        </div>
+
+      </div> <!-- Close homeView -->
           </div>
         </section>
 
@@ -2097,6 +2144,129 @@
 
     </div>
   </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      function initDashboardCharts() {
+        if (typeof Chart === 'undefined') {
+          setTimeout(initDashboardCharts, 150);
+          return;
+        }
+
+        // 1. Radar Chart (ความเชี่ยวชาญรายวิชา)
+        const radarCanvas = document.getElementById('statsRadarChartCanvas');
+        if (radarCanvas && !radarCanvas.dataset.rendered) {
+          radarCanvas.dataset.rendered = 'true';
+          new Chart(radarCanvas.getContext('2d'), {
+            type: 'radar',
+            data: {
+              labels: ['สารบรรณ', 'คำนวณ', 'สังคม', 'กฎหมาย', 'ไอที/คอม', 'ลักษณะ๕๔'],
+              datasets: [{
+                data: [85, 70, 75, 90, 65, 88],
+                backgroundColor: 'rgba(189, 27, 11, 0.10)',
+                borderColor: '#BD1B0B',
+                borderWidth: 2,
+                pointBackgroundColor: '#BD1B0B',
+                pointBorderColor: '#FFFFFF',
+                pointBorderWidth: 2,
+                pointRadius: 4
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { display: false } },
+              scales: {
+                r: {
+                  angleLines: { color: '#F1F5F9' },
+                  grid: { color: '#F1F5F9' },
+                  pointLabels: {
+                    font: { family: 'Kanit', size: 11, weight: '500' },
+                    color: '#64748B'
+                  },
+                  ticks: { display: false },
+                  suggestedMin: 30,
+                  suggestedMax: 100
+                }
+              }
+            }
+          });
+        }
+
+        // 2. Bar Chart (คะแนนรายวิชา)
+        const barCanvas = document.getElementById('statsBarChartCanvas');
+        if (barCanvas && !barCanvas.dataset.rendered) {
+          barCanvas.dataset.rendered = 'true';
+          new Chart(barCanvas.getContext('2d'), {
+            type: 'bar',
+            data: {
+              labels: ['สารบรรณ', 'คำนวณ', 'สังคม', 'กฎหมาย', 'ไอที/คอม', 'ลักษณะ๕๔'],
+              datasets: [{
+                data: [88, 74, 70, 92, 65, 86],
+                backgroundColor: '#BD1B0B',
+                borderRadius: 4,
+                barThickness: 10
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { display: false } },
+              scales: {
+                x: {
+                  grid: { display: false },
+                  ticks: { font: { family: 'Kanit', size: 10.5 }, color: '#64748B' }
+                },
+                y: { display: false, suggestedMax: 100 }
+              }
+            }
+          });
+        }
+
+        // 3. Line Chart (พัฒนาการ 8 สัปดาห์)
+        const lineCanvas = document.getElementById('statsLineChartCanvas');
+        if (lineCanvas && !lineCanvas.dataset.rendered) {
+          lineCanvas.dataset.rendered = 'true';
+          new Chart(lineCanvas.getContext('2d'), {
+            type: 'line',
+            data: {
+              labels: ['W1', 'W2', 'W3', 'W4', 'W5', 'W6', 'W7', 'W8'],
+              datasets: [{
+                data: [62, 66, 71, 69, 77, 83, 81, 86],
+                borderColor: '#BD1B0B',
+                borderWidth: 2.5,
+                pointBackgroundColor: '#FFFFFF',
+                pointBorderColor: '#BD1B0B',
+                pointBorderWidth: 2,
+                pointRadius: 4.5,
+                tension: 0.35,
+                fill: false
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { display: false } },
+              scales: {
+                x: {
+                  grid: { display: false },
+                  ticks: { font: { family: 'Kanit', size: 11 }, color: '#94A3B8' }
+                },
+                y: {
+                  grid: { color: '#F8FAFC' },
+                  ticks: { font: { family: 'Kanit', size: 10 }, color: '#94A3B8' },
+                  min: 50,
+                  max: 100
+                }
+              }
+            }
+          });
+        }
+      }
+
+      initDashboardCharts();
+    });
+  </script>
 
 </body>
 
