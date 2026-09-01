@@ -788,7 +788,7 @@ window.switchSubjectSubtab = function(tabName) {
   }
 };
 
-// Render Exam Sets (matching Image 3)
+// Render Exam Sets (100% identical to reference screenshot)
 function renderSubjectExamSets() {
   const container = document.getElementById('examSetsContainer');
   if (!container) return;
@@ -798,39 +798,58 @@ function renderSubjectExamSets() {
 
   container.innerHTML = sets.slice(0, 3).map((s, idx) => {
     const setNum = idx + 1;
-    const questionsCount = s.count || 25;
-    const timeText = s.time || '30 นาที';
+    const questionsCount = s.count || (idx === 2 ? 50 : 25);
+    const timeText = s.time || (idx === 2 ? '60 นาที' : '30 นาที');
     const percent = idx === 0 ? 88 : idx === 1 ? 80 : 86;
-    const scoreText = `ได้ ${Math.round((percent / 100) * questionsCount)}/${questionsCount}`;
+    const correctCount = Math.round((percent / 100) * questionsCount);
 
     return `
-      <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 20px; padding: 18px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.02);">
-        <div style="display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0;">
-          <!-- Red Box: ชุดที่ X -->
-          <div style="width: 48px; height: 48px; border-radius: 14px; background: #FFF1F2; border: 1px solid #FFE4E6; color: #BD1B0B; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0;">
-            <span style="font-size: 9.5px; font-weight: 700; line-height: 1;">ชุดที่</span>
-            <span style="font-size: 16px; font-weight: 900; line-height: 1.1;">${setNum}</span>
+      <div style="background: #FFFFFF; border: 1.5px solid #F1F5F9; border-radius: 22px; padding: 18px 22px; display: flex; align-items: center; justify-content: space-between; gap: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+        <div style="display: flex; align-items: center; gap: 16px; flex: 1; min-width: 0;">
+          <!-- Red Badge: ชุดที่ X -->
+          <div style="width: 52px; height: 52px; border-radius: 16px; background: #FFF1F2; border: 1.5px solid #FFE4E6; color: #BD1B0B; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0;">
+            <span style="font-size: 10px; font-weight: 700; line-height: 1;">ชุดที่</span>
+            <span style="font-size: 20px; font-weight: 900; line-height: 1.1; margin-top: -1px;">${setNum}</span>
           </div>
 
           <!-- Middle Details + Progress -->
           <div style="flex: 1; min-width: 0;">
-            <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #64748B; font-weight: 600; margin-bottom: 6px;">
-              <span>📄 ${questionsCount} ข้อ</span>
-              <span>•</span>
-              <span>⏱ ${timeText}</span>
+            <!-- Top line: 25 ข้อ • 30 นาที -->
+            <div style="display: flex; align-items: center; gap: 10px; font-size: 13.5px; color: #0F172A; font-weight: 700; margin-bottom: 8px;">
+              <span style="display: inline-flex; align-items: center; gap: 4px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                </svg>
+                ${questionsCount} ข้อ
+              </span>
+              <span style="color: #CBD5E1;">•</span>
+              <span style="display: inline-flex; align-items: center; gap: 4px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+                ${timeText}
+              </span>
             </div>
-            <div style="display: flex; align-items: center; gap: 10px;">
-              <span style="font-size: 12.5px; font-weight: 800; color: #16A34A; white-space: nowrap;">${scoreText}</span>
-              <div style="flex: 1; height: 5px; background: #F1F5F9; border-radius: 999px; overflow: hidden;">
+
+            <!-- Bottom line: ได้ 22/25 + Bar + 88% -->
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span style="background: #ECFDF5; color: #059669; font-size: 12.5px; font-weight: 800; padding: 2px 9px; border-radius: 999px; white-space: nowrap;">
+                ได้ ${correctCount}/${questionsCount}
+              </span>
+              <div style="flex: 1; height: 6px; background: #F1F5F9; border-radius: 999px; overflow: hidden; position: relative;">
                 <div style="height: 100%; width: ${percent}%; background: #16A34A; border-radius: 999px;"></div>
               </div>
-              <span style="font-size: 12px; font-weight: 700; color: #64748B;">${percent}%</span>
+              <span style="font-size: 12.5px; font-weight: 800; color: #475569; white-space: nowrap;">
+                ${percent}%
+              </span>
             </div>
           </div>
         </div>
 
-        <!-- Right Action Button -->
-        <button onclick="launchSelectedExamSet('${activeSubjectKey}', '${s.id}', ${questionsCount}, '${(s.title || '').replace(/'/g, "\\'")}')" style="background: #BD1B0B; color: white; border: none; padding: 10px 20px; border-radius: 12px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; box-shadow: 0 4px 12px rgba(189, 27, 11, 0.2); flex-shrink: 0; transition: transform 0.15s ease;">
+        <!-- Right Action Button: ทำอีกครั้ง -->
+        <button onclick="launchSelectedExamSet('${activeSubjectKey}', '${s.id}', ${questionsCount}, '${(s.title || '').replace(/'/g, "\\'")}')" style="background: #BD1B0B; color: #FFFFFF; border: none; padding: 11px 26px; border-radius: 14px; font-size: 13.5px; font-weight: 800; cursor: pointer; font-family: inherit; box-shadow: 0 4px 12px rgba(189, 27, 11, 0.22); flex-shrink: 0; transition: transform 0.15s ease, background 0.15s ease;">
           ทำอีกครั้ง
         </button>
       </div>
