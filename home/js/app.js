@@ -5516,33 +5516,51 @@ window.startBankSubject = async function(subjectKey) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
-// Render Chapter Cards (Step 2 - Strictly Ordered with Number Badges 01, 02, 03... 100% matching Image 2)
+// Render Chapter Cards (Step 2 - 100% Real Chapters & Strict Real User Scores)
 function renderSubjectChaptersGrid(subjectKey) {
   const container = document.getElementById('chaptersContainer');
   const countBadge = document.getElementById('chaptersCountBadge');
+  const completedBadge = document.getElementById('chaptersCompletedBadge');
+  const questionsCountEl = document.getElementById('currentChapterQuestionsCount');
   if (!container) return;
 
   // 1. Get Canonical List of Chapters
-  const canonicalList = BANK_SUBJECT_CHAPTERS[subjectKey] || BANK_SUBJECT_CHAPTERS['งานสารบรรณ'];
+  const canonicalList = BANK_SUBJECT_CHAPTERS[subjectKey] || (SUBJECT_CONFIG[subjectKey]?.chapters || []).filter(c => c !== 'ทุกหมวด') || [];
   
-  // 2. Filter / Sort: Ensure Index 0 is Master, then 1..N strictly in ascending order
-  const masterChapter = canonicalList.find(c => c.includes('รวม')) || canonicalList[0];
+  if (canonicalList.length === 0) {
+    if (countBadge) countBadge.textContent = '0 บทเรียน';
+    if (completedBadge) completedBadge.textContent = '✓ 0/0 บท';
+    container.innerHTML = `
+      <div style="text-align: center; padding: 48px 16px; background: white; border-radius: 20px; border: 1.5px dashed #CBD5E1; color: #64748B;">
+        <div style="font-size: 32px; margin-bottom: 8px;">📂</div>
+        <h4 style="margin: 0 0 4px 0; font-size: 16px; font-weight: 800; color: #0F172A;">ยังไม่มีบทเรียนในวิชานี้</h4>
+        <p style="margin: 0; font-size: 13px; color: #94A3B8;">กำลังจัดเตรียมบทเรียนและข้อสอบจริง</p>
+      </div>
+    `;
+    return;
+  }
+
+  // 2. Filter / Sort: Ensure 1..N strictly in ascending order
+  const masterChapter = canonicalList.find(c => c.includes('รวม'));
   const lessonChapters = canonicalList.filter(c => !c.includes('รวม'));
   lessonChapters.sort((a, b) => extractChapterNumber(a) - extractChapterNumber(b));
 
-  const sortedChapters = [masterChapter, ...lessonChapters];
-
-  if (countBadge) countBadge.textContent = `${lessonChapters.length} บทเรียน`;
-
+  const sortedChapters = masterChapter ? [masterChapter, ...lessonChapters] : lessonChapters;
   const history = getLocalQuizHistory(subjectKey);
 
-  container.innerHTML = sortedChapters.map((ch, idx) => {
-    const isMaster = idx === 0 || ch.includes('รวม');
-    const chNum = extractChapterNumber(ch);
-    const num = isMaster ? '★' : String(chNum !== 999 ? chNum : idx).padStart(2, '0');
+  let completedChaptersCount = 0;
+  let totalSubjectQuestions = 0;
 
-    // Count matching sets from DB
-    const matchingSets = currentFetchedExamSets.filter(s => {
+  const chaptersHTML = sortedChapters.map((ch, idx) => {
+    const isMaster = ch.includes('รวม');
+    const chNum = extractChapterNumber(ch);
+    const num = isMaster ? '★' : String(chNum !== 999 ? chNum : (idx + 1)).padStart(2, '0');
+
+    // Count matching sets from DB / config
+    const cfg = SUBJECT_CONFIG[subjectKey] || {};
+    const sets = currentFetchedExamSets.length > 0 ? currentFetchedExamSets : (cfg.sets || []);
+    
+    const matchingSets = sets.filter(s => {
       if (isMaster) return true;
       const sNum = extractChapterNumber(s.subcategory || s.title);
       if (sNum === chNum && chNum !== 999) return true;
@@ -5552,18 +5570,20 @@ function renderSubjectChaptersGrid(subjectKey) {
       return false;
     });
 
-    const setCount = matchingSets.length > 0 ? matchingSets.length : 1;
-    const totalQuestions = matchingSets.reduce((sum, s) => sum + (s.questionsCount || 25), 0) || (25 * setCount);
+    const setCount = matchingSets.length > 0 ? matchingSets.length : (subjectKey === 'งานสารบรรณ' ? 1 : 0);
+    const totalQuestions = matchingSets.reduce((sum, s) => sum + (s.questionsCount || s.count || 25), 0) || (setCount > 0 ? 25 : 0);
+    totalSubjectQuestions += totalQuestions;
 
-    // Check user completion history for this chapter
+    // Check user REAL completion history for this chapter
     const doneRecords = history.filter(h => {
       if (!h) return false;
       return matchingSets.some(s => String(s.id) === String(h.setId || h.setType)) || 
              (h.setTitle && h.setTitle.includes(ch));
     });
 
-    const isCompleted = doneRecords.length > 0 || (idx === 1 || idx === 2 || idx === 4); // sample active or real
-    const bestScore = doneRecords.length > 0 ? Math.max(...doneRecords.map(r => r.scorePct || 0)) : (idx === 1 ? 88 : idx === 2 ? 76 : idx === 4 ? 92 : 0);
+    const isCompleted = doneRecords.length > 0;
+    const bestScore = isCompleted ? Math.max(...doneRecords.map(r => r.scorePct || 0)) : 0;
+    if (isCompleted) completedChaptersCount++;
 
     return `
       <div onclick="selectBankChapter('${subjectKey}', '${ch.replace(/'/g, "\\'")}')" style="background: #FFFFFF; border: 1.5px solid #F1F5F9; border-radius: 20px; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.02); margin-bottom: 4px;">
@@ -5577,7 +5597,7 @@ function renderSubjectChaptersGrid(subjectKey) {
           <div>
             <h4 style="margin: 0; font-size: 15px; font-weight: 800; color: #0F172A; letter-spacing: -0.01em;">${escapeHTML(ch)}</h4>
             <div style="margin-top: 4px; font-size: 12.5px; color: #64748B;">
-              ${totalQuestions} ข้อ &nbsp;•&nbsp; ${isCompleted ? `<span style="color: #16A34A; font-weight: 800;">${bestScore}%</span>` : `<span style="color: #94A3B8;">ยังไม่ได้ทำ</span>`}
+              ${totalQuestions > 0 ? `${totalQuestions} ข้อ` : '0 ข้อ'} &nbsp;•&nbsp; ${isCompleted ? `<span style="color: #16A34A; font-weight: 800;">${bestScore}%</span>` : `<span style="color: #94A3B8;">ยังไม่ได้ทำ</span>`}
             </div>
           </div>
         </div>
@@ -5594,9 +5614,14 @@ function renderSubjectChaptersGrid(subjectKey) {
       </div>
     `;
   }).join('');
+
+  if (countBadge) countBadge.textContent = `${lessonChapters.length} บทเรียน`;
+  if (completedBadge) completedBadge.textContent = `✓ ${completedChaptersCount}/${lessonChapters.length} บท`;
+
+  container.innerHTML = chaptersHTML;
 }
 
-// Step 2 -> Step 3: Open Exam Sets for Selected Chapter (100% matching reference)
+// Step 2 -> Step 3: Open Exam Sets for Selected Chapter
 window.selectBankChapter = function(subjectKey, chapterName) {
   currentSelectedChapter = chapterName;
   activeSubjectKey = subjectKey;
@@ -5609,9 +5634,6 @@ window.selectBankChapter = function(subjectKey, chapterName) {
 
   const titleEl = document.getElementById('currentChapterTitle');
   const subtitleEl = document.getElementById('currentChapterSubtitle');
-  const questionsCountEl = document.getElementById('currentChapterQuestionsCount');
-  const examSetsCountEl = document.getElementById('examSetsCountTag');
-  const completionTag = document.getElementById('examSetsCompletionTag');
 
   if (titleEl) titleEl.textContent = chapterName;
   if (subtitleEl) subtitleEl.textContent = subjectKey ? `วิชา ${subjectKey}` : 'งานสารบรรณ';
@@ -5620,7 +5642,7 @@ window.selectBankChapter = function(subjectKey, chapterName) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
-// Render Exam Sets inside Selected Chapter using Real Sets (100% identical to reference screenshot)
+// Render Exam Sets inside Selected Chapter using 100% Real Sets
 function renderFilteredExamSetsForChapter(subjectKey, chapterName) {
   const container = document.getElementById('examSetsContainer');
   const countTag = document.getElementById('examSetsCountTag');
@@ -5632,7 +5654,10 @@ function renderFilteredExamSetsForChapter(subjectKey, chapterName) {
   const isMaster = chapterName.includes('รวม');
   const chNum = extractChapterNumber(chapterName);
 
-  let sets = currentFetchedExamSets.filter(s => {
+  const cfg = SUBJECT_CONFIG[subjectKey] || {};
+  const allSets = currentFetchedExamSets.length > 0 ? currentFetchedExamSets : (cfg.sets || []);
+
+  let sets = allSets.filter(s => {
     if (isMaster) return true;
     const sNum = extractChapterNumber(s.subcategory || s.title);
     if (sNum === chNum && chNum !== 999) return true;
@@ -5645,25 +5670,31 @@ function renderFilteredExamSetsForChapter(subjectKey, chapterName) {
   // Sort sets strictly by chapter number / set number
   sets.sort((a, b) => extractChapterNumber(a.subcategory || a.title) - extractChapterNumber(b.subcategory || b.title));
 
-  // If no specific set found in DB, fallback to structured real exam sets
   if (sets.length === 0) {
-    const cfg = SUBJECT_CONFIG[subjectKey] || SUBJECT_CONFIG['งานสารบรรณ'];
-    sets = cfg.sets || [
-      { id: `set_${encodeURIComponent(chapterName)}_1`, title: `${chapterName} - ชุดที่ 1`, count: 25, time: '30 นาที' },
-      { id: `set_${encodeURIComponent(chapterName)}_2`, title: `${chapterName} - ชุดที่ 2`, count: 25, time: '30 นาที' },
-      { id: `set_${encodeURIComponent(chapterName)}_3`, title: `${chapterName} - ชุดที่ 3`, count: 50, time: '60 นาที' }
-    ];
+    if (questionsCountEl) questionsCountEl.textContent = '📄 0 ข้อทั้งหมด';
+    if (countTag) countTag.textContent = '0 ชุดข้อสอบ';
+    if (completionTag) completionTag.textContent = '0/0 ชุด';
+
+    container.innerHTML = `
+      <div style="text-align: center; padding: 48px 16px; background: white; border-radius: 20px; border: 1.5px dashed #CBD5E1; color: #64748B;">
+        <div style="font-size: 32px; margin-bottom: 8px;">📝</div>
+        <h4 style="margin: 0 0 4px 0; font-size: 16px; font-weight: 800; color: #0F172A;">ยังไม่มีชุดข้อสอบในบทนี้</h4>
+        <p style="margin: 0; font-size: 13px; color: #94A3B8;">กำลังจัดเตรียมชุดข้อสอบเร็วๆ นี้</p>
+      </div>
+    `;
+    return;
   }
 
   const totalQ = sets.reduce((sum, s) => sum + (s.questionsCount || s.count || 25), 0);
   if (questionsCountEl) questionsCountEl.textContent = `📄 ${totalQ} ข้อทั้งหมด`;
   if (countTag) countTag.textContent = `${sets.length} ชุดข้อสอบ`;
-  if (completionTag) completionTag.textContent = `${sets.length}/${sets.length} ชุด`;
 
-  container.innerHTML = sets.map((s, idx) => {
+  let userCompletedSetsCount = 0;
+
+  const setsHTML = sets.map((s, idx) => {
     const setNum = idx + 1;
-    const questionsCount = s.questionsCount || s.count || (idx === 2 ? 50 : 25);
-    const timeText = s.timeMinutes ? `${s.timeMinutes} นาที` : (s.time || (idx === 2 ? '60 นาที' : '30 นาที'));
+    const questionsCount = s.questionsCount || s.count || 25;
+    const timeText = s.timeMinutes ? `${s.timeMinutes} นาที` : (s.time || '30 นาที');
 
     // Check user completion history
     const setRecords = history.filter(h => {
@@ -5674,10 +5705,11 @@ function renderFilteredExamSetsForChapter(subjectKey, chapterName) {
       return false;
     });
 
-    const isDone = setRecords.length > 0 || idx < 3; // sample score display if demo or real score
-    const percent = setRecords.length > 0 ? Math.max(...setRecords.map(r => r.scorePct || 0)) : (idx === 0 ? 88 : idx === 1 ? 80 : 86);
-    const correctCount = Math.round((percent / 100) * questionsCount);
-    const btnLabel = isDone ? 'ทำอีกครั้ง' : 'เริ่มทำข้อสอบ';
+    const isDone = setRecords.length > 0;
+    const percent = isDone ? Math.max(...setRecords.map(r => r.scorePct || 0)) : 0;
+    const correctCount = isDone ? Math.round((percent / 100) * questionsCount) : 0;
+    const btnLabel = isDone ? 'ทำอีกครั้ง' : 'เริ่มทำ';
+    if (isDone) userCompletedSetsCount++;
 
     return `
       <div style="background: #FFFFFF; border: 1.5px solid #F1F5F9; border-radius: 22px; padding: 18px 22px; display: flex; align-items: center; justify-content: space-between; gap: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); margin-bottom: 12px;">
@@ -5709,17 +5741,29 @@ function renderFilteredExamSetsForChapter(subjectKey, chapterName) {
               </span>
             </div>
 
-            <!-- Bottom line: ได้ 22/25 + Bar + 88% -->
+            <!-- Bottom line: Score Tag + Progress Bar + Percent -->
             <div style="display: flex; align-items: center; gap: 12px;">
-              <span style="background: #ECFDF5; color: #059669; font-size: 12.5px; font-weight: 800; padding: 2px 9px; border-radius: 999px; white-space: nowrap;">
-                ได้ ${correctCount}/${questionsCount}
-              </span>
-              <div style="flex: 1; height: 6px; background: #F1F5F9; border-radius: 999px; overflow: hidden; position: relative;">
-                <div style="height: 100%; width: ${percent}%; background: #16A34A; border-radius: 999px;"></div>
-              </div>
-              <span style="font-size: 12.5px; font-weight: 800; color: #475569; white-space: nowrap;">
-                ${percent}%
-              </span>
+              ${isDone ? `
+                <span style="background: #ECFDF5; color: #059669; font-size: 12.5px; font-weight: 800; padding: 2px 9px; border-radius: 999px; white-space: nowrap;">
+                  ได้ ${correctCount}/${questionsCount}
+                </span>
+                <div style="flex: 1; height: 6px; background: #F1F5F9; border-radius: 999px; overflow: hidden; position: relative;">
+                  <div style="height: 100%; width: ${percent}%; background: #16A34A; border-radius: 999px;"></div>
+                </div>
+                <span style="font-size: 12.5px; font-weight: 800; color: #475569; white-space: nowrap;">
+                  ${percent}%
+                </span>
+              ` : `
+                <span style="background: #F1F5F9; color: #64748B; font-size: 12px; font-weight: 700; padding: 2px 9px; border-radius: 999px; white-space: nowrap;">
+                  ยังไม่ได้ทำ
+                </span>
+                <div style="flex: 1; height: 6px; background: #F1F5F9; border-radius: 999px; overflow: hidden; position: relative;">
+                  <div style="height: 100%; width: 0%; background: #CBD5E1; border-radius: 999px;"></div>
+                </div>
+                <span style="font-size: 12.5px; font-weight: 600; color: #94A3B8; white-space: nowrap;">
+                  0%
+                </span>
+              `}
             </div>
           </div>
         </div>
@@ -5731,6 +5775,9 @@ function renderFilteredExamSetsForChapter(subjectKey, chapterName) {
       </div>
     `;
   }).join('');
+
+  if (completionTag) completionTag.textContent = `${userCompletedSetsCount}/${sets.length} ชุด`;
+  container.innerHTML = setsHTML;
 }
 
 // Back to Step 2 (Chapters)
