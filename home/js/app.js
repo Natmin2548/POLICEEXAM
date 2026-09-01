@@ -864,7 +864,7 @@ function renderSubjectExamSets() {
   }).join('');
 }
 
-// Update Subject Stats (matching Image 4)
+// Update Subject Stats from 100% Real History
 function updateSubjectStatsView() {
   const attemptsEl = document.getElementById('subjStatAttempts');
   const avgEl = document.getElementById('subjStatAvgScore');
@@ -873,26 +873,52 @@ function updateSubjectStatsView() {
   const avgBar = document.getElementById('subjStatAvgBar');
   const masteryEl = document.getElementById('subjStatMastery');
 
+  const history = getLocalQuizHistory(activeSubjectKey);
   const savedScores = JSON.parse(localStorage.getItem(`stats_${activeSubjectKey}`) || '[]');
-  if (savedScores.length > 0) {
-    const totalAttempts = savedScores.length;
-    const bestScore = Math.max(...savedScores.map(s => s.percent));
-    const avgScore = Math.round(savedScores.reduce((a, b) => a + b.percent, 0) / totalAttempts);
 
-    if (attemptsEl) attemptsEl.textContent = totalAttempts;
-    if (bestEl) bestEl.textContent = bestScore;
-    if (avgEl) avgEl.textContent = avgScore;
-    if (bestBar) bestBar.style.width = `${bestScore}%`;
-    if (avgBar) avgBar.style.width = `${avgScore}%`;
-    if (masteryEl) masteryEl.textContent = avgScore >= 80 ? 'ดีมาก' : avgScore >= 60 ? 'ปานกลาง' : 'เริ่มต้น';
+  // Combine real history records and saved scores
+  const allScores = [
+    ...history.map(h => typeof h.scorePct === 'number' ? h.scorePct : Math.round((h.score / (h.total || 25)) * 100)),
+    ...savedScores.map(s => typeof s.percent === 'number' ? s.percent : (s.score || 0))
+  ].filter(s => !isNaN(s) && s >= 0);
+
+  if (allScores.length > 0) {
+    const totalAttempts = allScores.length;
+    const bestScore = Math.max(...allScores);
+    const avgScore = Math.round(allScores.reduce((a, b) => a + b, 0) / totalAttempts);
+
+    if (attemptsEl) attemptsEl.textContent = `${totalAttempts}`;
+    if (bestEl) bestEl.textContent = `${bestScore}`;
+    if (avgEl) avgEl.textContent = `${avgScore}`;
+    if (bestBar) bestBar.style.width = `${Math.min(bestScore, 100)}%`;
+    if (avgBar) avgBar.style.width = `${Math.min(avgScore, 100)}%`;
+
+    if (masteryEl) {
+      if (avgScore >= 80) {
+        masteryEl.textContent = 'ดีมาก';
+        masteryEl.style.color = '#16A34A';
+      } else if (avgScore >= 60) {
+        masteryEl.textContent = 'ปานกลาง';
+        masteryEl.style.color = '#2563EB';
+      } else if (avgScore >= 40) {
+        masteryEl.textContent = 'พอใช้';
+        masteryEl.style.color = '#EA580C';
+      } else {
+        masteryEl.textContent = 'เริ่มต้น';
+        masteryEl.style.color = '#64748B';
+      }
+    }
   } else {
-    // Default matching sample screen
-    if (attemptsEl) attemptsEl.textContent = '18';
-    if (bestEl) bestEl.textContent = '92';
-    if (avgEl) avgEl.textContent = '78';
-    if (bestBar) bestBar.style.width = '92%';
-    if (avgBar) avgBar.style.width = '78%';
-    if (masteryEl) masteryEl.textContent = 'ดีมาก';
+    // Real zero state when user has not yet taken any exam in this subject
+    if (attemptsEl) attemptsEl.textContent = '0';
+    if (bestEl) bestEl.textContent = '0';
+    if (avgEl) avgEl.textContent = '0';
+    if (bestBar) bestBar.style.width = '0%';
+    if (avgBar) avgBar.style.width = '0%';
+    if (masteryEl) {
+      masteryEl.textContent = 'ยังไม่เริ่ม';
+      masteryEl.style.color = '#94A3B8';
+    }
   }
 }
 
@@ -1142,6 +1168,23 @@ async function finishQuiz() {
       </div>
     </div>
   `;
+
+  // Save quiz record to local history
+  saveQuizHistoryRecord({
+    subject: currentQuizSubject,
+    score: currentQuizScore,
+    total: total,
+    scorePct: percent,
+    date: new Date().toISOString()
+  });
+
+  // Save to subject stats
+  try {
+    const key = `stats_${currentQuizSubject}`;
+    const cur = JSON.parse(localStorage.getItem(key) || '[]');
+    cur.push({ percent: percent, score: currentQuizScore, total: total, date: new Date().toISOString() });
+    localStorage.setItem(key, JSON.stringify(cur));
+  } catch (e) {}
 
   // Submit score to backend
   try {
