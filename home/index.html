@@ -164,66 +164,57 @@
 <body>
 
   <!-- Top Navigation Header -->
-  <header class="navbar" style="position: sticky; top: 0; z-index: 100; background: rgba(255,255,255,0.92); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid #F1F5F9; padding: 12px 0;">
-    <div class="nav-container" style="display: flex; justify-content: space-between; align-items: center; max-width: 1000px; margin: 0 auto; padding: 0 20px;">
+  <header class="navbar" style="position: sticky; top: 0; z-index: 100; background: rgba(255,255,255,0.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid #F1F5F9; padding: 14px 0;">
+    <div class="nav-container" style="display: flex; justify-content: space-between; align-items: center; max-width: 1080px; margin: 0 auto; padding: 0 24px;">
       
-      <!-- Logo & Greeting -->
-      <div style="display: flex; align-items: center; gap: 12px;">
-        <a href="#" onclick="if(document.getElementById('btnTabHome')) document.getElementById('btnTabHome').click(); return false;" style="display: flex; align-items: center; gap: 6px; text-decoration: none;">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="#BD1B0B" stroke="#BD1B0B" stroke-width="0">
+      <!-- Left: Logo & Greeting -->
+      <div style="display: flex; align-items: center; gap: 16px;">
+        <a href="#" onclick="if(document.getElementById('btnTabHome')) document.getElementById('btnTabHome').click(); return false;" style="display: flex; align-items: center; gap: 8px; text-decoration: none;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="#BD1B0B" stroke="#BD1B0B" stroke-width="0">
             <path d="M12 2L3 6v6c0 5.3 3.9 10.2 9 11.4C17.1 22.2 21 17.3 21 12V6L12 2z" />
           </svg>
-          <span style="font-size: 16px; font-weight: 800; letter-spacing: -0.02em; color: #0F172A;">POLICE<span style="color: #BD1B0B;">EXAM</span></span>
+          <span style="font-size: 17px; font-weight: 900; letter-spacing: -0.02em; color: #0F172A;">POLICE<span style="color: #BD1B0B;">EXAM</span></span>
         </a>
-        <div class="nav-greeting" style="display: flex; flex-direction: column; margin-left: 8px; border-left: 1px solid #E2E8F0; padding-left: 12px;">
-          <span class="greeting-subtitle" style="font-size: 11px; color: #94A3B8; font-weight: 500; line-height: 1;">สวัสดีตอนเย็น 👋</span>
-          <h1 class="greeting-title" id="greetingName" style="font-size: 14px; font-weight: 700; color: #0F172A; margin: 2px 0 0 0;">ผู้ใช้งาน</h1>
+        <div style="width: 1px; height: 28px; background: #E2E8F0;"></div>
+        <div class="nav-greeting" style="display: flex; flex-direction: column;">
+          <span class="greeting-subtitle" style="font-size: 11.5px; color: #94A3B8; font-weight: 500; line-height: 1;">สวัสดีตอนเช้า</span>
+          <h1 class="greeting-title" id="greetingName" style="font-size: 15px; font-weight: 800; color: #0F172A; margin: 3px 0 0 0;">มิน</h1>
         </div>
       </div>
 
-      <!-- Right Header Actions -->
-      <div class="header-actions" style="display: flex; align-items: center; gap: 10px;">
+      <!-- Right: Admin Button & Avatar -->
+      <div class="header-actions" style="display: flex; align-items: center; gap: 12px;">
         <!-- Direct Admin Exam Button -->
-        <a href="admin.html" id="btnAdminDirect" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 999px; font-size: 12px; font-weight: 700; text-decoration: none; color: #BD1B0B; border: 1px solid #FBCFCB; background: #FDF2F1; box-shadow: 0 1px 3px rgba(0,0,0,0.02); transition: all 0.2s;">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+        <a href="admin.html" id="btnAdminDirect" style="display: inline-flex; align-items: center; gap: 6px; padding: 7px 16px; border-radius: 999px; font-size: 13px; font-weight: 700; text-decoration: none; color: #BD1B0B; border: 1.5px solid #FBCFCB; background: #FFFFFF; box-shadow: 0 1px 3px rgba(0,0,0,0.03); transition: all 0.2s;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
             <path d="M12 20h9"/>
             <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
           </svg>
           <span>สร้างข้อสอบ (Admin)</span>
         </a>
 
-        <!-- Notification Bell -->
-        <button class="btn-notification" id="btnNotification" aria-label="Notifications" style="display: none;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
-            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0" />
-          </svg>
-          <span class="notification-badge" id="notifBadge"></span>
-        </button>
-
         <!-- User Profile Dropdown Anchor -->
         <div class="profile-menu-container">
-          <button class="btn-profile-menu" id="btnProfileMenu" aria-label="Profile Menu" style="width: 36px; height: 36px; border-radius: 50%; overflow: hidden; border: 1.5px solid #E2E8F0; padding: 0; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+          <button class="btn-profile-menu" id="btnProfileMenu" aria-label="Profile Menu" style="width: 38px; height: 38px; border-radius: 50%; overflow: hidden; border: 1.5px solid #E2E8F0; padding: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; background: none;">
             <img src="" alt="Google Avatar" class="header-avatar" id="headerAvatar" style="width: 100%; height: 100%; object-fit: cover; display: none;">
-            <div class="default-avatar" id="defaultAvatar" style="width: 100%; height: 100%; background: linear-gradient(135deg, #BD1B0B 0%, #7A1107 100%); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px;">ส</div>
+            <div class="default-avatar" id="defaultAvatar" style="width: 100%; height: 100%; background: linear-gradient(135deg, #BD1B0B 0%, #7A1107 100%); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 15px;">ม</div>
           </button>
 
           <!-- Dropdown Options -->
           <div class="profile-dropdown" id="profileDropdown">
             <div class="dropdown-header">
-              <span class="dropdown-user-name" id="dropdownUserName">ผู้ใช้งาน</span>
+              <span class="dropdown-user-name" id="dropdownUserName">มิน</span>
               <span class="dropdown-user-email" id="dropdownUserEmail">user@policeexam.com</span>
             </div>
             <div class="dropdown-divider"></div>
             <a href="#" onclick="window.location.href='admin.html?t=' + Date.now(); return false;" class="dropdown-item" id="dropdownAdminPanel" style="display: none; color: #BD1B0B;">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
               </svg>
               <span>จัดการระบบ (Admin Panel)</span>
             </a>
             <a href="#" class="dropdown-item" id="btnDropdownLogout">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                stroke-linejoin="round">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
               </svg>
               <span>ออกจากระบบ</span>
@@ -236,66 +227,68 @@
 
   <!-- Main Dashboard Content -->
   <main class="dashboard-main">
-    <div class="container" style="max-width: 900px;">
+    <div class="container" style="max-width: 1080px; margin: 0 auto; padding: 0 24px;">
 
       <div id="homeView" class="tab-view active">
-        <!-- Streak Card (Daily Challenge Banner Matching Screenshot) -->
-        <section class="target-card" onclick="openPoliceTrackModal()" style="background: linear-gradient(135deg, #A81308 0%, #780B04 60%, #4D0602 100%); border-radius: 24px; padding: 24px 28px; color: white; margin-bottom: 24px; cursor: pointer; transition: transform 0.15s ease; position: relative; overflow: hidden; box-shadow: 0 12px 32px -4px rgba(168, 19, 8, 0.35);">
-          <!-- Decorative Background Circles -->
-          <div style="position: absolute; top: -30px; right: -20px; width: 180px; height: 180px; border-radius: 50%; background: rgba(0,0,0,0.18);"></div>
-          <div style="position: absolute; bottom: -50px; right: 100px; width: 140px; height: 140px; border-radius: 50%; background: rgba(255,255,255,0.03);"></div>
-
-          <div style="position: relative; z-index: 2; max-width: 540px;">
-            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
-              <div style="background: rgba(255,255,255,0.18); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px;">
-                🔥
-              </div>
-              <span style="font-size: 12px; font-weight: 700; color: rgba(255,255,255,0.85); letter-spacing: 0.08em; text-transform: uppercase;">DAILY CHALLENGE</span>
-            </div>
-            
-            <h2 id="greetingStreakTitle" style="margin: 0 0 6px 0; font-size: 22px; font-weight: 800; color: #FFFFFF; letter-spacing: -0.01em;">0 วันติดต่อกัน!</h2>
-            <p id="greetingStreakSubtitle" style="margin: 0 0 18px 0; font-size: 13px; color: rgba(255,255,255,0.82); line-height: 1.4;">ทำข้อสอบวันนี้เพื่อรักษา Streak และพัฒนาความแม่นยำของคุณ</p>
-
-            <button id="btnStartExam" onclick="event.stopPropagation(); openPoliceTrackModal();" style="background: #FFFFFF; color: #991007; border: none; padding: 10px 22px; border-radius: 999px; font-weight: 700; font-family: inherit; font-size: 13.5px; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,0.18); display: inline-flex; align-items: center; gap: 6px; transition: transform 0.15s ease;">
-              <span>⚡</span> เริ่มทำข้อสอบทันที
-            </button>
+        <!-- Search Bar -->
+        <div class="search-bar-container" style="margin-bottom: 24px; margin-top: 14px;">
+          <div style="position: relative;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position: absolute; left: 18px; top: 14px; width: 18px; height: 18px;">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" placeholder="ค้นหาข้อสอบ วิชา หรือเพื่อน..." style="width: 100%; padding: 13px 20px 13px 48px; border-radius: 999px; border: 1px solid #E2E8F0; background: #FFFFFF; font-family: inherit; font-size: 14px; outline: none; box-sizing: border-box; color: #0F172A; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
           </div>
+        </div>
+
+        <!-- Red Streak Card (Daily Challenge) -->
+        <section class="target-card" onclick="openPoliceTrackModal()" style="background: linear-gradient(135deg, #BD1B0B 0%, #8B0F06 60%, #6B0A04 100%); border-radius: 28px; padding: 26px 32px; color: white; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 12px 36px -6px rgba(189, 27, 11, 0.4); border: none; margin-bottom: 28px; cursor: pointer; transition: transform 0.15s ease; position: relative; overflow: hidden;">
+          <div style="position: absolute; top: -40px; right: -20px; width: 160px; height: 160px; border-radius: 50%; background: rgba(0,0,0,0.12);"></div>
+          <div style="position: absolute; bottom: -40px; right: 120px; width: 120px; height: 120px; border-radius: 50%; background: rgba(255,255,255,0.04);"></div>
+
+          <div style="display: flex; align-items: center; gap: 18px; position: relative; z-index: 1;">
+            <div style="background: rgba(255,255,255,0.18); width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 26px; flex-shrink: 0;">
+              🔥
+            </div>
+            <div>
+              <span style="font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.75); letter-spacing: 0.08em; text-transform: uppercase; display: block; margin-bottom: 3px;">DAILY CHALLENGE</span>
+              <h2 id="greetingStreakTitle" style="margin: 0; font-size: 20px; font-weight: 800; display: flex; align-items: center; gap: 6px; color: #FFFFFF;">0 วันติดต่อกัน! 🔥</h2>
+              <span id="greetingStreakSubtitle" style="font-size: 13px; opacity: 0.88; margin-top: 4px; display: block; color: rgba(255,255,255,0.9);">เริ่มทำข้อสอบเพื่อสะสม streak เลย!</span>
+            </div>
+          </div>
+          <button id="btnStartExam" onclick="event.stopPropagation(); openPoliceTrackModal();" style="background: #FFFFFF; color: #BD1B0B; border: none; padding: 12px 28px; border-radius: 999px; font-weight: 800; font-family: inherit; font-size: 14px; cursor: pointer; box-shadow: 0 4px 16px rgba(0,0,0,0.15); flex-shrink: 0; position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 6px; transition: transform 0.15s ease;">
+            ทำเลย ⚡
+          </button>
         </section>
 
-        <!-- 2x2 Action Grid Matching Screenshot -->
-        <section class="action-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 28px;">
+        <!-- 4 Action Grid (Single Row, 4 Columns Matching Screenshot) -->
+        <section class="action-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px;">
           <!-- 1. บีบอัดรูป -->
-          <button onclick="openImageCompressorModal()" style="background: #F0FDF4; border: 1px solid #DCFCE7; border-radius: 20px; padding: 18px 20px; display: flex; align-items: center; gap: 16px; text-align: left; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease;">
-            <div style="width: 44px; height: 44px; border-radius: 14px; background: #FFFFFF; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.03); flex-shrink: 0;">
+          <button onclick="openImageCompressorModal()" style="background: #F0FDF4; border: 1px solid #DCFCE7; border-radius: 20px; padding: 22px 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease;">
+            <div style="width: 44px; height: 44px; border-radius: 14px; background: #FFFFFF; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.03);">
               <svg viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 22px; height: 22px;">
                 <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
                 <circle cx="8.5" cy="8.5" r="1.5"></circle>
                 <polyline points="21 15 16 10 5 21"></polyline>
               </svg>
             </div>
-            <div>
-              <h3 style="margin: 0; font-size: 15px; font-weight: 700; color: #0F172A;">บีบอัดรูป</h3>
-              <p style="margin: 2px 0 0 0; font-size: 12px; color: #64748B;">ลดขนาดไฟล์สมัครสอบตำรวจ</p>
-            </div>
+            <span style="font-size: 14px; font-weight: 700; color: #16A34A; font-family: inherit;">บีบอัดรูป</span>
           </button>
 
           <!-- 2. คลังข้อสอบ -->
-          <button onclick="document.getElementById('btnTabBank').click()" style="background: #EFF6FF; border: 1px solid #DBEAFE; border-radius: 20px; padding: 18px 20px; display: flex; align-items: center; gap: 16px; text-align: left; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease;">
-            <div style="width: 44px; height: 44px; border-radius: 14px; background: #FFFFFF; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.03); flex-shrink: 0;">
+          <button onclick="document.getElementById('btnTabBank').click()" style="background: #EFF6FF; border: 1px solid #DBEAFE; border-radius: 20px; padding: 22px 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease;">
+            <div style="width: 44px; height: 44px; border-radius: 14px; background: #FFFFFF; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.03);">
               <svg viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 22px; height: 22px;">
                 <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
                 <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
               </svg>
             </div>
-            <div>
-              <h3 style="margin: 0; font-size: 15px; font-weight: 700; color: #0F172A;">คลังข้อสอบ</h3>
-              <p style="margin: 2px 0 0 0; font-size: 12px; color: #64748B;">6 หมวดวิชาพร้อมบทเรียน</p>
-            </div>
+            <span style="font-size: 14px; font-weight: 700; color: #2563EB; font-family: inherit;">คลังข้อสอบ</span>
           </button>
 
           <!-- 3. แบทเทิล -->
-          <button onclick="showBattleMaintenanceAlert(event)" style="background: #FFF7ED; border: 1px solid #FFEDD5; border-radius: 20px; padding: 18px 20px; display: flex; align-items: center; gap: 16px; text-align: left; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease;">
-            <div style="width: 44px; height: 44px; border-radius: 14px; background: #FFFFFF; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.03); flex-shrink: 0;">
+          <button onclick="showBattleMaintenanceAlert(event)" style="background: #FFF7ED; border: 1px solid #FFEDD5; border-radius: 20px; padding: 22px 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease;">
+            <div style="width: 44px; height: 44px; border-radius: 14px; background: #FFFFFF; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.03);">
               <svg viewBox="0 0 24 24" fill="none" stroke="#EA580C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 22px; height: 22px;">
                 <polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5" />
                 <line x1="13" y1="19" x2="19" y2="13" />
@@ -303,120 +296,35 @@
                 <line x1="3" y1="21" x2="10" y2="14" />
               </svg>
             </div>
-            <div>
-              <h3 style="margin: 0; font-size: 15px; font-weight: 700; color: #0F172A;">แบทเทิล</h3>
-              <p style="margin: 2px 0 0 0; font-size: 12px; color: #64748B;">ดวลข้อสอบ 1v1 & อันดับ</p>
-            </div>
+            <span style="font-size: 14px; font-weight: 700; color: #EA580C; font-family: inherit;">แบทเทิล</span>
           </button>
 
-          <!-- 4. คลังคำศัพท์ -->
-          <button onclick="openVocabArena()" style="background: #FAF5FF; border: 1px solid #F3E8FF; border-radius: 20px; padding: 18px 20px; display: flex; align-items: center; gap: 16px; text-align: left; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease;">
-            <div style="width: 44px; height: 44px; border-radius: 14px; background: #FFFFFF; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.03); flex-shrink: 0;">
+          <!-- 4. คำศัพท์ -->
+          <button onclick="openVocabArena()" style="background: #FAF5FF; border: 1px solid #F3E8FF; border-radius: 20px; padding: 22px 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease;">
+            <div style="width: 44px; height: 44px; border-radius: 14px; background: #FFFFFF; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.03);">
               <svg viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 22px; height: 22px;">
-                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                <path d="M12 3c-4.4 0-8 2.2-8 5s3.6 5 8 5 8-2.2 8-5-3.6-5-8-5z" />
+                <path d="M4 8v5c0 2.8 3.6 5 8 5s8-2.2 8-5V8" />
+                <path d="M4 13v5c0 2.8 3.6 5 8 5s8-2.2 8-5v-5" />
               </svg>
             </div>
-            <div>
-              <h3 style="margin: 0; font-size: 15px; font-weight: 700; color: #0F172A;">คลังคำศัพท์</h3>
-              <p style="margin: 2px 0 0 0; font-size: 12px; color: #64748B;">Flashcards อังกฤษ-ตำรวจ</p>
-            </div>
+            <span style="font-size: 14px; font-weight: 700; color: #7C3AED; font-family: inherit;">คำศัพท์</span>
           </button>
         </section>
 
-        <!-- Section Title: ผลการเรียนรู้ & จุดอ่อน -->
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 32px; margin-bottom: 16px;">
-          <h3 style="margin: 0; font-size: 18px; font-weight: 800; color: #0F172A;">ผลการเรียนรู้ & จุดอ่อน</h3>
-          <span style="font-size: 12px; color: #94A3B8;" id="statsLastUpdateText">อัปเดตล่าสุด: วันนี้</span>
+        <!-- Section Title: รายงานผลการเรียนรู้ & จุดอ่อน -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 36px; margin-bottom: 16px;">
+          <h3 style="margin: 0; font-size: 18px; font-weight: 800; color: #0F172A;">รายงานผลการเรียนรู้ & จุดอ่อน</h3>
+          <span style="font-size: 13px; color: #94A3B8;" id="statsLastUpdateText">อัปเดต วันนี้ (2 ก.ย.)</span>
         </div>
 
-        <!-- 2 Column Analytics Grid (Top Row) -->
-        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 16px;">
-          <!-- Card 1: ความเชี่ยวชาญรายวิชา (Radar) -->
-          <div style="background: white; border-radius: 20px; padding: 22px; box-shadow: 0 1px 4px rgba(0,0,0,0.02); border: 1px solid #F1F5F9;">
-            <h4 style="margin: 0; font-size: 15px; font-weight: 700; color: #0F172A;">ความเชี่ยวชาญรายวิชา</h4>
-            <span style="font-size: 11.5px; color: #94A3B8; display: block; margin-bottom: 14px;">Subject Mastery</span>
-            <div style="position: relative; height: 230px;">
-              <canvas id="statsRadarChartCanvas"></canvas>
-            </div>
-          </div>
-
-          <!-- Card 2: คะแนนรายวิชา (Bar) -->
-          <div style="background: white; border-radius: 20px; padding: 22px; box-shadow: 0 1px 4px rgba(0,0,0,0.02); border: 1px solid #F1F5F9; display: flex; flex-direction: column; justify-content: space-between;">
-            <div>
-              <h4 style="margin: 0; font-size: 15px; font-weight: 700; color: #0F172A;">คะแนนรายวิชา</h4>
-              <span style="font-size: 11.5px; color: #94A3B8; display: block; margin-bottom: 14px;">Score by Subject</span>
-              <div style="position: relative; height: 185px;">
-                <canvas id="statsBarChartCanvas"></canvas>
-              </div>
-            </div>
-            <div style="display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-top: 10px; font-size: 10.5px; font-weight: 600; color: #64748B;">
-              <span style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 999px; background: #F8FAFC;"><span style="width: 6px; height: 6px; border-radius: 50%; background: #BD1B0B;"></span>สารบรรณ</span>
-              <span style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 999px; background: #F8FAFC;"><span style="width: 6px; height: 6px; border-radius: 50%; background: #BD1B0B;"></span>คำนวณ</span>
-              <span style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 999px; background: #F8FAFC;"><span style="width: 6px; height: 6px; border-radius: 50%; background: #BD1B0B;"></span>สังคม</span>
-              <span style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 999px; background: #F8FAFC;"><span style="width: 6px; height: 6px; border-radius: 50%; background: #BD1B0B;"></span>กฎหมาย</span>
-              <span style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 999px; background: #F8FAFC;"><span style="width: 6px; height: 6px; border-radius: 50%; background: #BD1B0B;"></span>ไอที/คอม</span>
-              <span style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 999px; background: #F8FAFC;"><span style="width: 6px; height: 6px; border-radius: 50%; background: #BD1B0B;"></span>ลักษณะ๕๔</span>
-            </div>
+        <!-- Analytics Section (Radar) -->
+        <div style="background: white; border-radius: 24px; padding: 28px; box-shadow: 0 2px 12px rgba(0,0,0,0.02); border: 1px solid #F1F5F9; margin-bottom: 24px;">
+          <h4 style="margin: 0 0 16px 0; font-size: 16px; font-weight: 800; color: #0F172A;">ภาพรวมรายวิชา (Subject Mastery)</h4>
+          <div style="position: relative; height: 280px;">
+            <canvas id="statsRadarChartCanvas"></canvas>
           </div>
         </div>
-
-        <!-- Full Width Card: พัฒนาการ 8 สัปดาห์ (Line) -->
-        <div style="background: white; border-radius: 20px; padding: 22px; box-shadow: 0 1px 4px rgba(0,0,0,0.02); border: 1px solid #F1F5F9; margin-bottom: 16px;">
-          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
-            <div>
-              <h4 style="margin: 0; font-size: 15px; font-weight: 700; color: #0F172A;">พัฒนาการ 8 สัปดาห์</h4>
-              <span style="font-size: 11.5px; color: #94A3B8;">8-Week Score Progression</span>
-            </div>
-            <div style="text-align: right;">
-              <span style="font-size: 20px; font-weight: 800; color: #BD1B0B; display: block; line-height: 1;">84%</span>
-              <span style="font-size: 11px; font-weight: 700; color: #16A34A;">▲ +22% พัฒนาการ</span>
-            </div>
-          </div>
-          <div style="position: relative; height: 160px;">
-            <canvas id="statsLineChartCanvas"></canvas>
-          </div>
-        </div>
-
-        <!-- Full Width Card: AI แนะนำแนวทางอ่านสอบ -->
-        <div style="background: white; border-radius: 20px; padding: 22px; box-shadow: 0 1px 4px rgba(0,0,0,0.02); border: 1px solid #F1F5F9; margin-bottom: 24px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-            <div style="display: flex; align-items: center; gap: 10px;">
-              <div style="width: 32px; height: 32px; border-radius: 10px; background: #FEF2F2; color: #BD1B0B; display: flex; align-items: center; justify-content: center; font-size: 16px;">
-                💡
-              </div>
-              <div>
-                <h4 style="margin: 0; font-size: 15px; font-weight: 700; color: #0F172A;">AI แนะนำแนวทางอ่านสอบ</h4>
-                <span style="font-size: 11.5px; color: #94A3B8;">Smart Study Advice</span>
-              </div>
-            </div>
-            <span style="background: #FDF2F1; color: #BD1B0B; border: 1px solid #FBCFCB; padding: 2px 10px; border-radius: 999px; font-size: 11px; font-weight: 800;">AI</span>
-          </div>
-
-          <div id="aiRecsListContainer" style="display: flex; flex-direction: column; gap: 10px;">
-            <!-- Advice 1: สำคัญมาก -->
-            <div style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 14px; background: #F8FAFC; border: 1px solid #F1F5F9;">
-              <span style="background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; flex-shrink: 0;">สำคัญมาก</span>
-              <span style="font-size: 13px; color: #334155;">วิชา ไอที/คอมพิวเตอร์ ควรทบทวน พ.ร.บ.คอมพิวเตอร์ และระบบความมั่นคงปลอดภัยไซเบอร์</span>
-            </div>
-
-            <!-- Advice 2: แนะนำ -->
-            <div style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 14px; background: #F8FAFC; border: 1px solid #F1F5F9;">
-              <span style="background: #FFFBEB; color: #D97706; border: 1px solid #FDE68A; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; flex-shrink: 0;">แนะนำ</span>
-              <span style="font-size: 13px; color: #334155;">วิชา สังคมฯ ควรติดตามเหตุการณ์ปัจจุบันปี 2568-2569 และความสัมพันธ์อาเซียน</span>
-            </div>
-
-            <!-- Advice 3: ทำต่อเนื่อง -->
-            <div style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 14px; background: #F8FAFC; border: 1px solid #F1F5F9;">
-              <span style="background: #F0FDF4; color: #16A34A; border: 1px solid #DCFCE7; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; flex-shrink: 0;">ทำต่อเนื่อง</span>
-              <span style="font-size: 13px; color: #334155;">วิชา งานสารบรรณ และ ลักษณะที่ ๕๔ มีความแม่นยำสูง (>85%) รักษาระดับไว้ได้ดีเยี่ยม</span>
-            </div>
-          </div>
-        </div>
-
-      </div> <!-- Close homeView -->
-          </div>
-        </section>
 
       </div> <!-- Close homeView -->
 
