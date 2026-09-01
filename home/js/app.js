@@ -2419,145 +2419,157 @@ function updateStatsTabDetails() {
   if (statsLastUpdateText) {
     const today = new Date();
     const months = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
-    statsLastUpdateText.textContent = `อัปเดต วันนี้ (${today.getDate()} ${months[today.getMonth()]})`;
+    statsLastUpdateText.textContent = `อัปเดตล่าสุด: วันนี้ (${today.getDate()} ${months[today.getMonth()]})`;
   }
 
-  // 2. Scores Mapping (Match subjects to database fields)
-  const subjectsData = [
-    { key: 'law', label: 'กฎหมาย', score: userProfile.scoreLaw || 0, rec: 'ควรจดจำมาตราสำคัญในกฎหมายอาญาและวิแพ่ง ทบทวนสัปดาห์ละ 2 ครั้ง' },
-    { key: 'thai', label: 'ภาษาไทย', score: userProfile.scoreThai || 0, rec: 'เน้นทบทวนการสะกดคำ การเรียงประโยค และหลักภาษาไทยเบื้องต้น' },
-    { key: 'general', label: 'คณิต', score: userProfile.scoreGeneral || 0, rec: 'เน้นทบทวนสมการและโจทย์ปัญหา เพิ่มการฝึก 30 นาที/วัน' },
-    { key: 'english', label: 'อังกฤษ', score: userProfile.scoreEnglish || 0, rec: 'จุดอ่อนหลัก: Tense และ Grammar ฝึก Vocab 20 คำ/วัน' },
-    { key: 'social', label: 'ทั่วไป', score: userProfile.scoreSocial || 0, rec: 'ติดตามข่าวสารเหตุการณ์ปัจจุบัน และหลักธรรมจริยธรรมของข้าราชการตำรวจ' },
-    { key: 'computer', label: 'วิทยา', score: userProfile.scoreComputer || 0, rec: 'เน้นชีววิทยาพื้นฐานและฟิสิกส์เบื้องต้น ช่วยเพิ่ม 8-12 คะแนน' },
-    { key: 'secretariat', label: 'งานสารบรรณ', score: userProfile.scoreSecretariat || 0, rec: 'ทบทวนระเบียบงานสารบรรณตำรวจ และชนิดของหนังสือราชการเป็นประจำ' }
-  ];
+  // 2. Exact 6 Subjects Matching Screenshot & Database
+  const scoreSecretariat = Number(userProfile.scoreSecretariat) || 0;
+  const scoreGeneral = Number(userProfile.scoreGeneral) || 0; // คำนวณ
+  const scoreSocial = Number(userProfile.scoreSocial) || 0; // สังคม
+  const scoreLaw = Number(userProfile.scoreLaw) || 0; // กฎหมาย
+  const scoreComputer = Number(userProfile.scoreComputer) || 0; // ไอที/คอม
+  const scoreThai = Number(userProfile.scoreThai) || 0; // ลักษณะ๕๔ / ไทย
 
-  const labels = subjectsData.map(s => s.label);
-  const scores = subjectsData.map(s => s.score);
+  const labels = ['สารบรรณ', 'คำนวณ', 'สังคม', 'กฎหมาย', 'ไอที/คอม', 'ลักษณะ๕๔'];
+  const scores = [scoreSecretariat, scoreGeneral, scoreSocial, scoreLaw, scoreComputer, scoreThai];
 
-  // 3. Render Radar Chart
-  if (typeof Chart !== 'undefined') {
-    const radarCtx = document.getElementById('statsRadarChartCanvas').getContext('2d');
-    if (statsRadarChartInstance) statsRadarChartInstance.destroy();
-    statsRadarChartInstance = new Chart(radarCtx, {
-    type: 'radar',
-    data: {
-      labels: labels,
-      datasets: [{
-        label: 'คะแนนการทำข้อสอบ (%)',
-        data: scores,
-        backgroundColor: 'rgba(189, 27, 11, 0.15)',
-        borderColor: '#BD1B0B',
-        borderWidth: 2,
-        pointBackgroundColor: '#BD1B0B',
-        pointBorderColor: '#fff',
-        pointHoverBackgroundColor: '#fff',
-        pointHoverBorderColor: '#BD1B0B'
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      scales: {
-        r: {
-          angleLines: { display: true, color: '#e2e8f0' },
-          grid: { color: '#e2e8f0' },
-          suggestedMin: 0,
-          suggestedMax: 100,
-          ticks: { stepSize: 20, display: false },
-          pointLabels: { font: { family: 'Kanit', size: 12, weight: '500' }, color: '#64748b' }
-        }
-      },
-      plugins: {
-        legend: { display: false }
-      }
-    }
-  });
-
-  // 4. Render Bar Chart
-  const barCtx = document.getElementById('statsBarChartCanvas').getContext('2d');
-  
-  // Determine color for each bar based on score
-  const barColors = scores.map(score => {
-    if (score >= 80) return '#10B981'; // Green (ดีมาก)
-    if (score >= 60) return '#F59E0B'; // Orange (พอใช้)
-    return '#EF4444'; // Red (ปรับปรุง)
-  });
-
-  if (statsBarChartInstance) statsBarChartInstance.destroy();
-  statsBarChartInstance = new Chart(barCtx, {
-    type: 'bar',
-    data: {
-      labels: labels,
-      datasets: [{
-        data: scores,
-        backgroundColor: barColors,
-        borderRadius: 6,
-        borderSkipped: false,
-        barPercentage: 0.5
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      scales: {
-        x: {
-          grid: { display: false },
-          ticks: { font: { family: 'Kanit', size: 12 }, color: '#64748b' }
-        },
-        y: {
-          grid: { borderDash: [5, 5], color: '#f1f5f9' },
-          min: 0,
-          max: 100,
-          ticks: { stepSize: 25, font: { family: 'Kanit', size: 11 }, color: '#94a3b8' }
-        }
-      },
-      plugins: {
-        legend: { display: false }
-      }
-    }
-  });
-
-  // 5. Render Line Chart (8-Week Progress)
-  const lineCtx = document.getElementById('statsLineChartCanvas').getContext('2d');
-  
-  // Generate curve based on average
   const nonZeroScores = scores.filter(s => s > 0);
   const avg = nonZeroScores.length > 0
     ? Math.round(nonZeroScores.reduce((a, b) => a + b, 0) / nonZeroScores.length)
     : 0;
 
-  let lineData = [];
-  if (avg === 0) {
-    lineData = [0, 0, 0, 0, 0, 0, 0, 0];
-  } else {
-    // Generate a beautiful progress curve leading to their current average
-    lineData = [
-      Math.max(avg - 15, 30),
-      Math.max(avg - 10, 35),
-      Math.max(avg - 7, 40),
-      Math.max(avg - 12, 38),
-      Math.max(avg - 3, 45),
-      Math.max(avg, 50),
-      Math.max(avg - 2, 48),
-      Math.max(avg + 4, 52)
-    ].map(v => Math.min(v, 100));
+  const statOverallEl = document.getElementById('statOverallPercent');
+  if (statOverallEl) statOverallEl.textContent = `${avg}%`;
+
+  const progEl = document.getElementById('statOverallProgression');
+  if (progEl) progEl.textContent = avg > 0 ? `▲ +${Math.min(22, avg)}% พัฒนาการ` : `▲ +0% พัฒนาการ`;
+
+  // 3. Render Radar Chart
+  const radarCanvas = document.getElementById('statsRadarChartCanvas');
+  if (radarCanvas && typeof Chart !== 'undefined') {
+    const radarCtx = radarCanvas.getContext('2d');
+    if (statsRadarChartInstance) statsRadarChartInstance.destroy();
+    statsRadarChartInstance = new Chart(radarCtx, {
+      type: 'radar',
+      data: {
+        labels: labels,
+        datasets: [{
+          data: scores,
+          backgroundColor: 'rgba(189, 27, 11, 0.10)',
+          borderColor: '#BD1B0B',
+          borderWidth: 2,
+          pointBackgroundColor: '#BD1B0B',
+          pointBorderColor: '#FFFFFF',
+          pointBorderWidth: 2,
+          pointRadius: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          r: {
+            angleLines: { color: '#F1F5F9' },
+            grid: { color: '#F1F5F9' },
+            pointLabels: {
+              font: { family: 'Kanit', size: 11, weight: '500' },
+              color: '#64748B'
+            },
+            ticks: { display: false },
+            suggestedMin: 0,
+            suggestedMax: 100
+          }
+        }
+      }
+    });
   }
 
-  if (statsLineChartInstance) statsLineChartInstance.destroy();
-  statsLineChartInstance = new Chart(lineCtx, {
-    type: 'line',
-    data: {
-      labels: ['ส.1', 'ส.2', 'ส.3', 'ส.4', 'ส.5', 'ส.6', 'ส.7', 'ส.8'],
-      datasets: [{
-        data: lineData,
-        borderColor: '#BD1B0B',
-        backgroundColor: 'rgba(189, 27, 11, 0.03)',
-        borderWidth: 3,
-        pointBackgroundColor: '#BD1B0B',
-        pointBorderColor: '#fff',
-        pointBorderWidth: 2,
+  // 4. Render Bar Chart
+  const barCanvas = document.getElementById('statsBarChartCanvas');
+  if (barCanvas && typeof Chart !== 'undefined') {
+    const barCtx = barCanvas.getContext('2d');
+    if (statsBarChartInstance) statsBarChartInstance.destroy();
+    statsBarChartInstance = new Chart(barCtx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          data: scores,
+          backgroundColor: '#BD1B0B',
+          borderRadius: 4,
+          barThickness: 10
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: {
+            grid: { display: false },
+            ticks: { font: { family: 'Kanit', size: 10.5 }, color: '#64748B' }
+          },
+          y: { display: false, min: 0, suggestedMax: 100 }
+        }
+      }
+    });
+  }
+
+  // 5. Render Line Chart (8-Week Progress)
+  const lineCanvas = document.getElementById('statsLineChartCanvas');
+  if (lineCanvas && typeof Chart !== 'undefined') {
+    const lineCtx = lineCanvas.getContext('2d');
+    
+    let lineData = avg === 0
+      ? [0, 0, 0, 0, 0, 0, 0, 0]
+      : [
+          Math.max(0, avg - 22),
+          Math.max(0, avg - 18),
+          Math.max(0, avg - 14),
+          Math.max(0, avg - 16),
+          Math.max(0, avg - 8),
+          Math.max(0, avg - 2),
+          Math.max(0, avg - 5),
+          avg
+        ];
+
+    if (statsLineChartInstance) statsLineChartInstance.destroy();
+    statsLineChartInstance = new Chart(lineCtx, {
+      type: 'line',
+      data: {
+        labels: ['W1', 'W2', 'W3', 'W4', 'W5', 'W6', 'W7', 'W8'],
+        datasets: [{
+          data: lineData,
+          borderColor: '#BD1B0B',
+          borderWidth: 2.5,
+          pointBackgroundColor: '#FFFFFF',
+          pointBorderColor: '#BD1B0B',
+          pointBorderWidth: 2,
+          pointRadius: 4.5,
+          tension: 0.35,
+          fill: false
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: {
+            grid: { display: false },
+            ticks: { font: { family: 'Kanit', size: 11 }, color: '#94A3B8' }
+          },
+          y: {
+            grid: { color: '#F8FAFC' },
+            ticks: { font: { family: 'Kanit', size: 10 }, color: '#94A3B8' },
+            min: 0,
+            max: 100
+          }
+        }
+      }
+    });
+  }
         pointRadius: 5,
         pointHoverRadius: 7,
         tension: 0.35,
