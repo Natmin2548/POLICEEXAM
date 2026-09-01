@@ -5434,8 +5434,9 @@ function extractChapterNumber(str) {
   return match ? parseInt(match[1], 10) : 999;
 }
 
-// Step 1 -> Step 2: Open Chapters List
+// Step 1 -> Step 2: Open Chapters List (100% matching Image 2)
 window.startBankSubject = async function(subjectKey) {
+  activeSubjectKey = subjectKey;
   currentSelectedBankSubject = subjectKey;
   
   const bankMainHeader = document.getElementById('bankMainHeader');
@@ -5448,64 +5449,16 @@ window.startBankSubject = async function(subjectKey) {
   if (examSetsPanel) examSetsPanel.style.display = 'none';
   if (chaptersPanel) chaptersPanel.style.display = 'block';
 
-  // Format Subject Details
-  const subjectMetadata = {
-    'งานสารบรรณ': {
-      title: 'งานสารบรรณ',
-      subtitle: 'ระเบียบสำนักนายกรัฐมนตรี (พ.ศ. ๒๕๒๖ และที่แก้ไขเพิ่มเติม)',
-      badge: 'วิชาหลักสำคัญ',
-      icon: '📜'
-    },
-    'ลักษณะที่54': {
-      title: 'ลักษณะที่ ๕๔',
-      subtitle: 'งานสารบรรณตำรวจ (พ.ศ. ๒๕๕๖)',
-      badge: 'วิชาเฉพาะ ตร.',
-      icon: '📑'
-    },
-    'ทั่วไป': {
-      title: 'ความสามารถทั่วไป',
-      subtitle: 'คณิตศาสตร์ การคิดคำนวณ และการใช้เหตุผล',
-      badge: 'วิชาหลักสำคัญ',
-      icon: '🧠'
-    },
-    'สังคม': {
-      title: 'สังคมและวัฒนธรรม',
-      subtitle: 'ความรู้รอบตัว ปรัชญาเศรษฐกิจพอเพียง และอาเซียน',
-      badge: 'วิชาความรู้ทั่วไป',
-      icon: '🏛️'
-    },
-    'กฏหมาย': {
-      title: 'กฎหมายที่ควรรู้',
-      subtitle: 'กฎหมายตำรวจและวิธีพิจารณาความอาญา',
-      badge: 'วิชากฎหมาย',
-      icon: '⚖️'
-    },
-    'คอม': {
-      title: 'เทคโนโลยีสารสนเทศ',
-      subtitle: 'คอมพิวเตอร์และระบบสารสนเทศเพื่อการสอบ',
-      badge: 'วิชาเทคโนโลยี',
-      icon: '💻'
-    }
-  };
-
-  const meta = subjectMetadata[subjectKey] || {
-    title: subjectKey,
-    subtitle: 'แนวข้อสอบตำรวจ',
-    badge: 'วิชาเตรียมสอบ',
-    icon: '📚'
-  };
-
+  const cfg = SUBJECT_CONFIG[subjectKey] || SUBJECT_CONFIG['งานสารบรรณ'];
   const titleEl = document.getElementById('currentSubjectChapterTitle');
   const subtitleEl = document.getElementById('currentSubjectChapterSubtitle');
-  const badgeEl = document.getElementById('currentSubjectChapterBadge');
   const iconEl = document.getElementById('currentSubjectChapterIcon');
 
-  if (titleEl) titleEl.textContent = meta.title;
-  if (subtitleEl) subtitleEl.textContent = meta.subtitle;
-  if (badgeEl) badgeEl.textContent = meta.badge;
-  if (iconEl) iconEl.textContent = meta.icon;
+  if (titleEl) titleEl.textContent = cfg.title;
+  if (subtitleEl) subtitleEl.textContent = cfg.subtitle;
+  if (iconEl) iconEl.textContent = cfg.icon;
 
-  // Fetch sets from API
+  // Fetch sets from API in background if needed
   try {
     const res = await fetch(`${API_BASE}/api/exams/sets?category=${encodeURIComponent(subjectKey)}`);
     const sets = res.ok ? await res.json() : [];
@@ -5514,8 +5467,9 @@ window.startBankSubject = async function(subjectKey) {
     currentFetchedExamSets = [];
   }
 
-  // Render Chapters Grid
+  switchSubjectSubtab('examSets');
   renderSubjectChaptersGrid(subjectKey);
+  updateSubjectStatsView();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
