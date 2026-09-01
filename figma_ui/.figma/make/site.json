@@ -1,0 +1,10 @@
+{
+  "description": "Streamline your police exam preparation with an intuitive dashboard that offers practice tests, analytics, and interactive quizzes for aspiring officers.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
