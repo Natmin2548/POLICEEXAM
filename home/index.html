@@ -1,24 +1,2103 @@
-<!doctype html>
-<html lang="en">
-  <head>
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+  <meta charset="UTF-8">
+  <script>
+    (function() {
+      try {
+        const token = localStorage.getItem('authToken');
+        const profile = localStorage.getItem('userProfile');
+        if (!token || !profile || token.startsWith('test_dev_') || token.startsWith('dev_')) {
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('userProfile');
+          window.location.replace('/index.html');
+        }
+      } catch (e) {
+        window.location.replace('/index.html');
+      }
+    })();
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>แดชบอร์ด - POLICE EXAM</title>
+  <!-- Google Fonts: Kanit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="css/style.css?v=41">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
+  <!-- Cropper.js -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js" defer></script>
+  <!-- External Application Script -->
+  <style>
+    /* Toggle Switch */
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+    }
+    .toggle-switch input { 
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #CBD5E1;
+      transition: .4s;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .4s;
+    }
+    input:checked + .slider {
+      background-color: #10B981;
+    }
+    input:focus + .slider {
+      box-shadow: 0 0 1px #10B981;
+    }
+    input:checked + .slider:before {
+      transform: translateX(20px);
+    }
+    .slider.round {
+      border-radius: 24px;
+    }
+    .slider.round:before {
+      border-radius: 50%;
+    }
     
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>POLICE EXAM - แดชบอร์ดเตรียมสอบตำรวจ</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    /* Dark Mode (Basic) */
+    body.dark-mode {
+      --bg-white: #1E293B;
+      --bg-gray: #0F172A;
+      --text-dark: #F8FAFC;
+      --text-gray: #94A3B8;
+      --border-color: #334155;
+      background-color: var(--bg-gray);
+      color: var(--text-dark);
+    }
+    body.dark-mode .app-container {
+      background-color: var(--bg-gray);
+    }
+    body.dark-mode .navbar, body.dark-mode .bottom-nav {
+      background-color: var(--bg-white);
+      border-color: var(--border-color);
+    }
+    body.dark-mode .nav-item {
+      color: var(--text-gray);
+    }
+    body.dark-mode .nav-item.active {
+      color: #BD1B0B;
+    }
+    body.dark-mode .stat-card, body.dark-mode .profile-menu-container-card, body.dark-mode .hero-banner {
+      background-color: var(--bg-white);
+      border-color: var(--border-color);
+      color: var(--text-dark);
+    }
+    body.dark-mode .profile-menu-item {
+      border-bottom-color: var(--border-color);
+    }
+    body.dark-mode .profile-menu-item:hover {
+      background-color: var(--bg-gray);
+    }
+    body.dark-mode .menu-item-text, body.dark-mode .stat-value {
+      color: var(--text-dark);
+    }
+    body.dark-mode .stat-label {
+      color: var(--text-gray);
+    }
     
-    <meta name="description" content="Streamline your police exam preparation with an intuitive dashboard that offers practice tests, analytics, and interactive quizzes for aspiring officers.">
-    <meta name="robots" content="noindex, nofollow">
-    <meta property="og:title" content="Figma Make App">
-    <meta property="og:description" content="Streamline your police exam preparation with an intuitive dashboard that offers practice tests, analytics, and interactive quizzes for aspiring officers.">
-    <script type="module" crossorigin src="./assets/index-BLyVIdkh.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-DTaqPV7u.css">
-  </head>
-  <body>
-    
-    <div id="root"></div>
-    
-  </body>
+    .vocab-lvl-btn {
+      background: white;
+      border: 2px solid #E2E8F0;
+      border-radius: 16px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: left;
+      width: 100%;
+      font-family: inherit;
+    }
+
+    .vocab-lvl-btn:hover {
+      border-color: #CBD5E1;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    }
+
+    .vocab-lvl-btn:active {
+      transform: translateY(0);
+    }
+
+    .vocab-count-btn {
+      background: transparent;
+      color: #64748B;
+    }
+
+    .vocab-count-btn.active-count {
+      background: white;
+      color: #BD1B0B;
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    }
+  </style>
+  <script src="vocab-data.js?v=42" defer></script>
+  <script src="js/app.js?v=42" defer></script>
+</head>
+
+<body>
+
+  <!-- Top Navigation Header -->
+  <header class="navbar" style="position: sticky; top: 0; z-index: 100; background: rgba(255,255,255,0.92); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid #F1F5F9; padding: 12px 0;">
+    <div class="nav-container" style="display: flex; justify-content: space-between; align-items: center; max-width: 1000px; margin: 0 auto; padding: 0 20px;">
+      
+      <!-- Logo & Greeting -->
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <a href="#" onclick="if(document.getElementById('btnTabHome')) document.getElementById('btnTabHome').click(); return false;" style="display: flex; align-items: center; gap: 6px; text-decoration: none;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="#BD1B0B" stroke="#BD1B0B" stroke-width="0">
+            <path d="M12 2L3 6v6c0 5.3 3.9 10.2 9 11.4C17.1 22.2 21 17.3 21 12V6L12 2z" />
+          </svg>
+          <span style="font-size: 16px; font-weight: 800; letter-spacing: -0.02em; color: #0F172A;">POLICE<span style="color: #BD1B0B;">EXAM</span></span>
+        </a>
+        <div class="nav-greeting" style="display: flex; flex-direction: column; margin-left: 8px; border-left: 1px solid #E2E8F0; padding-left: 12px;">
+          <span class="greeting-subtitle" style="font-size: 11px; color: #94A3B8; font-weight: 500; line-height: 1;">สวัสดีตอนเย็น 👋</span>
+          <h1 class="greeting-title" id="greetingName" style="font-size: 14px; font-weight: 700; color: #0F172A; margin: 2px 0 0 0;">ผู้ใช้งาน</h1>
+        </div>
+      </div>
+
+      <!-- Right Header Actions -->
+      <div class="header-actions" style="display: flex; align-items: center; gap: 10px;">
+        <!-- Direct Admin Exam Button -->
+        <a href="admin.html" id="btnAdminDirect" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 999px; font-size: 12px; font-weight: 700; text-decoration: none; color: #BD1B0B; border: 1px solid #FBCFCB; background: #FDF2F1; box-shadow: 0 1px 3px rgba(0,0,0,0.02); transition: all 0.2s;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="M12 20h9"/>
+            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+          </svg>
+          <span>สร้างข้อสอบ (Admin)</span>
+        </a>
+
+        <!-- Notification Bell -->
+        <button class="btn-notification" id="btnNotification" aria-label="Notifications" style="display: none;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0" />
+          </svg>
+          <span class="notification-badge" id="notifBadge"></span>
+        </button>
+
+        <!-- User Profile Dropdown Anchor -->
+        <div class="profile-menu-container">
+          <button class="btn-profile-menu" id="btnProfileMenu" aria-label="Profile Menu" style="width: 36px; height: 36px; border-radius: 50%; overflow: hidden; border: 1.5px solid #E2E8F0; padding: 0; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+            <img src="" alt="Google Avatar" class="header-avatar" id="headerAvatar" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+            <div class="default-avatar" id="defaultAvatar" style="width: 100%; height: 100%; background: linear-gradient(135deg, #BD1B0B 0%, #7A1107 100%); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px;">ส</div>
+          </button>
+
+          <!-- Dropdown Options -->
+          <div class="profile-dropdown" id="profileDropdown">
+            <div class="dropdown-header">
+              <span class="dropdown-user-name" id="dropdownUserName">ผู้ใช้งาน</span>
+              <span class="dropdown-user-email" id="dropdownUserEmail">user@policeexam.com</span>
+            </div>
+            <div class="dropdown-divider"></div>
+            <a href="#" onclick="window.location.href='admin.html?t=' + Date.now(); return false;" class="dropdown-item" id="dropdownAdminPanel" style="display: none; color: #BD1B0B;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              </svg>
+              <span>จัดการระบบ (Admin Panel)</span>
+            </a>
+            <a href="#" class="dropdown-item" id="btnDropdownLogout">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
+              </svg>
+              <span>ออกจากระบบ</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Dashboard Content -->
+  <main class="dashboard-main">
+    <div class="container" style="max-width: 900px;">
+
+      <div id="homeView" class="tab-view active">
+        <!-- Search Bar -->
+        <div class="search-bar-container" style="margin-bottom: 20px; margin-top: 10px;">
+          <div style="position: relative;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position: absolute; left: 16px; top: 12px; width: 18px; height: 18px;">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" placeholder="ค้นหาข้อสอบ วิชา หรือเพื่อน..." style="width: 100%; padding: 11px 16px 11px 44px; border-radius: 999px; border: 1px solid #E2E8F0; background: #F8FAFC; font-family: inherit; font-size: 13.5px; outline: none; box-sizing: border-box; color: #0F172A; transition: border-color 0.2s;">
+          </div>
+        </div>
+
+        <!-- Red Streak Card (Daily Challenge) -->
+        <section class="target-card" onclick="openPoliceTrackModal()" style="background: linear-gradient(135deg, #BD1B0B 0%, #8B0F06 60%, #6B0A04 100%); border-radius: 24px; padding: 24px 26px; color: white; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 30px -5px rgba(189, 27, 11, 0.35); border: none; margin-bottom: 24px; cursor: pointer; transition: transform 0.15s ease; position: relative; overflow: hidden;">
+          <div style="position: absolute; top: -40px; right: -20px; width: 140px; height: 140px; border-radius: 50%; background: rgba(255,255,255,0.06);"></div>
+          <div style="position: absolute; bottom: -30px; right: 80px; width: 90px; height: 90px; border-radius: 50%; background: rgba(255,255,255,0.04);"></div>
+
+          <div style="display: flex; align-items: center; gap: 14px; position: relative; z-index: 1;">
+            <div style="background: rgba(255,255,255,0.15); width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px;">
+              🔥
+            </div>
+            <div>
+              <span style="font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.7); letter-spacing: 0.06em; text-transform: uppercase; display: block; margin-bottom: 2px;">Daily Challenge</span>
+              <h2 id="greetingStreakTitle" style="margin: 0; font-size: 18px; font-weight: 800; display: flex; align-items: center; gap: 6px;">0 วันติดต่อกัน! 🔥</h2>
+              <span id="greetingStreakSubtitle" style="font-size: 12.5px; opacity: 0.85; margin-top: 3px; display: block;">ทำข้อสอบวันนี้เพื่อสะสม streak และพัฒนาความแม่นยำ</span>
+            </div>
+          </div>
+          <button id="btnStartExam" onclick="event.stopPropagation(); openPoliceTrackModal();" style="background: white; color: #BD1B0B; border: none; padding: 11px 24px; border-radius: 999px; font-weight: 700; font-family: inherit; font-size: 13.5px; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,0.15); flex-shrink: 0; position: relative; z-index: 1; transition: transform 0.15s ease;">
+            ทำเลย ⚡
+          </button>
+        </section>
+
+        <!-- Action Grid (4 Buttons) -->
+        <section class="action-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 28px;">
+          <!-- บีบอัดรูป -->
+          <button onclick="openImageCompressorModal()" style="background: #F0FDF4; border: 1px solid #DCFCE7; border-radius: 18px; padding: 16px 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease;">
+            <div style="width: 40px; height: 40px; border-radius: 12px; background: white; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.04);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 22px; height: 22px;">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                <polyline points="21 15 16 10 5 21"></polyline>
+              </svg>
+            </div>
+            <span style="font-size: 13px; font-weight: 700; color: #15803D; font-family: inherit;">บีบอัดรูป</span>
+          </button>
+
+          <!-- คลังข้อสอบ -->
+          <button onclick="document.getElementById('btnTabBank').click()" style="background: #EFF6FF; border: 1px solid #DBEAFE; border-radius: 18px; padding: 16px 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease;">
+            <div style="width: 40px; height: 40px; border-radius: 12px; background: white; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.04);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 22px; height: 22px;">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+              </svg>
+            </div>
+            <span style="font-size: 13px; font-weight: 700; color: #1D4ED8; font-family: inherit;">คลังข้อสอบ</span>
+          </button>
+
+          <!-- แบทเทิล -->
+          <button onclick="showBattleMaintenanceAlert(event)" style="background: #FFF7ED; border: 1px solid #FFEDD5; border-radius: 18px; padding: 16px 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease;">
+            <div style="width: 40px; height: 40px; border-radius: 12px; background: white; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.04);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#EA580C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 22px; height: 22px;">
+                <polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5" />
+                <line x1="13" y1="19" x2="19" y2="13" />
+                <line x1="16" y1="22" x2="22" y2="16" />
+                <line x1="3" y1="21" x2="10" y2="14" />
+              </svg>
+            </div>
+            <span style="font-size: 13px; font-weight: 700; color: #C2410C; font-family: inherit;">แบทเทิล</span>
+          </button>
+
+          <!-- คำศัพท์ -->
+          <button onclick="openVocabArena()" style="background: #FAF5FF; border: 1px solid #F3E8FF; border-radius: 18px; padding: 16px 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease;">
+            <div style="width: 40px; height: 40px; border-radius: 12px; background: white; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.04);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 22px; height: 22px;">
+                <path d="M12 3c-4.4 0-8 2.2-8 5s3.6 5 8 5 8-2.2 8-5-3.6-5-8-5z" />
+                <path d="M4 8v5c0 2.8 3.6 5 8 5s8-2.2 8-5V8" />
+                <path d="M4 13v5c0 2.8 3.6 5 8 5s8-2.2 8-5v-5" />
+              </svg>
+            </div>
+            <span style="font-size: 13px; font-weight: 700; color: #6D28D9; font-family: inherit;">คำศัพท์</span>
+          </button>
+        </section>
+
+
+        <!-- Stats Section (Apple Minimalist Analytics) -->
+        <section class="stats-section" style="margin-top: 24px; margin-bottom: 24px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+            <h3 style="margin: 0; font-size: 17px; font-weight: 800; color: #0F172A;">รายงานผลการเรียนรู้ & จุดอ่อน</h3>
+            <span style="font-size: 12px; color: #94A3B8;" id="statsLastUpdateText">อัปเดต วันนี้</span>
+          </div>
+          
+          <div style="display: flex; flex-direction: column; gap: 14px;">
+            <!-- Card 1: Radar Chart -->
+            <div style="background: white; border-radius: 20px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.02); border: 1px solid #F1F5F9;">
+              <h4 style="margin: 0 0 14px 0; font-size: 14px; font-weight: 700; color: #0F172A;">ภาพรวมรายวิชา (Subject Mastery)</h4>
+              <div style="position: relative; height: 260px;">
+                <canvas id="statsRadarChartCanvas"></canvas>
+              </div>
+            </div>
+
+            <!-- Card 2: Bar Chart -->
+            <div style="background: white; border-radius: 20px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.02); border: 1px solid #F1F5F9;">
+              <h4 style="margin: 0 0 14px 0; font-size: 14px; font-weight: 700; color: #0F172A;">คะแนนแยกวิชา (Score by Subject)</h4>
+              <div style="position: relative; height: 240px;">
+                <canvas id="statsBarChartCanvas"></canvas>
+              </div>
+              <div style="display: flex; justify-content: center; gap: 16px; margin-top: 14px; font-size: 12px; font-weight: 600; color: #64748B;">
+                <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 8px; height: 8px; border-radius: 50%; background-color: #10B981;"></span>ดีมาก</span>
+                <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 8px; height: 8px; border-radius: 50%; background-color: #F59E0B;"></span>พอใช้</span>
+                <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 8px; height: 8px; border-radius: 50%; background-color: #EF4444;"></span>ปรับปรุง</span>
+              </div>
+            </div>
+
+            <!-- Card 3: Line Chart (8-Week Progress) -->
+            <div style="background: white; border-radius: 20px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.02); border: 1px solid #F1F5F9;">
+              <h4 style="margin: 0 0 14px 0; font-size: 14px; font-weight: 700; color: #0F172A;">พัฒนาการ 8 สัปดาห์ (Score Progression)</h4>
+              <div style="position: relative; height: 200px;">
+                <canvas id="statsLineChartCanvas"></canvas>
+              </div>
+            </div>
+
+            <!-- Card 4: AI Recommendations -->
+            <div style="background: white; border-radius: 20px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.02); border: 1px solid #F1F5F9;">
+              <h4 style="margin: 0 0 14px 0; font-size: 14px; font-weight: 700; color: #0F172A; display: flex; align-items: center; gap: 8px;">
+                <span>💡</span> AI แนะนำแนวทางการอ่านสอบ
+              </h4>
+              <div id="aiRecsListContainer">
+                <div style="color: #94A3B8; font-size: 13px; text-align: center; padding: 12px;">กำลังวิเคราะห์คะแนน...</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </div> <!-- Close homeView -->
+
+      <!-- Community View Content -->
+      <div id="communityView" class="tab-view">
+        <!-- Header title -->
+        <section class="profile-header-title-section"
+          style="flex-direction: column; align-items: flex-start; gap: 16px; width: 100%;">
+          <h1 class="profile-header-title">ชุมชนเตรียมสอบ</h1>
+        </section>
+
+        <!-- Sub Tabs Bar -->
+        <div class="community-subtabs-bar"
+          style="display: flex; gap: 8px; width: 100%; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; flex-wrap: wrap; margin-bottom: 16px;">
+          <button class="subtab-btn active" id="btnSubtabPosts">โพสต์</button>
+          <button class="subtab-btn" id="btnSubtabChat">ช่องแชทรวม</button>
+          <button class="subtab-btn" id="btnSubtabGroups">กลุ่ม</button>
+          <button class="subtab-btn" id="btnSubtabFriends">เพื่อน & แชทส่วนตัว</button>
+        </div>
+
+        <!-- SUBTAB 1: Posts list & compose -->
+        <div id="subtabContentPosts" class="subtab-content active">
+          <!-- Create Post Box -->
+          <div class="stats-card-box" style="padding: 16px; margin-bottom: 16px;">
+            <div style="display: flex; gap: 12px; align-items: flex-start; margin-bottom: 12px;">
+              <img src="" class="post-user-avatar" id="composePostAvatarImg" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: #E2E8F0; display: none;">
+              <div class="profile-avatar-box" id="composePostAvatarBox" style="width: 40px; height: 40px; font-size: 16px; flex-shrink: 0;">?</div>
+              <textarea id="txtPostContent" placeholder="แบ่งปันแนวข้อสอบ หรือพูดคุยเตรียมสอบกับเพื่อนๆ..."
+                style="flex: 1; height: 80px; border: 1px solid var(--border-color); border-radius: 12px; padding: 12px; font-family: 'Kanit', sans-serif; font-size: 14px; resize: none; outline: none; transition: 0.2s;"
+                onfocus="this.style.borderColor='var(--primary-color)'"
+                onblur="this.style.borderColor='var(--border-color)'"></textarea>
+            </div>
+            <div style="display: flex; justify-content: flex-end;">
+              <button id="btnCreatePost" class="btn-quick-match"
+                style="padding: 8px 20px; font-size: 13px; border-radius: 8px; box-shadow: none;">โพสต์</button>
+            </div>
+          </div>
+
+          <!-- Posts Feed Container -->
+          <div id="postsFeedContainer" class="ai-recommendations-list"
+            style="max-height: 500px; overflow-y: auto; padding-right: 4px;">
+            <div class="leaderboard-item-loading">กำลังโหลดฟีดโพสต์...</div>
+          </div>
+        </div>
+
+        <!-- SUBTAB 2: Global Chat View -->
+        <div id="subtabContentChat" class="subtab-content">
+            <div class="stats-card-box"
+              style="padding: 0; overflow: hidden; height: 480px; display: flex; flex-direction: column; justify-content: space-between; border-radius: 20px;">
+              <!-- Chat Messages Panel -->
+              <div id="chatMessagesContainer"
+                style="flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; background-color: #F8FAFC;">
+                <div class="leaderboard-item-loading">กำลังโหลดข้อความ...</div>
+              </div>
+              <!-- Chat Input Panel -->
+              <div
+                style="display: flex; align-items: center; padding: 12px; border-top: 1px solid var(--border-color); gap: 8px; background-color: white;">
+                
+<label style="cursor: pointer; display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; background: #F8FAFC; color: #64748B; border: 1px solid #E2E8F0; flex-shrink: 0;" title="ส่งรูปภาพ/GIF">
+  <input type="file" accept="image/*" style="display: none;" onchange="handleChatImageUpload(event, '/api/community/chat')">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+</label>
+
+                <input type="text" id="txtChatInput" placeholder="พิมพ์ข้อความคุยแชทรวม..."
+                  style="flex: 1; border: 1px solid var(--border-color); border-radius: 12px; padding: 10px 14px; font-family: 'Kanit', sans-serif; font-size: 14px; outline: none;"
+                  onfocus="this.style.borderColor='var(--primary-color)'"
+                  onblur="this.style.borderColor='var(--border-color)'">
+                <button id="btnSendChat" class="btn-quick-match"
+                  style="padding: 10px 16px; border-radius: 12px; box-shadow: none; flex-shrink: 0; width: auto;">ส่ง</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- SUBTAB 3: Groups View -->
+          <div id="subtabContentGroups" class="subtab-content">
+            <!-- Group List Main Panel -->
+            <div id="groupListMainPanel">
+              <div style="display: flex; gap: 12px; margin-bottom: 16px; align-items: center;">
+                <input type="text" id="txtGroupSearch" placeholder=" ค้นหาชื่อกลุ่มติว..."
+                  style="flex: 1; border: 1px solid var(--border-color); border-radius: 12px; padding: 10px 14px; font-family: 'Kanit', sans-serif; font-size: 14px; outline: none;">
+                <button id="btnOpenCreateGroupModal" class="btn-quick-match"
+                  style="padding: 10px 16px; border-radius: 12px; font-size: 13px; box-shadow: none; width: auto; flex-shrink: 0;">สร้างกลุ่ม</button>
+              </div>
+
+              <!-- Dynamic list -->
+              <div id="groupsListContainer" class="battle-modes-list">
+                <div class="leaderboard-item-loading">กำลังโหลดกลุ่มติว...</div>
+              </div>
+            </div>
+
+            <!-- Group Chat Screen (Initially Hidden) -->
+            <div id="groupChatScreenPanel"
+              style="display: none; flex-direction: column; height: 480px; background-color: white; border: 1px solid var(--border-color); border-radius: 20px; overflow: hidden;">
+              <!-- Header -->
+              <div
+                style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--border-color); background: #F8FAFC;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <button id="btnBackToGroups"
+                    style="background: none; border: none; font-size: 18px; cursor: pointer; color: var(--text-dark);">⬅</button>
+                  <img id="groupChatHeaderImage" src="" style="width: 32px; height: 32px; border-radius: 8px; object-fit: cover; display: none;">
+                  <div style="text-align: left;">
+                    <span id="lblChatGroupName"
+                      style="font-weight: 600; display: block; font-size: 14px; color: var(--text-dark);">ชื่อกลุ่ม</span>
+                    <span id="lblChatGroupMeta" style="font-size: 11px; color: var(--text-light); display: block;">ID:
+                      #1 • สมาชิก 1 คน</span>
+                  </div>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                  <button id="btnLeaveGroup" class="post-action-btn delete"
+                    style="font-weight: 600; font-size: 12px; border: 1px solid #EF4444; padding: 4px 10px; border-radius: 6px; background: none; margin-right: 0;">ออกจากกลุ่ม</button>
+                  <button id="btnDeleteGroup" class="post-action-btn delete"
+                    style="font-weight: 600; font-size: 12px; border: 1px solid #EF4444; padding: 4px 10px; border-radius: 6px; background: #EF4444; color: white; display: none; margin-right: 0;">ลบกลุ่ม</button>
+                </div>
+              </div>
+
+              <!-- Requests approval panel (Creator only, dynamic display) -->
+              <div id="groupJoinRequestsPanel"
+                style="display: none; background: #FFFBEB; border-bottom: 1px solid #FEF3C7; padding: 12px 16px; text-align: left;">
+                <span id="lblGroupJoinRequestsCount"
+                  style="font-size: 12px; font-weight: 600; color: #B45309; display: block; margin-bottom: 8px;">
+                  คำขอเข้าร่วมกลุ่ม (0)</span>
+                <div id="groupJoinRequestsContainer"
+                  style="display: flex; flex-direction: column; gap: 8px; max-height: 120px; overflow-y: auto;">
+                  <!-- pending requests -->
+                </div>
+              </div>
+
+              <!-- Message feed -->
+              <div id="groupChatMessagesContainer"
+                style="flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; background-color: #F8FAFC;">
+                <div class="leaderboard-item-loading">กำลังโหลดข้อความ...</div>
+              </div>
+
+              <!-- Input -->
+              <div
+                style="display: flex; align-items: center; padding: 12px; border-top: 1px solid var(--border-color); gap: 8px; background-color: white;">
+                
+<label style="cursor: pointer; display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; background: #F8FAFC; color: #64748B; border: 1px solid #E2E8F0; flex-shrink: 0;" title="ส่งรูปภาพ/GIF">
+  <input type="file" accept="image/*" style="display: none;" onchange="handleChatImageUpload(event, '/api/community/groups/:groupId/chat')">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+</label>
+
+                <input type="text" id="txtGroupChatInput" placeholder="พิมพ์ข้อความแชทคุยในกลุ่ม..."
+                  style="flex: 1; border: 1px solid var(--border-color); border-radius: 12px; padding: 10px 14px; font-family: 'Kanit', sans-serif; font-size: 14px; outline: none;">
+                <button id="btnSendGroupChat" class="btn-quick-match"
+                  style="padding: 10px 16px; border-radius: 12px; box-shadow: none; flex-shrink: 0; width: auto;">ส่ง</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- SUBTAB 4: Friends & Direct Chat -->
+          <div id="subtabContentFriends" class="subtab-content">
+            <!-- Active Chat Panel & Friends list -->
+            <div id="friendsMainPanel">
+              <!-- Friend Requests List -->
+              <div class="stats-card-box" id="friendRequestsPanel"
+                style="padding: 16px; display: none; margin-bottom: 16px; background-color: #FFFBEB; border: 1px solid #FDE68A;">
+                <h3 class="stats-card-title"
+                  style="font-size: 14px; margin-bottom: 12px; color: #B45309; display: flex; justify-content: space-between; align-items: center;">
+                  <span> คำขอเป็นเพื่อนใหม่</span>
+                </h3>
+                <div id="friendRequestsContainer"
+                  style="display: flex; flex-direction: column; gap: 8px; max-height: 180px; overflow-y: auto;">
+                  <!-- pending requests -->
+                </div>
+              </div>
+
+              <!-- Search Friends Input -->
+              <div style="margin-bottom: 16px; position: relative;">
+                <input type="text" id="txtFriendUserSearch" placeholder=" ค้นหาชื่อเพื่อเพิ่มเพื่อน..."
+                  style="width: 100%; border: 1px solid var(--border-color); border-radius: 12px; padding: 10px 14px; font-family: 'Kanit', sans-serif; font-size: 14px; outline: none;">
+                <!-- Search results list -->
+                <div id="friendUserSearchResultsContainer"
+                  style="position: absolute; left: 0; right: 0; top: 100%; margin-top: 4px; max-height: 180px; overflow-y: auto; display: none; background: white; border: 1px solid var(--border-color); border-radius: 12px; box-shadow: var(--shadow-sm); z-index: 50; padding: 6px 0;">
+                  <!-- results -->
+                </div>
+              </div>
+
+              <div style="display: flex; flex-direction: column; gap: 16px;">
+                <!-- Friends List -->
+                <div class="stats-card-box" style="padding: 16px;">
+                  <h3 class="stats-card-title"
+                    style="font-size: 14px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+                    <span> รายชื่อเพื่อนของคุณ (คลิกเพื่อแชทส่วนตัว)</span>
+                    <span id="lblFriendsCount" style="font-size: 11px; font-weight: normal; color: var(--text-light);">0
+                      คน</span>
+                  </h3>
+                  <div id="friendsListContainer"
+                    style="display: flex; flex-direction: column; gap: 8px; max-height: 250px; overflow-y: auto;">
+                    <div class="leaderboard-item-loading" style="font-size: 12px;">กำลังโหลดรายชื่อเพื่อน...</div>
+                  </div>
+                </div>
+
+                <!-- Blocked List -->
+                <div class="stats-card-box" style="padding: 16px;">
+                  <h3 class="stats-card-title"
+                    style="font-size: 14px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+                    <span> รายชื่อที่คุณบล็อก</span>
+                  </h3>
+                  <div id="blockedUsersListContainer"
+                    style="display: flex; flex-direction: column; gap: 8px; max-height: 150px; overflow-y: auto;">
+                    <div class="leaderboard-item-loading" style="font-size: 12px;">ไม่มีรายชื่อที่บล็อก</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Direct Message Chat Panel (Initially Hidden) -->
+            <div id="dmChatScreenPanel"
+              style="display: none; flex-direction: column; height: 480px; background-color: white; border: 1px solid var(--border-color); border-radius: 20px; overflow: hidden;">
+              <!-- Header -->
+              <div
+                style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--border-color); background: #F8FAFC;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <button id="btnBackToFriends"
+                    style="background: none; border: none; font-size: 18px; cursor: pointer; color: var(--text-dark);">⬅</button>
+                  <div style="text-align: left;">
+                    <span id="lblDmChatFriendName"
+                      style="font-weight: 600; display: block; font-size: 14px; color: var(--text-dark);">ชื่อเพื่อน</span>
+                    <span style="font-size: 11px; color: var(--text-light); display: block;">แชทส่วนตัว</span>
+                  </div>
+                </div>
+                <button id="btnBlockCurrentFriend" class="post-action-btn delete"
+                  style="font-weight: 600; font-size: 12px; border: 1px solid #EF4444; padding: 4px 10px; border-radius: 6px; background: none; margin-right: 0;">บล็อก</button>
+              </div>
+
+              <!-- Message panel -->
+              <div id="dmChatMessagesContainer"
+                style="flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; background-color: #F8FAFC;">
+                <div class="leaderboard-item-loading">กำลังโหลดข้อความ...</div>
+              </div>
+
+              <!-- Input panel -->
+              <div
+                style="display: flex; align-items: center; padding: 12px; border-top: 1px solid var(--border-color); gap: 8px; background-color: white;">
+                
+<label style="cursor: pointer; display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; background: #F8FAFC; color: #64748B; border: 1px solid #E2E8F0; flex-shrink: 0;" title="ส่งรูปภาพ/GIF">
+  <input type="file" accept="image/*" style="display: none;" onchange="handleChatImageUpload(event, '/api/community/dm/:friendId')">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+</label>
+
+                <input type="text" id="txtDmChatInput" placeholder="พิมพ์ข้อความคุยแชทส่วนตัว..."
+                  style="flex: 1; border: 1px solid var(--border-color); border-radius: 12px; padding: 10px 14px; font-family: 'Kanit', sans-serif; font-size: 14px; outline: none;">
+                <button id="btnSendDmChat" class="btn-quick-match"
+                  style="padding: 10px 16px; border-radius: 12px; box-shadow: none; flex-shrink: 0; width: auto;">ส่ง</button>
+              </div>
+            </div>
+          </div>
+
+      </div>
+
+      </div>
+
+
+      <!-- Profile View Content -->
+      <div id="profileView" class="tab-view">
+        <!-- Header title -->
+        <section class="profile-header-title-section">
+          <h1 class="profile-header-title">โปรไฟล์</h1>
+        </section>
+
+        <!-- Left Column Wrapper -->
+        <div class="profile-left-column">
+          <!-- Profile card -->
+          <section class="profile-user-card">
+            <div class="profile-avatar-container">
+              <div class="profile-avatar-box" id="profileAvatarBox">ส</div>
+              <img src="" alt="Avatar" class="profile-avatar-img" id="profileAvatarImg" style="display: none;">
+              <input type="file" id="profileImageInput" accept="image/*" style="display: none;"
+                onchange="handleProfileImageUpload(event)">
+            </div>
+            <div class="profile-user-info">
+              <h2 class="profile-user-name" id="profileName">สมชาย ใจดี</h2>
+              <p class="profile-user-email" id="profileEmail">somchai@email.com</p>
+              <div class="profile-badge-row">
+                <span class="profile-badge badge-free">Free</span>
+                <span class="profile-badge badge-date" id="profileJoinDate">สมาชิกตั้งแต่ ม.ค. 2568</span>
+              </div>
+            </div>
+          </section>
+
+          <!-- Stats Metric Row -->
+          <section class="profile-stats-row">
+            <div class="profile-stat-item-card">
+              <span class="profile-stat-number" id="profileQuestionsCount">1,248</span>
+              <span class="profile-stat-label">ข้อที่ทำ</span>
+            </div>
+            <div class="profile-stat-item-card">
+              <span class="profile-stat-number" id="profileAvgScore">72.4%</span>
+              <span class="profile-stat-label">คะแนนเฉลี่ย</span>
+            </div>
+            <div class="profile-stat-item-card">
+              <span class="profile-stat-number" id="profileStreakCount">14 วัน</span>
+              <span class="profile-stat-label">Streak</span>
+            </div>
+          </section>
+        </div>
+
+        <!-- Right Column Wrapper -->
+        <div class="profile-right-column">
+          <!-- Menu Settings List -->
+          <section class="profile-menu-container-card">
+            <div class="profile-menu-item" onclick="openEditProfileModal()">
+              <div class="menu-item-left">
+                <svg class="menu-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                  <circle cx="12" cy="7" r="4" />
+                </svg>
+                <span class="menu-item-text">แก้ไขโปรไฟล์</span>
+              </div>
+              <svg class="menu-item-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </div>
+
+            <div class="profile-menu-item" id="menuNotifications">
+              <div class="menu-item-left">
+                <svg class="menu-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0" />
+                </svg>
+                <span class="menu-item-text">การแจ้งเตือน</span>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="notificationToggle" checked>
+                <span class="slider round"></span>
+              </label>
+            </div>
+
+            <div class="profile-menu-item" id="menuChangePassword" onclick="openChangePasswordModal()">
+              <div class="menu-item-left">
+                <svg class="menu-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
+                <span class="menu-item-text">เปลี่ยนรหัสผ่าน</span>
+              </div>
+              <svg class="menu-item-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </div>
+
+            <div class="profile-menu-item" onclick="openExamHistoryModal()">
+              <div class="menu-item-left">
+                <svg class="menu-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                  <line x1="16" y1="13" x2="8" y2="13" />
+                  <line x1="16" y1="17" x2="8" y2="17" />
+                  <polyline points="10 9 9 9 8 9" />
+                </svg>
+                <span class="menu-item-text">ประวัติการสอบ</span>
+              </div>
+              <svg class="menu-item-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </div>
+
+            <div class="profile-menu-item" onclick="alert('ข้อสอบที่บันทึกจะเปิดเร็วๆ นี้');">
+              <div class="menu-item-left">
+                <svg class="menu-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+                </svg>
+                <span class="menu-item-text">ข้อสอบที่บันทึก</span>
+              </div>
+              <svg class="menu-item-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </div>
+
+            <div class="profile-menu-item" onclick="openHelpModal()">
+              <div class="menu-item-left">
+                <svg class="menu-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                  <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
+                <span class="menu-item-text">ช่วยเหลือ / FAQ</span>
+              </div>
+              <svg class="menu-item-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </div>
+
+            <div class="profile-menu-item" onclick="openSettingsModal()">
+              <div class="menu-item-left">
+                <svg class="menu-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="3" />
+                  <path
+                    d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                </svg>
+                <span class="menu-item-text">ตั้งค่า</span>
+              </div>
+              <svg class="menu-item-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </div>
+          </section>
+
+          <!-- Admin Panel Button (Hidden by default) -->
+          <button class="btn-profile-logout" id="btnAdminPanel" style="display: none; background: var(--surface-color); color: #BD1B0B; border: 1px solid #BD1B0B; margin-bottom: 12px;" onclick="window.location.href='admin.html?t=' + Date.now()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+            <span>จัดการระบบ (Admin Panel)</span>
+          </button>
+
+          <!-- Logout Button -->
+          <button class="btn-profile-logout" id="btnProfileLogout">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
+            </svg>
+            <span>ออกจากระบบ</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Battle View Content -->
+      <div id="battleView" class="tab-view">
+        <!-- Header title -->
+        <section class="profile-header-title-section">
+          <h1 class="profile-header-title">Battle Arena</h1>
+          <svg class="header-trophy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            style="color: #BD1B0B; width: 24px; height: 24px;">
+            <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
+            <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
+            <path d="M4 22h16" />
+            <path d="M10 14.66V17c0 .55-.45 1-1 1H4v2h16v-2h-5c-.55 0-1-.45-1-1v-2.34" />
+            <path d="M12 2a6 6 0 0 1 6 6v1H6V8a6 6 0 0 1 6-6z" />
+          </svg>
+        </section>
+
+        <!-- Left Column Wrapper -->
+        <div class="profile-left-column">
+          <!-- Battle Custom Rooms Main Card -->
+          <section class="battle-elo-card" style="background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%); color: white; padding: 20px; border-radius: 20px; box-shadow: 0 8px 20px rgba(15,23,42,0.15); margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+              <div>
+                <span style="background: rgba(255,255,255,0.15); color: #F59E0B; font-weight: 700; padding: 3px 10px; border-radius: 999px; font-size: 11px; text-transform: uppercase;">Battle Room</span>
+                <h3 style="margin: 4px 0 0 0; font-size: 18px; font-weight: 800; color: white;">ระบบห้องประลอง</h3>
+              </div>
+              <button onclick="openCustomRoomModal()" style="background: #BD1B0B; color: white; border: none; padding: 9px 16px; border-radius: 12px; font-weight: 700; font-size: 13px; cursor: pointer; font-family: inherit; box-shadow: 0 4px 12px rgba(189,27,11,0.3);">
+                สร้างห้องประลอง
+              </button>
+            </div>
+
+            <!-- Join Room Quick Bar -->
+            <div style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 14px; padding: 10px; display: flex; gap: 8px;">
+              <input type="text" id="txtDirectJoinRoomCode" placeholder="กรอกรหัสห้อง (เช่น RM84A2)" style="flex: 1; padding: 9px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.2); color: white; font-family: inherit; font-size: 13px; text-transform: uppercase;">
+              <button onclick="submitDirectJoinRoom()" style="background: #10B981; color: white; border: none; padding: 9px 16px; border-radius: 10px; font-weight: 700; font-size: 13px; cursor: pointer; font-family: inherit; flex-shrink: 0;">
+                เข้าห้อง
+              </button>
+            </div>
+          </section>
+
+          <!-- Active Public Rooms List Card -->
+          <section class="battle-modes-list" style="background: white; border-radius: 20px; padding: 20px; border: 1px solid #E2E8F0; box-shadow: 0 4px 12px rgba(0,0,0,0.04);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+              <h4 style="margin: 0; font-size: 15px; font-weight: 800; color: #1E293B;">
+                รายการห้องประลองที่เปิดอยู่
+              </h4>
+              <button onclick="fetchActiveBattleRooms()" style="background: #F1F5F9; border: 1px solid #CBD5E1; color: #475569; padding: 5px 12px; border-radius: 8px; font-weight: 700; font-size: 12px; cursor: pointer; font-family: inherit;">
+                รีเฟรช
+              </button>
+            </div>
+
+            <!-- Rooms List Container -->
+            <div id="activeRoomsListContainer" style="display: flex; flex-direction: column; gap: 8px; max-height: 280px; overflow-y: auto;">
+              <!-- Dynamic Room Items Rendered via JS -->
+              <div style="text-align: center; padding: 20px 12px; color: #94A3B8; font-size: 13px;">
+                กำลังโหลดรายการห้องประลอง...
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- Right Column Wrapper -->
+        <div class="profile-right-column">
+          <!-- Leaderboard Card -->
+          <section class="leaderboard-section-card" style="margin-bottom: 0;">
+            <h3 class="leaderboard-header-title">Leaderboard สัปดาห์นี้</h3>
+            <div class="leaderboard-list" id="leaderboardListContainer">
+              <div class="leaderboard-item-loading">กำลังโหลดอันดับ...</div>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <!-- Stats View Content -->
+      <!-- statsView was moved to homeView -->
+      <!-- Question Bank View Content -->
+      <div id="questionBankView" class="tab-view">
+        <!-- Main Library Header Banner (Clean White & Crimson Red Design) -->
+        <section id="bankMainHeader" class="bank-hero-banner-white">
+          <div class="bank-hero-top">
+            <div class="bank-hero-title-group">
+              <div class="bank-hero-icon-badge-red">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                  <path d="M9 7h6"/>
+                  <path d="M9 11h6"/>
+                </svg>
+              </div>
+              <div>
+                <h2 class="bank-hero-title-red">คลังข้อสอบนายสิบตำรวจ</h2>
+                <p class="bank-hero-subtitle-clean">เลือกหมวดวิชาเพื่อเริ่มฝึกฝนข้อสอบจริง</p>
+              </div>
+            </div>
+
+            <div class="bank-hero-badge-pill-red">
+              <span class="badge-count-num-red">6</span>
+              <span class="badge-count-label-red">หมวดวิชา</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Subjects List Grid (Apple Luxury Vector Cards) -->
+        <div id="questionBankSubjectsList">
+          <div class="bank-subjects-grid">
+            <!-- 1. สารบรรณ -->
+            <button class="subject-card" onclick="startBankSubject('งานสารบรรณ')">
+              <span class="subject-mini-badge badge-blue">12 บทเรียน</span>
+              <div class="subject-card-icon" style="background: #EFF6FF; color: #2563EB;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 26px; height: 26px;">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="16" y1="13" x2="8" y2="13"></line>
+                  <line x1="16" y1="17" x2="8" y2="17"></line>
+                  <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+              </div>
+              <span class="subject-card-title">งานสารบรรณ</span>
+              <span class="subject-card-hint">ระเบียบสำนักนายกฯ ๒๕๒๖</span>
+              <div class="subject-card-tag">เริ่มฝึกฝน ›</div>
+            </button>
+
+            <!-- 2. ความสามารถทั่วไป -->
+            <button class="subject-card" onclick="startBankSubject('ทั่วไป')">
+              <span class="subject-mini-badge badge-green">คำนวณ & ตรรกะ</span>
+              <div class="subject-card-icon" style="background: #ECFDF5; color: #059669;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 26px; height: 26px;">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                  <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+              </div>
+              <span class="subject-card-title">ความสามารถทั่วไป</span>
+              <span class="subject-card-hint">อนุกรม ร้อยละ คำนวณ</span>
+              <div class="subject-card-tag">เริ่มฝึกฝน ›</div>
+            </button>
+
+            <!-- 3. สังคม -->
+            <button class="subject-card" onclick="startBankSubject('สังคม')">
+              <span class="subject-mini-badge badge-purple">ความรู้รอบตัว</span>
+              <div class="subject-card-icon" style="background: #F5F3FF; color: #7C3AED;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 26px; height: 26px;">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="2" y1="12" x2="22" y2="12"></line>
+                  <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                </svg>
+              </div>
+              <span class="subject-card-title">สังคมและวัฒนธรรม</span>
+              <span class="subject-card-hint">AEC ศาสนา และข่าวสาร</span>
+              <div class="subject-card-tag">เริ่มฝึกฝน ›</div>
+            </button>
+
+            <!-- 4. กฎหมาย -->
+            <button class="subject-card" onclick="startBankSubject('กฏหมาย')">
+              <span class="subject-mini-badge badge-red">กฎหมายตำรวจ</span>
+              <div class="subject-card-icon" style="background: #FEF2F2; color: #DC2626;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 26px; height: 26px;">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                </svg>
+              </div>
+              <span class="subject-card-title">กฎหมายที่ควรรู้</span>
+              <span class="subject-card-hint">พ.ร.บ.ตำรวจ & ป.วิ.อ.</span>
+              <div class="subject-card-tag">เริ่มฝึกฝน ›</div>
+            </button>
+
+            <!-- 5. คอมพิวเตอร์ -->
+            <button class="subject-card" onclick="startBankSubject('คอม')">
+              <span class="subject-mini-badge badge-cyan">IT & ไซเบอร์</span>
+              <div class="subject-card-icon" style="background: #ECFEFF; color: #0891B2;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 26px; height: 26px;">
+                  <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                  <line x1="8" y1="21" x2="16" y2="21"></line>
+                  <line x1="12" y1="17" x2="12" y2="21"></line>
+                </svg>
+              </div>
+              <span class="subject-card-title">เทคโนโลยีสารสนเทศ</span>
+              <span class="subject-card-hint">พ.ร.บ.คอมฯ & ระบบเครือข่าย</span>
+              <div class="subject-card-tag">เริ่มฝึกฝน ›</div>
+            </button>
+
+            <!-- 6. ลักษณะที่ 54 -->
+            <button class="subject-card" onclick="startBankSubject('ลักษณะที่54')">
+              <span class="subject-mini-badge badge-pink">ระเบียบเฉพาะ ตร.</span>
+              <div class="subject-card-icon" style="background: #FDF2F8; color: #BE185D;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 26px; height: 26px;">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                </svg>
+              </div>
+              <span class="subject-card-title">ลักษณะที่ ๕๔</span>
+              <span class="subject-card-hint">งานสารบรรณตำรวจ ๒๕๕๖</span>
+              <div class="subject-card-tag">เริ่มฝึกฝน ›</div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Step 2: Chapters / Subcategories Directory Panel (Clean & Structured) -->
+        <div id="questionBankChaptersList" style="display: none;">
+          <!-- Top Subject Header -->
+          <div class="subject-detail-header-card">
+            <div class="subject-header-top">
+              <button onclick="backToBankSubjects()" class="btn-subject-back">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="15 18 9 12 15 6"/>
+                </svg>
+                <span>เลือกวิชาอื่น</span>
+              </button>
+              <span id="currentSubjectChapterBadge" class="subject-tag-badge">วิชาหลักสำคัญ</span>
+            </div>
+
+            <div class="subject-title-wrapper">
+              <div id="currentSubjectChapterIcon" class="subject-icon-box">
+                📑
+              </div>
+              <div style="flex: 1;">
+                <h2 id="currentSubjectChapterTitle" class="subject-title-text">งานสารบรรณ</h2>
+                <p id="currentSubjectChapterSubtitle" class="subject-subtitle-text">เลือกหมวดหมู่หรือบทเรียนที่ต้องการฝึกฝน</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section Label -->
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding: 0 4px;">
+            <h3 style="margin: 0; font-size: 15px; font-weight: 800; color: #1E293B;">
+              หมวดหมู่ / บทเรียนในวิชานี้
+            </h3>
+            <span id="chaptersCountBadge" style="font-size: 12px; color: #BD1B0B; font-weight: 700; background: #FEF2F2; padding: 3px 10px; border-radius: 999px; border: 1px solid #FECACA;">12 บทเรียน</span>
+          </div>
+
+          <!-- Chapters Directory Grid -->
+          <div class="chapters-list-grid" id="chaptersContainer">
+            <!-- Dynamically populated via JS -->
+          </div>
+        </div>
+
+        <!-- Step 3: Exam Sets for the Selected Chapter -->
+        <div id="questionBankExamSetsList" style="display: none;">
+          <div class="subject-detail-header-card">
+            <div class="subject-header-top">
+              <button onclick="backToBankChapters()" class="btn-subject-back">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="15 18 9 12 15 6"/>
+                </svg>
+                <span>กลับไปเลือกหมวด</span>
+              </button>
+              <span id="currentChapterBadge" class="subject-tag-badge">แบบทดสอบรายบท</span>
+            </div>
+
+            <div class="subject-title-wrapper">
+              <div id="currentChapterIcon" class="subject-icon-box">
+                📝
+              </div>
+              <div style="flex: 1;">
+                <h2 id="currentChapterTitle" class="subject-title-text">บทที่ 10 การยืม</h2>
+                <p id="currentChapterSubtitle" class="subject-subtitle-text">ชุดข้อสอบในหมวดนี้</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section Label -->
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding: 0 4px;">
+            <h3 style="margin: 0; font-size: 15px; font-weight: 800; color: #1E293B;">
+              ชุดข้อสอบที่พร้อมสอบ
+            </h3>
+            <span id="examSetsCountTag" style="font-size: 12px; color: #64748B; font-weight: 600; background: #F1F5F9; padding: 3px 10px; border-radius: 999px;">1 ชุดข้อสอบ</span>
+          </div>
+
+          <div class="exam-sets-grid" id="examSetsContainer">
+            <!-- Dynamically populated via JS -->
+          </div>
+        </div>
+
+          <!-- SUBTAB 2: Subject Score Statistics View -->
+          <div id="subjectSubtabStatsView" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; padding: 0 4px;">
+              <h3 style="margin: 0; font-size: 15px; font-weight: 800; color: #1E293B;">
+                สถิติคะแนนและพัฒนาการรายวิชา
+              </h3>
+            </div>
+
+            <!-- Stats Summary Cards Grid -->
+            <div style="background: white; border-radius: 20px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-bottom: 20px; border: 1px solid #E2E8F0;">
+              <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; text-align: center;">
+                <div style="background: #FEF2F2; border-radius: 16px; padding: 16px 10px; border: 1px solid #FEE2E2;">
+                  <div style="font-size: 26px; font-weight: 900; color: #BD1B0B; line-height: 1;" id="subjStatBestScore">0%</div>
+                  <div style="font-size: 12px; font-weight: 600; color: #64748B; margin-top: 6px;">คะแนนสูงสุด</div>
+                </div>
+                <div style="background: #EFF6FF; border-radius: 16px; padding: 16px 10px; border: 1px solid #DBEAFE;">
+                  <div style="font-size: 26px; font-weight: 900; color: #2563EB; line-height: 1;" id="subjStatAttempts">0 ครั้ง</div>
+                  <div style="font-size: 12px; font-weight: 600; color: #64748B; margin-top: 6px;">จำนวนครั้งที่ทำ</div>
+                </div>
+                <div style="background: #ECFDF5; border-radius: 16px; padding: 16px 10px; border: 1px solid #D1FAE5;">
+                  <div style="font-size: 26px; font-weight: 900; color: #10B981; line-height: 1;" id="subjStatAvgScore">0%</div>
+                  <div style="font-size: 12px; font-weight: 600; color: #64748B; margin-top: 6px;">คะแนนเฉลี่ย</div>
+                </div>
+                <div style="background: #FFFBEB; border-radius: 16px; padding: 16px 10px; border: 1px solid #FEF3C7;">
+                  <div style="font-size: 17px; font-weight: 800; color: #D97706; line-height: 1.3;" id="subjStatMastery">มือใหม่</div>
+                  <div style="font-size: 12px; font-weight: 600; color: #64748B; margin-top: 6px;">ระดับความชำนาญ</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- History Card List -->
+            <div style="background: white; border-radius: 20px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-bottom: 40px; border: 1px solid #E2E8F0;">
+              <h4 style="margin: 0 0 14px 0; font-size: 14px; font-weight: 700; color: #1E293B;">ประวัติการทำข้อสอบล่าสุดวิชานี้</h4>
+              <div id="subjHistoryListContainer" style="display: flex; flex-direction: column; gap: 10px; max-height: 320px; overflow-y: auto;">
+                <div style="text-align: center; color: #94A3B8; font-size: 13px; padding: 20px 0;">ยังไม่มีประวัติการทำข้อสอบในวิชานี้</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Sticky Bottom Navigation for Mobile -->
+  <nav class="bottom-nav">
+    <div class="bottom-nav-container">
+      <a href="#" class="nav-tab active">
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+          <polyline points="9 22 9 12 15 12 15 22" />
+        </svg>
+        <span class="tab-label">หน้าหลัก</span>
+      </a>
+
+      <a href="#" class="nav-tab" id="btnTabBank">
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+        </svg>
+        <span class="tab-label">คลัง</span>
+      </a>
+
+      <a href="#" class="nav-tab nav-tab-action" id="btnTabBattle" onclick="showBattleMaintenanceAlert(event)">
+        <div class="action-btn-wrapper">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14.5 17.5L3 6V3h3l11.5 11.5"></path><path d="M13 19l6-6"></path><path d="M16 16l4 4"></path><path d="M19 21l2-2"></path><path d="M6.5 4.5L5.5 5.5"></path><path d="M9.5 7.5L8.5 8.5"></path><path d="M17.5 14.5L14 11l-2.5 2.5 3.5 3.5"></path>
+          </svg>
+        </div>
+        <span class="tab-label">แบทเทิล</span>
+      </a>
+
+      <a href="#" class="nav-tab" id="btnTabCommunity">
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+          <circle cx="9" cy="7" r="4" />
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+          <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+        </svg>
+        <span class="tab-label">ชุมชน</span>
+      </a>
+
+      <a href="#" class="nav-tab" id="btnTabProfile">
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+          <circle cx="12" cy="7" r="4" />
+        </svg>
+        <span class="tab-label">โปรไฟล์</span>
+      </a>
+    </div>
+  </nav>
+
+  <!-- Apple Minimalist Maintenance Modal -->
+  <div id="maintenanceModal" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 10000; align-items: center; justify-content: center; padding: 20px;">
+    <div style="background: white; border-radius: 28px; padding: 32px 24px; max-width: 360px; width: 100%; text-align: center; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); border: 1px solid rgba(226, 232, 240, 0.9); animation: scalePop 0.25s cubic-bezier(0.16, 1, 0.3, 1);">
+      <div style="width: 64px; height: 64px; border-radius: 20px; background: #FFF1F2; color: #BD1B0B; display: flex; align-items: center; justify-content: center; font-size: 30px; margin: 0 auto 16px auto;">
+        🛠️
+      </div>
+      <span style="font-size: 11px; font-weight: 700; background: #FFF1F2; color: #BD1B0B; padding: 4px 12px; border-radius: 999px; border: 1px solid #FFE4E6; letter-spacing: 0.05em; text-transform: uppercase;">Under Maintenance</span>
+      <h3 style="margin: 12px 0 6px 0; font-size: 18px; font-weight: 800; color: #0F172A;">โหมดแบทเทิลกำลังปรับปรุง</h3>
+      <p style="font-size: 13.5px; color: #64748B; margin: 0 0 24px 0; line-height: 1.5;">ระบบกำลังอยู่ในช่วงพัฒนาและปรับปรุงประสิทธิภาพเพื่อประสบการณ์การประลองที่ดียิ่งขึ้น</p>
+      <button onclick="closeMaintenanceModal()" style="width: 100%; background: #BD1B0B; color: white; border: none; padding: 12px; border-radius: 999px; font-weight: 700; font-size: 14px; cursor: pointer; font-family: inherit; box-shadow: 0 4px 14px rgba(189, 27, 11, 0.25); transition: all 0.2s ease;">
+        รับทราบ
+      </button>
+    </div>
+  </div>
+
+  <!-- Select Police Exam Track Modal (สายสอบ: ปราบปราม vs อำนวยการ/พิสูจน์หลักฐาน) -->
+  <div id="selectPoliceTrackModal" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 10000; align-items: center; justify-content: center; padding: 16px;">
+    <div style="background: white; border-radius: 28px; padding: 24px 20px; max-width: 420px; width: 100%; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); border: 1.5px solid #FEE2E2; animation: scalePop 0.25s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column;">
+      
+      <!-- Modal Header -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <span style="background: #FEF2F2; color: #BD1B0B; font-weight: 700; font-size: 11.5px; padding: 4px 12px; border-radius: 999px; border: 1px solid #FECACA;">
+          🔥 แบบทดสอบประจำวัน (Streak)
+        </span>
+        <button onclick="closePoliceTrackModal()" style="background: #F1F5F9; border: none; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; color: #64748B; cursor: pointer; font-weight: 700;">&times;</button>
+      </div>
+
+      <h3 style="margin: 0 0 6px 0; font-size: 18px; font-weight: 800; color: #0F172A;">เลือกสายการสอบ</h3>
+      <p style="margin: 0 0 18px 0; font-size: 13px; color: #64748B; line-height: 1.45;">เลือกสายที่คุณกำลังเตรียมตัวสอบ เพื่อทำข้อสอบตรงตามวิชาและรักษา Streak วันนี้</p>
+
+      <!-- 2 Track Cards -->
+      <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 18px;">
+        
+        <!-- Track 1: สายปราบปราม -->
+        <button onclick="startStreakChallenge('ปราบปราม')" style="background: #FFFFFF; border: 2px solid #FEE2E2; border-radius: 18px; padding: 16px; text-align: left; cursor: pointer; transition: all 0.15s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.04); display: flex; align-items: center; gap: 14px;">
+          <div style="width: 48px; height: 48px; border-radius: 14px; background: #FEF2F2; color: #BD1B0B; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; border: 1px solid #FECACA;">
+            👮‍♂️
+          </div>
+          <div style="flex: 1;">
+            <div style="font-weight: 800; font-size: 15.5px; color: #0F172A; margin-bottom: 2px; display: flex; align-items: center; justify-content: space-between;">
+              <span>สายปราบปราม</span>
+              <span style="font-size: 11px; background: #FEF2F2; color: #BD1B0B; padding: 2px 8px; border-radius: 999px; font-weight: 700;">นปพ. / ปป.</span>
+            </div>
+            <div style="font-size: 12px; color: #64748B; line-height: 1.4;">เน้นกฎหมายวิธีพิจารณาความอาญา, สารบรรณตำรวจ 54, ความสามารถทั่วไป</div>
+          </div>
+        </button>
+
+        <!-- Track 2: สายอำนวยการ / พิสูจน์หลักฐาน -->
+        <button onclick="startStreakChallenge('อำนวยการ_พิสูจน์หลักฐาน')" style="background: #FFFFFF; border: 2px solid #FEE2E2; border-radius: 18px; padding: 16px; text-align: left; cursor: pointer; transition: all 0.15s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.04); display: flex; align-items: center; gap: 14px;">
+          <div style="width: 48px; height: 48px; border-radius: 14px; background: #FEF2F2; color: #BD1B0B; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; border: 1px solid #FECACA;">
+            📑
+          </div>
+          <div style="flex: 1;">
+            <div style="font-weight: 800; font-size: 15.5px; color: #0F172A; margin-bottom: 2px; display: flex; align-items: center; justify-content: space-between;">
+              <span>สายอำนวยการ / พิสูจน์หลักฐาน</span>
+              <span style="font-size: 11px; background: #FEF2F2; color: #BD1B0B; padding: 2px 8px; border-radius: 999px; font-weight: 700;">อก. / พฐ.</span>
+            </div>
+            <div style="font-size: 12px; color: #64748B; line-height: 1.4;">เน้นระเบียบสารบรรณ 2526, สังคม, คอมพิวเตอร์, ภาษาไทย/อังกฤษ</div>
+          </div>
+        </button>
+
+      </div>
+
+      <button onclick="closePoliceTrackModal()" style="width: 100%; background: #F8FAFC; border: 1.5px solid #E2E8F0; border-radius: 999px; padding: 11px; font-weight: 700; color: #64748B; font-size: 13px; cursor: pointer; font-family: inherit;">
+        ยกเลิก
+      </button>
+
+    </div>
+  </div>
+
+  <!-- Apple Luxury Subject Quiz / Exam Modal -->
+  <div id="subjectQuizModal" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 10000; align-items: center; justify-content: center; padding: 16px;">
+    <div style="background: white; border-radius: 26px; padding: 22px 20px; max-width: 450px; width: 100%; max-height: 92vh; overflow-y: auto; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); border: 1.5px solid #FEE2E2; animation: scalePop 0.25s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column;">
+      <!-- Quiz Header -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <span id="quizSubjectBadge" style="background: #FEF2F2; color: #BD1B0B; font-weight: 700; font-size: 11px; padding: 4px 12px; border-radius: 999px; border: 1px solid #FECACA;">วิชาเตรียมสอบ</span>
+        <button onclick="closeSubjectQuiz()" style="background: #F1F5F9; border: none; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; color: #64748B; cursor: pointer; font-weight: 700;">&times;</button>
+      </div>
+
+      <h3 id="quizTitle" style="margin: 0 0 8px 0; font-size: 16.5px; font-weight: 800; color: #0F172A; line-height: 1.35;">ชุดข้อสอบ</h3>
+      
+      <!-- Progress Bar Track -->
+      <div style="width: 100%; height: 6px; background: #E2E8F0; border-radius: 999px; overflow: hidden; margin-bottom: 12px;">
+        <div id="quizProgressBar" style="width: 10%; height: 100%; background: linear-gradient(90deg, #BD1B0B, #E11D48); border-radius: 999px; transition: width 0.3s ease;"></div>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <span id="quizStepText" style="font-size: 12px; font-weight: 700; color: #64748B;">ข้อที่ 1 / 20</span>
+        <span id="quizAnsweredCountLabel" style="font-size: 11.5px; font-weight: 700; color: #BD1B0B;">ทำแล้ว 0/20 ข้อ</span>
+      </div>
+
+      <!-- Quiz Body Question & Choices -->
+      <div id="quizBodyContent" style="flex: 1; margin-bottom: 14px;">
+        <!-- Injected dynamically via JS -->
+      </div>
+
+      <!-- Bottom Prev / Next Action Controls (Left: ข้อก่อนหน้า | Right: ข้อถัดไป) -->
+      <div id="quizActionButtonsRow" style="display: flex; gap: 10px; margin-bottom: 14px; width: 100%;">
+        <button id="btnPrevQuiz" onclick="prevQuizQuestion()" style="flex: 1; background: #F8FAFC; color: #475569; border: 1.5px solid #CBD5E1; padding: 12px 10px; border-radius: 999px; font-weight: 700; font-size: 13.5px; cursor: pointer; font-family: inherit; transition: all 0.15s ease; display: flex; align-items: center; justify-content: center; gap: 4px;">
+          <span>‹ ข้อก่อนหน้า</span>
+        </button>
+        <button id="btnNextQuiz" onclick="nextQuizQuestion()" style="flex: 1; background: #BD1B0B; color: white; border: none; padding: 12px 10px; border-radius: 999px; font-weight: 700; font-size: 13.5px; cursor: pointer; font-family: inherit; box-shadow: 0 4px 12px rgba(189, 27, 11, 0.25); transition: all 0.15s ease; display: flex; align-items: center; justify-content: center; gap: 4px;">
+          <span>ข้อถัดไป ›</span>
+        </button>
+      </div>
+
+      <!-- Bottom Question Numbers Grid (1 to N) - Jump Freely to Any Question -->
+      <div id="quizNavContainer" style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 18px; padding: 12px 14px;">
+        <div style="font-size: 11.5px; font-weight: 700; color: #64748B; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+          <span>🔢 แตะหมายเลขเพื่อข้ามไปทำข้อนั้น:</span>
+          <span id="quizSummaryNavHint" style="font-size: 10.5px; color: #94A3B8;">เลือกข้ามได้อิสระ</span>
+        </div>
+        <div id="quizQuestionNavGrid" style="display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; max-height: 120px; overflow-y: auto;">
+          <!-- Injected dynamically: [1] [2] [3]... [20] -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  
+  <!-- Edit Group Modal -->
+  <div class="modal-overlay" id="editGroupModal"
+    style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.4); align-items: center; justify-content: center; z-index: 100;">
+    <div class="modal-card"
+      style="background: white; max-width: 400px; width: 90%; padding: 24px; border-radius: 20px; text-align: left; box-shadow: var(--shadow-lg);">
+      <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 16px; color: #1E293B;">ตั้งค่ากลุ่ม</h3>
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div>
+          <label style="font-size: 13px; font-weight: 500; color: #64748B; display: block; margin-bottom: 4px;">ชื่อกลุ่ม</label>
+          <input type="text" id="txtEditGroupName" placeholder="เช่น ตะลุยโจทย์อังกฤษ นายสิบตำรวจ"
+            style="width: 100%; border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 12px; font-family: 'Kanit'; font-size: 14px; outline: none;">
+        </div>
+        <div>
+          <label style="font-size: 13px; font-weight: 500; color: #64748B; display: block; margin-bottom: 4px;">รูปภาพกลุ่ม</label>
+          <div style="display: flex; gap: 12px; align-items: center;">
+            <img id="editGroupImagePreview" src="" style="width: 48px; height: 48px; border-radius: 8px; object-fit: cover; display: none;">
+            <input type="file" id="fileEditGroupImage" accept="image/*" style="font-size: 12px; font-family: 'Kanit'; max-width: 100%;">
+          </div>
+        </div>
+        <div>
+          <label style="font-size: 13px; font-weight: 500; color: #64748B; display: block; margin-bottom: 4px;">รายละเอียดกลุ่ม</label>
+          <textarea id="txtEditGroupDesc" placeholder="อธิบายวัตถุประสงค์ หรือแนวข้อสอบในกลุ่ม..."
+            style="width: 100%; height: 60px; border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 12px; font-family: 'Kanit'; font-size: 14px; outline: none; resize: none;"></textarea>
+        </div>
+        <div>
+          <label style="font-size: 13px; font-weight: 500; color: #64748B; display: block; margin-bottom: 4px;">ประเภทกลุ่ม</label>
+          <div style="display: flex; gap: 16px; margin-top: 4px;">
+            <label style="display: flex; align-items: center; gap: 6px; font-size: 14px; cursor: pointer; color: var(--text-dark);">
+              <input type="radio" name="optEditGroupPrivacy" value="public" checked>
+              สาธารณะ (ใครก็เข้าร่วมได้)
+            </label>
+            <label style="display: flex; align-items: center; gap: 6px; font-size: 14px; cursor: pointer; color: var(--text-dark);">
+              <input type="radio" name="optEditGroupPrivacy" value="private">
+              ส่วนตัว (ต้องรออนุมัติ)
+            </label>
+          </div>
+        </div>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px;">
+        <button id="btnCancelEditGroup"
+          style="background: transparent; border: none; padding: 10px 16px; font-size: 14px; font-family: 'Kanit'; cursor: pointer; color: #64748B; font-weight: 500;">ยกเลิก</button>
+        <button id="btnSubmitEditGroup" class="btn-quick-match"
+          style="width: auto; padding: 10px 20px; font-size: 14px; box-shadow: none;">บันทึกการเปลี่ยนแปลง</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create Group Modal -->
+  <!-- Exam Mode Selection Modal -->
+  <div class="modal-overlay" id="examModeModal"
+    style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); align-items: center; justify-content: center; z-index: 1000;">
+    <div class="modal-card"
+      style="background: white; max-width: 360px; width: 90%; padding: 24px; border-radius: 20px; text-align: center; box-shadow: var(--shadow-xl); position: relative;">
+      
+      <button id="btnCloseExamMode" style="position: absolute; right: 16px; top: 16px; background: none; border: none; font-size: 20px; color: #94A3B8; cursor: pointer;">&times;</button>
+
+      <div style="font-size: 48px; margin-bottom: 16px;">⚠️</div>
+      <h3 style="font-size: 20px; font-weight: 700; color: #CE1B28; margin-bottom: 12px;">เตรียมตัวให้พร้อมก่อนสอบ</h3>
+      
+      <div style="background: #FFF0F2; border: 1px solid #FECDD3; border-radius: 12px; padding: 16px; text-align: left; margin-bottom: 24px;">
+        <ul style="font-size: 13px; color: #881337; margin: 0; padding-left: 20px; line-height: 1.8;">
+          <li>ระหว่างทำข้อสอบ คุณ <strong>ไม่อนุญาตให้กดออก</strong> หรือปิดหน้าจอ</li>
+          <li>ห้าม <strong>สลับหน้าจอ</strong> ไปยังแอปพลิเคชันอื่นเด็ดขาด</li>
+          <li>ห้าม <strong>แคปหน้าจอ</strong> (ระบบจำลองการตรวจจับ)</li>
+          <li>ระบบจะจับเวลา <strong>3 ชั่วโมง</strong> ในการทำข้อสอบ (150 ข้อ)</li>
+        </ul>
+        <p style="font-size: 12px; color: #CE1B28; margin-top: 12px; text-align: center; font-weight: 600;">หากทำผิดกฎ ระบบจะตัดสิทธิ์และบันทึกคะแนนเป็น 0 ทันที!</p>
+      </div>
+
+      <button id="btnExamModePretest" style="background: #CE1B28; color: white; border: none; border-radius: 999px; padding: 14px 24px; width: 100%; font-weight: 700; font-size: 16px; font-family: inherit; cursor: pointer; box-shadow: 0 4px 12px rgba(206, 27, 40, 0.3);">
+        เริ่มทำข้อสอบ
+      </button>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="createGroupModal"
+    style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.4); align-items: center; justify-content: center; z-index: 100;">
+    <div class="modal-card"
+      style="background: white; max-width: 400px; width: 90%; padding: 24px; border-radius: 20px; text-align: left; box-shadow: var(--shadow-lg);">
+      <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 16px; color: #1E293B;">สร้างกลุ่มติวใหม่</h3>
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div>
+          <label
+            style="font-size: 13px; font-weight: 500; color: #64748B; display: block; margin-bottom: 4px;">ชื่อกลุ่ม</label>
+          <input type="text" id="txtCreateGroupName" placeholder="เช่น ตะลุยโจทย์อังกฤษ นายสิบตำรวจ"
+            style="width: 100%; border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 12px; font-family: 'Kanit'; font-size: 14px; outline: none;">
+        </div>
+        <div>
+          <label
+            style="font-size: 13px; font-weight: 500; color: #64748B; display: block; margin-bottom: 4px;">รูปภาพกลุ่ม (ไม่บังคับ)</label>
+          <div style="display: flex; gap: 12px; align-items: center;">
+            <img id="createGroupImagePreview" src="" style="width: 48px; height: 48px; border-radius: 8px; object-fit: cover; display: none;">
+            <input type="file" id="fileCreateGroupImage" accept="image/*" style="font-size: 12px; font-family: 'Kanit'; max-width: 100%;">
+          </div>
+        </div>
+        <div>
+          <label
+            style="font-size: 13px; font-weight: 500; color: #64748B; display: block; margin-bottom: 4px;">รายละเอียดกลุ่ม
+            (ไม่บังคับ)</label>
+          <textarea id="txtCreateGroupDesc" placeholder="อธิบายวัตถุประสงค์ หรือแนวข้อสอบในกลุ่ม..."
+            style="width: 100%; height: 60px; border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 12px; font-family: 'Kanit'; font-size: 14px; outline: none; resize: none;"></textarea>
+        </div>
+        <div>
+          <label
+            style="font-size: 13px; font-weight: 500; color: #64748B; display: block; margin-bottom: 4px;">ประเภทกลุ่ม</label>
+          <div style="display: flex; gap: 16px; margin-top: 4px;">
+            <label
+              style="display: flex; align-items: center; gap: 6px; font-size: 14px; cursor: pointer; color: var(--text-dark);">
+              <input type="radio" name="optGroupPrivacy" value="public" checked
+                style="accent-color: var(--primary-color);">  สาธารณะ (Public)
+            </label>
+            <label
+              style="display: flex; align-items: center; gap: 6px; font-size: 14px; cursor: pointer; color: var(--text-dark);">
+              <input type="radio" name="optGroupPrivacy" value="private" style="accent-color: var(--primary-color);"> 
+              ส่วนตัว (Private)
+            </label>
+          </div>
+        </div>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px;">
+        <button id="btnCancelCreateGroup"
+          style="background: #F1F5F9; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer;">ยกเลิก</button>
+        <button id="btnSubmitCreateGroup"
+          style="background: var(--primary-color); color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer;">สร้างกลุ่ม</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- User Profile Modal -->
+  <div class="modal-overlay" id="userProfileModal"
+    style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.4); align-items: center; justify-content: center; z-index: 120;">
+    <div class="modal-card"
+      style="background: white; max-width: 420px; width: 92%; padding: 24px; border-radius: 20px; text-align: center; box-shadow: var(--shadow-lg); position: relative; max-height: 85vh; overflow-y: auto;">
+      <!-- Close btn -->
+      <button id="btnCloseUserProfileModal"
+        style="position: absolute; right: 16px; top: 16px; background: #F1F5F9; border: none; width: 32px; height: 32px; border-radius: 50%; font-size: 20px; font-weight: 700; cursor: pointer; color: #64748B; display: flex; align-items: center; justify-content: center; line-height: 1; transition: all 0.2s;" aria-label="ปิด">&times;</button>
+
+      <!-- Avatar -->
+      <div id="userProfileModalAvatar"
+        style="width: 72px; height: 72px; border-radius: 50%; background-color: var(--primary-color); color: white; display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 700; margin: 12px auto;">
+        ส</div>
+
+      <!-- Names -->
+      <h3 id="lblUserProfileModalFullName"
+        style="font-size: 18px; font-weight: 600; color: #1E293B; margin-bottom: 2px;">ชื่อผู้ใช้</h3>
+      <span id="lblUserProfileModalUsername"
+        style="font-size: 13px; color: var(--text-light); display: block; margin-bottom: 16px;">@username</span>
+
+      <!-- Stats grid -->
+      <div style="display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: 20px;">
+        <div style="background-color: #F8FAFC; padding: 10px; border-radius: 12px;">
+          <span style="font-size: 11px; color: #64748B; display: block;">ชนะศึก Battle</span>
+          <span id="lblUserProfileModalWins" style="font-size: 15px; font-weight: 700; color: #6366F1;">0 ครั้ง</span>
+        </div>
+      </div>
+
+      <!-- Action buttons -->
+      <div id="userProfileModalActions" style="display: flex; flex-direction: column; gap: 8px;">
+        <!-- dynamic action buttons -->
+      </div>
+
+      <!-- Post History Section -->
+      <div style="margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 16px; text-align: left;">
+        <h4 style="font-size: 14px; font-weight: 600; color: #1E293B; margin-bottom: 12px;"> ประวัติการโพสต์</h4>
+        <div id="userProfileModalPostsContainer"
+          style="display: flex; flex-direction: column; gap: 10px; max-height: 300px; overflow-y: auto;">
+          <div style="text-align: center; color: var(--text-light); font-size: 12px; padding: 12px 0;">กำลังโหลด...
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Custom Confirm Modal (Centered) -->
+  <div id="customConfirmModal"
+    style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
+    <div
+      style="background: white; border-radius: 16px; padding: 28px 24px; max-width: 340px; width: 90%; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.3); animation: modalPop 0.2s ease;">
+      <div id="customConfirmIcon" style="font-size: 36px; margin-bottom: 12px;"></div>
+      <h3 id="customConfirmTitle" style="font-size: 16px; font-weight: 600; color: #1E293B; margin-bottom: 8px;">ยืนยัน
+      </h3>
+      <p id="customConfirmMessage" style="font-size: 13px; color: #64748B; margin-bottom: 20px; line-height: 1.5;"></p>
+      <div style="display: flex; gap: 10px;">
+        <button id="btnConfirmCancel"
+          style="flex: 1; padding: 12px; border-radius: 10px; border: 1px solid #E2E8F0; background: #F8FAFC; color: #64748B; font-size: 14px; font-weight: 600; cursor: pointer;">ยกเลิก</button>
+        <button id="btnConfirmOk"
+          style="flex: 1; padding: 12px; border-radius: 10px; border: none; background: #EF4444; color: white; font-size: 14px; font-weight: 600; cursor: pointer;">ยืนยัน</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Custom Alert Modal (Centered) -->
+  <div id="customAlertModal"
+    style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
+    <div
+      style="background: white; border-radius: 16px; padding: 28px 24px; max-width: 340px; width: 90%; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.3); animation: modalPop 0.2s ease;">
+      <div id="customAlertIcon" style="font-size: 36px; margin-bottom: 12px; display: none;"></div>
+      <h3 id="customAlertTitle" style="font-size: 16px; font-weight: 600; color: #1E293B; margin-bottom: 8px;">แจ้งเตือน
+      </h3>
+      <p id="customAlertMessage" style="font-size: 13px; color: #64748B; margin-bottom: 20px; line-height: 1.5;"></p>
+      <button id="btnAlertOk"
+        style="width: 100%; padding: 12px; border-radius: 10px; border: none; background: var(--primary-color); color: white; font-size: 14px; font-weight: 600; cursor: pointer;">ตกลง</button>
+    </div>
+  </div>
+
+  <!-- Vocab Game Modal -->
+  <div id="vocabArenaModal"
+    style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(8px); z-index: 1000; align-items: center; justify-content: center;">
+    <div class="modal-card"
+      style="background: #F8FAFC; max-width: 440px; width: 94%; padding: 24px; border-radius: 24px; text-align: center; box-shadow: var(--shadow-xl); position: relative; animation: modalPop 0.25s ease;">
+      <!-- Close button -->
+      <button id="btnCloseVocabArena"
+        style="position: absolute; right: 20px; top: 20px; background: #E2E8F0; border: none; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; cursor: pointer; color: var(--text-dark); transition: all 0.2s;"></button>
+
+      <!-- Title / Header -->
+      <div style="margin-bottom: 20px;">
+        <span style="font-size: 24px; display: block; margin-bottom: 4px;"></span>
+        <h2 style="font-size: 18px; font-weight: 800; color: #1E293B; margin: 0;">Vocab</h2>
+        <span style="font-size: 12px; color: #64748B;">มินิเกมฝึกคำศัพท์ภาษาอังกฤษสอบตำรวจ</span>
+      </div>
+
+      <!-- Level Selection Section -->
+      <div id="vocabLevelSelection" style="display: block; margin-top: 10px;">
+        <!-- Question Count Selector -->
+        <div style="margin-bottom: 20px; text-align: left;">
+          <p style="font-size: 13px; color: #64748B; font-weight: 600; margin-bottom: 8px;">จำนวนคำศัพท์ที่ต้องการฝึกฝน
+          </p>
+          <div style="display: flex; background: #E2E8F0; border-radius: 12px; padding: 4px; gap: 4px;">
+            <button onclick="setVocabWordCount(10)" id="btnVocabCount10" class="vocab-count-btn active-count"
+              style="flex: 1; border: none; padding: 8px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; font-family: inherit;">10
+              คำ</button>
+            <button onclick="setVocabWordCount(20)" id="btnVocabCount20" class="vocab-count-btn"
+              style="flex: 1; border: none; padding: 8px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; font-family: inherit;">20
+              คำ</button>
+            <button onclick="setVocabWordCount(30)" id="btnVocabCount30" class="vocab-count-btn"
+              style="flex: 1; border: none; padding: 8px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; font-family: inherit;">30
+              คำ</button>
+          </div>
+        </div>
+
+        <p style="font-size: 13px; color: #64748B; font-weight: 600; margin-bottom: 16px; text-align: left;">
+          เลือกความยากของคำศัพท์ภาษาอังกฤษ (CEFR)</p>
+        <div
+          style="display: flex; flex-direction: column; gap: 10px; max-height: 260px; overflow-y: auto; padding-right: 4px;">
+          <button onclick="startVocabSession('A1')" class="vocab-lvl-btn">
+            <span
+              style="font-size: 16px; font-weight: 800; font-family: inherit; background: #ECFDF5; border-radius: 12px; color: #22C55E; display: flex; align-items: center; justify-content: center; width: 42px; height: 42px;">A1</span>
+            <div style="flex: 1;">
+              <div style="font-weight: 800; color: #1E293B; font-size: 14px;">A1 — เบื้องต้น</div>
+              <div style="font-size: 11px; color: #64748B; font-weight: 500;">คำศัพท์พื้นฐานที่ใช้ในชีวิตประจำวัน</div>
+            </div>
+            <span
+              style="background: #F1F5F9; color: #475569; font-size: 10px; font-weight: 700; padding: 4px 8px; border-radius: 10px; white-space: nowrap;">600
+              คำ</span>
+          </button>
+          <button onclick="startVocabSession('A2')" class="vocab-lvl-btn">
+            <span
+              style="font-size: 16px; font-weight: 800; font-family: inherit; background: #EFF6FF; border-radius: 12px; color: #3B82F6; display: flex; align-items: center; justify-content: center; width: 42px; height: 42px;">A2</span>
+            <div style="flex: 1;">
+              <div style="font-weight: 800; color: #1E293B; font-size: 14px;">A2 — ก่อนกลาง</div>
+              <div style="font-size: 11px; color: #64748B; font-weight: 500;">คำศัพท์ที่ใช้สื่อสารทั่วไป</div>
+            </div>
+            <span
+              style="background: #F1F5F9; color: #475569; font-size: 10px; font-weight: 700; padding: 4px 8px; border-radius: 10px; white-space: nowrap;">600
+              คำ</span>
+          </button>
+          <button onclick="startVocabSession('B1')" class="vocab-lvl-btn">
+            <span
+              style="font-size: 16px; font-weight: 800; font-family: inherit; background: #FFFBEB; border-radius: 12px; color: #F59E0B; display: flex; align-items: center; justify-content: center; width: 42px; height: 42px;">B1</span>
+            <div style="flex: 1;">
+              <div style="font-weight: 800; color: #1E293B; font-size: 14px;">B1 — กลาง</div>
+              <div style="font-size: 11px; color: #64748B; font-weight: 500;">คำศัพท์เชิงวิชาการและธุรกิจ</div>
+            </div>
+            <span
+              style="background: #F1F5F9; color: #475569; font-size: 10px; font-weight: 700; padding: 4px 8px; border-radius: 10px; white-space: nowrap;">600
+              คำ</span>
+          </button>
+          <button onclick="startVocabSession('B2')" class="vocab-lvl-btn">
+            <span
+              style="font-size: 16px; font-weight: 800; font-family: inherit; background: #FEF2F2; border-radius: 12px; color: #EF4444; display: flex; align-items: center; justify-content: center; width: 42px; height: 42px;">B2</span>
+            <div style="flex: 1;">
+              <div style="font-weight: 800; color: #1E293B; font-size: 14px;">B2 — สูงกว่ากลาง</div>
+              <div style="font-size: 11px; color: #64748B; font-weight: 500;">คำศัพท์ขั้นสูงสำหรับข้อสอบ</div>
+            </div>
+            <span
+              style="background: #F1F5F9; color: #475569; font-size: 10px; font-weight: 700; padding: 4px 8px; border-radius: 10px; white-space: nowrap;">600
+              คำ</span>
+          </button>
+          <button onclick="startVocabSession('C1')" class="vocab-lvl-btn">
+            <span
+              style="font-size: 16px; font-weight: 800; font-family: inherit; background: #F5F3FF; border-radius: 12px; color: #8B5CF6; display: flex; align-items: center; justify-content: center; width: 42px; height: 42px;">C1</span>
+            <div style="flex: 1;">
+              <div style="font-weight: 800; color: #1E293B; font-size: 14px;">C1 — ขั้นสูง</div>
+              <div style="font-size: 11px; color: #64748B; font-weight: 500;">คำศัพท์ระดับผู้เชี่ยวชาญ</div>
+            </div>
+            <span
+              style="background: #F1F5F9; color: #475569; font-size: 10px; font-weight: 700; padding: 4px 8px; border-radius: 10px; white-space: nowrap;">600
+              คำ</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Gameplay Section -->
+      <div id="vocabGameplaySection" style="display: none;">
+        <!-- Stats row -->
+        <div
+          style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; background: white; padding: 14px 10px; border-radius: 16px; border: 1px solid #E2E8F0; margin-bottom: 20px; box-shadow: var(--shadow-sm);">
+          <div style="text-align: center;">
+            <p id="vocabGameScore" style="font-size: 18px; font-weight: 800; color: #BD1B0B; margin: 0;">0</p>
+            <p style="font-size: 10px; color: #94A3B8; margin: 2px 0 0 0; font-weight: 600;">ทำถูก</p>
+          </div>
+          <div style="text-align: center; border-left: 1px solid #E2E8F0; border-right: 1px solid #E2E8F0;">
+            <p id="vocabGameStreak" style="font-size: 18px; font-weight: 800; color: #D97706; margin: 0;">0 </p>
+            <p style="font-size: 10px; color: #94A3B8; margin: 2px 0 0 0; font-weight: 600;">Streak</p>
+          </div>
+          <div style="text-align: center;">
+            <p id="vocabGameCount" style="font-size: 18px; font-weight: 800; color: #1E293B; margin: 0;">1/5</p>
+            <p style="font-size: 10px; color: #94A3B8; margin: 2px 0 0 0; font-weight: 600;">คำศัพท์ที่ทำ</p>
+          </div>
+        </div>
+
+        <!-- Word display card -->
+        <div id="vocabWordCard"
+          style="background: white; border-radius: 20px; border: 2px solid #E2E8F0; padding: 32px 16px; margin-bottom: 20px; transition: all 0.2s; position: relative;">
+          <div id="vocabStreakAlert"
+            style="display: none; position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: #F59E0B; color: white; padding: 4px 12px; border-radius: 20px; font-size: 10px; font-weight: 800; box-shadow: var(--shadow-sm); animation: bounce 1s infinite;">
+             <span id="vocabStreakCount">0</span> STREAK!
+          </div>
+          <p id="lblVocabWord"
+            style="font-size: 32px; font-weight: 900; color: #1E293B; margin: 0 0 6px 0; letter-spacing: -0.5px;"></p>
+          <p style="font-size: 12px; color: #94A3B8; margin: 0; font-weight: 500;">เลือกคำแปลภาษาไทยที่ถูกต้อง</p>
+
+          <!-- Feedback placeholder -->
+          <div id="vocabFeedbackMessage" style="margin-top: 14px; font-size: 13px; font-weight: 700; display: none;">
+          </div>
+        </div>
+
+        <!-- Choices 2x2 grid -->
+        <div id="vocabChoicesGrid"
+          style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 10px;">
+          <!-- Dynamic options -->
+        </div>
+      </div>
+
+      <!-- Summary Section -->
+      <div id="vocabSummarySection" style="display: none; text-align: left; margin-top: 10px;">
+        <h3 style="font-size: 16px; font-weight: 800; color: #1E293B; margin: 0 0 4px 0; text-align: center;">
+          สรุปผลการฝึกฝน</h3>
+        <p style="font-size: 12px; color: #64748B; margin: 0 0 16px 0; text-align: center;" id="lblVocabSummaryMeta">
+          ระดับ A2 | 10 คำ</p>
+
+        <div
+          style="background: white; border-radius: 16px; border: 1px solid #E2E8F0; padding: 16px; margin-bottom: 20px; box-shadow: var(--shadow-sm); display: grid; grid-template-columns: 1fr 1fr; gap: 12px; text-align: center;">
+          <div>
+            <span style="font-size: 20px; font-weight: 800; color: #BD1B0B;" id="vocabSummaryScore">0</span>
+            <p style="font-size: 10px; color: #94A3B8; margin: 2px 0 0 0; font-weight: 600;">ทำถูก</p>
+          </div>
+          <div>
+            <span style="font-size: 20px; font-weight: 800; color: #10B981;" id="vocabSummaryAccuracy">0%</span>
+            <p style="font-size: 10px; color: #94A3B8; margin: 2px 0 0 0; font-weight: 600;">ความถูกต้อง</p>
+          </div>
+        </div>
+
+        <div id="vocabWrongAnswersContainer" style="display: block; margin-bottom: 20px;">
+          <p style="font-size: 12px; color: #E11D48; font-weight: 700; margin-bottom: 8px;"> คำศัพท์ที่ตอบผิด:</p>
+          <div id="vocabWrongAnswersList"
+            style="max-height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 4px;">
+            <!-- Wrong answers list -->
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-top: 15px;">
+          <button onclick="openVocabArena()"
+            style="flex: 1; padding: 12px; border-radius: 14px; border: none; background: #BD1B0B; color: white; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s; font-family: inherit;">เล่นอีกครั้ง</button>
+          <button onclick="closeVocabArena()"
+            style="flex: 1; padding: 12px; border-radius: 14px; border: 1px solid #E2E8F0; background: white; color: #475569; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s; font-family: inherit;">ปิด</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Image Crop Modal -->
+  <div id="cropModal"
+    style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.85); z-index: 2010; align-items: center; justify-content: center;">
+    <div
+      style="background: white; border-radius: 20px; width: 90%; max-width: 500px; padding: 20px; text-align: center;">
+      <h3 style="margin-top: 0; color: #1E293B; font-weight: 700;">ครอบตัดรูปโปรไฟล์</h3>
+      <div
+        style="width: 100%; max-height: 400px; margin-bottom: 20px; overflow: hidden; background: #f8fafc; border-radius: 10px;">
+        <img id="imageToCrop" src="" style="max-width: 100%; display: block;" alt="Image to crop">
+      </div>
+      <div style="display: flex; gap: 10px;">
+        <button onclick="confirmCrop()"
+          style="flex: 1; padding: 12px; border-radius: 10px; background: #10B981; color: white; border: none; font-weight: 700; cursor: pointer;">ยืนยัน</button>
+        <button onclick="cancelCrop()"
+          style="flex: 1; padding: 12px; border-radius: 10px; background: #EF4444; color: white; border: none; font-weight: 700; cursor: pointer;">ยกเลิก</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Change Password Modal -->
+  <div id="changePasswordModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.85); z-index: 2000; align-items: center; justify-content: center; padding: 20px;">
+    <div style="background: var(--bg-white, white); border-radius: 20px; width: 100%; max-width: 400px; padding: 24px; position: relative; color: var(--text-dark, #1E293B);">
+      <button onclick="closeChangePasswordModal()" style="position: absolute; top: 16px; right: 16px; background: var(--bg-gray, #F1F5F9); border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; color: #64748B;">&times;</button>
+      <h3 style="margin-top: 0; font-weight: 800; font-size: 20px; margin-bottom: 20px;">เปลี่ยนรหัสผ่าน</h3>
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <input type="password" id="oldPassword" placeholder="รหัสผ่านเดิม" style="padding: 14px; border-radius: 12px; border: 1px solid #E2E8F0; width: 100%; box-sizing: border-box; font-family: inherit;">
+        <input type="password" id="newPassword" placeholder="รหัสผ่านใหม่ (อย่างน้อย 8 ตัวอักษร)" style="padding: 14px; border-radius: 12px; border: 1px solid #E2E8F0; width: 100%; box-sizing: border-box; font-family: inherit;">
+        <input type="password" id="confirmNewPassword" placeholder="ยืนยันรหัสผ่านใหม่" style="padding: 14px; border-radius: 12px; border: 1px solid #E2E8F0; width: 100%; box-sizing: border-box; font-family: inherit;">
+        <button onclick="submitChangePassword()" style="padding: 14px; border-radius: 12px; border: none; background: #BD1B0B; color: white; font-weight: 700; cursor: pointer; font-family: inherit; margin-top: 8px;">อัปเดตรหัสผ่าน</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Help / FAQ Modal -->
+  <div id="helpModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.85); z-index: 2000; align-items: center; justify-content: center; padding: 20px;">
+    <div style="background: var(--bg-white, white); border-radius: 20px; width: 100%; max-width: 450px; padding: 24px; position: relative; max-height: 80vh; overflow-y: auto; color: var(--text-dark, #1E293B);">
+      <button onclick="closeHelpModal()" style="position: absolute; top: 16px; right: 16px; background: var(--bg-gray, #F1F5F9); border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; color: #64748B;">&times;</button>
+      <h3 style="margin-top: 0; font-weight: 800; font-size: 20px; margin-bottom: 20px;">ช่วยเหลือ / แจ้งปัญหา</h3>
+      
+      <div style="margin-bottom: 24px;">
+        <textarea id="supportMessage" rows="4" placeholder="พิมพ์ปัญหาหรือข้อเสนอแนะของคุณที่นี่..." style="width: 100%; padding: 14px; border-radius: 12px; border: 1px solid #E2E8F0; box-sizing: border-box; font-family: inherit; resize: none;"></textarea>
+        <button onclick="submitSupportTicket()" style="width: 100%; padding: 12px; border-radius: 12px; border: none; background: #BD1B0B; color: white; font-weight: 700; cursor: pointer; font-family: inherit; margin-top: 8px;">ส่งข้อความให้แอดมิน</button>
+      </div>
+
+      <h4 style="margin-top: 0; font-weight: 700; font-size: 16px; margin-bottom: 12px;">ประวัติการแจ้งปัญหา</h4>
+      <div id="supportTicketsList" style="display: flex; flex-direction: column; gap: 10px;">
+        <!-- Tickets will be loaded here -->
+        <div style="text-align: center; color: #94A3B8; font-size: 14px; padding: 20px 0;">กำลังโหลด...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div id="settingsModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.85); z-index: 2000; align-items: center; justify-content: center; padding: 20px;">
+    <div style="background: var(--bg-white, white); border-radius: 20px; width: 100%; max-width: 350px; padding: 24px; position: relative; color: var(--text-dark, #1E293B);">
+      <button onclick="closeSettingsModal()" style="position: absolute; top: 16px; right: 16px; background: var(--bg-gray, #F1F5F9); border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; color: #64748B;">&times;</button>
+      <h3 style="margin-top: 0; font-weight: 800; font-size: 20px; margin-bottom: 20px;">ตั้งค่า</h3>
+      
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border-color, #F1F5F9);">
+        <span style="font-weight: 600; color: var(--text-gray, #475569);">โหมดกลางคืน (Dark Mode)</span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="darkModeToggle" onchange="toggleDarkMode(this.checked)">
+          <span class="slider round"></span>
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Exam History Modal -->
+  <div id="examHistoryModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.85); z-index: 2000; align-items: center; justify-content: center; padding: 20px;">
+    <div style="background: var(--bg-white, white); border-radius: 20px; width: 100%; max-width: 350px; padding: 24px; position: relative; text-align: center; color: var(--text-dark, #1E293B);">
+      <button onclick="closeExamHistoryModal()" style="position: absolute; top: 16px; right: 16px; background: var(--bg-gray, #F1F5F9); border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; color: #64748B;">&times;</button>
+      <div style="width: 60px; height: 60px; border-radius: 50%; background: #EFF6FF; color: #3B82F6; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+        <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+          <line x1="16" y1="13" x2="8" y2="13"></line>
+          <line x1="16" y1="17" x2="8" y2="17"></line>
+          <polyline points="10 9 9 9 8 9"></polyline>
+        </svg>
+      </div>
+      <h3 style="margin-top: 0; font-weight: 800; font-size: 20px; margin-bottom: 8px;">ประวัติการสอบ</h3>
+      <p style="color: var(--text-gray, #64748B); font-size: 14px; margin-bottom: 20px;">จำนวนชุดข้อสอบและแบบทดสอบที่คุณทำสำเร็จแล้ว</p>
+      
+      <div style="background: var(--bg-gray, #F8FAFC); border: 1px solid var(--border-color, #E2E8F0); border-radius: 16px; padding: 20px;">
+        <div style="font-size: 36px; font-weight: 900; color: #BD1B0B; line-height: 1;" id="examHistoryCount">0</div>
+        <div style="font-size: 13px; font-weight: 600; color: #94A3B8; margin-top: 4px;">ชุดแบบทดสอบ (ด่าน)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Profile Modal -->
+  <div id="editProfileModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.85); z-index: 2000; align-items: center; justify-content: center; padding: 20px;">
+    <div style="background: var(--bg-white, white); border-radius: 20px; width: 100%; max-width: 400px; padding: 24px; position: relative; color: var(--text-dark, #1E293B);">
+      <button onclick="closeEditProfileModal()" style="position: absolute; top: 16px; right: 16px; background: var(--bg-gray, #F1F5F9); border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; color: #64748B;">&times;</button>
+      <h3 style="margin-top: 0; font-weight: 800; font-size: 20px; margin-bottom: 20px; text-align: center;">แก้ไขโปรไฟล์</h3>
+      
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 16px; margin-bottom: 20px;">
+        <div style="position: relative; width: 100px; height: 100px;">
+          <div class="profile-avatar-box" id="editProfileAvatarBox" style="width: 100px; height: 100px; font-size: 40px; border-radius: 50%; background: #EFF6FF; color: #3B82F6; display: flex; align-items: center; justify-content: center;">ส</div>
+          <img src="" alt="Avatar" id="editProfileAvatarImg" style="display: none; width: 100px; height: 100px; border-radius: 50%; object-fit: cover;">
+          <button onclick="document.getElementById('profileImageInput').click();" style="position: absolute; bottom: 0; right: 0; background: #BD1B0B; color: white; border: none; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+              <circle cx="12" cy="13" r="4" />
+            </svg>
+          </button>
+        </div>
+        <p style="font-size: 12px; color: #64748B; margin: 0;">คลิกที่ไอคอนกล้องเพื่อเปลี่ยนรูปโปรไฟล์</p>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <label style="font-size: 14px; font-weight: 600; color: var(--text-dark, #1E293B);">ชื่อ-นามสกุล</label>
+        <input type="text" id="editProfileNameInput" placeholder="กรอกชื่อ-นามสกุลของคุณ" style="padding: 14px; border-radius: 12px; border: 1px solid #E2E8F0; width: 100%; box-sizing: border-box; font-family: inherit;">
+        
+        <button id="btnSubmitEditProfile" onclick="submitEditProfile()" style="padding: 14px; border-radius: 12px; border: none; background: #BD1B0B; color: white; font-weight: 700; cursor: pointer; font-family: inherit; margin-top: 8px;">บันทึกข้อมูล</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Group Members Modal -->
+  <div class="modal-overlay" id="groupMembersModal"
+    style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); align-items: center; justify-content: center; z-index: 1000; padding: 20px;">
+    <div class="modal-card"
+      style="background: white; max-width: 480px; width: 100%; border-radius: 20px; overflow: hidden; display: flex; flex-direction: column; max-height: 80vh;">
+      <div style="padding: 20px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background-color: #F8FAFC;">
+        <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: var(--text-dark);">รายชื่อสมาชิกกลุ่ม</h3>
+        <button id="btnCloseGroupMembersModal" style="background: none; border: none; font-size: 20px; color: var(--text-light); cursor: pointer;">&times;</button>
+      </div>
+      <div id="groupMembersContainer" style="padding: 16px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 12px; background-color: white;">
+        <!-- Members injected here -->
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Image Compressor Modal -->
+  <div class="modal-overlay" id="imageCompressorModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.4); align-items: center; justify-content: center; z-index: 9999;">
+    <div class="modal-card" style="background: white; max-width: 500px; width: 90%; padding: 24px; border-radius: 20px; max-height: 90vh; overflow-y: auto;">
+      <h3 style="font-size: 18px; margin-bottom: 8px;">🖼️ เมนูพิเศษ: บีบอัดรูปภาพ</h3>
+      <p style="font-size: 13px; color: var(--text-light); margin-bottom: 16px;">บีบอัดขนาดไฟล์ภาพให้ต่ำกว่า 1MB เพื่อนำไปใช้งานต่อ โดยไม่ต้องพึ่งแอปอื่น</p>
+      
+      <div style="border: 2px dashed var(--border-color); border-radius: 12px; padding: 24px; text-align: center; margin-bottom: 16px;">
+        <input type="file" id="compressImageInput" accept="image/jpeg, image/png, image/webp" style="display: none;" onchange="handleImageCompressSelect(event)">
+        <button class="btn-primary" onclick="document.getElementById('compressImageInput').click()" style="padding: 10px 20px;">อัปโหลดรูปภาพ</button>
+        <p style="font-size: 12px; color: var(--text-light); margin-top: 8px;">รองรับ JPG, PNG, WEBP</p>
+      </div>
+      
+      <div id="compressorResultContainer" style="display: none;">
+        <div style="display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;">
+          <div style="flex: 1; min-width: 150px; background: #F8FAFC; padding: 12px; border-radius: 8px; text-align: center;">
+            <p style="font-size: 12px; color: var(--text-light); margin-bottom: 4px;">ขนาดต้นฉบับ</p>
+            <p id="compressOriginalSize" style="font-weight: 600; color: #475569;">-</p>
+          </div>
+          <div style="flex: 1; min-width: 150px; background: #ECFDF5; padding: 12px; border-radius: 8px; text-align: center;">
+            <p style="font-size: 12px; color: var(--text-light); margin-bottom: 4px;">หลังบีบอัด</p>
+            <p id="compressNewSize" style="font-weight: 600; color: #10B981;">-</p>
+          </div>
+        </div>
+        
+        <div style="margin-bottom: 16px; text-align: center;">
+          <img id="compressPreviewImage" style="max-width: 100%; max-height: 200px; border-radius: 8px; border: 1px solid var(--border-color);" />
+        </div>
+      </div>
+      
+      <div style="display: flex; justify-content: flex-end; gap: 12px;">
+        <button onclick="document.getElementById('imageCompressorModal').style.display='none'" style="background: none; border: none; cursor: pointer; color: var(--text-light);">ปิด</button>
+        <button class="btn-primary" id="btnDownloadCompressed" style="display: none; padding: 8px 16px; background: #10B981;">💾 ดาวน์โหลดรูป</button>
+      </div>
+    </div>
+  </div>
+
+
+
+
+  <!-- BATTLE ARENA MODALS -->
+
+  <!-- 1. Battle Arena Hub Modal (เลือกโหมดประลอง) -->
+  <div id="battleHubModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.85); z-index: 2000; align-items: center; justify-content: center; padding: 16px;">
+    <div style="background: white; border-radius: 24px; width: 100%; max-width: 520px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); display: flex; flex-direction: column; max-height: 90vh;">
+      <div style="background: linear-gradient(135deg, #BD1B0B 0%, #7F1D1D 100%); color: white; padding: 20px 24px; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <span style="background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Arena Duel</span>
+          <h2 style="margin: 6px 0 0 0; font-size: 20px; font-weight: 800;">โหมดประลองยุทธ์ตำรวจ</h2>
+        </div>
+        <button onclick="closeBattleHub()" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 36px; height: 36px; border-radius: 50%; font-size: 20px; cursor: pointer;">&times;</button>
+      </div>
+
+      <div style="padding: 24px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px;">
+        <p style="margin: 0 0 4px 0; font-size: 13px; color: #64748B; font-weight: 600;">เลือกรูปแบบการประลองที่ต้องการทดสอบความสามารถ:</p>
+
+        <!-- Mode 1: 1v1 Normal Battle -->
+        <div onclick="startNormalBattle1v1()" style="background: #F8FAFC; border: 2px solid #E2E8F0; border-radius: 18px; padding: 16px; display: flex; align-items: center; gap: 16px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='#BD1B0B'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='#E2E8F0'; this.style.transform='translateY(0)'">
+          <div style="width: 52px; height: 52px; border-radius: 16px; background: #FEF2F2; color: #BD1B0B; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; font-weight: 800;">🥊</div>
+          <div style="flex: 1;">
+            <h4 style="margin: 0 0 4px 0; font-size: 15px; font-weight: 800; color: #1E293B;">ประลองธรรมดา (1 vs 1)</h4>
+            <p style="margin: 0; font-size: 12px; color: #64748B;">จับคู่ 1 คน หมุนวงล้อสุ่มวิชา 10 ข้อ (+30 แต้ม / -30 แต้ม)</p>
+          </div>
+          <span style="font-size: 18px; color: #CBD5E1;">➔</span>
+        </div>
+
+        <!-- Mode 2: Ranked Battle (±200 Pts) -->
+        <div onclick="startRankedBattle()" style="background: #F8FAFC; border: 2px solid #E2E8F0; border-radius: 18px; padding: 16px; display: flex; align-items: center; gap: 16px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='#F59E0B'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='#E2E8F0'; this.style.transform='translateY(0)'">
+          <div style="width: 52px; height: 52px; border-radius: 16px; background: #FFFBEB; color: #D97706; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; font-weight: 800;">🏆</div>
+          <div style="flex: 1;">
+            <h4 style="margin: 0 0 4px 0; font-size: 15px; font-weight: 800; color: #1E293B;">ประลองจัดอันดับ (Ranked ±200 แต้ม)</h4>
+            <p style="margin: 0; font-size: 12px; color: #64748B;">จับคู่เฉพาะคู่ต่อสู้ที่คะแนนต่างกันไม่เกิน 200 แต้ม</p>
+          </div>
+          <span style="font-size: 18px; color: #CBD5E1;">➔</span>
+        </div>
+
+        <!-- Mode 3: Tournament (3-8 Players) -->
+        <div onclick="startTournamentBattle()" style="background: #F8FAFC; border: 2px solid #E2E8F0; border-radius: 18px; padding: 16px; display: flex; align-items: center; gap: 16px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='#8B5CF6'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='#E2E8F0'; this.style.transform='translateY(0)'">
+          <div style="width: 52px; height: 52px; border-radius: 16px; background: #F3E8FF; color: #7E22CE; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; font-weight: 800;">👑</div>
+          <div style="flex: 1;">
+            <h4 style="margin: 0 0 4px 0; font-size: 15px; font-weight: 800; color: #1E293B;">ทัวร์นาเมนต์ (3 - 8 คน)</h4>
+            <p style="margin: 0; font-size: 12px; color: #64748B;">ประลองตะลุมบอน 3-8 คน นับถอยหลัง 10 วินาทีเพื่อเริ่มชิงชนะเลิศ</p>
+          </div>
+          <span style="font-size: 18px; color: #CBD5E1;">➔</span>
+        </div>
+
+        <!-- Mode 4: Custom Room & Join Code -->
+        <div onclick="openCustomRoomSetup()" style="background: #F8FAFC; border: 2px solid #E2E8F0; border-radius: 18px; padding: 16px; display: flex; align-items: center; gap: 16px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='#10B981'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='#E2E8F0'; this.style.transform='translateY(0)'">
+          <div style="width: 52px; height: 52px; border-radius: 16px; background: #ECFDF5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; font-weight: 800;">🔑</div>
+          <div style="flex: 1;">
+            <h4 style="margin: 0 0 4px 0; font-size: 15px; font-weight: 800; color: #1E293B;">สร้างห้องประลอง / ใส่รหัสห้อง</h4>
+            <p style="margin: 0; font-size: 12px; color: #64748B;">สร้างห้องส่งลิงก์ชวนเพื่อน 2-8 คน รอคนครบหรือกดเริ่มได้ทันที</p>
+          </div>
+          <span style="font-size: 18px; color: #CBD5E1;">➔</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Battle Subject Select Modal (หน้าต่างเลือกวิชาประลองเองสำหรับโหมดอื่นๆ) -->
+  <div id="battleSubjectSelectModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.85); z-index: 2050; align-items: center; justify-content: center; padding: 16px;">
+    <div style="background: white; border-radius: 24px; width: 100%; max-width: 480px; padding: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3); position: relative; max-height: 90vh; overflow-y: auto;">
+      <button onclick="closeBattleSubjectSelectModal()" style="position: absolute; top: 16px; right: 16px; background: #F1F5F9; border: none; width: 32px; height: 32px; border-radius: 50%; font-size: 18px; cursor: pointer; color: #64748B;">&times;</button>
+      
+      <div style="text-align: center; margin-bottom: 20px;">
+        <span style="background: #FEF2F2; color: #BD1B0B; font-weight: 700; padding: 4px 12px; border-radius: 999px; font-size: 12px;" id="lblSubjectSelectModeBadge">เลือกวิชาประลอง</span>
+        <h3 style="margin: 8px 0 4px 0; font-size: 20px; font-weight: 800; color: #1E293B;">เลือกวิชาที่ต้องการประลองยุทธ์</h3>
+        <p style="margin: 0; font-size: 13px; color: #64748B;">ระบบจะสุ่มชุดข้อสอบ 10 ข้อจากวิชาที่คุณเลือกทันที</p>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <!-- Subject 1 -->
+        <div onclick="confirmSubjectSelection('งานสารบรรณ')" style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 14px; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='#BD1B0B'; this.style.background='#FEF2F2'" onmouseout="this.style.borderColor='#E2E8F0'; this.style.background='#F8FAFC'">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="font-size: 22px;">📕</span>
+            <span style="font-weight: 800; font-size: 14px; color: #1E293B;">งานสารบรรณ</span>
+          </div>
+          <span style="font-size: 13px; font-weight: 700; color: #BD1B0B;">เลือกวิชานี้ ➔</span>
+        </div>
+
+        <!-- Subject 2 -->
+        <div onclick="confirmSubjectSelection('ความสามารถทั่วไป')" style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 14px; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='#2563EB'; this.style.background='#EFF6FF'" onmouseout="this.style.borderColor='#E2E8F0'; this.style.background='#F8FAFC'">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="font-size: 22px;">🧮</span>
+            <span style="font-weight: 800; font-size: 14px; color: #1E293B;">ความสามารถทั่วไป (คณิตศาสตร์ / อนุกรม)</span>
+          </div>
+          <span style="font-size: 13px; font-weight: 700; color: #2563EB;">เลือกวิชานี้ ➔</span>
+        </div>
+
+        <!-- Subject 3 -->
+        <div onclick="confirmSubjectSelection('ภาษาไทย')" style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 14px; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='#059669'; this.style.background='#ECFDF5'" onmouseout="this.style.borderColor='#E2E8F0'; this.style.background='#F8FAFC'">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="font-size: 22px;">🇹🇭</span>
+            <span style="font-weight: 800; font-size: 14px; color: #1E293B;">ภาษาไทย</span>
+          </div>
+          <span style="font-size: 13px; font-weight: 700; color: #059669;">เลือกวิชานี้ ➔</span>
+        </div>
+
+        <!-- Subject 4 -->
+        <div onclick="confirmSubjectSelection('ภาษาอังกฤษ')" style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 14px; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='#7E22CE'; this.style.background='#F3E8FF'" onmouseout="this.style.borderColor='#E2E8F0'; this.style.background='#F8FAFC'">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="font-size: 22px;">🇬🇧</span>
+            <span style="font-weight: 800; font-size: 14px; color: #1E293B;">ภาษาอังกฤษ</span>
+          </div>
+          <span style="font-size: 13px; font-weight: 700; color: #7E22CE;">เลือกวิชานี้ ➔</span>
+        </div>
+
+        <!-- Subject 5 -->
+        <div onclick="confirmSubjectSelection('ความรู้สังคมฯ')" style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 14px; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='#D97706'; this.style.background='#FFFBEB'" onmouseout="this.style.borderColor='#E2E8F0'; this.style.background='#F8FAFC'">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="font-size: 22px;">🏛️</span>
+            <span style="font-weight: 800; font-size: 14px; color: #1E293B;">ความรู้สังคม วัฒนธรรม และความรู้เกี่ยวกับประชาคมอาเซียน</span>
+          </div>
+          <span style="font-size: 13px; font-weight: 700; color: #D97706;">เลือกวิชานี้ ➔</span>
+        </div>
+
+        <!-- Subject 6 -->
+        <div onclick="confirmSubjectSelection('กฎหมายตำรวจ')" style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 14px; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='#DC2626'; this.style.background='#FEF2F2'" onmouseout="this.style.borderColor='#E2E8F0'; this.style.background='#F8FAFC'">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="font-size: 22px;">⚖️</span>
+            <span style="font-weight: 800; font-size: 14px; color: #1E293B;">กฎหมายตำรวจ / ความรู้เกี่ยวกับกฎหมายประชาชน</span>
+          </div>
+          <span style="font-size: 13px; font-weight: 700; color: #DC2626;">เลือกวิชานี้ ➔</span>
+        </div>
+
+        <!-- Subject 7 -->
+        <div onclick="confirmSubjectSelection('คอมพิวเตอร์')" style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 14px; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='#0284C7'; this.style.background='#F0F9FF'" onmouseout="this.style.borderColor='#E2E8F0'; this.style.background='#F8FAFC'">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="font-size: 22px;">💻</span>
+            <span style="font-weight: 800; font-size: 14px; color: #1E293B;">เทคโนโลยีสารสนเทศ (คอมพิวเตอร์สำนักงาน)</span>
+          </div>
+          <span style="font-size: 13px; font-weight: 700; color: #0284C7;">เลือกวิชานี้ ➔</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Custom Room Setup & Lobby Modal -->
+  <div id="customRoomModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.85); z-index: 2020; align-items: center; justify-content: center; padding: 16px;">
+    <div style="background: white; border-radius: 24px; width: 100%; max-width: 480px; padding: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); position: relative;">
+      <button onclick="document.getElementById('customRoomModal').style.display='none'" style="position: absolute; top: 16px; right: 16px; background: #F1F5F9; border: none; width: 32px; height: 32px; border-radius: 50%; font-size: 18px; cursor: pointer; color: #64748B;">&times;</button>
+      
+      <h3 style="margin: 0 0 16px 0; font-size: 18px; font-weight: 800; color: #1E293B;">🔑 ห้องประลอง (Custom Room)</h3>
+
+      <!-- Create or Join Toggle -->
+      <div style="display: flex; gap: 8px; margin-bottom: 20px;">
+        <button onclick="switchRoomTab('create')" id="tabRoomCreate" style="flex: 1; padding: 10px; border-radius: 12px; font-weight: 700; border: none; background: #BD1B0B; color: white; cursor: pointer; font-family: inherit;">สร้างห้องใหม่</button>
+        <button onclick="switchRoomTab('join')" id="tabRoomJoin" style="flex: 1; padding: 10px; border-radius: 12px; font-weight: 700; border: 1px solid #CBD5E1; background: #F1F5F9; color: #475569; cursor: pointer; font-family: inherit;">เข้าร่วมด้วยรหัส</button>
+      </div>
+
+      <!-- Create Panel -->
+      <div id="roomCreatePanel" style="display: block;">
+        <div style="margin-bottom: 14px;">
+          <label style="font-size: 13px; font-weight: 700; color: #475569; display: block; margin-bottom: 6px;">เลือกวิชาประลอง:</label>
+          <select id="selRoomSubject" style="width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #CBD5E1; font-family: inherit; font-size: 14px; font-weight: 700; color: #1E293B;">
+            <option value="งานสารบรรณ">งานสารบรรณ</option>
+            <option value="ความสามารถทั่วไป">ความสามารถทั่วไป (คณิตศาสตร์ / อนุกรม)</option>
+            <option value="ภาษาไทย">ภาษาไทย</option>
+            <option value="ภาษาอังกฤษ">ภาษาอังกฤษ</option>
+            <option value="ความรู้สังคมฯ">ความรู้สังคม Culture & ASEAN</option>
+            <option value="กฎหมายตำรวจ">กฎหมายตำรวจ / กฎหมายประชาชน</option>
+            <option value="คอมพิวเตอร์">เทคโนโลยีสารสนเทศ (คอมพิวเตอร์)</option>
+          </select>
+        </div>
+
+        <div style="margin-bottom: 14px;">
+          <label style="font-size: 13px; font-weight: 700; color: #475569; display: block; margin-bottom: 6px;">ประเภทห้อง (ความปลอดภัย):</label>
+          <select id="selRoomPrivacy" style="width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #CBD5E1; font-family: inherit; font-size: 14px; font-weight: 700; color: #1E293B;">
+            <option value="public" selected>สาธารณะ (แสดงในรายการห้อง ใครๆ ก็กดเข้าได้)</option>
+            <option value="private">ส่วนตัว (ซ่อนจากรายการ ต้องส่งรหัส/ลิงก์เชิญเพื่อนเท่านั้น)</option>
+          </select>
+        </div>
+
+        <div style="margin-bottom: 14px;">
+          <label style="font-size: 13px; font-weight: 700; color: #475569; display: block; margin-bottom: 6px;">จำนวนผู้เล่นสูงสุด (2 - 8 คน):</label>
+          <select id="selMaxRoomPlayers" style="width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #CBD5E1; font-family: inherit; font-size: 14px;">
+            <option value="2">2 คน (1 vs 1)</option>
+            <option value="4">4 คน</option>
+            <option value="6">6 คน</option>
+            <option value="8" selected>8 คน (เต็มสตรีม)</option>
+          </select>
+        </div>
+
+        <button onclick="submitCreateCustomRoom()" style="width: 100%; padding: 12px; border-radius: 12px; background: #BD1B0B; color: white; border: none; font-weight: 800; font-size: 14px; cursor: pointer; font-family: inherit; margin-top: 8px;">
+          สร้างห้องประลองยุทธ์
+        </button>
+      </div>
+
+      <!-- Join Panel -->
+      <div id="roomJoinPanel" style="display: none;">
+        <div style="margin-bottom: 14px;">
+          <label style="font-size: 13px; font-weight: 700; color: #475569; display: block; margin-bottom: 6px;">กรอกรหัสห้อง (เช่น RM8A2B):</label>
+          <input type="text" id="txtJoinRoomCode" placeholder="รหัสห้อง..." style="width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #CBD5E1; font-family: inherit; font-size: 14px; text-transform: uppercase;">
+        </div>
+
+        <button onclick="submitJoinCustomRoom()" style="width: 100%; padding: 12px; border-radius: 12px; background: #10B981; color: white; border: none; font-weight: 800; font-size: 14px; cursor: pointer; font-family: inherit; margin-top: 8px;">
+          เข้าประลองในห้องนี้
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Room Lobby Dialog (เมื่ออยู่ในห้องรอแข่ง) -->
+  <div id="roomLobbyDialog" class="modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.85); z-index: 2030; align-items: center; justify-content: center; padding: 16px;">
+    <div style="background: white; border-radius: 24px; width: 100%; max-width: 500px; padding: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); text-align: center;">
+      <span style="background: #EFF6FF; color: #2563EB; font-weight: 700; padding: 4px 12px; border-radius: 999px; font-size: 12px;">Lobby Room</span>
+      <h2 style="margin: 8px 0 2 0; font-size: 22px; font-weight: 900; color: #1E293B;" id="lblLobbyRoomCode">ห้อง: RM1234</h2>
+      
+      <!-- Link Share Button -->
+      <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 14px; padding: 10px; margin: 12px 0 20px 0; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+        <span style="font-size: 12px; color: #64748B; font-family: monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" id="lblRoomShareUrl">https://policeexam.onrender.com/home/index.html?room=RM1234</span>
+        <button onclick="copyRoomShareLink()" style="background: #BD1B0B; color: white; border: none; padding: 6px 14px; border-radius: 10px; font-weight: 700; font-size: 12px; cursor: pointer; flex-shrink: 0; font-family: inherit;">คัดลอกลิงก์</button>
+      </div>
+
+      <!-- Players List -->
+      <h4 style="margin: 0 0 10px 0; font-size: 14px; color: #475569; text-align: left; font-weight: 700;">รายชื่อผู้เล่นที่เข้ามาในห้อง (<span id="lblLobbyPlayersCount">1/8</span> คน):</h4>
+      <div id="lobbyPlayersContainer" style="display: flex; flex-direction: column; gap: 8px; max-height: 200px; overflow-y: auto; margin-bottom: 20px;">
+        <!-- Injected dynamically via JS -->
+      </div>
+
+      <div style="display: flex; gap: 10px;">
+        <button onclick="leaveRoomLobby()" style="flex: 1; padding: 12px; border-radius: 12px; background: #F1F5F9; color: #64748B; border: 1px solid #CBD5E1; font-weight: 700; cursor: pointer; font-family: inherit;">ออกจากห้อง</button>
+        <button id="btnHostStartDuel" onclick="hostTriggerStartDuel()" style="flex: 2; padding: 12px; border-radius: 12px; background: #94A3B8; color: white; border: none; font-weight: 800; font-size: 14px; cursor: not-allowed; font-family: inherit;">⏳ รอผู้เล่นเข้าร่วมห้อง... (อย่างน้อย 2 คน)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. Live Battle Gameplay Arena Modal (หน้าจอแข่งขันคำถามประลองสด) -->
+  <div id="liveBattleArenaModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.95); z-index: 2090; align-items: center; justify-content: center; padding: 16px;">
+    <div style="background: white; border-radius: 24px; width: 100%; max-width: 600px; height: 90vh; max-height: 650px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3);">
+      
+      <!-- Battle Header / Opponents scoreboard -->
+      <div style="background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%); color: white; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="width: 40px; height: 40px; border-radius: 50%; background: #BD1B0B; color: white; font-weight: 800; display: flex; align-items: center; justify-content: center; font-size: 16px;" id="arenaPlayerAvatar">คุณ</div>
+          <div>
+            <span style="font-weight: 800; font-size: 14px; display: block;" id="arenaPlayerName">คุณ</span>
+            <span style="font-size: 11px; color: #10B981; font-weight: 700;" id="arenaPlayerScore">คะแนน: 0 ข้อ</span>
+          </div>
+        </div>
+
+        <div style="font-size: 16px; font-weight: 900; color: #F59E0B;" id="arenaSubjectTag">วิชา: ทั่วไป</div>
+
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="text-align: right;">
+            <span style="font-weight: 800; font-size: 14px; display: block;" id="arenaOpponentName">คู่ต่อสู้</span>
+            <span style="font-size: 11px; color: #F59E0B; font-weight: 700;" id="arenaOpponentScore">คะแนน: 0 ข้อ</span>
+          </div>
+          <div style="width: 40px; height: 40px; border-radius: 50%; background: #D97706; color: white; font-weight: 800; display: flex; align-items: center; justify-content: center; font-size: 16px;" id="arenaOpponentAvatar">คู่</div>
+        </div>
+      </div>
+
+      <!-- Question Content -->
+      <div style="padding: 24px; overflow-y: auto; flex: 1;" id="arenaBodyContent">
+        <!-- Question & choices dynamically rendered via JS -->
+      </div>
+
+      <!-- Footer Progress & Timer -->
+      <div style="padding: 16px 24px; border-top: 1px solid #E2E8F0; background: #F8FAFC; display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-size: 13px; font-weight: 700; color: #64748B;" id="arenaStepText">ข้อที่ 1 / 10</span>
+        <button id="btnArenaNext" onclick="nextArenaQuestion()" style="background: #BD1B0B; color: white; border: none; padding: 10px 20px; border-radius: 12px; font-weight: 700; font-family: inherit; cursor: pointer; display: none;">ข้อถัดไป ➔</button>
+      </div>
+
+    </div>
+  </div>
+
+</body>
+
 </html>
