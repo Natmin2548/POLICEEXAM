@@ -2742,9 +2742,11 @@ function updateStatsTabDetails() {
 // Community Section Logic
 // ==========================================
 let communityActiveTab = 'posts'; // 'posts', 'chat', 'groups', 'friends'
+let postsPollInterval = null;
 let chatPollInterval = null;
 let groupChatPollInterval = null;
 let dmChatPollInterval = null;
+let lastLoadedPostsHash = '';
 
 function updateCommunityTabDetails() {
   setupCommunitySubtabs();
@@ -2835,6 +2837,7 @@ function switchCommunitySubtab(tab) {
   if (contentFriends) contentFriends.classList.toggle('active', tab === 'friends');
 
   // Clear all polling intervals
+  if (postsPollInterval) { clearInterval(postsPollInterval); postsPollInterval = null; }
   if (chatPollInterval) { clearInterval(chatPollInterval); chatPollInterval = null; }
   if (groupChatPollInterval) { clearInterval(groupChatPollInterval); groupChatPollInterval = null; }
   if (dmChatPollInterval) { clearInterval(dmChatPollInterval); dmChatPollInterval = null; }
@@ -2852,6 +2855,8 @@ function switchCommunitySubtab(tab) {
 
   if (tab === 'posts') {
     loadCommunityPosts();
+    // Real-time live polling every 3 seconds
+    postsPollInterval = setInterval(() => loadCommunityPosts(true), 3000);
   } else if (tab === 'chat') {
     loadChatMessages();
     // Poll chat messages every 3 seconds
@@ -2867,9 +2872,17 @@ function switchCommunitySubtab(tab) {
   loadCommunityStats();
 }
 
-async function loadCommunityPosts() {
+async function loadCommunityPosts(isBackground = false) {
   const container = document.getElementById('postsFeedContainer');
   if (!container) return;
+
+  // If user is actively typing a comment or editing, skip background re-render
+  if (isBackground) {
+    const activeEl = document.activeElement;
+    if (activeEl && (activeEl.classList.contains('txt-comment-input') || activeEl.id === 'txtPostContent') && activeEl.value.trim().length > 0) {
+      return;
+    }
+  }
 
   try {
     const res = await fetch(`${API_BASE}/api/community/posts`, {
@@ -2878,18 +2891,6 @@ async function loadCommunityPosts() {
     if (!res.ok) throw new Error('Failed to load posts');
     const posts = await res.json();
 
-    if (posts.length === 0) {
-      container.innerHTML = `
-        <div style="background-color: var(--bg-card); border: 1px dashed var(--border-color); border-radius: 20px; padding: 40px; text-align: center; color: var(--text-light); font-size: 14px; width: 100%;">
-          <span style="font-size: 32px; display: block; margin-bottom: 8px;"></span>
-          ยังไม่มีโพสต์พูดคุยในขณะนี้<br>
-          <span style="font-size: 11px; opacity: 0.7;">เขียนโพสต์ด้านบนเพื่อเริ่มแชร์ข้อมูลคนแรก!</span>
-        </div>
-      `;
-      return;
-    }
-
-    let html = '';
     const oneWeekMs = 7 * 24 * 60 * 60 * 1000;
     const nowMs = Date.now();
 
@@ -2898,6 +2899,20 @@ async function loadCommunityPosts() {
       const pTime = new Date(p.createdAt).getTime();
       return (nowMs - pTime) <= oneWeekMs;
     });
+
+    const currentHash = JSON.stringify(validPosts.map(p => ({
+      id: p.id,
+      content: p.content,
+      likes: p.likesCount,
+      isLiked: p.isLiked,
+      commentsCount: p.comments ? p.comments.length : 0
+    })));
+
+    // If background polling and content hasn't changed, skip DOM redraw
+    if (isBackground && currentHash === lastLoadedPostsHash) {
+      return;
+    }
+    lastLoadedPostsHash = currentHash;
 
     if (validPosts.length === 0) {
       container.innerHTML = `
