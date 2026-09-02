@@ -541,11 +541,7 @@ const SUBJECT_CONFIG = {
       'บทที่ 11 การทำลาย',
       'บทที่ 12 ระบบสารบรรณอิเล็กทรอนิกส์'
     ],
-    sets: [
-      { id: 'sb_1', title: 'ระเบียบสารบรรณ: บทที่ 1 บทนำและนิยาม', chapter: 'บทที่ 1 บทนำและนิยาม', count: 25, time: '30 นาที', diff: 'ปานกลาง', diffColor: '#2563EB', diffBg: '#EFF6FF', completion: 0 },
-      { id: 'sb_2', title: 'ระเบียบสารบรรณ: บทที่ 2 มาตรฐานแบบพิมพ์ ตราครุฑ', chapter: 'บทที่ 2 มาตรฐานแบบพิมพ์ ตราครุฑ', count: 25, time: '30 นาที', diff: 'ปานกลาง', diffColor: '#2563EB', diffBg: '#EFF6FF', completion: 0 },
-      { id: 'sb_3', title: 'ระเบียบสารบรรณ: บทที่ 3 หนังสือภายนอก หนังสือภายใน หนังสือประทับตรา', chapter: 'บทที่ 3 หนังสือภายนอก หนังสือภายใน หนังสือประทับตรา', count: 30, time: '35 นาที', diff: 'ปานกลาง', diffColor: '#059669', diffBg: '#ECFDF5', completion: 0 }
-    ]
+    sets: []
   },
   'ทั่วไป': {
     title: 'ความสามารถทั่วไป',
@@ -561,10 +557,7 @@ const SUBJECT_CONFIG = {
       'ความน่าจะเป็นและสถิติพื้นฐาน',
       'พีชคณิตและสมการเชิงเส้น'
     ],
-    sets: [
-      { id: 'gen_1', title: 'ความสามารถทั่วไป: อนุกรมและมิติสัมพันธ์ตัวเลข', chapter: 'อนุกรมและมิติสัมพันธ์ตัวเลข', count: 25, time: '30 นาที', diff: 'ปานกลาง', diffColor: '#059669', diffBg: '#ECFDF5', completion: 0 },
-      { id: 'gen_2', title: 'ความสามารถทั่วไป: ร้อยละและโจทย์คำนวณคณิตศาสตร์', chapter: 'ร้อยละ กำไรขาดทุน และโจทย์คำนวณ', count: 25, time: '30 นาที', diff: 'ปานกลาง', diffColor: '#2563EB', diffBg: '#EFF6FF', completion: 0 }
-    ]
+    sets: []
   },
   'สังคม': {
     title: 'สังคมและวัฒนธรรม',
@@ -578,9 +571,7 @@ const SUBJECT_CONFIG = {
       'ศาสนา วัฒนธรรม และเศรษฐกิจพอเพียง',
       'ข่าวสารและเหตุการณ์สำคัญปัจจุบัน'
     ],
-    sets: [
-      { id: 'soc_1', title: 'สังคมและวัฒนธรรม: ประชาคมอาเซียน (AEC)', chapter: 'ประชาคมอาเซียน (AEC)', count: 20, time: '25 นาที', diff: 'ปานกลาง', diffColor: '#7C3AED', diffBg: '#F5F3FF', completion: 0 }
-    ]
+    sets: []
   },
   'กฏหมาย': {
     title: 'กฎหมายที่ประชาชนควรรู้',
@@ -613,9 +604,7 @@ const SUBJECT_CONFIG = {
       'บทที่ 21 กฎหมายทั่วไปเกี่ยวกับทะเบียนราษฎร์และสิทธิพลเมือง',
       'บทที่ 22 กฎหมายเฉพาะเรื่องอื่นๆ'
     ],
-    sets: [
-      { id: 'law_1', title: 'แบบทดสอบกฎหมาย: บทที่ 1 ความรู้ทั่วไปเกี่ยวกับกฎหมาย', chapter: 'บทที่ 1 ความรู้ทั่วไปเกี่ยวกับกฎหมาย', count: 25, time: '30 นาที', diff: 'ปานกลาง', diffColor: '#DC2626', diffBg: '#FEF2F2', completion: 0 }
-    ]
+    sets: []
   },
   'คอม': {
     title: 'เทคโนโลยีสารสนเทศ',
@@ -640,9 +629,7 @@ const SUBJECT_CONFIG = {
       'บทที่ 13 Microsoft Excel',
       'บทที่ 14 PowerPoint (คำสั่งลัด)'
     ],
-    sets: [
-      { id: 'com_1', title: 'แบบทดสอบเทคโนโลยีสารสนเทศ: บทที่ 1 ความรู้พื้นฐานและประวัติคอมพิวเตอร์', chapter: 'บทที่ 1 ความรู้พื้นฐานและประวัติคอมพิวเตอร์', count: 25, time: '30 นาที', diff: 'ปานกลาง', diffColor: '#0891B2', diffBg: '#ECFEFF', completion: 0 }
-    ]
+    sets: []
   },
   'ลักษณะที่54': {
     title: 'ลักษณะที่ ๕๔',
@@ -660,9 +647,7 @@ const SUBJECT_CONFIG = {
       'บทที่ ๘: คำย่อยศและตำแหน่งข้าราชการตำรวจ',
       'บทที่ ๑๐-๑๑: ประกาศเจ้าพนักงานจราจร และไปรษณีย์สนาม'
     ],
-    sets: [
-      { id: 'l54_1', title: 'ลักษณะที่ ๕๔: บทที่ ๑ บทนำและขอบเขต', chapter: 'บทที่ ๑: บทนำ และขอบเขตงานสารบรรณตำรวจ', count: 25, time: '30 นาที', diff: 'ปานกลาง', diffColor: '#BE185D', diffBg: '#FDF2F8', completion: 0 }
-    ]
+    sets: []
   },
   'ภาษาไทย': {
     title: 'ภาษาไทย',
@@ -5873,9 +5858,8 @@ function renderSubjectChaptersGrid(subjectKey) {
     const chNum = extractChapterNumber(ch);
     const num = isMaster ? '★' : String(chNum !== 999 ? chNum : (idx + 1)).padStart(2, '0');
 
-    // Count matching sets from DB / config
-    const cfg = SUBJECT_CONFIG[subjectKey] || {};
-    const sets = currentFetchedExamSets.length > 0 ? currentFetchedExamSets : (cfg.sets || []);
+    // Count matching sets from DB only
+    const sets = currentFetchedExamSets || [];
     
     const matchingSets = sets.filter(s => {
       if (isMaster) return true;
@@ -5887,8 +5871,8 @@ function renderSubjectChaptersGrid(subjectKey) {
       return false;
     });
 
-    const setCount = matchingSets.length > 0 ? matchingSets.length : (subjectKey === 'งานสารบรรณ' ? 1 : 0);
-    const totalQuestions = matchingSets.reduce((sum, s) => sum + (s.questionsCount || s.count || 25), 0) || (setCount > 0 ? 25 : 0);
+    const setCount = matchingSets.length;
+    const totalQuestions = matchingSets.reduce((sum, s) => sum + (s.questionsCount || s.count || 0), 0);
     totalSubjectQuestions += totalQuestions;
 
     // Check user REAL completion history for this chapter
@@ -5914,7 +5898,8 @@ function renderSubjectChaptersGrid(subjectKey) {
           <div>
             <h4 style="margin: 0; font-size: 15px; font-weight: 800; color: #0F172A; letter-spacing: -0.01em;">${escapeHTML(ch)}</h4>
             <div style="margin-top: 4px; font-size: 12.5px; color: #64748B;">
-              ${totalQuestions > 0 ? `${totalQuestions} ข้อ` : '0 ข้อ'} &nbsp;•&nbsp; ${isCompleted ? `<span style="color: #16A34A; font-weight: 800;">${bestScore}%</span>` : `<span style="color: #94A3B8;">ยังไม่ได้ทำ</span>`}
+              ${totalQuestions > 0 ? `${totalQuestions} ข้อ &nbsp;•&nbsp; ` : '<span style="color: #94A3B8; font-size: 12px; font-weight: 600;">ยังไม่อัปโหลดข้อสอบ</span>'}
+              ${totalQuestions > 0 ? (isCompleted ? `<span style="color: #16A34A; font-weight: 800;">${bestScore}%</span>` : `<span style="color: #94A3B8;">ยังไม่ได้ทำ</span>`) : ''}
             </div>
           </div>
         </div>
@@ -5934,6 +5919,7 @@ function renderSubjectChaptersGrid(subjectKey) {
 
   if (countBadge) countBadge.textContent = `${lessonChapters.length} บทเรียน`;
   if (completedBadge) completedBadge.textContent = `✓ ${completedChaptersCount}/${lessonChapters.length} บท`;
+  if (questionsCountEl) questionsCountEl.textContent = `${totalSubjectQuestions} ข้อ`;
 
   container.innerHTML = chaptersHTML;
 }
@@ -5971,8 +5957,7 @@ function renderFilteredExamSetsForChapter(subjectKey, chapterName) {
   const isMaster = chapterName.includes('รวม');
   const chNum = extractChapterNumber(chapterName);
 
-  const cfg = SUBJECT_CONFIG[subjectKey] || {};
-  const allSets = currentFetchedExamSets.length > 0 ? currentFetchedExamSets : (cfg.sets || []);
+  const allSets = currentFetchedExamSets || [];
 
   let sets = allSets.filter(s => {
     if (isMaster) return true;
@@ -5994,9 +5979,9 @@ function renderFilteredExamSetsForChapter(subjectKey, chapterName) {
 
     container.innerHTML = `
       <div style="text-align: center; padding: 48px 16px; background: white; border-radius: 20px; border: 1.5px dashed #CBD5E1; color: #64748B;">
-        <div style="font-size: 32px; margin-bottom: 8px;">📝</div>
-        <h4 style="margin: 0 0 4px 0; font-size: 16px; font-weight: 800; color: #0F172A;">ยังไม่มีชุดข้อสอบในบทนี้</h4>
-        <p style="margin: 0; font-size: 13px; color: #94A3B8;">กำลังจัดเตรียมชุดข้อสอบเร็วๆ นี้</p>
+        <div style="font-size: 36px; margin-bottom: 8px;">📂</div>
+        <h4 style="margin: 0 0 4px 0; font-size: 16px; font-weight: 800; color: #0F172A;">ยังไม่อัปโหลดข้อสอบ</h4>
+        <p style="margin: 0; font-size: 13px; color: #94A3B8;">บทเรียนนี้ยังไม่มีชุดข้อสอบจริงในระบบ</p>
       </div>
     `;
     return;
