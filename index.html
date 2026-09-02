@@ -5,15 +5,20 @@
   <meta charset="UTF-8">
   <script>
     (function() {
-      try {
-        const token = localStorage.getItem('authToken');
-        const profile = localStorage.getItem('userProfile');
-        
-        // If user is already authenticated with a real session, redirect to Dashboard
-        if (token && profile && !token.startsWith('dev_') && !token.startsWith('test_')) {
-          window.location.replace('/home/index.html');
-        }
-      } catch (e) {}
+      function checkAndRedirect() {
+        try {
+          const token = localStorage.getItem('authToken');
+          const profile = localStorage.getItem('userProfile');
+          
+          // If user is already authenticated with a real session, instantly redirect to Dashboard
+          if (token && profile && !token.startsWith('dev_') && !token.startsWith('test_')) {
+            window.location.replace('/home/index.html');
+          }
+        } catch (e) {}
+      }
+      checkAndRedirect();
+      window.addEventListener('storage', checkAndRedirect);
+      setInterval(checkAndRedirect, 400);
     })();
   </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -23,11 +28,11 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <!-- Stylesheet -->
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/style.css?v=20260902_3">
   <!-- Google Identity Services SDK -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <!-- External Application Script -->
-  <script src="js/app.js?v=13" defer></script>
+  <script src="js/app.js?v=20260902_3" defer></script>
 </head>
 
 <body>
