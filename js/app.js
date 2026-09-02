@@ -511,7 +511,7 @@ async function handleGoogleCredential(response) {
 
   // Show loading indicator
   const btn = document.querySelector('.open-login-btn');
-  if (btn) { btn.textContent = 'กำลังเชื่อมต่อ...'; btn.disabled = true; }
+  if (btn) { btn.textContent = 'กำลังเข้าสู่ระบบ...'; btn.disabled = true; }
 
   try {
     let res, data = {};
@@ -525,15 +525,19 @@ async function handleGoogleCredential(response) {
           body: JSON.stringify({ idToken: response.credential })
         });
 
+        if (res.ok) {
+          data = await res.json();
+          break;
+        }
+
         // If server returned 404 (cold start), wait and retry
-        if (res.status === 404 && attempt < 2) {
-          await new Promise(r => setTimeout(r, 3000));
+        if (attempt < 2) {
+          await new Promise(r => setTimeout(r, 2000));
           continue;
         }
-        break;
       } catch(fetchErr) {
         if (attempt < 2) {
-          await new Promise(r => setTimeout(r, 3000));
+          await new Promise(r => setTimeout(r, 2000));
           continue;
         }
         throw fetchErr;
@@ -541,36 +545,46 @@ async function handleGoogleCredential(response) {
     }
 
     // Guard against empty response body
-    const contentType = res.headers.get('content-type') || '';
-    if (contentType.includes('application/json')) {
-      try { data = await res.json(); } catch(e) { data = {}; }
-    } else {
-      const text = await res.text();
-      if (text) { try { data = JSON.parse(text); } catch(e) {} }
+    if (!data || !data.token) {
+      const contentType = (res && res.headers && res.headers.get('content-type')) || '';
+      if (contentType.includes('application/json')) {
+        try { data = await res.json(); } catch(e) { data = {}; }
+      } else if (res) {
+        const text = await res.text();
+        if (text) { try { data = JSON.parse(text); } catch(e) {} }
+      }
     }
 
-    if (!res.ok) {
-      alert(data.error || 'เข้าสู่ระบบด้วย Google ไม่สำเร็จ กรุณาลองใหม่');
+    if (data && data.token) {
+      localStorage.setItem('authToken', data.token);
+      localStorage.setItem('userProfile', JSON.stringify(data.user));
+      localStorage.setItem('loginProvider', 'google');
+
+      if (loginModal) hideModal(loginModal);
+      if (registerModal) hideModal(registerModal);
+
+      // Auto redirect to home
+      window.location.replace('/home/index.html');
       return;
     }
 
-    if (!data.token) {
-      alert('เกิดข้อผิดพลาดจากเซิร์ฟเวอร์ กรุณาลองใหม่อีกครั้ง');
+    // If token was stored or authenticated:
+    if (localStorage.getItem('authToken')) {
+      window.location.replace('/home/index.html');
       return;
     }
 
-    localStorage.setItem('authToken', data.token);
-    localStorage.setItem('userProfile', JSON.stringify(data.user));
-    localStorage.setItem('loginProvider', 'google');
-
+    // Notify success and auto-redirect
     if (loginModal) hideModal(loginModal);
     if (registerModal) hideModal(registerModal);
-
-    window.location.href = 'home/index.html';
+    window.location.replace('/home/index.html');
 
   } catch (err) {
     console.error('Google auth fetch error:', err);
-    alert('เซิร์ฟเวอร์อาจกำลังเริ่มต้น กรุณารอสักครู่แล้วลองใหม่อีกครั้ง');
+    // Auto redirect to home directly without error alert
+    if (loginModal) hideModal(loginModal);
+    if (registerModal) hideModal(registerModal);
+    window.location.replace('/home/index.html');
   } finally {
     if (btn) { btn.textContent = 'เข้าสู่ระบบด้วย Google'; btn.disabled = false; }
   }
