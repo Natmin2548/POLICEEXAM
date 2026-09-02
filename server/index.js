@@ -8547,7 +8547,7 @@ function getSubjectFallbackQuestions(subjectKey, count, subjectTitle) {
   return result;
 }
 
-// GET /api/exams/prabpram - Main Exam Simulation for สายปราบปราม (150 Questions)
+// GET /api/exams/prabpram - Main Exam Simulation for สายปราบปราม (100% Real DB Questions Only)
 app.get('/api/exams/prabpram', async (req, res) => {
   try {
     const subjects = [
@@ -8633,15 +8633,8 @@ app.get('/api/exams/prabpram', async (req, res) => {
         }
       }
 
-      // If needed, generate curated questions to fill up to required sub.count
-      if (pickedForSubject.length < sub.count) {
-        const needed = sub.count - pickedForSubject.length;
-        const fallbackList = getSubjectFallbackQuestions(sub.key, needed, sub.title);
-        pickedForSubject.push(...fallbackList);
-      }
-
-      // Add to main list with exact ordering (1 to 150)
-      pickedForSubject.slice(0, sub.count).forEach(q => {
+      // Add to main list with exact ordering (Only 100% real DB questions)
+      pickedForSubject.forEach(q => {
         allOrderedQuestions.push({
           ...q,
           index: questionRunningNumber++,
@@ -8653,11 +8646,20 @@ app.get('/api/exams/prabpram', async (req, res) => {
       });
     }
 
+    if (allOrderedQuestions.length === 0) {
+      return res.json({
+        success: false,
+        totalCount: 0,
+        message: 'ยังไม่มีชุดข้อสอบจริงในระบบ กรุณาเพิ่มชุดข้อสอบผ่าน Admin Panel ก่อนเริ่มทำข้อสอบ',
+        questions: []
+      });
+    }
+
     res.json({
       success: true,
       title: 'ข้อสอบจำลองเสมือนจริง: สายปราบปราม (นปพ. / ปป.)',
       track: 'prabpram',
-      totalCount: allOrderedQuestions.length, // 150
+      totalCount: allOrderedQuestions.length,
       timeLimitMinutes: 180, // 3 hours
       subjects: subjects.map((s, idx) => ({
         order: idx + 1,
@@ -8670,7 +8672,7 @@ app.get('/api/exams/prabpram', async (req, res) => {
     });
   } catch (err) {
     console.error('Generate Prabpram Exam Error:', err);
-    res.status(500).json({ error: 'ไม่สามารถสร้างชุดข้อสอบสายปราบปรามได้: ' + err.message });
+    res.status(500).json({ error: 'ไม่สามารถดึงชุดข้อสอบสายปราบปรามได้: ' + err.message });
   }
 });
 

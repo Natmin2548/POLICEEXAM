@@ -6231,7 +6231,29 @@ window.startPrabpramMainExam = async function() {
     if (!res.ok) throw new Error('Failed to fetch prabpram exam');
     const data = await res.json();
 
-    const questions = (data.questions || []).map(q => ({
+    if (!data.questions || data.questions.length === 0) {
+      bodyContent.innerHTML = `
+        <div style="text-align: center; padding: 36px 20px;">
+          <div style="font-size: 44px; margin-bottom: 12px;">📂</div>
+          <h3 style="font-size: 17px; font-weight: 800; color: #0F172A; margin-bottom: 8px;">ยังไม่มีชุดข้อสอบจริงในระบบ</h3>
+          <p style="font-size: 13.5px; color: #64748B; max-width: 440px; margin: 0 auto 20px; line-height: 1.5;">
+            ระบบถูกตั้งค่าให้ใช้เฉพาะ <strong>ข้อสอบจริงจากฐานข้อมูล 100%</strong> (ไม่ใช้ข้อสอบตัวอย่างเดโม่) เพื่อเก็บสถิติที่ถูกต้องแท้จริงบนแดชบอร์ดหน้าหลัก<br><br>กรุณาสร้างชุดข้อสอบจริงผ่าน <strong>Admin Panel</strong> ก่อนเริ่มทำข้อสอบ
+          </p>
+          <div style="display: flex; justify-content: center; gap: 10px;">
+            <a href="/home/admin.html" class="btn" style="background: #BD1B0B; color: white; padding: 10px 20px; border-radius: 12px; font-weight: 700; font-size: 13px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+              ⚙️ ไปหน้า Admin Panel
+            </a>
+            <button onclick="closeSubjectQuiz()" class="btn btn-outline" style="padding: 10px 20px; border-radius: 12px; font-weight: 700; font-size: 13px;">
+              ปิดหน้าต่าง
+            </button>
+          </div>
+        </div>
+      `;
+      if (stepText) stepText.textContent = 'ไม่พบข้อสอบในฐานข้อมูล';
+      return;
+    }
+
+    const questions = data.questions.map(q => ({
       ...q,
       choices: q.choices || [q.choice1, q.choice2, q.choice3, q.choice4]
     }));
@@ -6239,7 +6261,7 @@ window.startPrabpramMainExam = async function() {
     currentQuizState = {
       subjectKey: 'สายปราบปราม',
       setId: 'prabpram_main_150',
-      setTitle: 'ข้อสอบจำลองเสมือนจริง: สายปราบปราม (150 ข้อ)',
+      setTitle: `ข้อสอบจำลองเสมือนจริง: สายปราบปราม (${questions.length} ข้อ)`,
       track: 'prabpram',
       subjectsBreakdown: data.subjects || [],
       questions,
@@ -6558,6 +6580,35 @@ function saveQuizHistoryRecord(record) {
     if (!Array.isArray(list)) list = [];
     list.unshift(record);
     localStorage.setItem('userQuizHistory', JSON.stringify(list.slice(0, 50)));
+
+    // Send real stats to backend if authenticated
+    if (authToken) {
+      fetch(`${API_BASE}/api/user/record-quiz`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: JSON.stringify({
+          score: record.correctCount,
+          totalCount: record.totalQuestions,
+          subject: record.subject || 'สายปราบปราม'
+        })
+      }).then(res => res.json()).then(data => {
+        if (data.user) {
+          localStorage.setItem('userProfile', JSON.stringify(data.user));
+          if (typeof userProfile !== 'undefined') {
+            userProfile = data.user;
+          }
+          if (typeof updateHomeDashboardCharts === 'function') {
+            updateHomeDashboardCharts(data.user);
+          }
+          if (typeof loadRadarChart === 'function') {
+            loadRadarChart();
+          }
+        }
+      }).catch(err => console.warn('Record quiz backend sync warning:', err));
+    }
 
     // If this was a daily streak exam, increment streak!
     if (record.setId && String(record.setId).startsWith('streak_')) {
