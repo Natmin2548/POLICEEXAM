@@ -506,7 +506,7 @@ window.startStreakChallenge = function(trackKey) {
   closePoliceTrackModal();
   
   if (trackKey === 'ปราบปราม') {
-    startBankSubjectQuiz('สายปราบปราม', 'streak_prab', 10, 'แบบทดสอบประจำวัน: สายปราบปราม (นปพ./ปป.)');
+    startPrabpramMainExam();
   } else {
     startBankSubjectQuiz('สายอำนวยการ/พฐ.', 'streak_amnuay', 10, 'แบบทดสอบประจำวัน: สายอำนวยการ / พิสูจน์หลักฐาน (อก./พฐ.)');
   }
@@ -6087,6 +6087,58 @@ window.startBankSubjectQuiz = async function(subjectKey, setId, questionsCount, 
   }
 };
 
+window.startPrabpramMainExam = async function() {
+  const modal = document.getElementById('subjectQuizModal');
+  const badgeEl = document.getElementById('quizSubjectBadge');
+  const titleEl = document.getElementById('quizTitle');
+  const bodyContent = document.getElementById('quizBodyContent');
+  const stepText = document.getElementById('quizStepText');
+  const actionRow = document.getElementById('quizActionButtonsRow');
+  const navContainer = document.getElementById('quizNavContainer');
+  const progressBar = document.getElementById('quizProgressBar');
+
+  if (!modal || !bodyContent) return;
+
+  modal.style.display = 'flex';
+  if (badgeEl) badgeEl.textContent = '🛡️ สายปราบปราม (150 ข้อ)';
+  if (titleEl) titleEl.textContent = 'ข้อสอบหลักจำลองเสมือนจริง: สายปราบปราม';
+  if (stepText) stepText.textContent = 'กำลังโหลดและจัดเรียงข้อสอบ 150 ข้อ...';
+  if (actionRow) actionRow.style.display = 'none';
+  if (navContainer) navContainer.style.display = 'none';
+  if (progressBar) progressBar.style.width = '10%';
+
+  bodyContent.innerHTML = '<div style="text-align: center; color: #64748B; padding: 40px; font-size: 14px;"><div style="font-size: 32px; margin-bottom: 12px;">⏳</div>กำลังสุ่มและจัดเรียงข้อสอบ 6 วิชา (150 ข้อ)<br><span style="font-size: 12px; color: #94A3B8; margin-top: 6px; display: block;">(กระจายสุ่มจากทุกหมวดและหลากหลายชุดข้อสอบ)</span></div>';
+
+  try {
+    const res = await fetch(`${API_BASE}/api/exams/prabpram`);
+    if (!res.ok) throw new Error('Failed to fetch prabpram exam');
+    const data = await res.json();
+
+    const questions = (data.questions || []).map(q => ({
+      ...q,
+      choices: q.choices || [q.choice1, q.choice2, q.choice3, q.choice4]
+    }));
+
+    currentQuizState = {
+      subjectKey: 'สายปราบปราม',
+      setId: 'prabpram_main_150',
+      setTitle: 'ข้อสอบจำลองเสมือนจริง: สายปราบปราม (150 ข้อ)',
+      track: 'prabpram',
+      subjectsBreakdown: data.subjects || [],
+      questions,
+      currentIndex: 0,
+      userAnswers: {},
+      score: 0,
+      startTime: Date.now()
+    };
+
+    renderCurrentQuizQuestion();
+  } catch (err) {
+    console.error('Start Prabpram Exam Error:', err);
+    bodyContent.innerHTML = '<div style="text-align: center; color: #EF4444; padding: 30px;">เกิดข้อผิดพลาดในการโหลดข้อสอบสายปราบปราม กรุณาลองใหม่อีกครั้ง</div>';
+  }
+};
+
 window.closeSubjectQuiz = function() {
   const modal = document.getElementById('subjectQuizModal');
   if (modal) modal.style.display = 'none';
@@ -6100,7 +6152,7 @@ window.closeSubjectQuiz = function() {
 };
 
 function renderCurrentQuizQuestion() {
-  const { questions, currentIndex, userAnswers } = currentQuizState;
+  const { questions, currentIndex, userAnswers, track } = currentQuizState;
   const bodyContent = document.getElementById('quizBodyContent');
   const stepText = document.getElementById('quizStepText');
   const answeredLabel = document.getElementById('quizAnsweredCountLabel');
@@ -6148,7 +6200,8 @@ function renderCurrentQuizQuestion() {
     }
   }
 
-  let choicesHtml = q.choices.map((choiceText, idx) => {
+  const choicesList = q.choices || [q.choice1, q.choice2, q.choice3, q.choice4];
+  let choicesHtml = choicesList.map((choiceText, idx) => {
     const choiceNum = idx + 1;
     let btnStyle = 'background: #F8FAFC; border: 1.5px solid #E2E8F0; color: #1E293B;';
     
@@ -6165,7 +6218,7 @@ function renderCurrentQuizQuestion() {
     return `
       <button onclick="selectQuizAnswer(${choiceNum})" ${isAnswered ? 'disabled' : ''} style="${btnStyle} width: 100%; text-align: left; padding: 13px 16px; border-radius: 14px; font-size: 14px; font-family: inherit; margin-bottom: 8px; cursor: ${isAnswered ? 'default' : 'pointer'}; transition: all 0.15s; display: flex; align-items: center; gap: 12px; line-height: 1.45;">
         <span style="width: 28px; height: 28px; border-radius: 50%; background: rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; flex-shrink: 0;">${choiceNum}</span>
-        <span>${escapeHTML(choiceText)}</span>
+        <span>${escapeHTML(choiceText || '')}</span>
       </button>
     `;
   }).join('');
@@ -6181,8 +6234,23 @@ function renderCurrentQuizQuestion() {
     `;
   }
 
+  let subjectHeaderBadge = '';
+  if (q.subjectName || track === 'prabpram') {
+    subjectHeaderBadge = `
+      <div style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px;">
+        <span style="font-size: 11.5px; font-weight: 800; background: #FEF2F2; color: #BD1B0B; padding: 4px 12px; border-radius: 999px; border: 1px solid #FECACA; display: inline-flex; align-items: center; gap: 6px;">
+          <span>📚</span> [วิชาที่ ${q.subjectOrder || 1}/6] ${escapeHTML(q.shortSubjectName || q.subjectName || 'สายปราบปราม')}
+        </span>
+        <span style="font-size: 11px; color: #64748B; background: #F1F5F9; padding: 3px 10px; border-radius: 8px; font-weight: 500;">
+          ${escapeHTML(q.chapter || 'สุ่มจากทุกหมวด')} • ${escapeHTML(q.set || 'สุ่มหลายชุด')}
+        </span>
+      </div>
+    `;
+  }
+
   bodyContent.innerHTML = `
     <div>
+      ${subjectHeaderBadge}
       <h3 style="font-size: 15.5px; font-weight: 800; color: #1E293B; line-height: 1.55; margin-top: 0; margin-bottom: 16px;">
         ${currentIndex + 1}. ${escapeHTML(q.questionText)}
       </h3>
@@ -6208,7 +6276,7 @@ function renderQuizQuestionNavGrid() {
     const ans = userAnswers[idx];
     const isAnswered = ans !== undefined;
 
-    let style = 'width: 34px; height: 34px; border-radius: 10px; font-size: 12px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: all 0.15s; font-family: inherit;';
+    let style = 'width: 34px; height: 34px; border-radius: 10px; font-size: 11.5px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: all 0.15s; font-family: inherit;';
 
     if (isCurrent) {
       style += 'border: 2px solid #BD1B0B; background: #FEF2F2; color: #BD1B0B; font-weight: 800; transform: scale(1.08); box-shadow: 0 2px 8px rgba(189,27,11,0.25);';
@@ -6268,7 +6336,7 @@ window.nextQuizQuestion = function() {
 };
 
 function renderQuizResults() {
-  const { subjectKey, setId, setTitle, questions, score } = currentQuizState;
+  const { subjectKey, setId, setTitle, questions, score, track } = currentQuizState;
   const bodyContent = document.getElementById('quizBodyContent');
   const stepText = document.getElementById('quizStepText');
   const btnNext = document.getElementById('btnNextQuiz');
@@ -6294,20 +6362,68 @@ function renderQuizResults() {
     date: new Date().toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })
   });
 
+  // Calculate subject-by-subject breakdown for Prabpram track (6 subjects)
+  let subjectBreakdownHtml = '';
+  if (track === 'prabpram') {
+    const subStats = {};
+    questions.forEach((q, idx) => {
+      const sName = q.shortSubjectName || q.subjectName || 'วิชาทั่วไป';
+      if (!subStats[sName]) {
+        subStats[sName] = { total: 0, correct: 0, order: q.subjectOrder || 1 };
+      }
+      subStats[sName].total++;
+      if (currentQuizState.userAnswers[idx] === q.correctAnswer) {
+        subStats[sName].correct++;
+      }
+    });
+
+    const rows = Object.entries(subStats)
+      .sort((a, b) => a[1].order - b[1].order)
+      .map(([sName, data], i) => {
+        const subPct = Math.round((data.correct / data.total) * 100);
+        const pass = subPct >= 60;
+        return `
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: ${i % 2 === 0 ? '#F8FAFC' : '#FFFFFF'}; border-radius: 10px; font-size: 13px;">
+            <div style="text-align: left;">
+              <span style="font-weight: 700; color: #1E293B;">${i + 1}. ${sName}</span>
+              <span style="font-size: 11px; color: #94A3B8; margin-left: 6px;">(${data.total} ข้อ)</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-weight: 800; color: ${pass ? '#059669' : '#DC2626'};">${data.correct}/${data.total} (${subPct}%)</span>
+              <span style="font-size: 10px; padding: 2px 6px; border-radius: 999px; font-weight: 700; background: ${pass ? '#ECFDF5' : '#FEF2F2'}; color: ${pass ? '#059669' : '#DC2626'};">
+                ${pass ? 'ผ่าน' : 'ไม่ผ่าน'}
+              </span>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+    subjectBreakdownHtml = `
+      <div style="margin-top: 20px; margin-bottom: 24px; border: 1.5px solid #E2E8F0; border-radius: 16px; padding: 14px; background: white;">
+        <h4 style="margin: 0 0 10px 0; font-size: 14px; font-weight: 800; color: #0F172A; text-align: left;">📊 คะแนนแยกราย 6 วิชา (เกณฑ์ผ่าน 60%):</h4>
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          ${rows}
+        </div>
+      </div>
+    `;
+  }
+
   bodyContent.innerHTML = `
     <div style="text-align: center; padding: 20px 10px;">
-      <div style="font-size: 44px; font-weight: 900; color: ${pct >= 70 ? '#10B981' : (pct >= 50 ? '#F59E0B' : '#EF4444')}; line-height: 1; margin-bottom: 8px;">
+      <div style="font-size: 44px; font-weight: 900; color: ${pct >= 70 ? '#10B981' : (pct >= 60 ? '#F59E0B' : '#EF4444')}; line-height: 1; margin-bottom: 8px;">
         ${pct}%
       </div>
-      <h3 style="margin: 0 0 16px 0; font-size: 18px; font-weight: 800; color: #1E293B;">
-        ${pct >= 80 ? 'ดีเยี่ยม! ผ่านเกณฑ์ระดับสูง' : (pct >= 60 ? 'ผ่านเกณฑ์ทดสอบ' : 'ควรทบทวนเนื้อหาเพิ่มเติม')}
+      <h3 style="margin: 0 0 8px 0; font-size: 18px; font-weight: 800; color: #1E293B;">
+        ${pct >= 80 ? 'ดีเยี่ยม! ผ่านเกณฑ์ระดับสูง 🌟' : (pct >= 60 ? 'ผ่านเกณฑ์ทดสอบนายสิบตำรวจ 🎉' : 'ไม่ผ่านเกณฑ์ (ควรทบทวนเนื้อหาเพิ่มเติม) ⚠️')}
       </h3>
-      <p style="font-size: 14px; color: #64748B; margin-bottom: 24px;">
+      <p style="font-size: 14px; color: #64748B; margin-bottom: 16px;">
         ตอบถูกต้อง ${score} จากทั้งหมด ${total} ข้อ
       </p>
 
+      ${subjectBreakdownHtml}
+
       <div style="display: flex; gap: 12px; justify-content: center;">
-        <button onclick="startBankSubjectQuiz('${subjectKey}', '${setId}', ${total}, '${escapeHTML(setTitle)}')" style="flex: 1; max-width: 200px; padding: 12px; border-radius: 12px; background: #BD1B0B; color: white; border: none; font-weight: 700; font-family: inherit; cursor: pointer;">
+        <button onclick="${track === 'prabpram' ? 'startPrabpramMainExam()' : `startBankSubjectQuiz('${subjectKey}', '${setId}', ${total}, '${escapeHTML(setTitle)}')`}" style="flex: 1; max-width: 200px; padding: 12px; border-radius: 12px; background: #BD1B0B; color: white; border: none; font-weight: 700; font-family: inherit; cursor: pointer;">
           ทำอีกครั้ง
         </button>
         <button onclick="closeSubjectQuiz(); renderSubjectStatistics('${subjectKey}'); switchSubjectSubtab('stats');" style="flex: 1; max-width: 200px; padding: 12px; border-radius: 12px; background: #F1F5F9; color: #475569; border: 1px solid #CBD5E1; font-weight: 700; font-family: inherit; cursor: pointer;">

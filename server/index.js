@@ -8351,6 +8351,329 @@ app.get('/api/exams/subject-questions', authenticateToken, async (req, res) => {
   }
 });
 
+// ==========================================
+// Main Exam Simulation for สายปราบปราม (150 Questions)
+// Order:
+// 1. ความรู้ความสามารถทั่วไป (30 ข้อ)
+// 2. ภาษาไทย (25 ข้อ)
+// 3. ภาษาอังกฤษ (30 ข้อ)
+// 4. คอมพิวเตอร์และสารสนเทศ (25 ข้อ)
+// 5. กฎหมายที่ประชาชนควรรู้ (20 ข้อ)
+// 6. สังคม วัฒนธรรม จริยธรรมและอาเซียน (20 ข้อ)
+// ==========================================
+function getSubjectFallbackQuestions(subjectKey, count, subjectTitle) {
+  const fallbacks = {
+    general: [
+      {
+        questionText: "อนุกรมตัวเลข: 2, 5, 10, 17, 26, ... ตัวเลขถัดไปคือจำนวนใด?",
+        choice1: "35", choice2: "37", choice3: "39", choice4: "41",
+        correctAnswer: 2,
+        explanation: "ลำดับของผลต่างคือ +3, +5, +7, +9, +11 ดังนั้น 26 + 11 = 37"
+      },
+      {
+        questionText: "ถ้า A ทำงานเสร็จใน 6 วัน และ B ทำงานเดียวกันเสร็จใน 12 วัน หากทั้งสองช่วยกันทำจะเสร็จในกี่วัน?",
+        choice1: "3 วัน", choice2: "4 วัน", choice3: "5 วัน", choice4: "6 วัน",
+        correctAnswer: 2,
+        explanation: "1/6 + 1/12 = 3/12 = 1/4 ดังนั้นทำงานร่วมกันเสร็จใน 4 วัน"
+      },
+      {
+        questionText: "สินค้าชิ้นหนึ่งติดราคาไว้ 1,200 บาท หากลดราคา 15% ผู้ซื้อจะต้องจ่ายเงินกี่บาท?",
+        choice1: "1,000 บาท", choice2: "1,020 บาท", choice3: "1,040 บาท", choice4: "1,080 บาท",
+        correctAnswer: 2,
+        explanation: "ลด 15% คือลด 180 บาท ดังนั้นราคาที่ต้องจ่าย = 1,200 - 180 = 1,020 บาท"
+      },
+      {
+        questionText: "นายตำรวจ 4 นาย สามารถตรวจค้นพื้นที่ 800 ตร.ม. ได้ในเวลา 2 ชั่วโมง ถ้ามีนายตำรวจ 8 นาย จะตรวจพื้นที่ 1,600 ตร.ม. ในเวลากี่ชั่วโมง?",
+        choice1: "1 ชั่วโมง", choice2: "2 ชั่วโมง", choice3: "3 ชั่วโมง", choice4: "4 ชั่วโมง",
+        correctAnswer: 2,
+        explanation: "สัดส่วนคนและพื้นที่เพิ่มขึ้นเป็น 2 เท่าเท่ากัน เวลาจึงยังคงเท่าเดิมคือ 2 ชั่วโมง"
+      },
+      {
+        questionText: "อายุของบิดาเป็น 3 เท่าของบุตร เมื่อ 5 ปีที่แล้ว บิดาอายุ 40 ปี ปัจจุบันบุตรมีอายุกี่ปี?",
+        choice1: "12 ปี", choice2: "15 ปี", choice3: "18 ปี", choice4: "20 ปี",
+        correctAnswer: 2,
+        explanation: "ปัจจุบันบิดาอายุ 45 ปี บุตรมีอายุเป็น 1 ใน 3 เท่าของบิดา คือ 45 / 3 = 15 ปี"
+      }
+    ],
+    thai: [
+      {
+        questionText: "ข้อใดใช้คำราชาศัพท์ได้ถูกต้องตามหลักภาษาไทย?",
+        choice1: "ทรงเสวยพระกระยาหาร", choice2: "เสวยพระกระยาหาร", choice3: "ทรงรับประทาน", choice4: "ทรงฉันภัตตาหาร",
+        correctAnswer: 2,
+        explanation: "คำว่า 'เสวย' เป็นกริยาราชาศัพท์ในตัวเองแล้ว ไม่ต้องใส่ 'ทรง' นำหน้าซ้ำซ้อน"
+      },
+      {
+        questionText: "ข้อใดเขียนสะกดคำได้ถูกต้องทุกคำ?",
+        choice1: "กะเพรา, อนุญาต, อภิปราย", choice2: "กระเพรา, อนุญาติ, อภิปราย", choice3: "กะเพรา, อนุญาติ, อภิปราย", choice4: "กระเพรา, อนุญาต, อภิปราย",
+        correctAnswer: 1,
+        explanation: "คำที่ถูกต้องคือ กะเพรา (ไม่มี ร), อนุญาต (ไม่มีสระอิ), อภิปราย"
+      },
+      {
+        questionText: "สำนวนใดมีความหมายตรงกับคำว่า 'ทำสิ่งที่ไม่เกิดประโยชน์และเสียเวลาโดยเปล่าประโยชน์'?",
+        choice1: "ตำน้ำพริกละลายแม่น้ำ", choice2: "ขี่ช้างจับตั๊กแตน", choice3: "จับปลาสองมือ", choice4: "งมเข็มในมหาสมุทร",
+        correctAnswer: 1,
+        explanation: "ตำน้ำพริกละลายแม่น้ำ หมายถึง เสียทรัพย์หรือแรงงานไปเป็นอันมากแต่ไม่ได้ประโยชน์อะไรกลับคืนมา"
+      },
+      {
+        questionText: "ประโยคในข้อใดมีโครงสร้างประโยคสมบูรณ์และสื่อความหมายชัดเจนที่สุด?",
+        choice1: "ตำรวจปฏิบัติหน้าที่ด้วยความซื่อสัตย์สุจริตเพื่อประชาชน", choice2: "การเดินทางโดยรถยนต์ในเวลากลางคืนที่มีฝนตก", choice3: "เพราะเนื่องจากว่าเขาไม่ได้มาเข้าแถวเคารพธงชาติ", choice4: "ตามที่สำนักงานตำรวจแห่งชาติได้แจ้งให้ทราบแล้วนั้น",
+        correctAnswer: 1,
+        explanation: "ข้อ 1 มีประธาน (ตำรวจ) กริยา (ปฏิบัติหน้าที่) และส่วนขยายสมบูรณ์ชัดเจน"
+      }
+    ],
+    english: [
+      {
+        questionText: "Police Officer: \"Could you please describe the suspect's appearance?\"\nWitness: \"______.\"",
+        choice1: "He was about 180 cm tall with a black jacket", choice2: "He will go to the police station", choice3: "I am fine, thank you", choice4: "It happened yesterday afternoon",
+        correctAnswer: 1,
+        explanation: "คำถามถามถึงรูปพรรณสัณฐานของผู้ต้องสงสัย (describe appearance) คำตอบที่ถูกต้องคือการบอกส่วนสูงและการแต่งกาย"
+      },
+      {
+        questionText: "The police officers ______ the crime scene before the forensic team arrived.",
+        choice1: "secure", choice2: "have secured", choice3: "had secured", choice4: "securing",
+        correctAnswer: 3,
+        explanation: "Past Perfect Tense (had + V.3) ใช้กับเหตุการณ์ที่เกิดขึ้นและเสร็จสิ้นก่อนอีกเหตุการณ์หนึ่งในอดีต (arrived)"
+      },
+      {
+        questionText: "Choose the synonym of the word 'INVESTIGATE':",
+        choice1: "Examine", choice2: "Arrest", choice3: "Release", choice4: "Ignore",
+        correctAnswer: 1,
+        explanation: "Investigate หมายถึง ตรวจสอบ, ไต่สวน ซึ่งมีความหมายเหมือนกับ Examine"
+      },
+      {
+        questionText: "Driver: \"I am sorry officer, I didn't see the red light.\"\nPolice: \"______.\"",
+        choice1: "You must show me your driver's license, please.", choice2: "Have a nice trip.", choice3: "I don't care at all.", choice4: "Yes, you can drive faster.",
+        correctAnswer: 1,
+        explanation: "ตำรวจปฏิบัติหน้าที่ตรวจสอบใบอนุญาตขับขี่เมื่อพบผู้กระทำผิดกฎจราจร"
+      }
+    ],
+    computer: [
+      {
+        questionText: "ตาม พ.ร.บ.ว่าด้วยการกระทำความผิดเกี่ยวกับคอมพิวเตอร์ การเข้าถึงระบบคอมพิวเตอร์ของผู้อื่นโดยมิชอบ มีโทษอย่างไร?",
+        choice1: "ปรับไม่เกิน 10,000 บาท", choice2: "จำคุกไม่เกิน 6 เดือน หรือปรับไม่เกิน 10,000 บาท หรือทั้งจำทั้งปรับ", choice3: "จำคุกไม่เกิน 2 ปี", choice4: "จำคุกไม่เกิน 5 ปี",
+        correctAnswer: 2,
+        explanation: "มาตรา 5 บัญญัติว่า ผู้ใดเข้าถึงโดยมิชอบซึ่งระบบคอมพิวเตอร์ที่มีมาตรการป้องกัน ต้องระวางโทษจำคุกไม่เกิน 6 เดือน หรือปรับไม่เกิน 10,000 บาท หรือทั้งจำทั้งปรับ"
+      },
+      {
+        questionText: "โปรโตคอลใดที่ใช้ในการรับ-ส่งข้อมูลบนเครือข่ายอินเทอร์เน็ตแบบเข้ารหัสความปลอดภัยสูง (Encrypted)?",
+        choice1: "HTTP", choice2: "HTTPS", choice3: "FTP", choice4: "SMTP",
+        correctAnswer: 2,
+        explanation: "HTTPS (Hypertext Transfer Protocol Secure) ใช้ SSL/TLS ในการเข้ารหัสข้อมูลเพื่อความปลอดภัย"
+      },
+      {
+        questionText: "การโจมตีทางไซเบอร์ที่ใช้วิธีหลอกลวงเหยื่อด้วยอีเมลหรือเว็บไซต์ปลอมเพื่อขโมยรหัสผ่าน เรียกว่าอะไร?",
+        choice1: "Phishing", choice2: "DDoS", choice3: "Malware", choice4: "Ransomware",
+        correctAnswer: 1,
+        explanation: "Phishing คือการหลอกลวงผ่านอีเมลหรือหน้าเว็บปลอมเพื่อขโมยข้อมูลสำคัญ"
+      },
+      {
+        questionText: "คีย์ลัด (Keyboard Shortcut) ในระบบปฏิบัติการ Windows สำหรับการ 'ค้นหาข้อความ' ในเอกสารหรือหน้าเว็บคือข้อใด?",
+        choice1: "Ctrl + C", choice2: "Ctrl + V", choice3: "Ctrl + F", choice4: "Ctrl + Z",
+        correctAnswer: 3,
+        explanation: "Ctrl + F (Find) ใช้สำหรับค้นหาคำหรือข้อความ"
+      }
+    ],
+    law: [
+      {
+        questionText: "ตามประมวลกฎหมายวิธีพิจารณาความอาญา ผู้ใดเป็น 'เจ้าพนักงานฝ่ายปกครองหรือตำรวจ' มีอำนาจจับกุมผู้กระทำความผิดซึ่งหน้าได้?",
+        choice1: "เจ้าพนักงานฝ่ายปกครองหรือตำรวจทุกคน", choice2: "เฉพาะนายตำรวจสัญญาบัตรเท่านั้น", choice3: "เฉพาะพนักงานสอบสวนเท่านั้น", choice4: "เฉพาะผู้กำกับการสถานีตำรวจเท่านั้น",
+        correctAnswer: 1,
+        explanation: "ป.วิ.อ. มาตรา 78 บัญญัติให้เจ้าพนักงานฝ่ายปกครองหรือตำรวจสามารถจับผู้กระทำความผิดซึ่งหน้าได้โดยไม่ต้องมีหมายจับ"
+      },
+      {
+        questionText: "การควบคุมตัวผู้ต้องหาของเจ้าพนักงานตำรวจในชั้นสอบสวน สามารถควบคุมตัวได้ไม่เกินกี่ชั่วโมง?",
+        choice1: "24 ชั่วโมง", choice2: "48 ชั่วโมง", choice3: "72 ชั่วโมง", choice4: "7 วัน",
+        correctAnswer: 2,
+        explanation: "ป.วิ.อ. มาตรา 87 วรรคสาม ห้ามมิให้ควบคุมตัวผู้ถูกจับไว้เกินกว่า 48 ชั่วโมงนับแต่เวลาที่ผู้ถูกจับมาถึงที่ทำการของพนักงานสอบสวน"
+      },
+      {
+        questionText: "ตาม พ.ร.บ.ตำรวจแห่งชาติ พ.ศ. 2565 ข้อใดเป็นหน้าที่และอำนาจหลักของสำนักงานตำรวจแห่งชาติ?",
+        choice1: "การรักษาความสงบเรียบร้อย ป้องกันและปราบปรามอาชญากรรม และอำนวยความยุติธรรมทางอาญา", choice2: "การตัดสินคดีความในศาล", choice3: "การออกกฎหมายพระราชบัญญัติ", choice4: "การควบคุมเรือนจำและทัณฑสถาน",
+        correctAnswer: 1,
+        explanation: "พ.ร.บ.ตำรวจแห่งชาติ กำหนดหน้าที่ในการรักษาความสงบเรียบร้อย ป้องกันปราบปรามอาชญากรรม และคุ้มครองความปลอดภัยของประชาชน"
+      },
+      {
+        questionText: "การตรวจค้นบุคคลในที่สาธารณสถาน เจ้าพนักงานตำรวจจะกระทำได้ต่อเมื่อมีเหตุใด?",
+        choice1: "เมื่อสงสัยว่าบุคคลนั้นมีสิ่งของผิดกฎหมายหรือได้มาโดยการกระทำความผิด", choice2: "กระทำได้ตลอดเวลาโดยไม่มีเงื่อนไข", choice3: "เมื่อได้รับความยินยอมเป็นลายลักษณ์อักษรเท่านั้น", choice4: "เมื่อมีคำสั่งศาลชั้นต้นเท่านั้น",
+        correctAnswer: 1,
+        explanation: "ป.วิ.อ. มาตรา 93 ห้ามมิให้ค้นบุคคลในที่สาธารณสถาน เว้นแต่เมื่อมีเหตุอันควรสงสัยว่าบุคคลนั้นมีสิ่งของที่ผิดกฎหมายหรือได้มาโดยการกระทำผิด"
+      }
+    ],
+    social: [
+      {
+        questionText: "หลักธรรม 'พรหมวิหาร ๔' ข้อใดที่หมายถึง ความยินดีเมื่อผู้อื่นได้ดี มีความสุขและประสบความสำเร็จ?",
+        choice1: "เมตตา", choice2: "กรุณา", choice3: "มุทิตา", choice4: "อุเบกขา",
+        correctAnswer: 3,
+        explanation: "มุทิตา หมายถึง ความยินดีเมื่อผู้อื่นได้ดีหรือมีความสุข"
+      },
+      {
+        questionText: "ประชาคมอาเซียน (ASEAN Community) ประกอบด้วย 3 เสาหลัก ข้อใดไม่ใช่หนึ่งใน 3 เสาหลักของอาเซียน?",
+        choice1: "ประชาคมการเมืองและความมั่นคงอาเซียน (APSC)", choice2: "ประชาคมเศรษฐกิจอาเซียน (AEC)", choice3: "ประชาคมสังคมและวัฒนธรรมอาเซียน (ASCC)", choice4: "ประชาคมการเงินและการแลกเปลี่ยนเงินตราอาเซียน (AFCC)",
+        correctAnswer: 4,
+        explanation: "3 เสาหลักของอาเซียนได้แก่ การเมืองความมั่นคง (APSC), เศรษฐกิจ (AEC), และสังคมวัฒนธรรม (ASCC)"
+      },
+      {
+        questionText: "ค่านิยมหลักของข้าราชการตำรวจที่ดีตามประมวลจริยธรรมข้าราชการตำรวจ คือข้อใด?",
+        choice1: "ยึดมั่นในความถูกต้อง ซื่อสัตย์สุจริต และเคารพศักดิ์ศรีความเป็นมนุษย์", choice2: "การทำงานตามความพอใจของผู้บังคับบัญชาโดยไม่คำนึงถึงระเบียบ", choice3: "การใช้อำนาจตามอำเภอใจเพื่อความรวดเร็ว", choice4: "การละเว้นการปฏิบัติหน้าที่ในคดีเล็กน้อย",
+        correctAnswer: 1,
+        explanation: "ประมวลจริยธรรมข้าราชการตำรวจมุ่งเน้นความซื่อสัตย์สุจริต เที่ยงธรรม ยึดมั่นในความถูกต้อง และเคารพศักดิ์ศรีความเป็นมนุษย์"
+      },
+      {
+        questionText: "หลักปรัชญาเศรษฐกิจพอเพียง ประกอบด้วย 3 ห่วง 2 เงื่อนไข ข้อใดจัดอยู่ใน '3 ห่วง'?",
+        choice1: "ความพอประมาณ, ความมีเหตุผล, การมีภูมิคุ้มกันที่ดี", choice2: "ความรู้, คุณธรรม, ความขยัน", choice3: "ความมัธยัสถ์, ความอดทน, ความเสียสละ", choice4: "ความมั่งคั่ง, ความยั่งยืน, ความเท่าเทียม",
+        correctAnswer: 1,
+        explanation: "3 ห่วง ได้แก่ ความพอประมาณ ความมีเหตุผล และการมีภูมิคุ้มกันที่ดีในตัว"
+      }
+    ]
+  };
+
+  const list = fallbacks[subjectKey] || fallbacks.general;
+  const result = [];
+  for (let i = 0; i < count; i++) {
+    const template = list[i % list.length];
+    result.push({
+      id: 900000 + i + 1,
+      questionText: `${template.questionText}`,
+      choice1: template.choice1,
+      choice2: template.choice2,
+      choice3: template.choice3,
+      choice4: template.choice4,
+      correctAnswer: template.correctAnswer,
+      explanation: template.explanation,
+      chapter: `หมวดบทเรียนที่ ${(i % 5) + 1}`,
+      set: `ชุดข้อสอบมาตรฐาน ตร.ชุดที่ ${(i % 4) + 1}`
+    });
+  }
+  return result;
+}
+
+// GET /api/exams/prabpram - Main Exam Simulation for สายปราบปราม (150 Questions)
+app.get('/api/exams/prabpram', async (req, res) => {
+  try {
+    const subjects = [
+      { key: 'general', title: 'ความรู้ความสามารถทั่วไป (คณิตศาสตร์/คำนวณ)', shortTitle: 'ความรู้ความสามารถทั่วไป', count: 30, aliases: ['general', 'ทั่วไป', 'คำนวณ', 'คณิตศาสตร์', 'ความรู้ความสามารถทั่วไป', 'ความสามารถทั่วไป'] },
+      { key: 'thai', title: 'ภาษาไทย', shortTitle: 'ภาษาไทย', count: 25, aliases: ['thai', 'ไทย', 'ภาษาไทย', 'ความเข้าใจภาษาไทย'] },
+      { key: 'english', title: 'ภาษาอังกฤษ', shortTitle: 'ภาษาอังกฤษ', count: 30, aliases: ['english', 'อังกฤษ', 'ภาษาอังกฤษ', 'English'] },
+      { key: 'computer', title: 'เทคโนโลยีสารสนเทศและคอมพิวเตอร์เพื่อการสื่อสาร', shortTitle: 'คอมพิวเตอร์และสารสนเทศ', count: 25, aliases: ['computer', 'คอม', 'คอมพิวเตอร์', 'สารสนเทศ', 'ไอที', 'เทคโนโลยี'] },
+      { key: 'law', title: 'กฎหมายที่ประชาชนควรรู้ (พ.ร.บ.ตำรวจ / วิ.อาญา / กฎหมาย)', shortTitle: 'กฎหมายที่ประชาชนควรรู้', count: 20, aliases: ['law', 'กฎหมาย', 'กฏหมาย', 'พ.ร.บ.', 'วิ.อาญา', 'ลักษณะ๕๔', 'ลักษณะที่ ๕๔', 'งานสารบรรณ'] },
+      { key: 'social', title: 'สังคม วัฒนธรรม จริยธรรมและอาเซียน', shortTitle: 'สังคม วัฒนธรรม จริยธรรม', count: 20, aliases: ['social', 'สังคม', 'จริยธรรม', 'วัฒนธรรม', 'อาเซียน'] }
+    ];
+
+    const allOrderedQuestions = [];
+    let questionRunningNumber = 1;
+
+    for (let sIdx = 0; sIdx < subjects.length; sIdx++) {
+      const sub = subjects[sIdx];
+      
+      // Build search filter for this subject
+      const whereConditions = sub.aliases.map(al => ({
+        OR: [
+          { category: { contains: al } },
+          { subcategory: { contains: al } },
+          { title: { contains: al } }
+        ]
+      }));
+
+      // Fetch all sets and questions matching any alias for this subject
+      const examSets = await prisma.examSet.findMany({
+        where: {
+          OR: whereConditions.flatMap(w => w.OR)
+        },
+        include: {
+          questions: true
+        }
+      });
+
+      // Group questions by set/chapter to guarantee distributed multi-set sampling
+      const groupPools = [];
+      examSets.forEach(set => {
+        if (set.questions && set.questions.length > 0) {
+          // Shuffle questions within each set
+          const shuffledInSet = [...set.questions].sort(() => 0.5 - Math.random());
+          groupPools.push({
+            setId: set.id,
+            setTitle: set.title,
+            subcategory: set.subcategory || set.category,
+            questions: shuffledInSet
+          });
+        }
+      });
+
+      // Pick questions using Round-Robin across distinct sets/chapters (never only single set/chapter)
+      const pickedForSubject = [];
+      if (groupPools.length > 0) {
+        let poolIndex = 0;
+        let attempts = 0;
+        const maxAttempts = sub.count * 10;
+        while (pickedForSubject.length < sub.count && attempts < maxAttempts) {
+          attempts++;
+          const pool = groupPools[poolIndex % groupPools.length];
+          if (pool.questions.length > 0) {
+            const q = pool.questions.shift();
+            pickedForSubject.push({
+              id: q.id,
+              questionText: q.questionText,
+              choice1: q.choice1,
+              choice2: q.choice2,
+              choice3: q.choice3,
+              choice4: q.choice4,
+              correctAnswer: q.correctAnswer,
+              explanation: q.explanation || 'เฉลยตามมาตรฐานข้อสอบนายสิบตำรวจสายปราบปราม',
+              subjectKey: sub.key,
+              subjectName: sub.title,
+              shortSubjectName: sub.shortTitle,
+              chapter: pool.subcategory || 'หมวดทั่วไป',
+              set: pool.setTitle || 'ชุดข้อสอบ'
+            });
+          }
+          poolIndex++;
+          // Check if all pools are exhausted
+          const hasRemaining = groupPools.some(p => p.questions.length > 0);
+          if (!hasRemaining) break;
+        }
+      }
+
+      // If needed, generate curated questions to fill up to required sub.count
+      if (pickedForSubject.length < sub.count) {
+        const needed = sub.count - pickedForSubject.length;
+        const fallbackList = getSubjectFallbackQuestions(sub.key, needed, sub.title);
+        pickedForSubject.push(...fallbackList);
+      }
+
+      // Add to main list with exact ordering (1 to 150)
+      pickedForSubject.slice(0, sub.count).forEach(q => {
+        allOrderedQuestions.push({
+          ...q,
+          index: questionRunningNumber++,
+          subjectOrder: sIdx + 1,
+          subjectKey: sub.key,
+          subjectName: sub.title,
+          shortSubjectName: sub.shortTitle
+        });
+      });
+    }
+
+    res.json({
+      success: true,
+      title: 'ข้อสอบจำลองเสมือนจริง: สายปราบปราม (นปพ. / ปป.)',
+      track: 'prabpram',
+      totalCount: allOrderedQuestions.length, // 150
+      timeLimitMinutes: 180, // 3 hours
+      subjects: subjects.map((s, idx) => ({
+        order: idx + 1,
+        key: s.key,
+        title: s.title,
+        shortTitle: s.shortTitle,
+        count: s.count
+      })),
+      questions: allOrderedQuestions
+    });
+  } catch (err) {
+    console.error('Generate Prabpram Exam Error:', err);
+    res.status(500).json({ error: 'ไม่สามารถสร้างชุดข้อสอบสายปราบปรามได้: ' + err.message });
+  }
+});
+
 // POST /api/user/record-quiz - Record quiz result & award XP
 app.post('/api/user/record-quiz', authenticateToken, async (req, res) => {
   try {
