@@ -6796,6 +6796,11 @@ function saveQuizHistoryRecord(record) {
     if (!userDbQuizHistory) userDbQuizHistory = [];
     userDbQuizHistory.unshift(record);
 
+    // Immediately trigger real-time dashboard charts refresh
+    if (typeof window.updateHomeDashboardCharts === 'function') {
+      window.updateHomeDashboardCharts();
+    }
+
     // Send real stats to backend PostgreSQL if authenticated
     if (authToken) {
       fetch(`${API_BASE}/api/user/record-quiz`, {
@@ -6818,11 +6823,8 @@ function saveQuizHistoryRecord(record) {
           if (typeof userProfile !== 'undefined') {
             userProfile = data.user;
           }
-          if (typeof updateHomeDashboardCharts === 'function') {
-            updateHomeDashboardCharts(data.user);
-          }
-          if (typeof loadRadarChart === 'function') {
-            loadRadarChart();
+          if (typeof window.updateHomeDashboardCharts === 'function') {
+            window.updateHomeDashboardCharts(data.user);
           }
         }
       }).catch(err => console.warn('Record quiz backend sync warning:', err));

@@ -8723,13 +8723,30 @@ app.post('/api/user/record-quiz', authenticateToken, async (req, res) => {
     const newXp = (user.xp || 0) + xpGained;
     const newPoints = (user.points || 0) + pointsGained;
 
-    // 1. Update user XP & points
+    const sNorm = `${subject || ''} ${setTitle || ''}`.replace(/[\s_]/g, '').replace('กฏ', 'กฎ');
+    const updateData = {
+      xp: newXp,
+      points: newPoints
+    };
+
+    if (sNorm.includes('กฎหมาย') || sNorm.includes('กม')) {
+      updateData.scoreLaw = Math.max(user.scoreLaw || 0, pct);
+    } else if (sNorm.includes('คอม') || sNorm.includes('สารสนเทศ') || sNorm.includes('ไอที')) {
+      updateData.scoreComputer = Math.max(user.scoreComputer || 0, pct);
+    } else if (sNorm.includes('สารบรรณ')) {
+      updateData.scoreSecretariat = Math.max(user.scoreSecretariat || 0, pct);
+    } else if (sNorm.includes('ทั่วไป') || sNorm.includes('คณิต') || sNorm.includes('คำนวณ')) {
+      updateData.scoreGeneral = Math.max(user.scoreGeneral || 0, pct);
+    } else if (sNorm.includes('สังคม') || sNorm.includes('จริยธรรม')) {
+      updateData.scoreSocial = Math.max(user.scoreSocial || 0, pct);
+    } else if (sNorm.includes('ไทย') || sNorm.includes('๕๔') || sNorm.includes('54')) {
+      updateData.scoreThai = Math.max(user.scoreThai || 0, pct);
+    }
+
+    // 1. Update user XP, points & subject scores
     const updated = await prisma.user.update({
       where: { id: req.user.userId },
-      data: {
-        xp: newXp,
-        points: newPoints
-      }
+      data: updateData
     });
 
     // 2. Save QuizAttempt record directly to Database

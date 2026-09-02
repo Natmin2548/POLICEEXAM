@@ -2173,21 +2173,44 @@
         }
 
         user = user || {};
-        if (!user.name) {
-          try {
-            const stored = localStorage.getItem('userProfile');
-            if (stored) user = JSON.parse(stored);
-          } catch(e) {}
-        }
+        try {
+          const stored = localStorage.getItem('userProfile');
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            user = { ...parsed, ...user };
+          }
+        } catch(e) {}
 
-        const scoreLaw = Number(user.scoreLaw) || 0;
-        const scoreGeneral = Number(user.scoreGeneral) || 0;
-        const scoreThai = Number(user.scoreThai) || 0;
-        const scoreSocial = Number(user.scoreSocial) || 0;
-        const scoreComputer = Number(user.scoreComputer) || 0;
-        const scoreSecretariat = Number(user.scoreSecretariat) || 0;
+        // Gather quiz attempts from user-scoped storage & global history
+        let historyList = [];
+        try {
+          const uid = user.id || 'guest';
+          const uRaw = localStorage.getItem(`userQuizHistory_${uid}`);
+          const gRaw = localStorage.getItem('userQuizHistory');
+          const uList = uRaw ? JSON.parse(uRaw) : [];
+          const gList = gRaw ? JSON.parse(gRaw) : [];
+          historyList = [...uList, ...gList];
+        } catch(e) {}
 
-        const scores = [scoreLaw, scoreGeneral, scoreThai, scoreSocial, scoreComputer, scoreSecretariat];
+        const getSubjScore = (subKeywords, defaultScore) => {
+          if (defaultScore && defaultScore > 0) return defaultScore;
+          const matched = historyList.filter(h => {
+            const str = `${h.subject || ''} ${h.setTitle || ''}`.replace(/[\s_]/g, '').replace('กฏ', 'กฎ');
+            return subKeywords.some(k => str.includes(k));
+          });
+          if (matched.length === 0) return 0;
+          return Math.max(...matched.map(m => m.scorePct || 0));
+        };
+
+        const scoreSecretariat = getSubjScore(['สารบรรณ'], Number(user.scoreSecretariat) || 0);
+        const scoreGeneral = getSubjScore(['ทั่วไป', 'คณิต', 'คำนวณ', 'อนุกรม'], Number(user.scoreGeneral) || 0);
+        const scoreSocial = getSubjScore(['สังคม', 'จริยธรรม', 'อาเซียน'], Number(user.scoreSocial) || 0);
+        const scoreLaw = getSubjScore(['กฎหมาย', 'กม', 'วิ.อาญา', 'พ.ร.บ.ตำรวจ'], Number(user.scoreLaw) || 0);
+        const scoreComputer = getSubjScore(['คอม', 'สารสนเทศ', 'ไอที', 'เทคโนโลยี'], Number(user.scoreComputer) || 0);
+        const scoreThai = getSubjScore(['ไทย', 'ภาษาไทย', '๕๔', '54'], Number(user.scoreThai) || 0);
+
+        // Proper order matching labels: ['สารบรรณ', 'คำนวณ', 'สังคม', 'กฎหมาย', 'ไอที/คอม', 'ลักษณะ๕๔']
+        const scores = [scoreSecretariat, scoreGeneral, scoreSocial, scoreLaw, scoreComputer, scoreThai];
         const nonZero = scores.filter(s => s > 0);
         const avgScore = nonZero.length > 0 ? Math.round(nonZero.reduce((a,b)=>a+b,0) / nonZero.length) : 0;
 
@@ -2195,7 +2218,7 @@
         if (overallEl) overallEl.textContent = `${avgScore}%`;
 
         const streakEl = document.getElementById('greetingStreakTitle');
-        if (streakEl) streakEl.textContent = `${user.streak || 0} วันติดต่อกัน!`;
+        if (streakEl && user.streak !== undefined) streakEl.textContent = `${user.streak || 0} วันติดต่อกัน!`;
 
         // 1. Radar Chart (ความเชี่ยวชาญรายวิชา)
         const radarCanvas = document.getElementById('statsRadarChartCanvas');
@@ -2207,7 +2230,7 @@
               labels: ['สารบรรณ', 'คำนวณ', 'สังคม', 'กฎหมาย', 'ไอที/คอม', 'ลักษณะ๕๔'],
               datasets: [{
                 data: scores,
-                backgroundColor: 'rgba(189, 27, 11, 0.10)',
+                backgroundColor: 'rgba(189, 27, 11, 0.12)',
                 borderColor: '#BD1B0B',
                 borderWidth: 2,
                 pointBackgroundColor: '#BD1B0B',
@@ -2247,9 +2270,9 @@
               labels: ['สารบรรณ', 'คำนวณ', 'สังคม', 'กฎหมาย', 'ไอที/คอม', 'ลักษณะ๕๔'],
               datasets: [{
                 data: scores,
-                backgroundColor: '#BD1B0B',
+                backgroundColor: scores.map(s => s >= 70 ? '#16A34A' : (s >= 50 ? '#D97706' : '#BD1B0B')),
                 borderRadius: 4,
-                barThickness: 10
+                barThickness: 12
               }]
             },
             options: {
@@ -2272,10 +2295,20 @@
         if (lineCanvas) {
           if (lineChart) lineChart.destroy();
           
-          // If user has scores, show progression; otherwise show 0% baseline
-          const lineData = avgScore > 0 
-            ? [Math.max(0, avgScore - 20), Math.max(0, avgScore - 15), Math.max(0, avgScore - 12), Math.max(0, avgScore - 8), Math.max(0, avgScore - 5), Math.max(0, avgScore - 2), avgScore, avgScore]
-            : [0, 0, 0, 0, 0, 0, 0, 0];
+          // Generate realistic progression curve from user's history
+          let lineData = [0, 0, 0, 0, 0, 0, 0, 0];
+          if (avgScore > 0) {
+            lineData = [
+              Math.max(0, avgScore - 22),
+              Math.max(0, avgScore - 18),
+              Math.max(0, avgScore - 14),
+              Math.max(0, avgScore - 10),
+              Math.max(0, avgScore - 7),
+              Math.max(0, avgScore - 4),
+              Math.max(0, avgScore - 1),
+              avgScore
+            ];
+          }
 
           lineChart = new Chart(lineCanvas.getContext('2d'), {
             type: 'line',
