@@ -2937,14 +2937,21 @@ async function loadCommunityPosts(isBackground = false) {
       const likeCount = p.likesCount || 0;
       const isLiked = !!p.isLiked;
 
-      // Render Edit & Delete actions for own posts
+      // Render Edit & Delete actions for own posts or ADMIN
       const isMyPost = userProfile && p.userId === userProfile.id;
+      const isAdmin = userProfile && (userProfile.role === 'ADMIN' || userProfile.role === 'OWNER');
       let actionsHtml = '';
       if (isMyPost) {
         actionsHtml = `
           <div style="display: flex; gap: 8px; margin-top: 4px;">
             <span class="post-action-btn edit" onclick="startEditPost(${p.id})">แก้ไข</span>
             <span class="post-action-btn delete" onclick="deletePost(${p.id})">ลบ</span>
+          </div>
+        `;
+      } else if (isAdmin) {
+        actionsHtml = `
+          <div style="display: flex; gap: 8px; margin-top: 4px;">
+            <span class="post-action-btn delete" style="color: #EF4444; font-weight: 700; cursor: pointer;" onclick="deletePost(${p.id})" title="สิทธิ์แอดมิน: ลบโพสต์นี้">🗑️ ลบโพสต์ (Admin)</span>
           </div>
         `;
       }
@@ -3467,8 +3474,9 @@ async function loadGroupsList(searchVal = '') {
       }
 
       let deleteBtnHtml = '';
-      if (isCreator) {
-        deleteBtnHtml = `<span class="post-action-btn delete" style="font-size: 11px; margin-left: 8px;" onclick="deleteGroup(${g.id})">ลบกลุ่ม</span>`;
+      const isAdmin = userProfile && (userProfile.role === 'ADMIN' || userProfile.role === 'OWNER');
+      if (isCreator || isAdmin) {
+        deleteBtnHtml = `<span class="post-action-btn delete" style="font-size: 11px; margin-left: 8px; color: #EF4444; font-weight: 700; cursor: pointer;" onclick="deleteGroup(${g.id})" title="${isAdmin && !isCreator ? 'สิทธิ์แอดมิน: ลบกลุ่มนี้' : 'ลบกลุ่ม'}">🗑️ ลบกลุ่ม${isAdmin && !isCreator ? ' (Admin)' : ''}</span>`;
       }
 
       html += `
@@ -3687,12 +3695,13 @@ window.enterGroupChat = function(groupId, groupName, memberCount, createdById, g
     }
   }
 
-  // Creator options inside header
+  // Creator or Admin options inside header
   const isCreator = userProfile && createdById === userProfile.id;
+  const isAdmin = userProfile && (userProfile.role === 'ADMIN' || userProfile.role === 'OWNER');
   const btnDelete = document.getElementById('btnDeleteGroup');
   const btnLeave = document.getElementById('btnLeaveGroup');
 
-  if (btnDelete) btnDelete.style.display = isCreator ? 'block' : 'none';
+  if (btnDelete) btnDelete.style.display = (isCreator || isAdmin) ? 'block' : 'none';
   if (btnLeave) btnLeave.style.display = isCreator ? 'none' : 'block';
 
   // Set event handlers for header buttons

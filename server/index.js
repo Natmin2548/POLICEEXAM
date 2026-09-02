@@ -4129,7 +4129,7 @@ app.put('/api/community/posts/:postId', authenticateToken, async (req, res) => {
   }
 });
 
-// Delete a post (only owner)
+// Delete a post (owner or ADMIN/OWNER)
 app.delete('/api/community/posts/:postId', authenticateToken, async (req, res) => {
   const { postId } = req.params;
   try {
@@ -4139,8 +4139,16 @@ app.delete('/api/community/posts/:postId', authenticateToken, async (req, res) =
     if (!post) {
       return res.status(404).json({ error: 'ไม่พบโพสต์ที่ต้องการลบ' });
     }
-    if (post.userId !== req.user.userId) {
-      return res.status(403).json({ error: 'ไม่มีสิทธิ์ลบโพสต์นี้' });
+
+    // Check if requester is post owner or ADMIN/OWNER
+    const requester = await prisma.user.findUnique({
+      where: { id: req.user.userId },
+      select: { role: true }
+    });
+    const isAdmin = requester && (requester.role === 'ADMIN' || requester.role === 'OWNER' || req.user.role === 'ADMIN' || req.user.role === 'OWNER');
+
+    if (post.userId !== req.user.userId && !isAdmin) {
+      return res.status(403).json({ error: 'ไม่มีสิทธิ์ลบโพสต์นี้ (เฉพาะเจ้าของโพสต์หรือแอดมินเท่านั้น)' });
     }
 
     // Delete comments first, then the post (transaction)
@@ -4152,6 +4160,8 @@ app.delete('/api/community/posts/:postId', authenticateToken, async (req, res) =
         where: { id: parseInt(postId) }
       })
     ]);
+
+    postLikesStore.delete(parseInt(postId));
 
     res.json({ message: 'ลบโพสต์สำเร็จ' });
   } catch (err) {
@@ -4391,7 +4401,7 @@ app.get('/api/community/groups', authenticateToken, async (req, res) => {
   }
 });
 
-// Delete group (creator only)
+// Delete group (creator or ADMIN/OWNER)
 app.delete('/api/community/groups/:groupId', authenticateToken, async (req, res) => {
   const { groupId } = req.params;
   try {
@@ -4401,9 +4411,23 @@ app.delete('/api/community/groups/:groupId', authenticateToken, async (req, res)
     if (!group) {
       return res.status(404).json({ error: 'ไม่พบกลุ่มที่ต้องการลบ' });
     }
-    if (group.createdById !== req.user.userId) {
-      return res.status(403).json({ error: 'ไม่มีสิทธิ์ลบกลุ่มนี้ (เฉพาะผู้สร้างกลุ่มเท่านั้น)' });
+
+    // Check if requester is creator or ADMIN/OWNER
+    const requester = await prisma.user.findUnique({
+      where: { id: req.user.userId },
+      select: { role: true }
+    });
+    const isAdmin = requester && (requester.role === 'ADMIN' || requester.role === 'OWNER' || req.user.role === 'ADMIN' || req.user.role === 'OWNER');
+
+    if (group.createdById !== req.user.userId && !isAdmin) {
+      return res.status(403).json({ error: 'ไม่มีสิทธิ์ลบกลุ่มนี้ (เฉพาะผู้สร้างกลุ่มหรือแอดมินเท่านั้น)' });
     }
+
+    // Clean up members and group chats first if needed
+    try {
+      await prisma.groupMember.deleteMany({ where: { groupId: parseInt(groupId) } });
+      await prisma.groupChat.deleteMany({ where: { groupId: parseInt(groupId) } });
+    } catch(subErr) {}
 
     await prisma.group.delete({
       where: { id: parseInt(groupId) }
