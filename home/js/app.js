@@ -5803,9 +5803,9 @@ window.startBankSubject = async function(subjectKey) {
   if (subtitleEl) subtitleEl.textContent = cfg.subtitle;
   if (iconEl) iconEl.textContent = cfg.icon;
 
-  // Fetch sets from API in background if needed
+  // Fetch sets from API in background with cache-busting
   try {
-    const res = await fetch(`${API_BASE}/api/exams/sets?category=${encodeURIComponent(subjectKey)}`);
+    const res = await fetch(`${API_BASE}/api/exams/sets?category=${encodeURIComponent(subjectKey)}&_t=${Date.now()}`);
     const sets = res.ok ? await res.json() : [];
     currentFetchedExamSets = Array.isArray(sets) ? sets : [];
   } catch (err) {
@@ -5818,7 +5818,7 @@ window.startBankSubject = async function(subjectKey) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
-// Render Chapter Cards (Step 2 - 100% Real Chapters & Strict Real User Scores)
+// Render Chapter Cards (Step 2 - 100% Real Chapters & Dynamic Synchronization)
 function renderSubjectChaptersGrid(subjectKey) {
   const container = document.getElementById('chaptersContainer');
   const countBadge = document.getElementById('chaptersCountBadge');
@@ -5826,8 +5826,15 @@ function renderSubjectChaptersGrid(subjectKey) {
   const questionsCountEl = document.getElementById('currentChapterQuestionsCount');
   if (!container) return;
 
-  // 1. Get Canonical List of Chapters
-  const canonicalList = BANK_SUBJECT_CHAPTERS[subjectKey] || (SUBJECT_CONFIG[subjectKey]?.chapters || []).filter(c => c !== 'ทุกหมวด') || [];
+  // 1. Get Canonical List of Chapters + Dynamically Merge Custom Chapters from DB
+  const presetList = BANK_SUBJECT_CHAPTERS[subjectKey] || (SUBJECT_CONFIG[subjectKey]?.chapters || []).filter(c => c !== 'ทุกหมวด') || [];
+  
+  const dbSubcategories = (currentFetchedExamSets || [])
+    .map(s => s.subcategory || '')
+    .filter(sub => sub && sub !== 'ALL' && !sub.includes('ทุกหมวด') && !presetList.includes(sub));
+  
+  const uniqueDbSubcategories = Array.from(new Set(dbSubcategories));
+  const canonicalList = [...presetList, ...uniqueDbSubcategories];
   
   if (canonicalList.length === 0) {
     if (countBadge) countBadge.textContent = '0 บทเรียน';
