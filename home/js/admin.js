@@ -1613,7 +1613,22 @@ window.startBatchAutoExamGeneration = async function() {
 
     while (!success && retries <= maxRetries && !batchState.shouldStop) {
       try {
-        const title = `แบบทดสอบ${displayName}: ${chapterName}`;
+        // Calculate automatic set number (ชุดที่ 1, ชุดที่ 2...) for this specific chapter
+        const existingSetsForChapter = allLoadedExams.filter(ex => {
+          const isSameSubject = ex.category === subject || 
+            (subject.includes('สารบรรณ') && ex.category && ex.category.includes('สารบรรณ')) ||
+            (subject === 'กฏหมาย' && ex.category && (ex.category.includes('กฎหมาย') || ex.category.includes('กฏหมาย'))) ||
+            (subject === 'คอม' && ex.category && (ex.category.includes('คอม') || ex.category.includes('สารสนเทศ')));
+          if (!isSameSubject) return false;
+
+          const cleanCh = chapterName.replace(/บทที่\s*\d+\s*/, '').trim();
+          if (ex.subcategory && (ex.subcategory === chapterName || ex.subcategory.includes(cleanCh))) return true;
+          if (ex.title && cleanCh && ex.title.includes(cleanCh)) return true;
+          return false;
+        });
+
+        const nextSetNum = existingSetsForChapter.length + 1;
+        const title = `แบบทดสอบ${displayName}: ${chapterName} (ชุดที่ ${nextSetNum})`;
         
         // 1. Generate via Preview-AI
         const res = await fetch(`${API_BASE}/api/admin/exams/preview-ai`, {
@@ -1667,9 +1682,18 @@ window.startBatchAutoExamGeneration = async function() {
           throw new Error(saveData.error || 'บันทึกเข้าฐานข้อมูลไม่สำเร็จ');
         }
 
+        // Add to local loaded exams cache so subsequent runs know set numbers
+        allLoadedExams.push({
+          id: saveData.id || Date.now(),
+          title,
+          category: subject,
+          subcategory: chapterName,
+          questionsCount: data.questions.length
+        });
+
         success = true;
         batchState.successCount++;
-        appendBatchLog(`✅ [${chapterNum}/${selectedChapters.length}] "${chapterName}" สำเร็จ ${data.questions.length} ข้อ (บันทึกเรียบร้อย)`, '#34D399');
+        appendBatchLog(`✅ [${chapterNum}/${selectedChapters.length}] "${title}" สำเร็จ ${data.questions.length} ข้อ (บันทึกเรียบร้อย)`, '#34D399');
 
       } catch (err) {
         retries++;
