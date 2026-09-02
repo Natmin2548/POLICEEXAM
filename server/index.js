@@ -7878,8 +7878,8 @@ app.post('/api/admin/exams/preview-ai', authenticateToken, async (req, res) => {
       });
     }
 
-    const modelsToTry = ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.0-flash', 'gemini-1.5-flash'];
-    
+    const modelsToTry = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.5-flash-lite', 'gemini-1.5-flash-latest', 'gemini-2.5-pro'];
+
     let topicInstruction = '';
     const combinedStr = `${subject || ''} ${subcategory || ''} ${title || ''}`.toLowerCase();
     if (combinedStr.includes('อนุกรม')) {
@@ -7967,6 +7967,9 @@ ${contextText ? `คลังข้อมูลอ้างอิงทางก
     if (!textResponse) {
       if (lastErr && (lastErr.message.includes('401') || lastErr.message.includes('Unauthorized') || lastErr.message.includes('invalid authentication'))) {
         return res.status(401).json({ error: '🔑 Gemini API Key ไม่ถูกต้องหรือไม่มีสิทธิ์ใช้งาน (401 Unauthorized) กรุณาตรวจสอบ API Key ในเมนู Admin -> ตั้งค่าระบบ' });
+      }
+      if (lastErr && (lastErr.message.includes('429') || lastErr.message.includes('quota') || lastErr.message.includes('RESOURCE_EXHAUSTED') || lastErr.message.includes('Rate limit'))) {
+        return res.status(429).json({ error: '⚠️ Gemini API Rate Limit (429): ' + lastErr.message });
       }
       return res.status(500).json({ error: 'ไม่สามารถเรียกใช้งาน Gemini AI ได้: ' + (lastErr ? lastErr.message : 'Unknown error') });
     }
