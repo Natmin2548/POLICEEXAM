@@ -481,6 +481,75 @@ function getSubjectDisplayName(subject) {
   return subject;
 }
 
+function getStoredCustomChapters(subject) {
+  try {
+    const raw = localStorage.getItem(`admin_custom_chapters_${subject}`);
+    const list = raw ? JSON.parse(raw) : [];
+    return Array.isArray(list) ? list : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function storeCustomChapter(subject, chapterName) {
+  try {
+    const list = getStoredCustomChapters(subject);
+    if (!list.includes(chapterName)) {
+      list.push(chapterName);
+      localStorage.setItem(`admin_custom_chapters_${subject}`, JSON.stringify(list));
+    }
+  } catch (e) {}
+}
+
+window.toggleCustomChapterInput = function() {
+  const box = document.getElementById('customChapterBox');
+  const input = document.getElementById('customChapterInput');
+  if (!box) return;
+  const isHidden = box.style.display === 'none' || !box.style.display;
+  box.style.display = isHidden ? 'block' : 'none';
+  if (isHidden && input) {
+    input.value = '';
+    input.focus();
+  }
+};
+
+window.saveNewCustomChapter = function() {
+  const input = document.getElementById('customChapterInput');
+  const subjectSelect = document.getElementById('examSubject');
+  const chapterSelect = document.getElementById('sarabanChapterSelect');
+  const subject = subjectSelect ? subjectSelect.value : 'ทั่วไป';
+  const newChapter = input ? input.value.trim() : '';
+
+  if (!newChapter) {
+    alert('กรุณากรอกชื่อหมวดหมู่ใหม่ที่ต้องการสร้าง');
+    return;
+  }
+
+  // Save to persistent storage
+  storeCustomChapter(subject, newChapter);
+
+  // Add to in-memory SUBJECT_CHAPTERS
+  if (!SUBJECT_CHAPTERS[subject]) {
+    SUBJECT_CHAPTERS[subject] = [{ value: 'ALL', label: `📚 รวมทุกหมวดในวิชา${subject}` }];
+  }
+  if (!SUBJECT_CHAPTERS[subject].some(ch => ch.value === newChapter)) {
+    SUBJECT_CHAPTERS[subject].push({ value: newChapter, label: `✨ ${newChapter} (สร้างใหม่)` });
+  }
+
+  // Re-populate dropdown and select this new chapter
+  onSubjectChange();
+  if (chapterSelect) {
+    chapterSelect.value = newChapter;
+    onSarabanChapterChange();
+  }
+
+  // Hide custom input box
+  const box = document.getElementById('customChapterBox');
+  if (box) box.style.display = 'none';
+
+  alert(`✅ บันทึกหมวดหมู่ "${newChapter}" เรียบร้อยแล้ว! หมวดนี้จะถูกจดจำไว้ในระบบสำหรับการสร้างข้อสอบทุกครั้ง`);
+};
+
 function onSubjectChange() {
   const subjectSelect = document.getElementById('examSubject');
   const subject = subjectSelect ? subjectSelect.value : 'งานสารบรรณ_๒๕๒๖';
@@ -498,13 +567,37 @@ function onSubjectChange() {
     }
   }
 
+  // Collect all chapters (Preset + Stored Custom + DB Subcategories)
+  const presetChapters = SUBJECT_CHAPTERS[subject] || [
+    { value: 'ALL', label: `📚 รวมทุกหมวดในวิชา${subject}` }
+  ];
+  const customList = getStoredCustomChapters(subject);
+  
+  // Also collect subcategories from loaded exams
+  const dbSubcats = allLoadedExams
+    .filter(e => e.category === subject || (subject.includes('สารบรรณ') && e.category && e.category.includes('สารบรรณ')))
+    .map(e => e.subcategory)
+    .filter(Boolean);
+
+  const mergedMap = new Map();
+  presetChapters.forEach(ch => mergedMap.set(ch.value, ch.label));
+  
+  customList.forEach(customCh => {
+    if (!mergedMap.has(customCh)) {
+      mergedMap.set(customCh, `✨ ${customCh} (หมวดที่คุณสร้าง)`);
+    }
+  });
+
+  dbSubcats.forEach(dbCh => {
+    if (!mergedMap.has(dbCh)) {
+      mergedMap.set(dbCh, `📂 ${dbCh}`);
+    }
+  });
+
   if (chapterSelect) {
     chapterSelect.innerHTML = '';
-    const chapters = SUBJECT_CHAPTERS[subject] || [
-      { value: 'ALL', label: `📚 รวมทุกหมวดในวิชา${subject}` }
-    ];
-    chapters.forEach(ch => {
-      chapterSelect.innerHTML += `<option value="${ch.value}">${ch.label}</option>`;
+    mergedMap.forEach((label, val) => {
+      chapterSelect.innerHTML += `<option value="${escapeHTML(val)}">${escapeHTML(label)}</option>`;
     });
   }
 

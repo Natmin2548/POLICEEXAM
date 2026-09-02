@@ -338,12 +338,28 @@
 
         <!-- 2. เลือกหมวดหมู่ / บทเรียน -->
         <div class="form-group" style="margin-bottom: 16px;">
-          <label for="sarabanChapterSelect" id="chapterSelectLabel" style="font-size: 13px; font-weight: 700; color: #1E293B; display: block; margin-bottom: 8px;">
-            2. เลือกหมวดหมู่ระเบียบสารบรรณ (12 บท)
-          </label>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <label for="sarabanChapterSelect" id="chapterSelectLabel" style="font-size: 13px; font-weight: 700; color: #1E293B; margin: 0;">
+              2. เลือกหมวดหมู่ / บทเรียน
+            </label>
+            <button type="button" onclick="toggleCustomChapterInput()" id="btnToggleCustomChapter" style="background: #FEF2F2; color: #BD1B0B; border: 1px solid #FECACA; padding: 3px 10px; border-radius: 8px; font-size: 11.5px; font-weight: 700; cursor: pointer; font-family: inherit;">
+              + เพิ่มหมวดใหม่
+            </button>
+          </div>
           <select id="sarabanChapterSelect" onchange="onSarabanChapterChange()" style="width: 100%; padding: 13px 14px; border-radius: 14px; border: 1.5px solid #E2E8F0; background: #F8FAFC; font-size: 14px; font-weight: 600; color: #0F172A; outline: none; font-family: inherit; box-sizing: border-box;">
             <!-- Populated dynamically based on subject -->
           </select>
+          <div id="customChapterBox" style="display: none; margin-top: 10px; background: #FFF7ED; border: 1.5px dashed #FDBA74; border-radius: 14px; padding: 12px;">
+            <label style="font-size: 12px; font-weight: 700; color: #9A3412; display: block; margin-bottom: 6px;">
+              ✏️ ระบุชื่อหมวดหมู่ใหม่ที่ต้องการสร้าง (ระบบจะบันทึกหมวดนี้ให้อัตโนมัติ):
+            </label>
+            <div style="display: flex; gap: 8px;">
+              <input type="text" id="customChapterInput" placeholder="เช่น อนุกรมขั้นสูง, พีชคณิต, กฎหมายสิ่งแวดล้อม..." style="flex: 1; padding: 10px 12px; border-radius: 10px; border: 1.5px solid #FDBA74; background: white; font-size: 13px; outline: none; font-family: inherit;">
+              <button type="button" onclick="saveNewCustomChapter()" style="background: #EA580C; color: white; border: none; padding: 0 14px; border-radius: 10px; font-weight: 700; font-size: 12px; cursor: pointer; font-family: inherit;">
+                บันทึกหมวด
+              </button>
+            </div>
+          </div>
         </div>
 
         <!-- 3. ปุ่มเลือกจำนวนข้อสอบ (Touch Pills: 10, 20, 30, 40, 50 ข้อ) -->

@@ -544,16 +544,7 @@ const SUBJECT_CONFIG = {
     sets: [
       { id: 'sb_1', title: 'ระเบียบสารบรรณ: บทที่ 1 บทนำและนิยาม', chapter: 'บทที่ 1 บทนำและนิยาม', count: 25, time: '30 นาที', diff: 'ปานกลาง', diffColor: '#2563EB', diffBg: '#EFF6FF', completion: 0 },
       { id: 'sb_2', title: 'ระเบียบสารบรรณ: บทที่ 2 มาตรฐานแบบพิมพ์ ตราครุฑ', chapter: 'บทที่ 2 มาตรฐานแบบพิมพ์ ตราครุฑ', count: 25, time: '30 นาที', diff: 'ปานกลาง', diffColor: '#2563EB', diffBg: '#EFF6FF', completion: 0 },
-      { id: 'sb_3', title: 'ระเบียบสารบรรณ: บทที่ 3 หนังสือภายนอก หนังสือภายใน หนังสือประทับตรา', chapter: 'บทที่ 3 หนังสือภายนอก หนังสือภายใน หนังสือประทับตรา', count: 30, time: '35 นาที', diff: 'ปานกลาง', diffColor: '#059669', diffBg: '#ECFDF5', completion: 0 },
-      { id: 'sb_4', title: 'ระเบียบสารบรรณ: บทที่ 4 หนังสือสั่งการ (คำสั่ง ข้อบังคับ ระเบียบ)', chapter: 'บทที่ 4 หนังสือสั่งการ', count: 25, time: '30 นาที', diff: 'ปานกลาง', diffColor: '#059669', diffBg: '#ECFDF5', completion: 0 },
-      { id: 'sb_5', title: 'ระเบียบสารบรรณ: บทที่ 5 หนังสือประชาสัมพันธ์ (ประกาศ แถลงการณ์ ข่าว)', chapter: 'บทที่ 5 หนังสือประชาสัมพันธ์', count: 25, time: '30 นาที', diff: 'ปานกลาง', diffColor: '#059669', diffBg: '#ECFDF5', completion: 0 },
-      { id: 'sb_6', title: 'ระเบียบสารบรรณ: บทที่ 6 หนังสือที่เจ้าหน้าที่จัดทำขึ้นหรือรับไว้เป็นหลักฐาน', chapter: 'บทที่ 6 หนังสือที่เจ้าหน้าที่จัดทำขึ้นหรือรับไว้เป็นหลักฐาน', count: 25, time: '30 นาที', diff: 'ท้าทาย', diffColor: '#D97706', diffBg: '#FFFBEB', completion: 0 },
-      { id: 'sb_7', title: 'ระเบียบสารบรรณ: บทที่ 7 เบ็ดเตล็ด สำเนา สำเนาคู่ฉบับ หนังสือเวียน', chapter: 'บทที่ 7 เบ็ดเตล็ด สำเนา สำเนาคู่ฉบับ หนังสือเวียน', count: 25, time: '30 นาที', diff: 'ปานกลาง', diffColor: '#2563EB', diffBg: '#EFF6FF', completion: 0 },
-      { id: 'sb_8', title: 'ระเบียบสารบรรณ: บทที่ 8 การรับและส่งหนังสือ', chapter: 'บทที่ 8 การรับส่งหนังสือ', count: 25, time: '30 นาที', diff: 'ปานกลาง', diffColor: '#059669', diffBg: '#ECFDF5', completion: 0 },
-      { id: 'sb_9', title: 'ระเบียบสารบรรณ: บทที่ 9 การเก็บรักษาหนังสือราชการ', chapter: 'บทที่ 9 การเก็บรักษา', count: 25, time: '30 นาที', diff: 'ท้าทาย', diffColor: '#D97706', diffBg: '#FFFBEB', completion: 0 },
-      { id: 'sb_10', title: 'ระเบียบสารบรรณ: บทที่ 10 การยืมหนังสือราชการ', chapter: 'บทที่ 10 การยืม', count: 20, time: '25 นาที', diff: 'ปานกลาง', diffColor: '#2563EB', diffBg: '#EFF6FF', completion: 0 },
-      { id: 'sb_11', title: 'ระเบียบสารบรรณ: บทที่ 11 การทำลายหนังสือราชการ', chapter: 'บทที่ 11 การทำลาย', count: 25, time: '30 นาที', diff: 'ท้าทาย', diffColor: '#D97706', diffBg: '#FFFBEB', completion: 0 },
-      { id: 'sb_12', title: 'ระเบียบสารบรรณ: บทที่ 12 ระบบสารบรรณอิเล็กทรอนิกส์ (e-Saraban)', chapter: 'บทที่ 12 ระบบสารบรรณอิเล็กทรอนิกส์', count: 30, time: '35 นาที', diff: 'เสมือนจริง', diffColor: '#BD1B0B', diffBg: '#FEF2F2', completion: 0 }
+      { id: 'sb_3', title: 'ระเบียบสารบรรณ: บทที่ 3 หนังสือภายนอก หนังสือภายใน หนังสือประทับตรา', chapter: 'บทที่ 3 หนังสือภายนอก หนังสือภายใน หนังสือประทับตรา', count: 30, time: '35 นาที', diff: 'ปานกลาง', diffColor: '#059669', diffBg: '#ECFDF5', completion: 0 }
     ]
   },
   'ทั่วไป': {
@@ -563,8 +554,17 @@ const SUBJECT_CONFIG = {
     icon: '🧮',
     iconBg: '#ECFDF5',
     iconColor: '#059669',
-    chapters: [],
-    sets: []
+    chapters: [
+      'อนุกรมและมิติสัมพันธ์ตัวเลข',
+      'ร้อยละ กำไรขาดทุน และโจทย์คำนวณ',
+      'ตรรกศาสตร์และเงื่อนไขภาษา / สัญลักษณ์',
+      'ความน่าจะเป็นและสถิติพื้นฐาน',
+      'พีชคณิตและสมการเชิงเส้น'
+    ],
+    sets: [
+      { id: 'gen_1', title: 'ความสามารถทั่วไป: อนุกรมและมิติสัมพันธ์ตัวเลข', chapter: 'อนุกรมและมิติสัมพันธ์ตัวเลข', count: 25, time: '30 นาที', diff: 'ปานกลาง', diffColor: '#059669', diffBg: '#ECFDF5', completion: 0 },
+      { id: 'gen_2', title: 'ความสามารถทั่วไป: ร้อยละและโจทย์คำนวณคณิตศาสตร์', chapter: 'ร้อยละ กำไรขาดทุน และโจทย์คำนวณ', count: 25, time: '30 นาที', diff: 'ปานกลาง', diffColor: '#2563EB', diffBg: '#EFF6FF', completion: 0 }
+    ]
   },
   'สังคม': {
     title: 'สังคมและวัฒนธรรม',
@@ -573,28 +573,46 @@ const SUBJECT_CONFIG = {
     icon: '🌏',
     iconBg: '#F5F3FF',
     iconColor: '#7C3AED',
-    chapters: [],
-    sets: []
+    chapters: [
+      'ประชาคมอาเซียน (AEC)',
+      'ศาสนา วัฒนธรรม และเศรษฐกิจพอเพียง',
+      'ข่าวสารและเหตุการณ์สำคัญปัจจุบัน'
+    ],
+    sets: [
+      { id: 'soc_1', title: 'สังคมและวัฒนธรรม: ประชาคมอาเซียน (AEC)', chapter: 'ประชาคมอาเซียน (AEC)', count: 20, time: '25 นาที', diff: 'ปานกลาง', diffColor: '#7C3AED', diffBg: '#F5F3FF', completion: 0 }
+    ]
   },
   'กฏหมาย': {
     title: 'กฎหมายที่ประชาชนควรรู้',
-    subtitle: 'พ.ร.บ.ตำรวจแห่งชาติ พ.ศ. ๒๕๖๕ และ ป.วิ.อ.',
+    subtitle: 'พ.ร.บ.ตำรวจแห่งชาติ พ.ศ. ๒๕๖๕ และ ป.วิ.อาญา',
     badge: 'กฎหมายตำรวจ',
     icon: '⚖️',
     iconBg: '#FEF2F2',
     iconColor: '#DC2626',
-    chapters: [],
-    sets: []
+    chapters: [
+      'พ.ร.บ.ตำรวจแห่งชาติ พ.ศ. ๒๕๖๕',
+      'กฎหมายวิธีพิจารณาความอาญา (ป.วิ.อ.)',
+      'กฎหมายอาญาและสิทธิมนุษยชน'
+    ],
+    sets: [
+      { id: 'law_1', title: 'กฎหมายที่ประชาชนควรรู้: ป.วิ.อ. อำนาจสืบสวนจับกุม', chapter: 'กฎหมายวิธีพิจารณาความอาญา (ป.วิ.อ.)', count: 20, time: '25 นาที', diff: 'ท้าทาย', diffColor: '#DC2626', diffBg: '#FEF2F2', completion: 0 }
+    ]
   },
   'คอม': {
     title: 'เทคโนโลยีสารสนเทศ',
-    subtitle: 'ระบบเครือข่าย พ.ร.บ.คอมพิวเตอร์ และความมั่นคงปลอดภัยไซเบอร์',
+    subtitle: 'ระบบเครือข่าย พ.ร.บ.คอมพิวเตอร์ และความมั่นคงไซเบอร์',
     badge: 'ดิจิทัล & คอมฯ',
     icon: '💻',
     iconBg: '#ECFEFF',
     iconColor: '#0891B2',
-    chapters: [],
-    sets: []
+    chapters: [
+      'พ.ร.บ.คอมพิวเตอร์ และความมั่นคงไซเบอร์',
+      'ระบบเครือข่าย ซอฟต์แวร์ และฮาร์ดแวร์',
+      'เทคโนโลยี AI และนวัตกรรมดิจิทัล'
+    ],
+    sets: [
+      { id: 'com_1', title: 'เทคโนโลยีสารสนเทศ: พ.ร.บ.คอมพิวเตอร์และความปลอดภัย', chapter: 'พ.ร.บ.คอมพิวเตอร์ และความมั่นคงไซเบอร์', count: 25, time: '30 นาที', diff: 'ปานกลาง', diffColor: '#0891B2', diffBg: '#ECFEFF', completion: 0 }
+    ]
   },
   'ลักษณะที่54': {
     title: 'ลักษณะที่ ๕๔',
@@ -603,8 +621,50 @@ const SUBJECT_CONFIG = {
     icon: '📋',
     iconBg: '#FDF2F8',
     iconColor: '#BE185D',
-    chapters: [],
-    sets: []
+    chapters: [
+      'บทที่ ๑: บทนำ และขอบเขตงานสารบรรณตำรวจ',
+      'บทที่ ๑-๒: การลงชื่อ การสั่งการ และการใช้บันทึกข้อความ',
+      'บทที่ ๒-๓: เลขที่คำสั่งในบันทึกข้อความ และการเสนอ ผบ.ตร.',
+      'บทที่ ๔-๖: ศูนย์รับส่งหนังสือ ตร. และการรับรองสำเนา',
+      'บทที่ ๗: เลขที่หนังสือออก และรหัสประจำหน่วยงาน ตร',
+      'บทที่ ๘: คำย่อยศและตำแหน่งข้าราชการตำรวจ',
+      'บทที่ ๑๐-๑๑: ประกาศเจ้าพนักงานจราจร และไปรษณีย์สนาม'
+    ],
+    sets: [
+      { id: 'l54_1', title: 'ลักษณะที่ ๕๔: บทที่ ๑ บทนำและขอบเขต', chapter: 'บทที่ ๑: บทนำ และขอบเขตงานสารบรรณตำรวจ', count: 25, time: '30 นาที', diff: 'ปานกลาง', diffColor: '#BE185D', diffBg: '#FDF2F8', completion: 0 }
+    ]
+  },
+  'ภาษาไทย': {
+    title: 'ภาษาไทย',
+    subtitle: 'การใช้ภาษา ไวยากรณ์ ราชาศัพท์ สำนวน และการอ่านจับใจความ',
+    badge: 'ทักษะภาษาไทย',
+    icon: '🇹🇭',
+    iconBg: '#FEF3C7',
+    iconColor: '#D97706',
+    chapters: [
+      'การใช้คำ ความหมาย และคำราชาศัพท์',
+      'การสะกดคำ การแต่งประโยค และสำนวนไทย',
+      'การอ่านจับใจความและบทความ'
+    ],
+    sets: [
+      { id: 'th_1', title: 'ภาษาไทย: การใช้คำและคำราชาศัพท์', chapter: 'การใช้คำ ความหมาย และคำราชาศัพท์', count: 25, time: '30 นาที', diff: 'ปานกลาง', diffColor: '#D97706', diffBg: '#FEF3C7', completion: 0 }
+    ]
+  },
+  'ภาษาอังกฤษ': {
+    title: 'ภาษาอังกฤษ',
+    subtitle: 'Vocabulary, Grammar, Conversation & Reading for Police',
+    badge: 'English Test',
+    icon: '🇬🇧',
+    iconBg: '#EEF2FF',
+    iconColor: '#4F46E5',
+    chapters: [
+      'Vocabulary (คำศัพท์ตำรวจและทั่วไป)',
+      'Grammar & Structure (ไวยากรณ์และโครงสร้าง)',
+      'Conversation & Reading (บทสนทนาและการอ่าน)'
+    ],
+    sets: [
+      { id: 'en_1', title: 'English: Police Vocabulary & Context', chapter: 'Vocabulary (คำศัพท์ตำรวจและทั่วไป)', count: 25, time: '30 นาที', diff: 'ปานกลาง', diffColor: '#4F46E5', diffBg: '#EEF2FF', completion: 0 }
+    ]
   }
 };
 
@@ -616,6 +676,7 @@ let currentQuizScore = 0;
 let currentQuizSubject = '';
 let currentQuizAnswered = false;
 let activeChapterTitle = '';
+let activeSubjectDBSets = [];
 
 // Filter 6 Subjects in Screen 1
 window.filterBankSubjects = function(query) {
@@ -627,8 +688,8 @@ window.filterBankSubjects = function(query) {
   });
 };
 
-// 1. Open Screen 2 (Chapters List + Stats)
-window.startBankSubject = function(subjectKey) {
+// 1. Open Screen 2 (Chapters List + Stats) with Live Database Sets
+window.startBankSubject = async function(subjectKey) {
   activeSubjectKey = subjectKey;
 
   const subjectsList = document.getElementById('questionBankSubjectsList');
@@ -649,57 +710,92 @@ window.startBankSubject = function(subjectKey) {
   if (subEl) subEl.textContent = cfg.subtitle;
   if (iconEl) iconEl.textContent = cfg.icon;
 
-  const chapters = (cfg.chapters || []).filter(c => c !== 'ทุกหมวด');
+  // Base preset chapters
+  const chaptersSet = new Set((cfg.chapters || []).filter(c => c && c !== 'ทุกหมวด'));
+
+  // Fetch real exam sets from DB for this subject
+  activeSubjectDBSets = [];
+  try {
+    const res = await fetch(`${API_BASE}/api/exams/sets?category=${encodeURIComponent(subjectKey)}`);
+    if (res.ok) {
+      activeSubjectDBSets = await res.json();
+      if (Array.isArray(activeSubjectDBSets)) {
+        activeSubjectDBSets.forEach(s => {
+          if (s.subcategory && s.subcategory.trim() && !s.subcategory.includes('รวมทุก')) {
+            chaptersSet.add(s.subcategory.trim());
+          }
+        });
+      }
+    }
+  } catch (err) {
+    console.warn('Fetch DB sets for subject warning:', err);
+  }
+
+  const chapters = Array.from(chaptersSet);
   if (countBadge) countBadge.textContent = `${chapters.length} บทเรียน`;
 
   switchSubjectSubtab('examSets');
-  renderChaptersList(cfg, chapters);
+  renderChaptersList(cfg, chapters, activeSubjectDBSets);
   updateSubjectStatsView();
 };
 
 // Render Chapter Cards (100% matching Image 2)
-function renderChaptersList(cfg, chapters) {
+function renderChaptersList(cfg, chapters, dbSets = []) {
   const container = document.getElementById('chaptersContainer');
   if (!container) return;
 
+  if (!chapters || chapters.length === 0) {
+    container.innerHTML = `
+      <div style="text-align: center; padding: 40px 20px; color: #94A3B8;">
+        <div style="font-size: 32px; margin-bottom: 8px;">📂</div>
+        <div style="font-size: 14px; font-weight: 700; color: #475569;">ยังไม่มีหมวดหมู่ในวิชานี้</div>
+        <p style="font-size: 12px; margin-top: 4px;">แอดมินสามารถเพิ่มชุดข้อสอบและสร้างหมวดใหม่ได้ที่หน้า Admin Panel</p>
+      </div>
+    `;
+    return;
+  }
+
   container.innerHTML = chapters.map((ch, idx) => {
     const num = String(idx + 1).padStart(2, '0');
-    const isCompleted = idx < 2 || idx === 3; // matching Image 2 states: 01 (88%), 02 (76%), 03 (ยังไม่ได้ทำ), 04 (92%), 05 (ยังไม่ได้ทำ), 06 (ยังไม่ได้ทำ)
-    const scorePercent = idx === 0 ? 88 : idx === 1 ? 76 : idx === 3 ? 92 : 0;
-    const questionsCount = idx === 0 ? 45 : idx === 1 ? 38 : idx === 2 ? 32 : idx === 3 ? 50 : idx === 4 ? 28 : 40;
+    
+    // Count real matching sets from DB for this chapter
+    const matchingSets = (dbSets || []).filter(s => 
+      s.subcategory === ch || 
+      (s.title && s.title.includes(ch)) ||
+      (ch.includes(s.subcategory || '____'))
+    );
+    const setsCount = matchingSets.length > 0 ? matchingSets.length : 1;
+    const totalQuestions = matchingSets.reduce((sum, s) => sum + (s.questionsCount || 25), 0) || 25;
 
     return `
-      <div onclick="startBankChapter('${ch.replace(/'/g, "\\'")}')" style="background: #FFFFFF; border: 1.5px solid #F1F5F9; border-radius: 20px; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.02); margin-bottom: 2px;">
+      <div onclick="startBankChapter('${ch.replace(/'/g, "\\'")}')" style="background: #FFFFFF; border: 1.5px solid #F1F5F9; border-radius: 20px; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.02); margin-bottom: 6px;">
         <div style="display: flex; align-items: center; gap: 16px;">
           <!-- Number Badge -->
-          <div style="width: 44px; height: 44px; border-radius: 14px; background: ${isCompleted ? '#F0FDF4' : '#F8FAFC'}; border: 1.5px solid ${isCompleted ? '#86EFAC' : '#E2E8F0'}; color: ${isCompleted ? '#16A34A' : '#64748B'}; font-weight: 900; font-size: 15px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+          <div style="width: 44px; height: 44px; border-radius: 14px; background: #F8FAFC; border: 1.5px solid #E2E8F0; color: #BD1B0B; font-weight: 900; font-size: 15px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
             ${num}
           </div>
 
           <!-- Title & Subtitle -->
           <div>
-            <h4 style="margin: 0; font-size: 15px; font-weight: 800; color: #0F172A; letter-spacing: -0.01em;">${ch}</h4>
+            <h4 style="margin: 0; font-size: 15px; font-weight: 800; color: #0F172A; letter-spacing: -0.01em;">${escapeHTML(ch)}</h4>
             <div style="margin-top: 4px; font-size: 12.5px; color: #64748B;">
-              ${questionsCount} ข้อ &nbsp;•&nbsp; ${isCompleted ? `<span style="color: #16A34A; font-weight: 800;">${scorePercent}%</span>` : `<span style="color: #94A3B8;">ยังไม่ได้ทำ</span>`}
+              ${matchingSets.length > 0 ? `<span style="color: #059669; font-weight: 700;">📂 ${setsCount} ชุด (${totalQuestions} ข้อ)</span>` : `<span>${totalQuestions} ข้อแบบฝึกหัด</span>`}
             </div>
           </div>
         </div>
 
-        <!-- Right Side: Check Circle + Chevron -->
+        <!-- Right Side: Action Chevron -->
         <div style="display: flex; align-items: center; gap: 8px;">
-          ${isCompleted ? `
-            <div style="width: 22px; height: 22px; border-radius: 50%; border: 1.8px solid #16A34A; display: flex; align-items: center; justify-content: center; color: #16A34A; font-size: 12px; font-weight: 900;">
-              ✓
-            </div>
-          ` : ''}
-          <span style="color: #CBD5E1; font-size: 18px; font-weight: 600;">›</span>
+          <span style="background: #FEF2F2; color: #BD1B0B; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 999px;">
+            เปิดทำข้อสอบ ›
+          </span>
         </div>
       </div>
     `;
   }).join('');
 }
 
-// 2. Open Screen 3 (Exam Sets for Chapter - matching Image 3)
+// 2. Open Screen 3 (Exam Sets for Chapter)
 window.startBankChapter = function(chapterTitle) {
   activeChapterTitle = chapterTitle;
 
@@ -718,9 +814,6 @@ window.startBankChapter = function(chapterTitle) {
 
   if (titleEl) titleEl.textContent = chapterTitle;
   if (subEl) subEl.textContent = cfg.title;
-  if (questionsCountEl) questionsCountEl.textContent = '📄 45 ข้อทั้งหมด';
-  if (examSetsCountEl) examSetsCountEl.textContent = '3 ชุดข้อสอบ';
-  if (completionTag) completionTag.textContent = '3/3 ชุด';
 
   renderSubjectExamSets();
 };
@@ -781,23 +874,65 @@ window.switchSubjectSubtab = function(tabName) {
   }
 };
 
-// Render Exam Sets (100% identical to reference screenshot)
+// Render Exam Sets (Real DB sets or Fallbacks for this chapter)
 function renderSubjectExamSets() {
   const container = document.getElementById('examSetsContainer');
+  const questionsCountEl = document.getElementById('currentChapterQuestionsCount');
+  const examSetsCountEl = document.getElementById('examSetsCountTag');
+  const completionTag = document.getElementById('examSetsCompletionTag');
   if (!container) return;
 
   const cfg = SUBJECT_CONFIG[activeSubjectKey] || SUBJECT_CONFIG['งานสารบรรณ'];
-  let sets = cfg.sets || [];
+  
+  // Find matching real DB sets for this chapter
+  let matchingDBSets = (activeSubjectDBSets || []).filter(s => 
+    s.subcategory === activeChapterTitle ||
+    (s.title && s.title.includes(activeChapterTitle)) ||
+    (activeChapterTitle.includes(s.subcategory || '____'))
+  );
 
-  container.innerHTML = sets.slice(0, 3).map((s, idx) => {
+  let setsToRender = [];
+  if (matchingDBSets.length > 0) {
+    setsToRender = matchingDBSets.map((s, idx) => ({
+      id: s.id.toString().startsWith('db_') ? s.id : `db_${s.id}`,
+      title: s.title,
+      chapter: s.subcategory || activeChapterTitle,
+      count: s.questionsCount || 25,
+      time: `${s.timeMinutes || 30} นาที`,
+      isRealDB: true
+    }));
+  } else {
+    // Check preset sets
+    const preset = (cfg.sets || []).filter(s => s.chapter === activeChapterTitle || (s.title && s.title.includes(activeChapterTitle)));
+    if (preset.length > 0) {
+      setsToRender = preset;
+    } else {
+      // Generate standard set for this chapter
+      setsToRender = [
+        {
+          id: `custom_${activeSubjectKey}_1`,
+          title: `แบบทดสอบ${cfg.title}: ${activeChapterTitle} (ชุดที่ 1)`,
+          chapter: activeChapterTitle,
+          count: 25,
+          time: '30 นาที',
+          isRealDB: false
+        }
+      ];
+    }
+  }
+
+  const totalQuestions = setsToRender.reduce((sum, s) => sum + (s.count || 25), 0);
+  if (questionsCountEl) questionsCountEl.textContent = `📄 ${totalQuestions} ข้อทั้งหมด`;
+  if (examSetsCountEl) examSetsCountEl.textContent = `${setsToRender.length} ชุดข้อสอบ`;
+  if (completionTag) completionTag.textContent = `${setsToRender.length} ชุดพร้อมสอบ`;
+
+  container.innerHTML = setsToRender.map((s, idx) => {
     const setNum = idx + 1;
-    const questionsCount = s.count || (idx === 2 ? 50 : 25);
-    const timeText = s.time || (idx === 2 ? '60 นาที' : '30 นาที');
-    const percent = idx === 0 ? 88 : idx === 1 ? 80 : 86;
-    const correctCount = Math.round((percent / 100) * questionsCount);
+    const questionsCount = s.count || 25;
+    const timeText = s.time || '30 นาที';
 
     return `
-      <div style="background: #FFFFFF; border: 1.5px solid #F1F5F9; border-radius: 22px; padding: 18px 22px; display: flex; align-items: center; justify-content: space-between; gap: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+      <div style="background: #FFFFFF; border: 1.5px solid #F1F5F9; border-radius: 22px; padding: 18px 22px; display: flex; align-items: center; justify-content: space-between; gap: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); margin-bottom: 10px;">
         <div style="display: flex; align-items: center; gap: 16px; flex: 1; min-width: 0;">
           <!-- Red Badge: ชุดที่ X -->
           <div style="width: 52px; height: 52px; border-radius: 16px; background: #FFF1F2; border: 1.5px solid #FFE4E6; color: #BD1B0B; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0;">
@@ -805,50 +940,32 @@ function renderSubjectExamSets() {
             <span style="font-size: 20px; font-weight: 900; line-height: 1.1; margin-top: -1px;">${setNum}</span>
           </div>
 
-          <!-- Middle Details + Progress -->
+          <!-- Middle Details -->
           <div style="flex: 1; min-width: 0;">
-            <!-- Top line: 25 ข้อ • 30 นาที -->
-            <div style="display: flex; align-items: center; gap: 10px; font-size: 13.5px; color: #0F172A; font-weight: 700; margin-bottom: 8px;">
-              <span style="display: inline-flex; align-items: center; gap: 4px;">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                  <polyline points="14 2 14 8 20 8"></polyline>
-                </svg>
-                ${questionsCount} ข้อ
-              </span>
-              <span style="color: #CBD5E1;">•</span>
-              <span style="display: inline-flex; align-items: center; gap: 4px;">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <polyline points="12 6 12 12 16 14"></polyline>
-                </svg>
-                ${timeText}
-              </span>
+            <div style="font-size: 14.5px; font-weight: 800; color: #0F172A; margin-bottom: 4px; line-height: 1.35;">
+              ${escapeHTML(s.title)}
             </div>
-
-            <!-- Bottom line: ได้ 22/25 + Bar + 88% -->
-            <div style="display: flex; align-items: center; gap: 12px;">
-              <span style="background: #ECFDF5; color: #059669; font-size: 12.5px; font-weight: 800; padding: 2px 9px; border-radius: 999px; white-space: nowrap;">
-                ได้ ${correctCount}/${questionsCount}
-              </span>
-              <div style="flex: 1; height: 6px; background: #F1F5F9; border-radius: 999px; overflow: hidden; position: relative;">
-                <div style="height: 100%; width: ${percent}%; background: #16A34A; border-radius: 999px;"></div>
-              </div>
-              <span style="font-size: 12.5px; font-weight: 800; color: #475569; white-space: nowrap;">
-                ${percent}%
-              </span>
+            <div style="display: flex; align-items: center; gap: 10px; font-size: 12.5px; color: #64748B; font-weight: 600;">
+              <span>📝 ${questionsCount} ข้อ</span>
+              <span>•</span>
+              <span>⏱️ ${timeText}</span>
+              ${s.isRealDB ? '<span style="background: #ECFDF5; color: #059669; padding: 2px 8px; border-radius: 999px; font-size: 11px;">คลังข้อสอบจริง</span>' : ''}
             </div>
           </div>
         </div>
 
-        <!-- Right Action Button: ทำอีกครั้ง -->
-        <button onclick="launchSelectedExamSet('${activeSubjectKey}', '${s.id}', ${questionsCount}, '${(s.title || '').replace(/'/g, "\\'")}')" style="background: #BD1B0B; color: #FFFFFF; border: none; padding: 11px 26px; border-radius: 14px; font-size: 13.5px; font-weight: 800; cursor: pointer; font-family: inherit; box-shadow: 0 4px 12px rgba(189, 27, 11, 0.22); flex-shrink: 0; transition: transform 0.15s ease, background 0.15s ease;">
-          ทำอีกครั้ง
+        <!-- Right Action Button -->
+        <button onclick="launchSelectedExamSet('${activeSubjectKey}', '${s.id}', ${questionsCount}, '${escapeHTML(s.title)}')" style="background: #BD1B0B; color: #FFFFFF; border: none; padding: 11px 22px; border-radius: 14px; font-size: 13.5px; font-weight: 800; cursor: pointer; font-family: inherit; box-shadow: 0 4px 12px rgba(189, 27, 11, 0.22); flex-shrink: 0; transition: transform 0.15s ease;">
+          เริ่มทำข้อสอบ
         </button>
       </div>
     `;
   }).join('');
 }
+
+window.launchSelectedExamSet = function(subjectKey, setId, questionsCount, setTitle) {
+  startBankSubjectQuiz(subjectKey, setId, questionsCount, setTitle);
+};
 
 // Update Subject Stats from 100% Real History
 function updateSubjectStatsView() {
