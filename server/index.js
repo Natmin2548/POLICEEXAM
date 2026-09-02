@@ -8707,18 +8707,23 @@ app.get('/api/exams/prabpram', async (req, res) => {
   }
 });
 
-// POST /api/user/record-quiz - Record quiz result & award XP
+// POST /api/user/record-quiz - Record quiz result to DB & award XP
 app.post('/api/user/record-quiz', authenticateToken, async (req, res) => {
   try {
-    const { score, totalCount, subject } = req.body;
+    const { score, totalCount, subject, setId, setTitle, scorePct } = req.body;
     const user = await prisma.user.findUnique({ where: { id: req.user.userId } });
     if (!user) return res.status(404).json({ error: 'ไม่พบผู้ใช้' });
 
-    const xpGained = (score || 0) * 10 + 20;
-    const pointsGained = (score || 0) * 5;
+    const correct = parseInt(score) || 0;
+    const total = parseInt(totalCount) || 10;
+    const pct = parseInt(scorePct) !== undefined ? parseInt(scorePct) : Math.round((correct / total) * 100);
+
+    const xpGained = correct * 10 + 20;
+    const pointsGained = correct * 5;
     const newXp = (user.xp || 0) + xpGained;
     const newPoints = (user.points || 0) + pointsGained;
 
+    // 1. Update user XP & points
     const updated = await prisma.user.update({
       where: { id: req.user.userId },
       data: {
@@ -8727,15 +8732,57 @@ app.post('/api/user/record-quiz', authenticateToken, async (req, res) => {
       }
     });
 
+    // 2. Save QuizAttempt record directly to Database
+    const attempt = await prisma.quizAttempt.create({
+      data: {
+        userId: req.user.userId,
+        subject: (subject || 'ทั่วไป').trim(),
+        setId: setId ? String(setId) : null,
+        setTitle: setTitle ? String(setTitle).trim() : null,
+        scorePct: pct,
+        correctCount: correct,
+        totalQuestions: total
+      }
+    });
+
     res.json({
       message: 'บันทึกคะแนนสำเร็จ! คุณได้รับ +' + xpGained + ' XP และ +' + pointsGained + ' คะแนน',
       xpGained,
       pointsGained,
-      user: updated
+      user: updated,
+      attempt
     });
   } catch (err) {
     console.error('Record quiz error:', err);
-    res.status(500).json({ error: 'เกิดข้อผิดพลาดในการบันทึกคะแนน' });
+    res.status(500).json({ error: 'เกิดข้อผิดพลาดในการบันทึกคะแนน: ' + err.message });
+  }
+});
+
+// GET /api/user/quiz-history - Fetch real quiz attempts from Database for authenticated user
+app.get('/api/user/quiz-history', authenticateToken, async (req, res) => {
+  try {
+    const attempts = await prisma.quizAttempt.findMany({
+      where: { userId: req.user.userId },
+      orderBy: { createdAt: 'desc' },
+      take: 200
+    });
+
+    const formatted = attempts.map(a => ({
+      id: a.id,
+      subject: a.subject,
+      setId: a.setId,
+      setTitle: a.setTitle,
+      scorePct: a.scorePct,
+      correctCount: a.correctCount,
+      totalQuestions: a.totalQuestions,
+      date: a.createdAt.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' }),
+      createdAt: a.createdAt
+    }));
+
+    res.json(formatted);
+  } catch (err) {
+    console.error('Fetch quiz history error:', err);
+    res.status(500).json({ error: 'เกิดข้อผิดพลาดในการโหลดประวัติการสอบ' });
   }
 });
 

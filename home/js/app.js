@@ -5328,6 +5328,67 @@ function handleChatImageUpload(e, apiEndpoint) {
   reader.readAsDataURL(file);
 }
 
+let userDbQuizHistory = [];
+
+// Step 1 -> Step 2: Open Subject Chapters Directory
+window.startBankSubject = async function(subjectKey) {
+  activeSubjectKey = subjectKey;
+  const cfg = SUBJECT_CONFIG[subjectKey] || {
+    title: subjectKey,
+    subtitle: 'รวมชุดข้อสอบและแบบทดสอบมาตรฐาน',
+    icon: '📝',
+    chapters: BANK_SUBJECT_CHAPTERS[subjectKey] || []
+  };
+
+  const bankMainHeader = document.getElementById('bankMainHeader');
+  const subjectsGridPanel = document.getElementById('questionBankSubjectsList');
+  const chaptersPanel = document.getElementById('questionBankChaptersList');
+  const examSetsPanel = document.getElementById('questionBankExamSetsList');
+
+  if (bankMainHeader) bankMainHeader.style.display = 'none';
+  if (subjectsGridPanel) subjectsGridPanel.style.display = 'none';
+  if (examSetsPanel) examSetsPanel.style.display = 'none';
+  if (chaptersPanel) chaptersPanel.style.display = 'block';
+
+  // Set Hero Card Info
+  const titleEl = document.getElementById('currentSubjectChapterTitle');
+  const subtitleEl = document.getElementById('currentSubjectChapterSubtitle');
+  const iconEl = document.getElementById('currentSubjectChapterIcon');
+
+  if (titleEl) titleEl.textContent = cfg.title;
+  if (subtitleEl) subtitleEl.textContent = cfg.subtitle;
+  if (iconEl) iconEl.textContent = cfg.icon;
+
+  // Fetch sets & user DB quiz history in background with cache-busting
+  try {
+    const promises = [
+      fetch(`${API_BASE}/api/exams/sets?category=${encodeURIComponent(subjectKey)}&_t=${Date.now()}`)
+    ];
+    if (authToken) {
+      promises.push(fetch(`${API_BASE}/api/user/quiz-history?_t=${Date.now()}`, {
+        headers: { 'Authorization': `Bearer ${authToken}` }
+      }));
+    }
+    const [setsRes, historyRes] = await Promise.all(promises);
+    if (setsRes && setsRes.ok) {
+      const sets = await setsRes.json();
+      currentFetchedExamSets = Array.isArray(sets) ? sets : [];
+    }
+    if (historyRes && historyRes.ok) {
+      const historyList = await historyRes.json();
+      if (Array.isArray(historyList)) {
+        userDbQuizHistory = historyList;
+      }
+    }
+  } catch (err) {
+    console.warn('Bank subject load error:', err);
+  }
+
+  switchSubjectSubtab('examSets');
+  renderSubjectChaptersGrid(subjectKey);
+  updateSubjectStatsView();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
 
 // ==========================================
 // Group Members Management
@@ -6161,10 +6222,22 @@ window.backToBankSubjects = function() {
 
 function getLocalQuizHistory(subjectKey) {
   try {
-    const raw = localStorage.getItem('userQuizHistory');
-    if (!raw) return [];
-    const list = JSON.parse(raw);
-    if (!Array.isArray(list)) return [];
+    const userId = (typeof userProfile !== 'undefined' && userProfile && userProfile.id) ? userProfile.id : 'guest';
+    const raw = localStorage.getItem(`userQuizHistory_${userId}`) || localStorage.getItem('userQuizHistory');
+    let localList = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(localList)) localList = [];
+
+    // Merge Database quiz attempts with local storage
+    const combined = [...(userDbQuizHistory || []), ...localList];
+    const uniqueMap = new Map();
+    combined.forEach(item => {
+      const key = `${item.subject}_${item.setId || ''}_${item.setTitle || ''}_${item.scorePct || 0}`;
+      if (!uniqueMap.has(key)) {
+        uniqueMap.set(key, item);
+      }
+    });
+    const list = Array.from(uniqueMap.values());
+
     const sNorm = (subjectKey || '').replace(/[\s_]/g, '').replace('กฏ', 'กฎ');
     return list.filter(h => {
       const hSub = (h.subject || '').replace(/[\s_]/g, '').replace('กฏ', 'กฎ');
@@ -6711,13 +6784,19 @@ function renderQuizResults() {
 
 function saveQuizHistoryRecord(record) {
   try {
-    const raw = localStorage.getItem('userQuizHistory');
+    const userId = (typeof userProfile !== 'undefined' && userProfile && userProfile.id) ? userProfile.id : 'guest';
+    const userKey = `userQuizHistory_${userId}`;
+    const raw = localStorage.getItem(userKey);
     let list = raw ? JSON.parse(raw) : [];
     if (!Array.isArray(list)) list = [];
     list.unshift(record);
-    localStorage.setItem('userQuizHistory', JSON.stringify(list.slice(0, 50)));
+    localStorage.setItem(userKey, JSON.stringify(list.slice(0, 100)));
+    localStorage.setItem('userQuizHistory', JSON.stringify(list.slice(0, 100)));
 
-    // Send real stats to backend if authenticated
+    if (!userDbQuizHistory) userDbQuizHistory = [];
+    userDbQuizHistory.unshift(record);
+
+    // Send real stats to backend PostgreSQL if authenticated
     if (authToken) {
       fetch(`${API_BASE}/api/user/record-quiz`, {
         method: 'POST',
@@ -6728,7 +6807,10 @@ function saveQuizHistoryRecord(record) {
         body: JSON.stringify({
           score: record.correctCount,
           totalCount: record.totalQuestions,
-          subject: record.subject || 'สายปราบปราม'
+          scorePct: record.scorePct,
+          subject: record.subject || 'ทั่วไป',
+          setId: record.setId,
+          setTitle: record.setTitle
         })
       }).then(res => res.json()).then(data => {
         if (data.user) {
