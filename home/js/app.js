@@ -5882,30 +5882,63 @@ function renderSubjectChaptersGrid(subjectKey) {
     const totalQuestions = matchingSets.reduce((sum, s) => sum + (s.questionsCount || s.count || 0), 0);
     totalSubjectQuestions += totalQuestions;
 
-    // Check user REAL completion history for this chapter
-    const doneRecords = history.filter(h => {
-      if (!h) return false;
-      const hTitle = (h.setTitle || '').replace(/[\s_]/g, '').replace('กฏ', 'กฎ');
-      const hSub = (h.subcategory || '').replace(/[\s_]/g, '').replace('กฏ', 'กฎ');
-      const chClean = ch.replace(/บทที่\s*\d+\s*/, '').replace(/[\s_]/g, '').replace('กฏ', 'กฎ').trim();
-      const hNum = extractChapterNumber(h.setTitle || h.subcategory || '');
-      
-      const idMatch = matchingSets.some(s => String(s.id) === String(h.setId || h.setType));
-      const numMatch = (chNum !== 999 && hNum === chNum);
-      const titleMatch = (chClean && (hTitle.includes(chClean) || hSub.includes(chClean)));
-      
-      return idMatch || (chNum !== 999 ? numMatch : titleMatch);
+    // Check individual sets in this chapter that the user has completed
+    const completedMatchingSets = matchingSets.filter(s => {
+      return history.some(h => {
+        if (!h) return false;
+        // 1. Match by Exact set ID
+        if (h.setId && String(h.setId) === String(s.id)) return true;
+        if (h.setType && String(h.setType) === String(s.id)) return true;
+        
+        // 2. Match by exact title
+        if (h.setTitle && s.title && h.setTitle.trim() === s.title.trim()) return true;
+
+        // 3. Match set number inside chapter (e.g. ชุดที่ 1, ชุดที่ 2)
+        const sSetNum = (s.title && s.title.match(/ชุดที่\s*(\d+)/)) ? parseInt(s.title.match(/ชุดที่\s*(\d+)/)[1]) : 1;
+        const hSetNum = (h.setTitle && h.setTitle.match(/ชุดที่\s*(\d+)/)) ? parseInt(h.setTitle.match(/ชุดที่\s*(\d+)/)[1]) : 1;
+        const sChNum = extractChapterNumber(s.subcategory || s.title || '');
+        const hChNum = extractChapterNumber(h.setTitle || h.subcategory || '');
+
+        if (sChNum !== 999 && hChNum !== 999 && sChNum === hChNum) {
+          return sSetNum === hSetNum;
+        }
+        return false;
+      });
     });
 
-    const isCompleted = doneRecords.length > 0;
-    const bestScore = isCompleted ? Math.max(...doneRecords.map(r => r.scorePct || 0)) : 0;
-    if (isCompleted) completedChaptersCount++;
+    const isFullyCompleted = matchingSets.length > 0 && completedMatchingSets.length >= matchingSets.length;
+    const isPartiallyCompleted = completedMatchingSets.length > 0 && completedMatchingSets.length < matchingSets.length;
+
+    // Calculate score of completed sets
+    const completedScores = completedMatchingSets.map(s => {
+      const recs = history.filter(h => String(h.setId) === String(s.id) || (h.setTitle && s.title && h.setTitle.trim() === s.title.trim()));
+      return recs.length > 0 ? Math.max(...recs.map(r => r.scorePct || 0)) : 0;
+    });
+    const avgScore = completedScores.length > 0 ? Math.round(completedScores.reduce((a, b) => a + b, 0) / completedScores.length) : 0;
+
+    if (isFullyCompleted) completedChaptersCount++;
+
+    // Badge styling & subtitle status
+    let statusSubtitle = '<span style="color: #94A3B8;">ยังไม่ได้ทำ</span>';
+    if (totalQuestions === 0) {
+      statusSubtitle = '<span style="color: #94A3B8; font-size: 12px; font-weight: 600;">ยังไม่อัปโหลดข้อสอบ</span>';
+    } else if (isFullyCompleted) {
+      statusSubtitle = `${totalQuestions} ข้อ &nbsp;•&nbsp; <span style="color: #16A34A; font-weight: 800;">✓ ${avgScore}% (ครบ ${matchingSets.length}/${matchingSets.length} ชุด)</span>`;
+    } else if (isPartiallyCompleted) {
+      statusSubtitle = `${totalQuestions} ข้อ &nbsp;•&nbsp; <span style="color: #D97706; font-weight: 700;">ทำแล้ว ${completedMatchingSets.length}/${matchingSets.length} ชุด (${avgScore}%)</span>`;
+    } else {
+      statusSubtitle = `${totalQuestions} ข้อ &nbsp;•&nbsp; <span style="color: #94A3B8;">ยังไม่ได้ทำ (${matchingSets.length} ชุด)</span>`;
+    }
+
+    const badgeBg = isFullyCompleted ? '#F0FDF4' : (isPartiallyCompleted ? '#FFFBEB' : '#F8FAFC');
+    const badgeBorder = isFullyCompleted ? '#86EFAC' : (isPartiallyCompleted ? '#FDE68A' : '#E2E8F0');
+    const badgeColor = isFullyCompleted ? '#16A34A' : (isPartiallyCompleted ? '#D97706' : '#64748B');
 
     return `
       <div onclick="selectBankChapter('${subjectKey}', '${ch.replace(/'/g, "\\'")}')" style="background: #FFFFFF; border: 1.5px solid #F1F5F9; border-radius: 20px; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.02); margin-bottom: 4px;">
         <div style="display: flex; align-items: center; gap: 16px;">
           <!-- Number Badge: 01, 02, 03... -->
-          <div style="width: 44px; height: 44px; border-radius: 14px; background: ${isCompleted ? '#F0FDF4' : '#F8FAFC'}; border: 1.5px solid ${isCompleted ? '#86EFAC' : '#E2E8F0'}; color: ${isCompleted ? '#16A34A' : '#64748B'}; font-weight: 900; font-size: ${isMaster ? '16px' : '15px'}; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+          <div style="width: 44px; height: 44px; border-radius: 14px; background: ${badgeBg}; border: 1.5px solid ${badgeBorder}; color: ${badgeColor}; font-weight: 900; font-size: ${isMaster ? '16px' : '15px'}; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
             ${num}
           </div>
 
@@ -5913,19 +5946,22 @@ function renderSubjectChaptersGrid(subjectKey) {
           <div>
             <h4 style="margin: 0; font-size: 15px; font-weight: 800; color: #0F172A; letter-spacing: -0.01em;">${escapeHTML(ch)}</h4>
             <div style="margin-top: 4px; font-size: 12.5px; color: #64748B;">
-              ${totalQuestions > 0 ? `${totalQuestions} ข้อ &nbsp;•&nbsp; ` : '<span style="color: #94A3B8; font-size: 12px; font-weight: 600;">ยังไม่อัปโหลดข้อสอบ</span>'}
-              ${totalQuestions > 0 ? (isCompleted ? `<span style="color: #16A34A; font-weight: 800;">${bestScore}%</span>` : `<span style="color: #94A3B8;">ยังไม่ได้ทำ</span>`) : ''}
+              ${statusSubtitle}
             </div>
           </div>
         </div>
 
-        <!-- Right Side: Check Circle + Chevron -->
+        <!-- Right Side: Check Circle / Partial Tag + Chevron -->
         <div style="display: flex; align-items: center; gap: 8px;">
-          ${isCompleted ? `
+          ${isFullyCompleted ? `
             <div style="width: 22px; height: 22px; border-radius: 50%; border: 1.8px solid #16A34A; display: flex; align-items: center; justify-content: center; color: #16A34A; font-size: 12px; font-weight: 900;">
               ✓
             </div>
-          ` : ''}
+          ` : (isPartiallyCompleted ? `
+            <span style="font-size: 11px; background: #FEF3C7; color: #92400E; padding: 2px 7px; border-radius: 6px; font-weight: 700;">
+              เหลือ ${matchingSets.length - completedMatchingSets.length} ชุด
+            </span>
+          ` : '')}
           <span style="color: #CBD5E1; font-size: 18px; font-weight: 600;">›</span>
         </div>
       </div>
