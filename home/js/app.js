@@ -4721,6 +4721,71 @@ window.closeVocabArena = function() {
   }
 };
 
+window.openVocabStatsModal = function() {
+  const modal = document.getElementById('vocabStatsModal');
+  if (!modal) return;
+
+  const userId = (typeof userProfile !== 'undefined' && userProfile && userProfile.id) ? userProfile.id : 'guest';
+  const vKey = `userVocabHistory_${userId}`;
+  let history = [];
+  try {
+    const raw = localStorage.getItem(vKey) || localStorage.getItem('userVocabHistory');
+    history = raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    history = [];
+  }
+
+  const totalSessions = history.length;
+  const totalWordsPracticed = history.reduce((sum, h) => sum + (h.totalWords || 0), 0);
+  const avgAccuracy = totalSessions > 0 ? Math.round(history.reduce((sum, h) => sum + (h.accuracy || 0), 0) / totalSessions) : 0;
+
+  const totalSessionsEl = document.getElementById('vocabStatTotalSessions');
+  const totalWordsEl = document.getElementById('vocabStatTotalWords');
+  const avgAccuracyEl = document.getElementById('vocabStatAvgAccuracy');
+  const historyListContainer = document.getElementById('vocabStatsHistoryList');
+
+  if (totalSessionsEl) totalSessionsEl.textContent = `${totalSessions} รอบ`;
+  if (totalWordsEl) totalWordsEl.textContent = `${totalWordsPracticed} คำ`;
+  if (avgAccuracyEl) avgAccuracyEl.textContent = `${avgAccuracy}%`;
+
+  if (historyListContainer) {
+    if (history.length === 0) {
+      historyListContainer.innerHTML = `
+        <div style="text-align: center; color: #94A3B8; padding: 28px 12px; font-size: 13px; background: #F8FAFC; border-radius: 14px; border: 1px dashed #CBD5E1;">
+          <span style="font-size: 26px; display: block; margin-bottom: 6px;">📖</span>
+          ยังไม่มีประวัติการฝึกคำศัพท์<br>
+          <span style="font-size: 11.5px; color: #64748B;">เริ่มฝึกคำศัพท์ CEFR (A1-C1) เพื่อสะสมสถิติได้เลย!</span>
+        </div>
+      `;
+    } else {
+      historyListContainer.innerHTML = history.slice(0, 15).map(h => `
+        <div style="display: flex; justify-content: space-between; align-items: center; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 10px 14px; font-size: 13px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="background: #FAF5FF; color: #7C3AED; font-weight: 800; font-size: 11px; padding: 3px 8px; border-radius: 8px; border: 1px solid #E9D5FF;">${escapeHTML(h.level || 'A1')}</span>
+            <div>
+              <div style="font-weight: 700; color: #1E293B;">ฝึกคำศัพท์ ${h.totalWords || 10} คำ</div>
+              <div style="font-size: 11px; color: #94A3B8;">${h.date || 'วันนี้'}</div>
+            </div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-weight: 800; color: ${h.accuracy >= 70 ? '#16A34A' : (h.accuracy >= 50 ? '#D97706' : '#EF4444')}; font-size: 14px;">
+              ${h.accuracy}%
+            </div>
+            <div style="font-size: 10.5px; color: #64748B;">ถูก ${h.correctCount}/${h.totalWords} ข้อ</div>
+          </div>
+        </div>
+      `).join('');
+    }
+  }
+
+  modal.style.display = 'flex';
+};
+
+window.closeVocabStatsModal = function() {
+  const modal = document.getElementById('vocabStatsModal');
+  if (modal) modal.style.display = 'none';
+};
+
 // Bind close button
 const btnCloseVocabArena = document.getElementById('btnCloseVocabArena');
 if (btnCloseVocabArena) {
@@ -4973,6 +5038,24 @@ async function completeVocabSession() {
       wrongContainer.style.display = 'block';
     }
   }
+
+  // Save to local user-scoped vocab history
+  try {
+    const userId = (typeof userProfile !== 'undefined' && userProfile && userProfile.id) ? userProfile.id : 'guest';
+    const vKey = `userVocabHistory_${userId}`;
+    const raw = localStorage.getItem(vKey);
+    let vList = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(vList)) vList = [];
+    vList.unshift({
+      level: currentLevel,
+      totalWords: totalQuestions,
+      correctCount: correctCount,
+      accuracy: accuracy,
+      date: new Date().toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })
+    });
+    localStorage.setItem(vKey, JSON.stringify(vList.slice(0, 50)));
+    localStorage.setItem('userVocabHistory', JSON.stringify(vList.slice(0, 50)));
+  } catch (e) {}
 
   try {
     const res = await fetch(`${API_BASE}/api/user/vocab-complete`, {
