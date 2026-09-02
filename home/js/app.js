@@ -2890,12 +2890,36 @@ async function loadCommunityPosts() {
     }
 
     let html = '';
-    posts.forEach(p => {
+    const oneWeekMs = 7 * 24 * 60 * 60 * 1000;
+    const nowMs = Date.now();
+
+    // Filter posts within 7 days
+    const validPosts = posts.filter(p => {
+      const pTime = new Date(p.createdAt).getTime();
+      return (nowMs - pTime) <= oneWeekMs;
+    });
+
+    if (validPosts.length === 0) {
+      container.innerHTML = `
+        <div style="background-color: var(--bg-card); border: 1px dashed var(--border-color); border-radius: 20px; padding: 40px; text-align: center; color: var(--text-light); font-size: 14px; width: 100%;">
+          <span style="font-size: 32px; display: block; margin-bottom: 8px;"></span>
+          ยังไม่มีโพสต์พูดคุยในขณะนี้<br>
+          <span style="font-size: 11px; opacity: 0.7;">เขียนโพสต์ด้านบนเพื่อเริ่มแชร์ข้อมูลคนแรก!</span>
+        </div>
+      `;
+      return;
+    }
+
+    validPosts.forEach(p => {
       const displayName = p.user.fullName || p.user.username || 'ผู้ใช้งาน';
       const initial = displayName.charAt(0);
       const postDate = new Date(p.createdAt);
       
       const timeStr = formatPostTime(postDate);
+
+      // Heart like status
+      const likeCount = p.likesCount || 0;
+      const isLiked = !!p.isLiked;
 
       // Render Edit & Delete actions for own posts
       const isMyPost = userProfile && p.userId === userProfile.id;
@@ -2932,26 +2956,46 @@ async function loadCommunityPosts() {
       }
 
       html += `
-        <div class="post-card" style="margin-bottom: 16px;">
-          <div class="post-header">
-            <div class="post-author-info">
-              ${renderAvatarHtml(p.user, 'post-author-avatar', '', '#CBD5E1')}
+        <div class="post-card" style="margin-bottom: 16px; background: #FFFFFF; border: 1.5px solid #F1F5F9; border-radius: 20px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+          <div class="post-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+            <div class="post-author-info" style="display: flex; align-items: center; gap: 12px;">
+              ${renderAvatarHtml(p.user, 'post-author-avatar', 'width: 40px; height: 40px; border-radius: 50%; font-size: 16px;', '#CBD5E1')}
               <div>
-                <span class="post-author-name" style="display: block;">${displayName}</span>
-                <span class="post-time">${timeStr}</span>
+                <span class="post-author-name" style="display: block; font-weight: 800; font-size: 14.5px; color: #0F172A;">${displayName}</span>
+                <span class="post-time" style="font-size: 11.5px; color: #94A3B8;">${timeStr}</span>
                 ${actionsHtml}
               </div>
             </div>
+
+            <!-- Auto-expire indicator pill -->
+            <span style="font-size: 10.5px; color: #94A3B8; background: #F8FAFC; border: 1px solid #E2E8F0; padding: 2px 8px; border-radius: 999px; font-weight: 600;" title="โพสต์จะถูกลบอัตโนมัติเมื่อครบ 7 วัน">
+              ⏱ คงอยู่ 7 วัน
+            </span>
           </div>
-          <p class="post-body" id="postBodyText-${p.id}">${formatMessageContent(p.content)}</p>
+
+          <div class="post-body" id="postBodyText-${p.id}" style="font-size: 14px; color: #1E293B; line-height: 1.6; margin-bottom: 14px;">${formatMessageContent(p.content)}</div>
           
+          <!-- Post Action Bar (Heart Like & Comment Indicator) -->
+          <div style="display: flex; align-items: center; gap: 12px; padding: 8px 0; border-top: 1px solid #F1F5F9; border-bottom: 1px solid #F1F5F9; margin-bottom: 12px;">
+            <!-- Heart Like Button -->
+            <button id="btnPostLike-${p.id}" onclick="togglePostLike(${p.id})" style="background: ${isLiked ? '#FEF2F2' : '#F8FAFC'}; border: 1.5px solid ${isLiked ? '#FECACA' : '#E2E8F0'}; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; color: ${isLiked ? '#DC2626' : '#64748B'}; font-size: 12.5px; font-weight: 800; padding: 6px 14px; border-radius: 999px; transition: all 0.2s ease; font-family: inherit;">
+              <span id="postHeartIcon-${p.id}" style="font-size: 14px; transform: ${isLiked ? 'scale(1.15)' : 'scale(1)'}; transition: transform 0.2s ease;">${isLiked ? '❤️' : '🤍'}</span>
+              <span id="postLikeCount-${p.id}">${likeCount}</span>
+            </button>
+
+            <!-- Comments Count Indicator -->
+            <span style="display: inline-flex; align-items: center; gap: 6px; color: #64748B; font-size: 12.5px; font-weight: 700; padding: 6px 12px;">
+              💬 <span>${p.comments ? p.comments.length : 0} ความคิดเห็น</span>
+            </span>
+          </div>
+
           <!-- Comments List Area -->
           ${commentsHtml}
 
           <!-- Add Comment Input Area -->
-          <div class="comment-input-row">
-            <input type="text" placeholder="เขียนความคิดเห็น..." class="txt-comment-input" id="txtCommentForPost-${p.id}">
-            <button class="btn-submit-comment" onclick="submitComment(${p.id})">ส่ง</button>
+          <div class="comment-input-row" style="margin-top: 12px; display: flex; gap: 8px;">
+            <input type="text" placeholder="เขียนความคิดเห็น..." class="txt-comment-input" id="txtCommentForPost-${p.id}" style="flex: 1; border: 1px solid #E2E8F0; border-radius: 12px; padding: 9px 14px; font-size: 13.5px; font-family: inherit; outline: none;">
+            <button class="btn-submit-comment" onclick="submitComment(${p.id})" style="padding: 9px 18px; border-radius: 12px; background: #0F172A; color: white; border: none; font-weight: 700; cursor: pointer; font-size: 13px; font-family: inherit;">ส่ง</button>
           </div>
         </div>
       `;
@@ -2964,6 +3008,56 @@ async function loadCommunityPosts() {
     container.innerHTML = '<div class="leaderboard-item-loading">ไม่สามารถโหลดฟีดโพสต์ได้</div>';
   }
 }
+
+// Toggle Post Heart Like
+window.togglePostLike = async function(postId) {
+  const btn = document.getElementById(`btnPostLike-${postId}`);
+  const icon = document.getElementById(`postHeartIcon-${postId}`);
+  const countEl = document.getElementById(`postLikeCount-${postId}`);
+  if (!btn || !countEl) return;
+
+  // Optimistic UI update
+  const wasLiked = icon.textContent === '❤️';
+  let curCount = parseInt(countEl.textContent || '0', 10);
+  
+  if (wasLiked) {
+    icon.textContent = '🤍';
+    btn.style.background = '#F8FAFC';
+    btn.style.borderColor = '#E2E8F0';
+    btn.style.color = '#64748B';
+    countEl.textContent = Math.max(0, curCount - 1);
+  } else {
+    icon.textContent = '❤️';
+    btn.style.background = '#FEF2F2';
+    btn.style.borderColor = '#FECACA';
+    btn.style.color = '#DC2626';
+    countEl.textContent = curCount + 1;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/api/community/posts/${postId}/like`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`
+      }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (typeof data.likesCount === 'number') {
+        countEl.textContent = data.likesCount;
+      }
+      if (typeof data.isLiked === 'boolean') {
+        icon.textContent = data.isLiked ? '❤️' : '🤍';
+        btn.style.background = data.isLiked ? '#FEF2F2' : '#F8FAFC';
+        btn.style.borderColor = data.isLiked ? '#FECACA' : '#E2E8F0';
+        btn.style.color = data.isLiked ? '#DC2626' : '#64748B';
+      }
+    }
+  } catch (err) {
+    console.error('Toggle like error:', err);
+  }
+};
 
 // Community Post Image Attachment Handler
 let selectedPostImageBase64 = '';

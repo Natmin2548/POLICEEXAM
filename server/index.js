@@ -3966,10 +3966,45 @@ app.get('/api/leaderboard', async (req, res) => {
 
 // --- Community (Posts, Comments, Chat) Routes ---
 
-// Get all posts (latest first)
+// Post Likes in-memory Map (postId -> Set of userIds)
+const postLikesStore = new Map();
+
+// Auto delete posts older than 7 days
+async function cleanupExpiredPosts() {
+  try {
+    const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const expiredPosts = await prisma.post.findMany({
+      where: { createdAt: { lt: oneWeekAgo } },
+      select: { id: true }
+    });
+    if (expiredPosts.length > 0) {
+      const expiredIds = expiredPosts.map(p => p.id);
+      await prisma.comment.deleteMany({
+        where: { postId: { in: expiredIds } }
+      });
+      await prisma.post.deleteMany({
+        where: { id: { in: expiredIds } }
+      });
+      expiredIds.forEach(id => postLikesStore.delete(id));
+      console.log(`[Auto-Clean] Cleaned up ${expiredIds.length} expired posts (> 7 days).`);
+    }
+  } catch (err) {
+    console.error('Cleanup expired posts error:', err);
+  }
+}
+
+// Run cleanup on startup and hourly
+cleanupExpiredPosts();
+setInterval(cleanupExpiredPosts, 60 * 60 * 1000);
+
+// Get all posts (within 7 days, latest first)
 app.get('/api/community/posts', authenticateToken, async (req, res) => {
   try {
+    const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     const posts = await prisma.post.findMany({
+      where: {
+        createdAt: { gte: oneWeekAgo }
+      },
       orderBy: { createdAt: 'desc' },
       include: {
         user: {
@@ -3985,11 +4020,45 @@ app.get('/api/community/posts', authenticateToken, async (req, res) => {
         }
       }
     });
-    res.json(posts);
+
+    const currentUserId = req.user.userId;
+    const enrichedPosts = posts.map(p => {
+      const likedUsers = postLikesStore.get(p.id) || new Set();
+      return {
+        ...p,
+        likesCount: likedUsers.size,
+        isLiked: likedUsers.has(currentUserId)
+      };
+    });
+
+    res.json(enrichedPosts);
   } catch (err) {
     console.error('Fetch posts error:', err);
     res.status(500).json({ error: 'ไม่สามารถโหลดโพสต์ได้' });
   }
+});
+
+// Like / Unlike a post
+app.post('/api/community/posts/:postId/like', authenticateToken, (req, res) => {
+  const postId = parseInt(req.params.postId);
+  const userId = req.user.userId;
+
+  if (!postLikesStore.has(postId)) {
+    postLikesStore.set(postId, new Set());
+  }
+
+  const likedUsers = postLikesStore.get(postId);
+  let isLiked = false;
+
+  if (likedUsers.has(userId)) {
+    likedUsers.delete(userId);
+    isLiked = false;
+  } else {
+    likedUsers.add(userId);
+    isLiked = true;
+  }
+
+  res.json({ success: true, isLiked, likesCount: likedUsers.size });
 });
 
 // Create a new post
