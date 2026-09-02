@@ -2,9 +2,18 @@
 function formatMessageContent(content) {
   if (!content) return '';
   if (content.startsWith('data:image/') || content.match(/^https?:\/\/.*\.(gif|png|jpg|jpeg|webp)(\?.*)?$/i)) {
-    return `<img src="${content}" style="max-width: 250px; width: 100%; border-radius: 8px; margin-top: 4px;">`;
+    return `<img src="${content}" style="max-width: 100%; max-height: 380px; border-radius: 12px; margin-top: 6px; display: block; border: 1px solid #E2E8F0; background: #F8FAFC;">`;
   }
-  return escapeHTML(content);
+  if (content.includes('data:image/')) {
+    const parts = content.split(/(data:image\/[a-zA-Z0-9+]+;base64,[^\s]+)/g);
+    return parts.map(part => {
+      if (part.startsWith('data:image/')) {
+        return `<img src="${part}" style="max-width: 100%; max-height: 380px; border-radius: 12px; margin-top: 8px; display: block; border: 1px solid #E2E8F0; background: #F8FAFC;">`;
+      }
+      return escapeHTML(part).replace(/\n/g, '<br>');
+    }).join('');
+  }
+  return escapeHTML(content).replace(/\n/g, '<br>');
 }
 
 function renderAvatarHtml(user, classNames, inlineStyles = '', defaultBgColor = '#64748B') {
@@ -2956,6 +2965,42 @@ async function loadCommunityPosts() {
   }
 }
 
+// Community Post Image Attachment Handler
+let selectedPostImageBase64 = '';
+
+window.handlePostImageSelect = function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  if (file.size > 5 * 1024 * 1024) {
+    showCenteredAlert('ไฟล์รูปภาพมีขนาดใหญ่เกินไป (จำกัดไม่เกิน 5MB)');
+    e.target.value = '';
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    selectedPostImageBase64 = ev.target.result;
+    const previewContainer = document.getElementById('postImagePreviewContainer');
+    const previewImg = document.getElementById('postImagePreviewImg');
+    if (previewContainer && previewImg) {
+      previewImg.src = selectedPostImageBase64;
+      previewContainer.style.display = 'block';
+    }
+  };
+  reader.readAsDataURL(file);
+};
+
+window.clearPostImageAttachment = function() {
+  selectedPostImageBase64 = '';
+  const previewContainer = document.getElementById('postImagePreviewContainer');
+  const previewImg = document.getElementById('postImagePreviewImg');
+  const fileInput = document.getElementById('filePostImageInput');
+  if (previewContainer) previewContainer.style.display = 'none';
+  if (previewImg) previewImg.src = '';
+  if (fileInput) fileInput.value = '';
+};
+
 // Submit Post
 const btnCreatePost = document.getElementById('btnCreatePost');
 if (btnCreatePost) {
@@ -2965,9 +3010,14 @@ if (btnCreatePost) {
     if (!txtPostContent) return;
 
     const content = txtPostContent.value.trim();
-    if (!content) {
-      await showCenteredAlert('กรุณากรอกข้อความโพสต์');
+    if (!content && !selectedPostImageBase64) {
+      await showCenteredAlert('กรุณากรอกข้อความหรือแนบรูปภาพโพสต์');
       return;
+    }
+
+    let finalPayload = content;
+    if (selectedPostImageBase64) {
+      finalPayload = content ? `${content}\n\n${selectedPostImageBase64}` : selectedPostImageBase64;
     }
 
     btnCreatePost.disabled = true;
@@ -2980,7 +3030,7 @@ if (btnCreatePost) {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${authToken}`
         },
-        body: JSON.stringify({ content })
+        body: JSON.stringify({ content: finalPayload })
       });
 
       if (!res.ok) {
@@ -2989,6 +3039,7 @@ if (btnCreatePost) {
       }
 
       txtPostContent.value = '';
+      clearPostImageAttachment();
       loadCommunityPosts(); // Reload posts
     } catch (err) {
       console.error('Create post error:', err);
