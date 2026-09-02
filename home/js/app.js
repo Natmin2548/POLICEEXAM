@@ -2885,9 +2885,9 @@ async function loadCommunityPosts(isBackground = false) {
   }
 
   try {
-    const res = await fetch(`${API_BASE}/api/community/posts`, {
-      headers: { 'Authorization': `Bearer ${authToken}` }
-    });
+    const token = authToken || localStorage.getItem('authToken');
+    const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+    const res = await fetch(`${API_BASE}/api/community/posts`, { headers });
     if (!res.ok) throw new Error('Failed to load posts');
     const posts = await res.json();
 
@@ -3020,7 +3020,9 @@ async function loadCommunityPosts(isBackground = false) {
 
   } catch (err) {
     console.error('Load posts error:', err);
-    container.innerHTML = '<div class="leaderboard-item-loading">ไม่สามารถโหลดฟีดโพสต์ได้</div>';
+    if (!isBackground && (!container.innerHTML || container.innerHTML.includes('กำลังโหลดฟีดโพสต์'))) {
+      container.innerHTML = '<div class="leaderboard-item-loading">ไม่สามารถโหลดฟีดโพสต์ได้</div>';
+    }
   }
 }
 

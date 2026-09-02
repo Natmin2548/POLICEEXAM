@@ -3997,9 +3997,19 @@ async function cleanupExpiredPosts() {
 cleanupExpiredPosts();
 setInterval(cleanupExpiredPosts, 60 * 60 * 1000);
 
-// Get all posts (within 7 days, latest first)
-app.get('/api/community/posts', authenticateToken, async (req, res) => {
+// Get all posts (within 7 days, latest first - Public Read with Optional Auth)
+app.get('/api/community/posts', async (req, res) => {
   try {
+    let currentUserId = null;
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        currentUserId = decoded.userId;
+      } catch (e) {}
+    }
+
     const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     const posts = await prisma.post.findMany({
       where: {
@@ -4021,13 +4031,12 @@ app.get('/api/community/posts', authenticateToken, async (req, res) => {
       }
     });
 
-    const currentUserId = req.user.userId;
     const enrichedPosts = posts.map(p => {
       const likedUsers = postLikesStore.get(p.id) || new Set();
       return {
         ...p,
         likesCount: likedUsers.size,
-        isLiked: likedUsers.has(currentUserId)
+        isLiked: currentUserId ? likedUsers.has(currentUserId) : false
       };
     });
 
