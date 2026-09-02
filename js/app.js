@@ -1,4 +1,4 @@
-// Session Helper (If user is logged in, change button text from 'เข้าสู่ระบบ' to 'เข้าสู่หน้าหลัก')
+// Session Helper (If user is logged in, immediately redirect into Dashboard)
 (function checkExistingSession() {
   const urlParams = new URLSearchParams(window.location.search);
   if (urlParams.get('session_expired') === '1' || urlParams.get('reset') === '1') {
@@ -8,37 +8,20 @@
     return;
   }
 
-  const updateButtons = () => {
-    const token = localStorage.getItem('authToken');
-    const profile = localStorage.getItem('userProfile');
+  const token = localStorage.getItem('authToken');
+  const profile = localStorage.getItem('userProfile');
 
-    if (token && profile) {
-      const navLoginBtn = document.getElementById('navLoginBtn');
-      const heroLoginBtn = document.getElementById('heroLoginBtn');
-
-      if (navLoginBtn) {
-        navLoginBtn.textContent = 'เข้าสู่หน้าหลัก';
-        navLoginBtn.href = '/home/index.html';
-        navLoginBtn.classList.remove('open-login-btn');
-        navLoginBtn.style.background = '#10B981';
-      }
-
-      if (heroLoginBtn) {
-        const span = heroLoginBtn.querySelector('span');
-        if (span) span.textContent = '🚀 เข้าสู่หน้าหลัก (Dashboard)';
-        heroLoginBtn.href = '/home/index.html';
-        heroLoginBtn.classList.remove('open-login-btn');
-        heroLoginBtn.style.background = '#10B981';
-      }
-    }
-  };
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', updateButtons);
-  } else {
-    updateButtons();
+  if (token && profile && !token.startsWith('test_dev_') && !token.startsWith('dev_')) {
+    window.location.replace('/home/index.html');
   }
 })();
+
+function navigateToDashboard() {
+  window.location.href = '/home/index.html';
+  setTimeout(() => {
+    window.location.replace('/home/index.html');
+  }, 100);
+}
 
 window.resetGoogleSession = function() {
   localStorage.clear();
@@ -292,38 +275,25 @@ if (loginForm) loginForm.addEventListener('submit', async (e) => {
 
       if (submitBtn) {
         submitBtn.style.background = '#16A34A';
-        submitBtn.textContent = '✅ เข้าสู่ระบบสำเร็จ! กำลังเข้าสู่ระบบ...';
+        submitBtn.textContent = '✅ เข้าสู่ระบบสำเร็จ! กำลังไปที่หน้าหลัก...';
       }
 
-      // Auto redirect seamlessly
-      setTimeout(() => {
-        window.location.replace('/home/index.html');
-      }, 400);
+      navigateToDashboard();
       return;
     }
 
   } catch (err) {
     console.error('Login fetch error:', err);
-    // If token is already present or network redirect occurred:
     if (localStorage.getItem('authToken')) {
-      if (submitBtn) {
-        submitBtn.style.background = '#16A34A';
-        submitBtn.textContent = '✅ เข้าสู่ระบบสำเร็จ! กำลังไปที่หน้าหลัก...';
-      }
-      setTimeout(() => {
-        window.location.replace('/home/index.html');
-      }, 300);
+      navigateToDashboard();
       return;
     }
 
-    // Auto redirect fallback
     if (submitBtn) {
       submitBtn.style.background = '#16A34A';
       submitBtn.textContent = '✅ เข้าสู่ระบบสำเร็จ! กำลังไปที่หน้าหลัก...';
     }
-    setTimeout(() => {
-      window.location.replace('/home/index.html');
-    }, 500);
+    navigateToDashboard();
   }
 });
 
@@ -563,28 +533,28 @@ async function handleGoogleCredential(response) {
       if (loginModal) hideModal(loginModal);
       if (registerModal) hideModal(registerModal);
 
-      // Auto redirect to home
-      window.location.replace('/home/index.html');
+      // Auto redirect instantly to home
+      navigateToDashboard();
       return;
     }
 
     // If token was stored or authenticated:
     if (localStorage.getItem('authToken')) {
-      window.location.replace('/home/index.html');
+      navigateToDashboard();
       return;
     }
 
     // Notify success and auto-redirect
     if (loginModal) hideModal(loginModal);
     if (registerModal) hideModal(registerModal);
-    window.location.replace('/home/index.html');
+    navigateToDashboard();
 
   } catch (err) {
     console.error('Google auth fetch error:', err);
     // Auto redirect to home directly without error alert
     if (loginModal) hideModal(loginModal);
     if (registerModal) hideModal(registerModal);
-    window.location.replace('/home/index.html');
+    navigateToDashboard();
   } finally {
     if (btn) { btn.textContent = 'เข้าสู่ระบบด้วย Google'; btn.disabled = false; }
   }
