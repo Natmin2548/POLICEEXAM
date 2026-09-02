@@ -8582,12 +8582,12 @@ function getSubjectFallbackQuestions(subjectKey, count, subjectTitle) {
 app.get('/api/exams/prabpram', async (req, res) => {
   try {
     const subjects = [
-      { key: 'general', title: 'ความรู้ความสามารถทั่วไป (คณิตศาสตร์/คำนวณ)', shortTitle: 'ความรู้ความสามารถทั่วไป', count: 30, aliases: ['general', 'ทั่วไป', 'คำนวณ', 'คณิตศาสตร์', 'ความรู้ความสามารถทั่วไป', 'ความสามารถทั่วไป'] },
-      { key: 'thai', title: 'ภาษาไทย', shortTitle: 'ภาษาไทย', count: 25, aliases: ['thai', 'ไทย', 'ภาษาไทย', 'ความเข้าใจภาษาไทย'] },
-      { key: 'english', title: 'ภาษาอังกฤษ', shortTitle: 'ภาษาอังกฤษ', count: 30, aliases: ['english', 'อังกฤษ', 'ภาษาอังกฤษ', 'English'] },
-      { key: 'computer', title: 'เทคโนโลยีสารสนเทศและคอมพิวเตอร์เพื่อการสื่อสาร', shortTitle: 'คอมพิวเตอร์และสารสนเทศ', count: 25, aliases: ['computer', 'คอม', 'คอมพิวเตอร์', 'สารสนเทศ', 'ไอที', 'เทคโนโลยี'] },
-      { key: 'law', title: 'กฎหมายที่ประชาชนควรรู้ (พ.ร.บ.ตำรวจ / วิ.อาญา / กฎหมาย)', shortTitle: 'กฎหมายที่ประชาชนควรรู้', count: 20, aliases: ['law', 'กฎหมาย', 'กฏหมาย', 'พ.ร.บ.', 'วิ.อาญา', 'ลักษณะ๕๔', 'ลักษณะที่ ๕๔', 'งานสารบรรณ'] },
-      { key: 'social', title: 'สังคม วัฒนธรรม จริยธรรมและอาเซียน', shortTitle: 'สังคม วัฒนธรรม จริยธรรม', count: 20, aliases: ['social', 'สังคม', 'จริยธรรม', 'วัฒนธรรม', 'อาเซียน'] }
+      { key: 'general', title: 'ความรู้ความสามารถทั่วไป (คณิตศาสตร์/คำนวณ)', shortTitle: 'ความรู้ความสามารถทั่วไป', count: 30, categories: ['ทั่วไป', 'ความสามารถทั่วไป', 'ความรู้ทั่วไป', 'คณิตศาสตร์', 'คณิต'] },
+      { key: 'thai', title: 'ภาษาไทย', shortTitle: 'ภาษาไทย', count: 25, categories: ['ภาษาไทย', 'ไทย'] },
+      { key: 'english', title: 'ภาษาอังกฤษ', shortTitle: 'ภาษาอังกฤษ', count: 30, categories: ['ภาษาอังกฤษ', 'อังกฤษ', 'English', 'english'] },
+      { key: 'computer', title: 'เทคโนโลยีสารสนเทศและคอมพิวเตอร์เพื่อการสื่อสาร', shortTitle: 'คอมพิวเตอร์และสารสนเทศ', count: 25, categories: ['คอม', 'คอมพิวเตอร์', 'เทคโนโลยีสารสนเทศ', 'สารสนเทศ', 'คอมพิวเตอร์และสารสนเทศ'] },
+      { key: 'law', title: 'กฎหมายที่ประชาชนควรรู้ (พ.ร.บ.ตำรวจ / วิ.อาญา / กฎหมาย)', shortTitle: 'กฎหมายที่ประชาชนควรรู้', count: 20, categories: ['กฏหมาย', 'กฎหมาย', 'กฎหมายที่ประชาชนควรรู้', 'กม'] },
+      { key: 'social', title: 'สังคม วัฒนธรรม จริยธรรมและอาเซียน', shortTitle: 'สังคม วัฒนธรรม จริยธรรม', count: 20, categories: ['สังคม', 'สังคมและวัฒนธรรม', 'สังคมและจริยธรรมตำรวจ', 'อาเซียน'] }
     ];
 
     const allOrderedQuestions = [];
@@ -8596,19 +8596,19 @@ app.get('/api/exams/prabpram', async (req, res) => {
     for (let sIdx = 0; sIdx < subjects.length; sIdx++) {
       const sub = subjects[sIdx];
       
-      // Build search filter for this subject
-      const whereConditions = sub.aliases.map(al => ({
-        OR: [
-          { category: { contains: al } },
-          { subcategory: { contains: al } },
-          { title: { contains: al } }
-        ]
-      }));
+      // Strict category matching (Prevent cross-subject contamination like Saraban in Law)
+      const orClauses = sub.categories.map(cat => ({ category: { contains: cat } }));
 
-      // Fetch all sets and questions matching any alias for this subject
+      // Fetch all sets and questions strictly matching this subject's category
       const examSets = await prisma.examSet.findMany({
         where: {
-          OR: whereConditions.flatMap(w => w.OR)
+          OR: orClauses,
+          // Explicitly exclude Saraban from Law
+          NOT: (sub.key === 'law') ? [
+            { category: { contains: 'สารบรรณ' } },
+            { category: { contains: '๕๔' } },
+            { category: { contains: '54' } }
+          ] : undefined
         },
         include: {
           questions: true
