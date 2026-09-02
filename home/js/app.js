@@ -5878,8 +5878,16 @@ function renderSubjectChaptersGrid(subjectKey) {
     // Check user REAL completion history for this chapter
     const doneRecords = history.filter(h => {
       if (!h) return false;
-      return matchingSets.some(s => String(s.id) === String(h.setId || h.setType)) || 
-             (h.setTitle && h.setTitle.includes(ch));
+      const hTitle = (h.setTitle || '').replace(/[\s_]/g, '').replace('กฏ', 'กฎ');
+      const hSub = (h.subcategory || '').replace(/[\s_]/g, '').replace('กฏ', 'กฎ');
+      const chClean = ch.replace(/บทที่\s*\d+\s*/, '').replace(/[\s_]/g, '').replace('กฏ', 'กฎ').trim();
+      const hNum = extractChapterNumber(h.setTitle || h.subcategory || '');
+      
+      const idMatch = matchingSets.some(s => String(s.id) === String(h.setId || h.setType));
+      const numMatch = (chNum !== 999 && hNum === chNum);
+      const titleMatch = (chClean && (hTitle.includes(chClean) || hSub.includes(chClean)));
+      
+      return idMatch || (chNum !== 999 ? numMatch : titleMatch);
     });
 
     const isCompleted = doneRecords.length > 0;
@@ -5917,8 +5925,10 @@ function renderSubjectChaptersGrid(subjectKey) {
     `;
   }).join('');
 
+  const totalQuestionsBadge = document.getElementById('chaptersTotalQuestionsBadge');
   if (countBadge) countBadge.textContent = `${lessonChapters.length} บทเรียน`;
   if (completedBadge) completedBadge.textContent = `✓ ${completedChaptersCount}/${lessonChapters.length} บท`;
+  if (totalQuestionsBadge) totalQuestionsBadge.textContent = `${totalSubjectQuestions} ข้อ`;
   if (questionsCountEl) questionsCountEl.textContent = `${totalSubjectQuestions} ข้อ`;
 
   container.innerHTML = chaptersHTML;
@@ -6112,7 +6122,18 @@ function getLocalQuizHistory(subjectKey) {
     if (!raw) return [];
     const list = JSON.parse(raw);
     if (!Array.isArray(list)) return [];
-    return list.filter(h => h.subject === subjectKey || (subjectKey.includes('สารบรรณ') && h.subject && h.subject.includes('สารบรรณ')));
+    const sNorm = (subjectKey || '').replace(/[\s_]/g, '').replace('กฏ', 'กฎ');
+    return list.filter(h => {
+      const hSub = (h.subject || '').replace(/[\s_]/g, '').replace('กฏ', 'กฎ');
+      const hTitle = (h.setTitle || '').replace(/[\s_]/g, '').replace('กฏ', 'กฎ');
+      if (hSub === sNorm || hSub.includes(sNorm) || sNorm.includes(hSub)) return true;
+      if (sNorm.includes('สารบรรณ') && (hSub.includes('สารบรรณ') || hTitle.includes('สารบรรณ'))) return true;
+      if (sNorm.includes('กฎหมาย') && (hSub.includes('กฎหมาย') || hTitle.includes('กฎหมาย'))) return true;
+      if (sNorm.includes('คอม') && (hSub.includes('คอม') || hTitle.includes('คอม') || hSub.includes('สารสนเทศ'))) return true;
+      if (sNorm.includes('ทั่วไป') && (hSub.includes('ทั่วไป') || hTitle.includes('ทั่วไป') || hSub.includes('คณิต'))) return true;
+      if (sNorm.includes('สังคม') && (hSub.includes('สังคม') || hTitle.includes('สังคม'))) return true;
+      return false;
+    });
   } catch (e) {
     return [];
   }
