@@ -2925,6 +2925,7 @@ async function loadCommunityPosts(isBackground = false) {
       return;
     }
 
+    let html = '';
     validPosts.forEach(p => {
       const displayName = p.user.fullName || p.user.username || 'ผู้ใช้งาน';
       const initial = displayName.charAt(0);
