@@ -7803,6 +7803,36 @@ app.post('/api/admin/exams/preview-ai', authenticateToken, async (req, res) => {
       } catch (e) {
         console.error('Fetch 54 error:', e);
       }
+    } else if (!contextText && (subject === 'คอม' || subject === 'คอมพิวเตอร์' || subject === 'เทคโนโลยีสารสนเทศ')) {
+      try {
+        const docs = await prisma.knowledgeDocument.findMany({ where: { category: { contains: 'คอมพิวเตอร์' } } });
+        if (docs && docs.length > 0) {
+          contextText = docs.map(d => `[${d.title}]\n${d.content}`).join('\n\n');
+        } else {
+          const p = path.join(__dirname, 'data', 'computer_full.json');
+          if (fs.existsSync(p)) {
+            const raw = JSON.parse(fs.readFileSync(p, 'utf8'));
+            contextText = raw.map(d => `[${d.title}]\n${d.content}`).join('\n\n');
+          }
+        }
+      } catch (e) {
+        console.error('Fetch computer error:', e);
+      }
+    } else if (!contextText && (subject === 'กฏหมาย' || subject === 'กฎหมาย' || subject === 'กฎหมายที่ประชาชนควรรู้')) {
+      try {
+        const docs = await prisma.knowledgeDocument.findMany({ where: { category: { contains: 'กฎหมาย' } } });
+        if (docs && docs.length > 0) {
+          contextText = docs.map(d => `[${d.title}]\n${d.content}`).join('\n\n');
+        } else {
+          const p = path.join(__dirname, 'data', 'law_full.json');
+          if (fs.existsSync(p)) {
+            const raw = JSON.parse(fs.readFileSync(p, 'utf8'));
+            contextText = raw.map(d => `[${d.title}]\n${d.content}`).join('\n\n');
+          }
+        }
+      } catch (e) {
+        console.error('Fetch law error:', e);
+      }
     } else if (!contextText && (knowledgeBase === 'ALL_SARABAN' || subject === 'งานสารบรรณ')) {
       const docs = await prisma.knowledgeDocument.findMany({});
       if (docs && docs.length > 0) {
