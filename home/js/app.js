@@ -6319,6 +6319,69 @@ let currentQuizState = {
   score: 0
 };
 
+let quizTimerInterval = null;
+let quizRemainingSeconds = 0;
+
+function startQuizCountdownTimer(durationSeconds) {
+  if (quizTimerInterval) {
+    clearInterval(quizTimerInterval);
+    quizTimerInterval = null;
+  }
+
+  const timerBadge = document.getElementById('quizTimerBadge');
+  const timerText = document.getElementById('quizTimerText');
+  if (!timerBadge || !timerText) return;
+
+  quizRemainingSeconds = durationSeconds;
+  timerBadge.style.display = 'inline-flex';
+  timerBadge.style.background = '#FFF1F2';
+  timerBadge.style.borderColor = '#FDA4AF';
+  timerBadge.style.color = '#E11D48';
+
+  const formatTime = (secs) => {
+    const h = Math.floor(secs / 3600);
+    const m = Math.floor((secs % 3600) / 60);
+    const s = secs % 60;
+    const pad = (n) => String(n).padStart(2, '0');
+    if (h > 0) {
+      return `${pad(h)}:${pad(m)}:${pad(s)}`;
+    }
+    return `${pad(m)}:${pad(s)}`;
+  };
+
+  timerText.textContent = formatTime(quizRemainingSeconds);
+
+  quizTimerInterval = setInterval(() => {
+    quizRemainingSeconds--;
+    if (quizRemainingSeconds <= 0) {
+      clearInterval(quizTimerInterval);
+      quizTimerInterval = null;
+      timerText.textContent = '00:00:00';
+      alert('⏰ หมดเวลาการทำข้อสอบแล้ว! ระบบจะสรุปผลคะแนนให้ทันที');
+      renderQuizResults();
+      return;
+    }
+
+    timerText.textContent = formatTime(quizRemainingSeconds);
+
+    // Alert styling when less than 10 minutes left
+    if (quizRemainingSeconds <= 600) {
+      timerBadge.style.background = '#FEF2F2';
+      timerBadge.style.borderColor = '#EF4444';
+      timerBadge.style.color = '#DC2626';
+    }
+  }, 1000);
+}
+
+function stopQuizCountdownTimer() {
+  if (quizTimerInterval) {
+    clearInterval(quizTimerInterval);
+    quizTimerInterval = null;
+  }
+  const timerBadge = document.getElementById('quizTimerBadge');
+  if (timerBadge) timerBadge.style.display = 'none';
+}
+
 window.startBankSubjectQuiz = async function(subjectKey, setId, questionsCount, setTitle) {
   const modal = document.getElementById('subjectQuizModal');
   const badgeEl = document.getElementById('quizSubjectBadge');
@@ -6333,6 +6396,7 @@ window.startBankSubjectQuiz = async function(subjectKey, setId, questionsCount, 
 
   if (!modal || !bodyContent) return;
 
+  stopQuizCountdownTimer();
   modal.style.display = 'flex';
   if (badgeEl) badgeEl.textContent = subjectKey;
   if (titleEl) titleEl.textContent = setTitle || 'ทำข้อสอบ';
@@ -6406,6 +6470,10 @@ window.startBankSubjectQuiz = async function(subjectKey, setId, questionsCount, 
       score: 0
     };
 
+    // Start timer for standard quiz (e.g. 1.5 mins per question)
+    const duration = Math.max(600, questions.length * 90);
+    startQuizCountdownTimer(duration);
+
     renderCurrentQuizQuestion();
   } catch (err) {
     console.error('Start quiz error:', err);
@@ -6425,15 +6493,16 @@ window.startPrabpramMainExam = async function() {
 
   if (!modal || !bodyContent) return;
 
+  stopQuizCountdownTimer();
   modal.style.display = 'flex';
   if (badgeEl) badgeEl.textContent = '🛡️ สายปราบปราม (150 ข้อ)';
-  if (titleEl) titleEl.textContent = 'ข้อสอบหลักจำลองเสมือนจริง: สายปราบปราม';
+  if (titleEl) titleEl.textContent = 'ข้อสอบหลักจำลองเสมือนจริง: สายปราบปราม (3 ชั่วโมง)';
   if (stepText) stepText.textContent = 'กำลังโหลดและจัดเรียงข้อสอบ 150 ข้อ...';
   if (actionRow) actionRow.style.display = 'none';
   if (navContainer) navContainer.style.display = 'none';
   if (progressBar) progressBar.style.width = '10%';
 
-  bodyContent.innerHTML = '<div style="text-align: center; color: #64748B; padding: 40px; font-size: 14px;"><div style="font-size: 32px; margin-bottom: 12px;">⏳</div>กำลังสุ่มและจัดเรียงข้อสอบ 6 วิชา (150 ข้อ)<br><span style="font-size: 12px; color: #94A3B8; margin-top: 6px; display: block;">(กระจายสุ่มจากทุกหมวดและหลากหลายชุดข้อสอบ)</span></div>';
+  bodyContent.innerHTML = '<div style="text-align: center; color: #64748B; padding: 40px; font-size: 14px;"><div style="font-size: 32px; margin-bottom: 12px;">⏳</div>กำลังสุ่มและจัดเรียงข้อสอบ 6 วิชา (150 ข้อ)<br><span style="font-size: 12px; color: #94A3B8; margin-top: 6px; display: block;">(พร้อมระบบจับเวลาเสมือนจริง 3 ชั่วโมง 180 นาที)</span></div>';
 
   try {
     const res = await fetch(`${API_BASE}/api/exams/prabpram`);
@@ -6480,6 +6549,9 @@ window.startPrabpramMainExam = async function() {
       startTime: Date.now()
     };
 
+    // Start 3-Hour Countdown Timer (180 mins = 10,800 seconds)
+    startQuizCountdownTimer(180 * 60);
+
     renderCurrentQuizQuestion();
   } catch (err) {
     console.error('Start Prabpram Exam Error:', err);
@@ -6488,6 +6560,7 @@ window.startPrabpramMainExam = async function() {
 };
 
 window.closeSubjectQuiz = function() {
+  stopQuizCountdownTimer();
   const modal = document.getElementById('subjectQuizModal');
   if (modal) modal.style.display = 'none';
   if (currentSelectedBankSubject) {
@@ -6684,6 +6757,7 @@ window.nextQuizQuestion = function() {
 };
 
 function renderQuizResults() {
+  stopQuizCountdownTimer();
   const { subjectKey, setId, setTitle, questions, score, track } = currentQuizState;
   const bodyContent = document.getElementById('quizBodyContent');
   const stepText = document.getElementById('quizStepText');
