@@ -317,6 +317,17 @@
         <button type="button" onclick="closeAddExamModal()" style="background: #F1F5F9; border: none; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; cursor: pointer; color: #64748B;">✕</button>
       </div>
 
+      <!-- Mode Switcher Tabs: รายบท vs อัตโนมัติทุกหมวด (Batch) -->
+      <div style="background: #F1F5F9; padding: 4px; border-radius: 14px; display: flex; gap: 4px; margin-bottom: 18px;">
+        <button type="button" id="tabGenSingle" onclick="switchGenMode('single')" style="flex: 1; padding: 9px; border-radius: 10px; border: none; font-size: 12.5px; font-weight: 800; cursor: pointer; background: white; color: #0F172A; box-shadow: 0 1px 3px rgba(0,0,0,0.05); font-family: inherit;">
+          📌 สร้างทีละหมวด
+        </button>
+        <button type="button" id="tabGenBatch" onclick="switchGenMode('batch')" style="flex: 1; padding: 9px; border-radius: 10px; border: none; font-size: 12.5px; font-weight: 800; cursor: pointer; background: transparent; color: #64748B; font-family: inherit;">
+          ⚡ เจนอัตโนมัติยกชุด (Batch)
+        </button>
+      </div>
+
+      <!-- Section 1: Single Chapter Generator Form -->
       <form id="addExamForm" onsubmit="event.preventDefault(); generateAIExamPreview();">
         
         <!-- 1. เลือกวิชาหลัก -->
@@ -421,6 +432,138 @@
           </button>
         </div>
       </form>
+
+      <!-- Section 2: Batch AI Exam Generator (สร้างยกชุดทุกหมวดอัตโนมัติ) -->
+      <div id="batchGenSection" style="display: none;">
+        
+        <!-- วิชาหลักสำหรับ Batch -->
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label style="font-size: 13px; font-weight: 700; color: #1E293B; display: block; margin-bottom: 6px;">
+            1. เลือกวิชาที่ต้องการสร้างยกชุด
+          </label>
+          <select id="batchSubjectSelect" onchange="onBatchSubjectChange()" style="width: 100%; padding: 12px 14px; border-radius: 14px; border: 1.5px solid #E2E8F0; background: #F8FAFC; font-size: 14px; font-weight: 600; color: #0F172A; outline: none; font-family: inherit;">
+            <option value="กฏหมาย" selected>⚖️ กฎหมายที่ประชาชนควรรู้ (22 หมวด)</option>
+            <option value="คอม">💻 คอมพิวเตอร์และสารสนเทศ (14 หมวด)</option>
+            <option value="งานสารบรรณ_๒๕๒๖">📑 ระเบียบสำนักนายกฯ งานสารบรรณ (12 หมวด)</option>
+            <option value="สารบรรณตำรวจ_๕๔">👮 สารบรรณตำรวจ ลักษณะที่ ๕๔ (7 หมวด)</option>
+            <option value="ทั่วไป">🧮 ความสามารถทั่วไป (5 หมวด)</option>
+            <option value="สังคม">🌏 สังคมและจริยธรรมตำรวจ (3 หมวด)</option>
+          </select>
+        </div>
+
+        <!-- รายการหมวดหมู่ที่จะสร้างพร้อม Checkbox -->
+        <div class="form-group" style="margin-bottom: 14px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <label style="font-size: 13px; font-weight: 700; color: #1E293B;">
+              2. เลือกบทเรียนที่จะสร้าง (<span id="batchSelectedCountText">22 หมวด</span>)
+            </label>
+            <button type="button" onclick="toggleBatchSelectAll()" id="btnToggleBatchSelectAll" style="background: none; border: none; color: #2563EB; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit;">
+              เลือกทั้งหมด
+            </button>
+          </div>
+          <div id="batchChaptersChecklist" style="max-height: 160px; overflow-y: auto; background: #F8FAFC; border: 1.5px solid #E2E8F0; border-radius: 14px; padding: 8px 12px; display: flex; flex-direction: column; gap: 6px;">
+            <!-- Populated dynamically with checkboxes -->
+          </div>
+        </div>
+
+        <!-- จำนวนข้อต่อหมวด -->
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label style="font-size: 13px; font-weight: 700; color: #1E293B; display: block; margin-bottom: 6px;">
+            3. จำนวนข้อสอบต่อ 1 หมวด
+          </label>
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;">
+            <button type="button" class="btn-batch-count" onclick="selectBatchCount(5)" id="btnBatch5" style="padding: 9px 0; border-radius: 12px; border: 1.5px solid #E2E8F0; background: #F8FAFC; font-weight: 700; font-size: 12px; color: #475569; cursor: pointer;">5 ข้อ</button>
+            <button type="button" class="btn-batch-count active" onclick="selectBatchCount(10)" id="btnBatch10" style="padding: 9px 0; border-radius: 12px; border: 1.5px solid #BD1B0B; background: #FEF2F2; font-weight: 700; font-size: 12px; color: #BD1B0B; cursor: pointer;">10 ข้อ</button>
+            <button type="button" class="btn-batch-count" onclick="selectBatchCount(15)" id="btnBatch15" style="padding: 9px 0; border-radius: 12px; border: 1.5px solid #E2E8F0; background: #F8FAFC; font-weight: 700; font-size: 12px; color: #475569; cursor: pointer;">15 ข้อ</button>
+            <button type="button" class="btn-batch-count" onclick="selectBatchCount(20)" id="btnBatch20" style="padding: 9px 0; border-radius: 12px; border: 1.5px solid #E2E8F0; background: #F8FAFC; font-weight: 700; font-size: 12px; color: #475569; cursor: pointer;">20 ข้อ</button>
+          </div>
+          <input type="hidden" id="batchQuestionsPerChapter" value="10">
+        </div>
+
+        <!-- ดีเลย์ป้องกัน API Rate Limit -->
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label style="font-size: 13px; font-weight: 700; color: #1E293B; display: block; margin-bottom: 6px;">
+            🛡️ ดีเลย์หน่วงเวลาต่อหมวด (ป้องกัน API Rate Limit 429)
+          </label>
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;">
+            <button type="button" class="btn-batch-delay" onclick="selectBatchDelay(2500)" id="btnDelay2500" style="padding: 9px 0; border-radius: 12px; border: 1.5px solid #E2E8F0; background: #F8FAFC; font-weight: 700; font-size: 12px; color: #475569; cursor: pointer;">2.5 วินาที</button>
+            <button type="button" class="btn-batch-delay active" onclick="selectBatchDelay(3500)" id="btnDelay3500" style="padding: 9px 0; border-radius: 12px; border: 1.5px solid #059669; background: #ECFDF5; font-weight: 700; font-size: 12px; color: #059669; cursor: pointer;">3.5 วินาที (แนะนำ)</button>
+            <button type="button" class="btn-batch-delay" onclick="selectBatchDelay(5000)" id="btnDelay5000" style="padding: 9px 0; border-radius: 12px; border: 1.5px solid #E2E8F0; background: #F8FAFC; font-weight: 700; font-size: 12px; color: #475569; cursor: pointer;">5.0 วินาที</button>
+          </div>
+          <input type="hidden" id="batchDelayMs" value="3500">
+        </div>
+
+        <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 12px; padding: 10px 12px; margin-bottom: 16px; font-size: 12px; color: #166534; display: flex; align-items: center; gap: 8px;">
+          <span>💡</span>
+          <span>ระบบจะรันวนสร้างทีละหมวดและบันทึกตรงเข้าฐานข้อมูล PostgreSQL อัตโนมัติทันที</span>
+        </div>
+
+        <!-- Big Touch Friendly Batch Start Button -->
+        <div style="display: flex; gap: 10px;">
+          <button type="button" onclick="closeAddExamModal()" style="flex: 1; padding: 13px; border-radius: 14px; border: 1.5px solid #E2E8F0; background: white; font-weight: 700; color: #64748B; font-size: 14px; cursor: pointer;">
+            ยกเลิก
+          </button>
+          <button type="button" onclick="startBatchAutoExamGeneration()" style="flex: 2; padding: 13px; border-radius: 14px; border: none; background: #059669; color: white; font-weight: 800; font-size: 14px; cursor: pointer; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.25); display: flex; align-items: center; justify-content: center; gap: 6px;">
+            <span>🚀 เริ่มต้นสร้างยกชุดทุกหมวด</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Batch Progress Modal (หน้าต่างแสดงความคืบหน้าแบบ Real-time พร้อมหลบ Rate Limit) -->
+  <div class="modal-overlay" id="batchProgressModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(12px); z-index: 10001; align-items: center; justify-content: center; padding: 16px;">
+    <div class="modal-card" style="background: white; max-width: 500px; width: 100%; padding: 24px; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);">
+      
+      <!-- Header -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="width: 44px; height: 44px; border-radius: 14px; background: #ECFDF5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 22px;">
+            ⚡
+          </div>
+          <div>
+            <h3 style="font-size: 17px; font-weight: 800; color: #0F172A; margin: 0;">สร้างข้อสอบอัตโนมัติ (Batch Run)</h3>
+            <p id="batchProgressSubjectSubtitle" style="font-size: 12px; color: #64748B; margin: 2px 0 0 0;">วิชากฎหมายที่ประชาชนควรรู้</p>
+          </div>
+        </div>
+        <span id="batchProgressPercentText" style="font-size: 16px; font-weight: 900; color: #059669;">0%</span>
+      </div>
+
+      <!-- Progress Bar -->
+      <div style="height: 10px; background: #F1F5F9; border-radius: 999px; overflow: hidden; margin-bottom: 12px; position: relative;">
+        <div id="batchProgressBar" style="height: 100%; width: 0%; background: linear-gradient(90deg, #10B981, #059669); border-radius: 999px; transition: width 0.3s ease;"></div>
+      </div>
+
+      <!-- Current Step Status -->
+      <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12.5px; font-weight: 700; color: #1E293B; margin-bottom: 14px;">
+        <span id="batchCurrentChapterStatus">กำลังเตรียมการสร้าง...</span>
+        <span id="batchCountBadge" style="color: #64748B;">0 / 0 หมวด</span>
+      </div>
+
+      <!-- Rate Limit Countdown Alert Box -->
+      <div id="batchCountdownBox" style="display: none; background: #FFFBEB; border: 1.5px solid #FDE68A; border-radius: 14px; padding: 10px 14px; margin-bottom: 14px; font-size: 12.5px; color: #92400E; display: flex; align-items: center; justify-content: space-between;">
+        <span style="display: inline-flex; align-items: center; gap: 6px;">
+          <span>⏳</span> <span id="batchCountdownText">หน่วงเวลาหลบ API Limit...</span>
+        </span>
+        <span id="batchCountdownSeconds" style="font-weight: 900; font-size: 14px; background: #FEF3C7; padding: 2px 8px; border-radius: 8px;">3.5s</span>
+      </div>
+
+      <!-- Live Terminal Console Log -->
+      <div id="batchLogsConsole" style="background: #0F172A; border-radius: 14px; padding: 12px 14px; height: 180px; overflow-y: auto; font-family: monospace; font-size: 12px; color: #E2E8F0; line-height: 1.6; margin-bottom: 18px;">
+        <div style="color: #94A3B8;">> ระบบพร้อมเริ่มการสร้างข้อสอบอัตโนมัติ...</div>
+      </div>
+
+      <!-- Action / Control Buttons -->
+      <div style="display: flex; gap: 10px;">
+        <button type="button" id="btnPauseBatch" onclick="togglePauseBatch()" style="flex: 1; padding: 12px; border-radius: 14px; border: 1.5px solid #E2E8F0; background: white; font-weight: 700; color: #475569; font-size: 13.5px; cursor: pointer;">
+          ⏸️ พักชั่วคราว
+        </button>
+        <button type="button" onclick="stopBatchGeneration()" style="flex: 1; padding: 12px; border-radius: 14px; border: none; background: #EF4444; color: white; font-weight: 800; font-size: 13.5px; cursor: pointer; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);">
+          ⏹️ ยุติการสร้าง
+        </button>
+      </div>
+    </div>
+  </div>
     </div>
   </div>
 

@@ -7772,6 +7772,25 @@ app.post('/api/admin/exams/preview-ai', authenticateToken, async (req, res) => {
       const doc = await prisma.knowledgeDocument.findUnique({ where: { id: parseInt(docId) } });
       if (doc) contextText = `[เอกสารอ้างอิง: ${doc.title}]\n${doc.content}`;
     }
+
+    if (!contextText && subcategory && subcategory !== 'ALL') {
+      try {
+        const cleanSub = subcategory.replace(/บทที่\s*\d+\s*/, '').trim();
+        const specificDoc = await prisma.knowledgeDocument.findFirst({
+          where: {
+            OR: [
+              { title: { contains: subcategory } },
+              { title: { contains: cleanSub } }
+            ]
+          }
+        });
+        if (specificDoc) {
+          contextText = `[เอกสารอ้างอิงเฉพาะหมวด: ${specificDoc.title}]\n${specificDoc.content}`;
+        }
+      } catch (e) {
+        console.warn('Find specific subcategory doc error:', e);
+      }
+    }
     
     if (!contextText && (knowledgeBase === 'สารบรรณ_๒๕๒๖' || docId === 'ALL_2526' || subject === 'งานสารบรรณ_๒๕๒๖')) {
       try {

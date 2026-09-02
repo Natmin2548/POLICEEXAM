@@ -1349,3 +1349,360 @@ window.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+
+// =========================================================
+// BATCH AI EXAM GENERATOR (สร้างยกชุดทุกหมวดพร้อมหลบ Rate Limit)
+// =========================================================
+let batchState = {
+  isRunning: false,
+  isPaused: false,
+  shouldStop: false,
+  subject: '',
+  chapters: [],
+  questionsPerChapter: 10,
+  delayMs: 3500,
+  currentIndex: 0,
+  successCount: 0,
+  failCount: 0
+};
+
+window.switchGenMode = function(mode) {
+  const tabSingle = document.getElementById('tabGenSingle');
+  const tabBatch = document.getElementById('tabGenBatch');
+  const singleForm = document.getElementById('addExamForm');
+  const batchSection = document.getElementById('batchGenSection');
+
+  if (mode === 'batch') {
+    if (tabSingle) {
+      tabSingle.style.background = 'transparent';
+      tabSingle.style.color = '#64748B';
+      tabSingle.style.boxShadow = 'none';
+    }
+    if (tabBatch) {
+      tabBatch.style.background = 'white';
+      tabBatch.style.color = '#0F172A';
+      tabBatch.style.boxShadow = '0 1px 3px rgba(0,0,0,0.05)';
+    }
+    if (singleForm) singleForm.style.display = 'none';
+    if (batchSection) batchSection.style.display = 'block';
+    onBatchSubjectChange();
+  } else {
+    if (tabSingle) {
+      tabSingle.style.background = 'white';
+      tabSingle.style.color = '#0F172A';
+      tabSingle.style.boxShadow = '0 1px 3px rgba(0,0,0,0.05)';
+    }
+    if (tabBatch) {
+      tabBatch.style.background = 'transparent';
+      tabBatch.style.color = '#64748B';
+      tabBatch.style.boxShadow = 'none';
+    }
+    if (singleForm) singleForm.style.display = 'block';
+    if (batchSection) batchSection.style.display = 'none';
+  }
+};
+
+window.onBatchSubjectChange = function() {
+  const select = document.getElementById('batchSubjectSelect');
+  const subject = select ? select.value : 'กฏหมาย';
+  const container = document.getElementById('batchChaptersChecklist');
+  const countText = document.getElementById('batchSelectedCountText');
+  if (!container) return;
+
+  const chapters = (SUBJECT_CHAPTERS[subject] || [])
+    .filter(ch => ch.value !== 'ALL' && !ch.label.includes('รวมทุกหมวด'));
+
+  container.innerHTML = chapters.map((ch, idx) => `
+    <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #1E293B; cursor: pointer; padding: 4px 0;">
+      <input type="checkbox" class="batch-chapter-checkbox" value="${escapeHTML(ch.value)}" checked onchange="updateBatchSelectedCount()" style="width: 16px; height: 16px; accent-color: #059669; cursor: pointer;">
+      <span>${escapeHTML(ch.label)}</span>
+    </label>
+  `).join('');
+
+  if (countText) countText.textContent = `${chapters.length} หมวด`;
+};
+
+window.toggleBatchSelectAll = function() {
+  const checkboxes = document.querySelectorAll('.batch-chapter-checkbox');
+  const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+  checkboxes.forEach(cb => cb.checked = !allChecked);
+  const btn = document.getElementById('btnToggleBatchSelectAll');
+  if (btn) btn.textContent = !allChecked ? 'ยกเลิกทั้งหมด' : 'เลือกทั้งหมด';
+  updateBatchSelectedCount();
+};
+
+window.updateBatchSelectedCount = function() {
+  const checkboxes = document.querySelectorAll('.batch-chapter-checkbox:checked');
+  const countText = document.getElementById('batchSelectedCountText');
+  if (countText) countText.textContent = `${checkboxes.length} หมวด`;
+};
+
+window.selectBatchCount = function(count) {
+  const input = document.getElementById('batchQuestionsPerChapter');
+  if (input) input.value = count;
+  [5, 10, 15, 20].forEach(c => {
+    const btn = document.getElementById(`btnBatch${c}`);
+    if (btn) {
+      if (c === count) {
+        btn.style.borderColor = '#BD1B0B';
+        btn.style.backgroundColor = '#FEF2F2';
+        btn.style.color = '#BD1B0B';
+      } else {
+        btn.style.borderColor = '#E2E8F0';
+        btn.style.backgroundColor = '#F8FAFC';
+        btn.style.color = '#475569';
+      }
+    }
+  });
+};
+
+window.selectBatchDelay = function(ms) {
+  const input = document.getElementById('batchDelayMs');
+  if (input) input.value = ms;
+  [2500, 3500, 5000].forEach(d => {
+    const btn = document.getElementById(`btnDelay${d}`);
+    if (btn) {
+      if (d === ms) {
+        btn.style.borderColor = '#059669';
+        btn.style.backgroundColor = '#ECFDF5';
+        btn.style.color = '#059669';
+      } else {
+        btn.style.borderColor = '#E2E8F0';
+        btn.style.backgroundColor = '#F8FAFC';
+        btn.style.color = '#475569';
+      }
+    }
+  });
+};
+
+window.togglePauseBatch = function() {
+  batchState.isPaused = !batchState.isPaused;
+  const btn = document.getElementById('btnPauseBatch');
+  if (btn) {
+    btn.textContent = batchState.isPaused ? '▶️ ทำต่อ' : '⏸️ พักชั่วคราว';
+    btn.style.background = batchState.isPaused ? '#FEF3C7' : 'white';
+    btn.style.color = batchState.isPaused ? '#92400E' : '#475569';
+  }
+};
+
+window.stopBatchGeneration = function() {
+  if (confirm('คุณต้องการยุติการสร้างข้อสอบอัตโนมัติใช่หรือไม่? (ข้อสอบหมวดที่สร้างสำเร็จแล้วจะไม่สูญหายและถูกบันทึกไว้ในระบบแล้ว)')) {
+    batchState.shouldStop = true;
+  }
+};
+
+function appendBatchLog(msg, color = '#E2E8F0') {
+  const consoleEl = document.getElementById('batchLogsConsole');
+  if (!consoleEl) return;
+  const div = document.createElement('div');
+  div.style.color = color;
+  div.style.marginBottom = '4px';
+  div.textContent = `> ${msg}`;
+  consoleEl.appendChild(div);
+  consoleEl.scrollTop = consoleEl.scrollHeight;
+}
+
+function delayWithCountdown(ms, text = 'หน่วงเวลาหลบ API Limit...') {
+  return new Promise(resolve => {
+    const box = document.getElementById('batchCountdownBox');
+    const textEl = document.getElementById('batchCountdownText');
+    const secEl = document.getElementById('batchCountdownSeconds');
+
+    if (box) box.style.display = 'flex';
+    if (textEl) textEl.textContent = text;
+
+    let remaining = ms;
+    const step = 100;
+
+    const interval = setInterval(() => {
+      remaining -= step;
+      if (secEl) secEl.textContent = `${(Math.max(remaining, 0) / 1000).toFixed(1)}s`;
+
+      if (remaining <= 0 || batchState.shouldStop) {
+        clearInterval(interval);
+        if (box) box.style.display = 'none';
+        resolve();
+      }
+    }, step);
+  });
+}
+
+window.startBatchAutoExamGeneration = async function() {
+  const subjectSelect = document.getElementById('batchSubjectSelect');
+  const subject = subjectSelect ? subjectSelect.value : 'กฏหมาย';
+  const displayName = getSubjectDisplayName(subject);
+
+  const checkedBoxes = Array.from(document.querySelectorAll('.batch-chapter-checkbox:checked'));
+  const selectedChapters = checkedBoxes.map(cb => cb.value);
+
+  if (selectedChapters.length === 0) {
+    alert('กรุณาเลือกหมวดหมู่ที่ต้องการสร้างอย่างน้อย 1 หมวด');
+    return;
+  }
+
+  const numQuestions = parseInt(document.getElementById('batchQuestionsPerChapter')?.value) || 10;
+  const delayMs = parseInt(document.getElementById('batchDelayMs')?.value) || 3500;
+  const apiKey = document.getElementById('adminGeminiApiKey')?.value.trim() || localStorage.getItem('admin_gemini_key') || '';
+
+  // Initialize batch state
+  batchState = {
+    isRunning: true,
+    isPaused: false,
+    shouldStop: false,
+    subject,
+    chapters: selectedChapters,
+    questionsPerChapter: numQuestions,
+    delayMs,
+    currentIndex: 0,
+    successCount: 0,
+    failCount: 0
+  };
+
+  // Setup Progress Modal
+  const progressModal = document.getElementById('batchProgressModal');
+  const subTitleEl = document.getElementById('batchProgressSubjectSubtitle');
+  const consoleEl = document.getElementById('batchLogsConsole');
+  const progressBar = document.getElementById('batchProgressBar');
+  const percentText = document.getElementById('batchProgressPercentText');
+  const countBadge = document.getElementById('batchCountBadge');
+  const statusEl = document.getElementById('batchCurrentChapterStatus');
+  const btnPause = document.getElementById('btnPauseBatch');
+
+  if (progressModal) progressModal.style.display = 'flex';
+  if (subTitleEl) subTitleEl.textContent = `วิชา ${displayName} (${selectedChapters.length} หมวด)`;
+  if (consoleEl) consoleEl.innerHTML = `<div style="color: #94A3B8;">> เริ่มต้นระบบ Batch AI Generator: วิชา ${displayName} จำนวน ${selectedChapters.length} หมวด (หมวดละ ${numQuestions} ข้อ)</div>`;
+  if (progressBar) progressBar.style.width = '0%';
+  if (percentText) percentText.textContent = '0%';
+  if (countBadge) countBadge.textContent = `0 / ${selectedChapters.length} หมวด`;
+  if (btnPause) {
+    btnPause.textContent = '⏸️ พักชั่วคราว';
+    btnPause.style.background = 'white';
+    btnPause.style.color = '#475569';
+  }
+
+  closeAddExamModal();
+
+  for (let i = 0; i < selectedChapters.length; i++) {
+    if (batchState.shouldStop) {
+      appendBatchLog('⏹️ ผู้ใช้ได้ทำการยุติการสร้างข้อสอบ', '#EF4444');
+      break;
+    }
+
+    // Handle pause
+    while (batchState.isPaused && !batchState.shouldStop) {
+      if (statusEl) statusEl.textContent = '⏸️ พักการสร้างชั่วคราว...';
+      await new Promise(r => setTimeout(r, 500));
+    }
+
+    if (batchState.shouldStop) break;
+
+    const chapterName = selectedChapters[i];
+    const chapterNum = i + 1;
+    const progressPct = Math.round(((i) / selectedChapters.length) * 100);
+
+    if (progressBar) progressBar.style.width = `${progressPct}%`;
+    if (percentText) percentText.textContent = `${progressPct}%`;
+    if (countBadge) countBadge.textContent = `${i + 1} / ${selectedChapters.length} หมวด`;
+    if (statusEl) statusEl.textContent = `กำลังสร้าง [${chapterNum}/${selectedChapters.length}]: ${chapterName}...`;
+
+    appendBatchLog(`[${chapterNum}/${selectedChapters.length}] กำลังสั่ง Gemini AI เจนข้อสอบ "${chapterName}"...`, '#60A5FA');
+
+    let success = false;
+    let retries = 0;
+    const maxRetries = 2;
+
+    while (!success && retries <= maxRetries && !batchState.shouldStop) {
+      try {
+        const title = `แบบทดสอบ${displayName}: ${chapterName}`;
+        
+        // 1. Generate via Preview-AI
+        const res = await fetch(`${API_BASE}/api/admin/exams/preview-ai`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`
+          },
+          body: JSON.stringify({
+            subject,
+            knowledgeBase: 'GENERAL',
+            docId: 'ALL',
+            title,
+            subcategory: chapterName,
+            numQuestions,
+            apiKey
+          })
+        });
+
+        const data = await res.json();
+
+        if (res.status === 429 || (data.error && data.error.includes('429'))) {
+          retries++;
+          appendBatchLog(`⚠️ ติด Rate Limit (429) รอ 8 วินาทีก่อนลองใหม่ (ครั้งที่ ${retries}/${maxRetries})...`, '#F59E0B');
+          await delayWithCountdown(8000, '⏳ Gemini Rate Limit! กำลังรอถอยระยะห่าง 8s...');
+          continue;
+        }
+
+        if (!res.ok || !data.questions || data.questions.length === 0) {
+          throw new Error(data.error || 'ไม่มีคำถามถูกสร้าง');
+        }
+
+        // 2. Auto-save directly into Database
+        const saveRes = await fetch(`${API_BASE}/api/admin/exams/save-set`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`
+          },
+          body: JSON.stringify({
+            title,
+            category: subject,
+            subcategory: chapterName,
+            status: 'PUBLISHED',
+            questions: data.questions
+          })
+        });
+
+        const saveData = await saveRes.json();
+        if (!saveRes.ok) {
+          throw new Error(saveData.error || 'บันทึกเข้าฐานข้อมูลไม่สำเร็จ');
+        }
+
+        success = true;
+        batchState.successCount++;
+        appendBatchLog(`✅ [${chapterNum}/${selectedChapters.length}] "${chapterName}" สำเร็จ ${data.questions.length} ข้อ (บันทึกเรียบร้อย)`, '#34D399');
+
+      } catch (err) {
+        retries++;
+        if (retries <= maxRetries) {
+          appendBatchLog(`⚠️ ข้อผิดพลาด: ${err.message} -> กำลังลองใหม่ใน 4 วินาที...`, '#F59E0B');
+          await delayWithCountdown(4000, '⏳ กำลังลองใหม่...');
+        } else {
+          batchState.failCount++;
+          appendBatchLog(`❌ [${chapterNum}/${selectedChapters.length}] ข้าม "${chapterName}": ${err.message}`, '#EF4444');
+        }
+      }
+    }
+
+    // Delay before next chapter to safely avoid Rate Limit
+    if (i < selectedChapters.length - 1 && !batchState.shouldStop) {
+      await delayWithCountdown(delayMs, `⏳ หน่วงเวลา ${delayMs/1000}s เพื่อหลบ Rate Limit ก่อนเริ่มหมวดถัดไป...`);
+    }
+  }
+
+  // Completed All
+  if (progressBar) progressBar.style.width = '100%';
+  if (percentText) percentText.textContent = '100%';
+  if (statusEl) statusEl.textContent = `🎉 สร้างเสร็จสิ้น! (สำเร็จ ${batchState.successCount} หมวด, พลาด ${batchState.failCount} หมวด)`;
+
+  appendBatchLog(`🎉 การทำงานเสร็จสิ้นทั้งหมด! สำเร็จ ${batchState.successCount}/${selectedChapters.length} หมวด`, '#34D399');
+
+  const btnPauseEl = document.getElementById('btnPauseBatch');
+  if (btnPauseEl) {
+    btnPauseEl.textContent = '✓ ปิดหน้าต่างนี้';
+    btnPauseEl.onclick = () => {
+      progressModal.style.display = 'none';
+      loadExamsList(); // Refresh admin exams table
+    };
+  }
+};
+
