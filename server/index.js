@@ -8733,6 +8733,196 @@ app.get('/api/exams/prabpram', async (req, res) => {
   }
 });
 
+// Helper for Amnuay dynamic fallback questions
+function generateFallbackSubjectQuestions(subjectKey, count) {
+  const bank = {
+    general: [
+      { questionText: 'ลำดับตัวเลข 2, 5, 10, 17, 26, ... ตัวเลขถัดไปคือข้อใด?', choice1: '35', choice2: '37', choice3: '39', choice4: '41', correctAnswer: 2, explanation: 'ผลต่างเป็นเลขคี่บวกเพิ่มทีละ 2: +3, +5, +7, +9, +11 ดังนั้น 26 + 11 = 37' },
+      { questionText: 'สินค้าชิ้นหนึ่งติดราคาไว้ 1,200 บาท หากลดราคา 15% ผู้ซื้อต้องจ่ายเงินกี่บาท?', choice1: '1,000 บาท', choice2: '1,020 บาท', choice3: '1,050 บาท', choice4: '1,080 บาท', correctAnswer: 2, explanation: 'ส่วนลด 15% ของ 1,200 คือ 180 บาท ดังนั้น 1,200 - 180 = 1,020 บาท' },
+      { questionText: 'ถ้า 3x - 7 = 14 แล้วค่าของ 2x + 5 เท่ากับเท่าใด?', choice1: '17', choice2: '19', choice3: '21', choice4: '23', correctAnswer: 2, explanation: '3x = 21 -> x = 7; 2(7) + 5 = 19' },
+      { questionText: 'กำหนดให้ สมชาย วิ่งเร็วกว่า สมศักดิ์ แต่ สมศักดิ์ วิ่งเร็วกว่า สมหมาย ข้อใดถูกต้อง?', choice1: 'สมหมายวิ่งเร็วที่สุด', choice2: 'สมชายวิ่งเร็วที่สุด', choice3: 'สมศักดิ์วิ่งเร็วที่สุด', choice4: 'ทุกคนวิ่งเร็วเท่ากัน', correctAnswer: 2, explanation: 'สมชาย > สมศักดิ์ > สมหมาย ดังนั้นสมชายวิ่งเร็วที่สุด' },
+      { questionText: 'อัตราส่วนเงินเดือนของ A ต่อ B คือ 3 : 4 ถ้า B ได้เงินเดือน 20,000 บาท แล้ว A ได้เงินเดือนเท่าใด?', choice1: '12,000 บาท', choice2: '15,000 บาท', choice3: '16,000 บาท', choice4: '18,000 บาท', correctAnswer: 2, explanation: '1 ส่วน = 20,000 / 4 = 5,000 บาท; A ได้ 3 x 5,000 = 15,000 บาท' }
+    ],
+    thai: [
+      { questionText: 'ข้อใดสะกดคำได้ถูกต้องทุกคำตามพจนานุกรมฉบับราชบัณฑิตยสถาน?', choice1: 'กะเพรา, อนุญาต, สังเกต', choice2: 'กระเพรา, อนุญาติ, สังเกตุ', choice3: 'กะเพรา, อนุญาติ, สังเกตุ', choice4: 'กระเพรา, อนุญาต, สังเกต', correctAnswer: 1, explanation: 'กะเพรา อนุญาต สังเกต สะกดถูกต้องโดยไม่มีสระหรือรูปผิด' },
+      { questionText: 'สำนวน "ชี้โพรงให้กระรอก" มีความหมายตรงกับข้อใด?', choice1: 'แนะนำให้ผู้อื่นทำความดี', choice2: 'ชี้แนะหรือบอกลู่ทางให้คนทำความผิดหรือแสวงหาประโยชน์', choice3: 'สั่งสอนคนที่มีความชำนาญอยู่แล้ว', choice4: 'ช่วยเหลือผู้ที่กำลังเดือดร้อน', correctAnswer: 2, explanation: 'ชี้โพรงให้กระรอก หมายถึง การชี้ช่องทางหรือบอกโอกาสให้คนทำสิ่งที่ไม่ดีหรือเอาเปรียบ' },
+      { questionText: 'คำราชาศัพท์สำหรับคำว่า "กิน" ของพระมหากษัตริย์คือข้อใด?', choice1: 'เสวย', choice2: 'ฉัน', choice3: 'รับประทาน', choice4: 'บริโภค', correctAnswer: 1, explanation: 'เสวย เป็นคำราชาศัพท์สำหรับพระมหากษัตริย์และพระบรมวงศานุวงศ์' },
+      { questionText: 'ข้อใดเป็นประโยคความซ้อน (สังกรประโยค)?', choice1: 'ฉันกินข้าวและน้องดื่มนม', choice2: 'คุณครูชื่นชมนักเรียนที่ตั้งใจเรียน', choice3: 'เขาร้องเพลงอย่างไพเราะ', choice4: 'ฝนตกหนักน้ำจึงท่วมถนน', correctAnswer: 2, explanation: 'มีประโยคย่อย "ที่ตั้งใจเรียน" ทำหน้าที่ขยาย "นักเรียน"' },
+      { questionText: 'คำในข้อใดเป็นคำสมาสที่มีการสนธิ?', choice1: 'ราชการ', choice2: 'ธรรมาภิบาล', choice3: 'ภูมิศาสตร์', choice4: 'ประวัติศาสตร์', correctAnswer: 2, explanation: 'ธรรม + อภิบาล เชื่อมเสียงเป็น ธรรมาภิบาล' }
+    ],
+    english: [
+      { questionText: 'Choose the best word: The investigator needs to ______ all the evidence before making a report.', choice1: 'examine', choice2: 'examining', choice3: 'examined', choice4: 'examines', correctAnswer: 1, explanation: 'After modal verb "needs to", use base form of the verb (examine).' },
+      { questionText: 'What is the opposite meaning (Antonym) of the word "GUILTY"?', choice1: 'Innocent', choice2: 'Criminal', choice3: 'Suspect', choice4: 'Victim', correctAnswer: 1, explanation: 'Guilty (มีความผิด) ตรงข้ามกับ Innocent (บริสุทธิ์/ไม่มีความผิด)' },
+      { questionText: 'The officer said, "Please keep quiet ______ the meeting is in progress."', choice1: 'while', choice2: 'during', choice3: 'because of', choice4: 'despite', correctAnswer: 1, explanation: '"While" is followed by a clause (subject + verb).' },
+      { questionText: 'Which word means "a person who sees an event and can report what happened"?', choice1: 'Witness', choice2: 'Suspect', choice3: 'Victim', choice4: 'Judge', correctAnswer: 1, explanation: 'Witness หมายถึง พยานผู้เห็นเหตุการณ์' },
+      { questionText: 'Select the grammatically correct sentence:', choice1: 'Neither of the suspects have confessed.', choice2: 'Neither of the suspects has confessed.', choice3: 'Neither of the suspects having confessed.', choice4: 'Neither of the suspects to confess.', correctAnswer: 2, explanation: '"Neither of + plural noun" takes a singular verb (has confessed).' }
+    ]
+  };
+
+  const pool = bank[subjectKey] || bank.general;
+  const list = [];
+  for (let i = 0; i < count; i++) {
+    const template = pool[i % pool.length];
+    list.push({
+      ...template,
+      questionText: `[ข้อ ${i + 1}] ${template.questionText}`
+    });
+  }
+  return list;
+}
+
+// GET /api/exams/amnuay - Main Exam Simulation for สายอำนวยการ / พิสูจน์หลักฐาน (อก./พฐ.) (150 ข้อ)
+app.get('/api/exams/amnuay', async (req, res) => {
+  try {
+    const subjects = [
+      // กลุ่มที่ 1 (40 ข้อ - เกณฑ์ผ่าน 60% = 24 ข้อ)
+      { key: 'general', group: 1, groupName: 'กลุ่มที่ 1 (ความรู้ความสามารถทั่วไปและภาษาไทย)', title: 'ความรู้ความสามารถทั่วไป (คณิตศาสตร์/คำนวณ/ตรรกศาสตร์)', shortTitle: 'ความสามารถทั่วไป', count: 20, categories: ['ทั่วไป', 'ความสามารถทั่วไป', 'ความรู้ทั่วไป', 'คณิตศาสตร์', 'คณิต'] },
+      { key: 'thai', group: 1, groupName: 'กลุ่มที่ 1 (ความรู้ความสามารถทั่วไปและภาษาไทย)', title: 'ภาษาไทย', shortTitle: 'ภาษาไทย', count: 20, categories: ['ภาษาไทย', 'ไทย'] },
+      // กลุ่มที่ 2 (110 ข้อ - เกณฑ์ผ่าน 60% = 66 ข้อ)
+      { key: 'computer', group: 2, groupName: 'กลุ่มที่ 2 (ความรู้ความสามารถเฉพาะตำแหน่ง)', title: 'เทคโนโลยีสารสนเทศ (คอมพิวเตอร์เพื่อการสื่อสาร)', shortTitle: 'เทคโนโลยีสารสนเทศ', count: 40, categories: ['คอม', 'คอมพิวเตอร์', 'เทคโนโลยีสารสนเทศ', 'สารสนเทศ', 'คอมพิวเตอร์และสารสนเทศ'] },
+      { key: 'saraban', group: 2, groupName: 'กลุ่มที่ 2 (ความรู้ความสามารถเฉพาะตำแหน่ง)', title: 'งานสารบรรณ (ระเบียบสำนักนายกฯ ๒๕๒๖ + สารบรรณตำรวจ ลักษณะที่ ๕๔)', shortTitle: 'งานสารบรรณ (ระเบียบ+๕๔)', count: 30, categories: ['งานสารบรรณ', 'สารบรรณ', '๒๕๒๖', '2526', 'ลักษณะที่ ๕๔', 'ลักษณะที่54', '๕๔', '54', 'สารบรรณตำรวจ'] },
+      { key: 'law', group: 2, groupName: 'กลุ่มที่ 2 (ความรู้ความสามารถเฉพาะตำแหน่ง)', title: 'กฎหมายที่ประชาชนควรรู้ (พ.ร.บ.ตำรวจ / วิ.อาญา / กฎหมาย)', shortTitle: 'กฎหมายที่ประชาชนควรรู้', count: 25, categories: ['กฏหมาย', 'กฎหมาย', 'กฎหมายที่ประชาชนควรรู้', 'กม'] },
+      { key: 'english', group: 2, groupName: 'กลุ่มที่ 2 (ความรู้ความสามารถเฉพาะตำแหน่ง)', title: 'ภาษาอังกฤษ', shortTitle: 'ภาษาอังกฤษ', count: 15, categories: ['ภาษาอังกฤษ', 'อังกฤษ', 'English', 'english'] }
+    ];
+
+    const allOrderedQuestions = [];
+    let questionRunningNumber = 1;
+
+    for (let sIdx = 0; sIdx < subjects.length; sIdx++) {
+      const sub = subjects[sIdx];
+      const orClauses = sub.categories.map(cat => ({ category: { contains: cat } }));
+
+      // Fetch all sets and questions strictly matching this subject's category
+      const examSets = await prisma.examSet.findMany({
+        where: {
+          OR: orClauses,
+          NOT: (sub.key === 'law') ? [
+            { category: { contains: 'สารบรรณ' } },
+            { category: { contains: '๕๔' } },
+            { category: { contains: '54' } }
+          ] : undefined
+        },
+        include: {
+          questions: true
+        }
+      });
+
+      // Group questions by set/chapter
+      const groupPools = [];
+      examSets.forEach(set => {
+        if (set.questions && set.questions.length > 0) {
+          const shuffledInSet = [...set.questions].sort(() => 0.5 - Math.random());
+          groupPools.push({
+            setId: set.id,
+            setTitle: set.title,
+            subcategory: set.subcategory || set.category,
+            questions: shuffledInSet
+          });
+        }
+      });
+
+      // Pick questions using Round-Robin across distinct sets/chapters
+      const pickedForSubject = [];
+      if (groupPools.length > 0) {
+        let poolIndex = 0;
+        let attempts = 0;
+        const maxAttempts = sub.count * 10;
+        while (pickedForSubject.length < sub.count && attempts < maxAttempts) {
+          attempts++;
+          const pool = groupPools[poolIndex % groupPools.length];
+          if (pool.questions.length > 0) {
+            const q = pool.questions.shift();
+            pickedForSubject.push({
+              id: q.id,
+              questionText: q.questionText,
+              choice1: q.choice1,
+              choice2: q.choice2,
+              choice3: q.choice3,
+              choice4: q.choice4,
+              correctAnswer: q.correctAnswer,
+              explanation: q.explanation || 'เฉลยตามมาตรฐานข้อสอบนายสิบตำรวจสายอำนวยการ/พิสูจน์หลักฐาน',
+              subjectKey: sub.key,
+              group: sub.group,
+              groupName: sub.groupName,
+              subjectName: sub.title,
+              shortSubjectName: sub.shortTitle,
+              chapter: pool.subcategory || 'หมวดทั่วไป',
+              set: pool.setTitle || 'ชุดข้อสอบ'
+            });
+          }
+          poolIndex++;
+          const hasRemaining = groupPools.some(p => p.questions.length > 0);
+          if (!hasRemaining) break;
+        }
+      }
+
+      // If DB has fewer questions than required, fill from fallback questions bank
+      if (pickedForSubject.length < sub.count) {
+        const needed = sub.count - pickedForSubject.length;
+        const fallbackList = generateFallbackSubjectQuestions(sub.key, needed);
+        fallbackList.forEach(q => {
+          pickedForSubject.push({
+            id: `gen_${sub.key}_${Date.now()}_${Math.random()}`,
+            questionText: q.questionText,
+            choice1: q.choice1,
+            choice2: q.choice2,
+            choice3: q.choice3,
+            choice4: q.choice4,
+            correctAnswer: q.correctAnswer,
+            explanation: q.explanation,
+            subjectKey: sub.key,
+            group: sub.group,
+            groupName: sub.groupName,
+            subjectName: sub.title,
+            shortSubjectName: sub.shortTitle,
+            chapter: 'แบบฝึกหัดมาตรฐาน',
+            set: 'ชุดข้อสอบจำลอง อก./พฐ.'
+          });
+        });
+      }
+
+      // Add to main list with exact ordering
+      pickedForSubject.forEach(q => {
+        allOrderedQuestions.push({
+          ...q,
+          index: questionRunningNumber++,
+          subjectOrder: sIdx + 1,
+          subjectKey: sub.key,
+          group: sub.group,
+          groupName: sub.groupName,
+          subjectName: sub.title,
+          shortSubjectName: sub.shortTitle
+        });
+      });
+    }
+
+    res.json({
+      success: true,
+      title: 'ข้อสอบจำลองเสมือนจริง: สายอำนวยการ / พิสูจน์หลักฐาน (อก. / พฐ.)',
+      track: 'amnuay',
+      totalCount: allOrderedQuestions.length,
+      timeLimitMinutes: 180, // 3 hours
+      groups: [
+        { id: 1, name: 'กลุ่มที่ 1: ความรู้ความสามารถทั่วไปและภาษาไทย', count: 40, passMin: 24, passPct: 60, subjects: ['general', 'thai'] },
+        { id: 2, name: 'กลุ่มที่ 2: ความรู้ความสามารถเฉพาะตำแหน่ง (คอมฯ, สารบรรณ, กฎหมาย, อังกฤษ)', count: 110, passMin: 66, passPct: 60, subjects: ['computer', 'saraban', 'law', 'english'] }
+      ],
+      subjects: subjects.map((s, idx) => ({
+        order: idx + 1,
+        key: s.key,
+        group: s.group,
+        groupName: s.groupName,
+        title: s.title,
+        shortTitle: s.shortTitle,
+        count: s.count
+      })),
+      questions: allOrderedQuestions
+    });
+  } catch (err) {
+    console.error('Generate Amnuay Exam Error:', err);
+    res.status(500).json({ error: 'ไม่สามารถดึงชุดข้อสอบสายอำนวยการได้: ' + err.message });
+  }
+});
+
 // POST /api/user/record-quiz - Record quiz result to DB & award XP
 app.post('/api/user/record-quiz', authenticateToken, async (req, res) => {
   try {

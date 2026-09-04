@@ -519,7 +519,7 @@ window.startStreakChallenge = function(trackKey) {
   if (trackKey === 'ปราบปราม') {
     startPrabpramMainExam();
   } else {
-    startBankSubjectQuiz('สายอำนวยการ/พฐ.', 'streak_amnuay', 10, 'แบบทดสอบประจำวัน: สายอำนวยการ / พิสูจน์หลักฐาน (อก./พฐ.)');
+    startAmnuayMainExam();
   }
 };
 
@@ -6681,6 +6681,80 @@ window.startPrabpramMainExam = async function() {
   }
 };
 
+window.startAmnuayMainExam = async function() {
+  const modal = document.getElementById('subjectQuizModal');
+  const badgeEl = document.getElementById('quizSubjectBadge');
+  const titleEl = document.getElementById('quizTitle');
+  const bodyContent = document.getElementById('quizBodyContent');
+  const stepText = document.getElementById('quizStepText');
+  const actionRow = document.getElementById('quizActionButtonsRow');
+  const navContainer = document.getElementById('quizNavContainer');
+  const progressBar = document.getElementById('quizProgressBar');
+
+  if (!modal || !bodyContent) return;
+
+  stopQuizCountdownTimer();
+  modal.style.display = 'flex';
+  if (badgeEl) badgeEl.textContent = '📑 สายอำนวยการ / พฐ. (150 ข้อ)';
+  if (titleEl) titleEl.textContent = 'ข้อสอบหลักจำลองเสมือนจริง: สายอำนวยการ / พิสูจน์หลักฐาน (3 ชั่วโมง)';
+  if (stepText) stepText.textContent = 'กำลังโหลดและจัดเรียงข้อสอบ 150 ข้อ...';
+  if (actionRow) actionRow.style.display = 'none';
+  if (navContainer) navContainer.style.display = 'none';
+  if (progressBar) progressBar.style.width = '10%';
+
+  bodyContent.innerHTML = '<div style="text-align: center; color: #64748B; padding: 40px; font-size: 14px;"><div style="font-size: 32px; margin-bottom: 12px;">⏳</div>กำลังสุ่มและจัดเรียงข้อสอบ 6 วิชา (150 ข้อ)<br><span style="font-size: 12px; color: #94A3B8; margin-top: 6px; display: block;">(พร้อมระบบจับเวลาเสมือนจริง 3 ชั่วโมง 180 นาที • เกณฑ์ผ่าน 60% แยก 2 กลุ่มวิชา)</span></div>';
+
+  try {
+    const res = await fetch(`${API_BASE}/api/exams/amnuay`);
+    if (!res.ok) throw new Error('Failed to fetch amnuay exam');
+    const data = await res.json();
+
+    if (!data.questions || data.questions.length === 0) {
+      bodyContent.innerHTML = `
+        <div style="text-align: center; padding: 36px 20px;">
+          <div style="font-size: 44px; margin-bottom: 12px;">📂</div>
+          <h3 style="font-size: 17px; font-weight: 800; color: #0F172A; margin-bottom: 8px;">เกิดข้อผิดพลาดในการโหลดข้อสอบ</h3>
+          <p style="font-size: 13.5px; color: #64748B; max-width: 440px; margin: 0 auto 20px; line-height: 1.5;">
+            ไม่สามารถดึงข้อสอบสายอำนวยการได้ กรุณาลองใหม่อีกครั้ง
+          </p>
+          <button onclick="closeSubjectQuiz()" class="btn btn-outline" style="padding: 10px 20px; border-radius: 12px; font-weight: 700; font-size: 13px;">
+            ปิดหน้าต่าง
+          </button>
+        </div>
+      `;
+      if (stepText) stepText.textContent = 'ไม่พบข้อสอบในระบบ';
+      return;
+    }
+
+    const questions = data.questions.map(q => ({
+      ...q,
+      choices: q.choices || [q.choice1, q.choice2, q.choice3, q.choice4]
+    }));
+
+    currentQuizState = {
+      subjectKey: 'สายอำนวยการ/พฐ.',
+      setId: 'amnuay_main_150',
+      setTitle: `ข้อสอบจำลองเสมือนจริง: สายอำนวยการ / พิสูจน์หลักฐาน (${questions.length} ข้อ)`,
+      track: 'amnuay',
+      groups: data.groups || [],
+      subjectsBreakdown: data.subjects || [],
+      questions,
+      currentIndex: 0,
+      userAnswers: {},
+      score: 0,
+      startTime: Date.now()
+    };
+
+    // Start 3-Hour Countdown Timer (180 mins = 10,800 seconds)
+    startQuizCountdownTimer(180 * 60);
+
+    renderCurrentQuizQuestion();
+  } catch (err) {
+    console.error('Start Amnuay Exam Error:', err);
+    bodyContent.innerHTML = '<div style="text-align: center; color: #EF4444; padding: 30px;">เกิดข้อผิดพลาดในการโหลดข้อสอบสายอำนวยการ กรุณาลองใหม่อีกครั้ง</div>';
+  }
+};
+
 window.closeSubjectQuiz = function() {
   stopQuizCountdownTimer();
   const modal = document.getElementById('subjectQuizModal');
@@ -6886,6 +6960,8 @@ function renderQuizResults() {
   const btnNext = document.getElementById('btnNextQuiz');
   const progressBar = document.getElementById('quizProgressBar');
 
+  if (!bodyContent) return;
+
   const actionRow = document.getElementById('quizActionButtonsRow');
   const navContainer = document.getElementById('quizNavContainer');
   if (actionRow) actionRow.style.display = 'none';
@@ -6906,18 +6982,35 @@ function renderQuizResults() {
     date: new Date().toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })
   });
 
-  // Calculate subject-by-subject breakdown for Prabpram track (6 subjects)
+  // Calculate subject-by-subject and group breakdown
   let subjectBreakdownHtml = '';
-  if (track === 'prabpram') {
+  let overallPassStatus = pct >= 60;
+  let statusBadgeText = pct >= 80 ? 'ดีเยี่ยม! ผ่านเกณฑ์ระดับสูง 🌟' : (pct >= 60 ? 'ผ่านเกณฑ์ทดสอบนายสิบตำรวจ 🎉' : 'ไม่ผ่านเกณฑ์ (ควรทบทวนเนื้อหาเพิ่มเติม) ⚠️');
+
+  if (track === 'amnuay' || track === 'prabpram') {
     const subStats = {};
+    let g1Total = 0, g1Correct = 0;
+    let g2Total = 0, g2Correct = 0;
+
     questions.forEach((q, idx) => {
       const sName = q.shortSubjectName || q.subjectName || 'วิชาทั่วไป';
       if (!subStats[sName]) {
-        subStats[sName] = { total: 0, correct: 0, order: q.subjectOrder || 1 };
+        subStats[sName] = { total: 0, correct: 0, order: q.subjectOrder || 1, group: q.group || 1 };
       }
       subStats[sName].total++;
-      if (currentQuizState.userAnswers[idx] === q.correctAnswer) {
+      const isCorrect = currentQuizState.userAnswers[idx] === q.correctAnswer;
+      if (isCorrect) {
         subStats[sName].correct++;
+      }
+
+      if (track === 'amnuay') {
+        if (q.group === 1 || q.subjectKey === 'general' || q.subjectKey === 'thai') {
+          g1Total++;
+          if (isCorrect) g1Correct++;
+        } else {
+          g2Total++;
+          if (isCorrect) g2Correct++;
+        }
       }
     });
 
@@ -6942,9 +7035,64 @@ function renderQuizResults() {
         `;
       }).join('');
 
+    let groupSummaryHtml = '';
+    if (track === 'amnuay') {
+      const g1Pct = g1Total > 0 ? Math.round((g1Correct / g1Total) * 100) : 0;
+      const g2Pct = g2Total > 0 ? Math.round((g2Correct / g2Total) * 100) : 0;
+      const g1Pass = g1Correct >= Math.ceil(g1Total * 0.6); // >= 24
+      const g2Pass = g2Correct >= Math.ceil(g2Total * 0.6); // >= 66
+      overallPassStatus = g1Pass && g2Pass;
+
+      if (overallPassStatus) {
+        statusBadgeText = '🎉 ยินดีด้วย! สอบผ่านเกณฑ์สายอำนวยการ/พฐ. (ผ่าน 60% ทั้ง 2 กลุ่มวิชา)';
+      } else {
+        statusBadgeText = '⚠️ ไม่ผ่านเกณฑ์ (ต้องได้คะแนนขั้นต่ำ 60% ทั้ง 2 กลุ่มวิชา)';
+      }
+
+      groupSummaryHtml = `
+        <div style="margin-top: 16px; margin-bottom: 16px; border: 2px solid ${overallPassStatus ? '#10B981' : '#F87171'}; border-radius: 18px; padding: 16px; background: ${overallPassStatus ? '#F0FDF4' : '#FEF2F2'}; text-align: left;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <h4 style="margin: 0; font-size: 14.5px; font-weight: 800; color: ${overallPassStatus ? '#065F46' : '#991B1B'};">
+              📋 สรุปเกณฑ์การตัดสิน (ต้องผ่าน 60% ทั้ง 2 กลุ่ม):
+            </h4>
+            <span style="font-size: 11px; font-weight: 800; padding: 3px 10px; border-radius: 999px; background: ${overallPassStatus ? '#10B981' : '#EF4444'}; color: white;">
+              ${overallPassStatus ? 'ผ่านเกณฑ์รวม' : 'ไม่ผ่านเกณฑ์รวม'}
+            </span>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <!-- Group 1 -->
+            <div style="background: white; border-radius: 12px; padding: 10px 14px; border: 1px solid #E2E8F0; display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div style="font-weight: 700; font-size: 13px; color: #1E293B;">กลุ่มที่ 1: ความสามารถทั่วไป + ภาษาไทย</div>
+                <div style="font-size: 11px; color: #64748B;">เกณฑ์ผ่าน 60% (ขั้นต่ำ 24 / 40 ข้อ)</div>
+              </div>
+              <div style="text-align: right;">
+                <div style="font-weight: 800; font-size: 14px; color: ${g1Pass ? '#059669' : '#DC2626'};">${g1Correct} / ${g1Total} (${g1Pct}%)</div>
+                <span style="font-size: 10px; font-weight: 700; color: ${g1Pass ? '#059669' : '#DC2626'};">${g1Pass ? '✅ ผ่าน' : '❌ ไม่ผ่าน'}</span>
+              </div>
+            </div>
+
+            <!-- Group 2 -->
+            <div style="background: white; border-radius: 12px; padding: 10px 14px; border: 1px solid #E2E8F0; display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div style="font-weight: 700; font-size: 13px; color: #1E293B;">กลุ่มที่ 2: คอมพิวเตอร์ + สารบรรณ&๕๔ + กฎหมาย + ภาษาอังกฤษ</div>
+                <div style="font-size: 11px; color: #64748B;">เกณฑ์ผ่าน 60% (ขั้นต่ำ 66 / 110 ข้อ)</div>
+              </div>
+              <div style="text-align: right;">
+                <div style="font-weight: 800; font-size: 14px; color: ${g2Pass ? '#059669' : '#DC2626'};">${g2Correct} / ${g2Total} (${g2Pct}%)</div>
+                <span style="font-size: 10px; font-weight: 700; color: ${g2Pass ? '#059669' : '#DC2626'};">${g2Pass ? '✅ ผ่าน' : '❌ ไม่ผ่าน'}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
     subjectBreakdownHtml = `
-      <div style="margin-top: 20px; margin-bottom: 24px; border: 1.5px solid #E2E8F0; border-radius: 16px; padding: 14px; background: white;">
-        <h4 style="margin: 0 0 10px 0; font-size: 14px; font-weight: 800; color: #0F172A; text-align: left;">📊 คะแนนแยกราย 6 วิชา (เกณฑ์ผ่าน 60%):</h4>
+      ${groupSummaryHtml}
+      <div style="margin-top: 14px; margin-bottom: 24px; border: 1.5px solid #E2E8F0; border-radius: 16px; padding: 14px; background: white;">
+        <h4 style="margin: 0 0 10px 0; font-size: 14px; font-weight: 800; color: #0F172A; text-align: left;">📊 คะแนนแยกราย 6 วิชา (150 ข้อ):</h4>
         <div style="display: flex; flex-direction: column; gap: 6px;">
           ${rows}
         </div>
@@ -6952,13 +7100,15 @@ function renderQuizResults() {
     `;
   }
 
+  const retakeAction = track === 'amnuay' ? 'startAmnuayMainExam()' : (track === 'prabpram' ? 'startPrabpramMainExam()' : `startBankSubjectQuiz('${subjectKey}', '${setId}', ${total}, '${escapeHTML(setTitle)}')`);
+
   bodyContent.innerHTML = `
     <div style="text-align: center; padding: 20px 10px;">
       <div style="font-size: 44px; font-weight: 900; color: ${pct >= 70 ? '#10B981' : (pct >= 60 ? '#F59E0B' : '#EF4444')}; line-height: 1; margin-bottom: 8px;">
         ${pct}%
       </div>
-      <h3 style="margin: 0 0 8px 0; font-size: 18px; font-weight: 800; color: #1E293B;">
-        ${pct >= 80 ? 'ดีเยี่ยม! ผ่านเกณฑ์ระดับสูง 🌟' : (pct >= 60 ? 'ผ่านเกณฑ์ทดสอบนายสิบตำรวจ 🎉' : 'ไม่ผ่านเกณฑ์ (ควรทบทวนเนื้อหาเพิ่มเติม) ⚠️')}
+      <h3 style="margin: 0 0 8px 0; font-size: 17.5px; font-weight: 800; color: #1E293B;">
+        ${statusBadgeText}
       </h3>
       <p style="font-size: 14px; color: #64748B; margin-bottom: 16px;">
         ตอบถูกต้อง ${score} จากทั้งหมด ${total} ข้อ
@@ -6967,7 +7117,7 @@ function renderQuizResults() {
       ${subjectBreakdownHtml}
 
       <div style="display: flex; gap: 12px; justify-content: center;">
-        <button onclick="${track === 'prabpram' ? 'startPrabpramMainExam()' : `startBankSubjectQuiz('${subjectKey}', '${setId}', ${total}, '${escapeHTML(setTitle)}')`}" style="flex: 1; max-width: 200px; padding: 12px; border-radius: 12px; background: #BD1B0B; color: white; border: none; font-weight: 700; font-family: inherit; cursor: pointer;">
+        <button onclick="${retakeAction}" style="flex: 1; max-width: 200px; padding: 12px; border-radius: 12px; background: #BD1B0B; color: white; border: none; font-weight: 700; font-family: inherit; cursor: pointer;">
           ทำอีกครั้ง
         </button>
         <button onclick="closeSubjectQuiz(); renderSubjectStatistics('${subjectKey}'); switchSubjectSubtab('stats');" style="flex: 1; max-width: 200px; padding: 12px; border-radius: 12px; background: #F1F5F9; color: #475569; border: 1px solid #CBD5E1; font-weight: 700; font-family: inherit; cursor: pointer;">
