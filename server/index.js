@@ -726,10 +726,53 @@ app.get('/api/exams/sets', async (req, res) => {
           { title: { contains: 'สารบรรณตำรวจ', mode: 'insensitive' } },
           { title: { contains: '๕๔' } }
         ];
+      } else if (cat === 'ทั่วไป' || cat === 'ความสามารถทั่วไป') {
+        where.AND = [
+          {
+            OR: [
+              { category: { equals: 'ทั่วไป' } },
+              { category: { contains: 'ความสามารถทั่วไป' } },
+              { category: { contains: 'คำนวณ' } }
+            ]
+          },
+          {
+            NOT: [
+              { category: { contains: 'กฏหมาย' } },
+              { category: { contains: 'กฎหมาย' } },
+              { subcategory: { contains: 'กฎหมาย' } },
+              { subcategory: { contains: 'กฏหมาย' } }
+            ]
+          }
+        ];
+      } else if (cat === 'กฏหมาย' || cat === 'กฎหมาย' || cat === 'กฎหมายที่ประชาชนควรรู้') {
+        where.OR = [
+          { category: { contains: 'กฏหมาย' } },
+          { category: { contains: 'กฎหมาย' } }
+        ];
+      } else if (cat === 'สังคม' || cat === 'สังคมและวัฒนธรรม') {
+        where.OR = [
+          { category: { contains: 'สังคม' } }
+        ];
+      } else if (cat === 'คอม' || cat === 'เทคโนโลยีสารสนเทศ' || cat === 'คอมพิวเตอร์') {
+        where.OR = [
+          { category: { contains: 'คอม' } },
+          { category: { contains: 'เทคโนโลยีสารสนเทศ' } }
+        ];
+      } else if (cat === 'ไทย' || cat === 'ภาษาไทย') {
+        where.OR = [
+          { category: { equals: 'ไทย' } },
+          { category: { contains: 'ภาษาไทย' } }
+        ];
+      } else if (cat === 'อังกฤษ' || cat === 'ภาษาอังกฤษ') {
+        where.OR = [
+          { category: { equals: 'อังกฤษ' } },
+          { category: { contains: 'ภาษาอังกฤษ' } },
+          { category: { contains: 'English', mode: 'insensitive' } }
+        ];
       } else {
         where.OR = [
-          { category: { contains: cat, mode: 'insensitive' } },
-          { subcategory: { contains: cat, mode: 'insensitive' } }
+          { category: { equals: cat } },
+          { category: { contains: cat, mode: 'insensitive' } }
         ];
       }
     }

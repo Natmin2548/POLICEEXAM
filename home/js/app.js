@@ -6186,23 +6186,11 @@ function renderSubjectChaptersGrid(subjectKey) {
   const questionsCountEl = document.getElementById('currentChapterQuestionsCount');
   if (!container) return;
 
-  // 1. Get Canonical List of Chapters + Dynamically Merge Custom Chapters from DB
+  // 1. Get Canonical List of Chapters
   const presetList = BANK_SUBJECT_CHAPTERS[subjectKey] || (SUBJECT_CONFIG[subjectKey]?.chapters || []).filter(c => c !== 'ทุกหมวด') || [];
   
-  const isSarabanMain = subjectKey === 'งานสารบรรณ' || subjectKey === 'สารบรรณ';
-  const dbSubcategories = (currentFetchedExamSets || [])
-    .filter(s => {
-      if (isSarabanMain) {
-        const text = `${s.category || ''} ${s.subcategory || ''} ${s.title || ''}`;
-        if (text.includes('๕๔') || text.includes('54') || text.includes('สารบรรณตำรวจ')) return false;
-      }
-      return true;
-    })
-    .map(s => s.subcategory || '')
-    .filter(sub => sub && sub !== 'ALL' && !sub.includes('ทุกหมวด') && !presetList.includes(sub));
-  
-  const uniqueDbSubcategories = Array.from(new Set(dbSubcategories));
-  const canonicalList = [...presetList, ...uniqueDbSubcategories];
+  // Use presetList directly if configured to prevent foreign chapters from leaking in
+  const canonicalList = presetList.length > 0 ? [...presetList] : [];
   
   if (canonicalList.length === 0) {
     if (countBadge) countBadge.textContent = '0 บทเรียน';
@@ -6238,11 +6226,27 @@ function renderSubjectChaptersGrid(subjectKey) {
     
     const matchingSets = sets.filter(s => {
       if (isMaster) return true;
-      const sNum = extractChapterNumber(s.subcategory || s.title);
-      if (sNum === chNum && chNum !== 999) return true;
-      const cleanCh = ch.replace(/บทที่\s*\d+\s*/, '').trim();
-      if (s.title && cleanCh && s.title.includes(cleanCh)) return true;
-      if (s.subcategory && cleanCh && s.subcategory.includes(cleanCh)) return true;
+      if (s.subcategory && (s.subcategory === ch || s.subcategory.trim() === ch.trim())) return true;
+      
+      const sSub = s.subcategory || '';
+      const sTitle = s.title || '';
+      const sCat = s.category || '';
+
+      // Strict subject barrier
+      if (subjectKey === 'ทั่วไป' || subjectKey === 'ความสามารถทั่วไป') {
+        if (sCat.includes('กฏหมาย') || sCat.includes('กฎหมาย') || sSub.includes('กฎหมาย') || sSub.includes('กฏหมาย')) return false;
+      }
+      if (subjectKey === 'งานสารบรรณ' || subjectKey === 'สารบรรณ') {
+        if (sCat.includes('๕๔') || sCat.includes('54') || sSub.includes('๕๔') || sSub.includes('54')) return false;
+      }
+
+      const cleanCh = ch.replace(/บทที่\s*\d+\s*[:\-\(]?\s*/, '').replace(/[\(\)]/g, '').trim();
+      if (cleanCh && (sSub.includes(cleanCh) || sTitle.includes(cleanCh))) return true;
+
+      const sNum = extractChapterNumber(sSub || sTitle);
+      if (sNum === chNum && chNum !== 999) {
+        if (!sSub || sSub.includes(cleanCh) || sTitle.includes(cleanCh)) return true;
+      }
       return false;
     });
 
