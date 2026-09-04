@@ -8876,17 +8876,19 @@ app.post('/api/user/record-quiz', authenticateToken, async (req, res) => {
     };
 
     if (sNorm.includes('กฎหมาย') || sNorm.includes('กม')) {
-      updateData.scoreLaw = Math.max(user.scoreLaw || 0, pct);
+      updateData.scoreLaw = pct;
     } else if (sNorm.includes('คอม') || sNorm.includes('สารสนเทศ') || sNorm.includes('ไอที')) {
-      updateData.scoreComputer = Math.max(user.scoreComputer || 0, pct);
+      updateData.scoreComputer = pct;
     } else if (sNorm.includes('สารบรรณ')) {
-      updateData.scoreSecretariat = Math.max(user.scoreSecretariat || 0, pct);
+      updateData.scoreSecretariat = pct;
     } else if (sNorm.includes('ทั่วไป') || sNorm.includes('คณิต') || sNorm.includes('คำนวณ')) {
-      updateData.scoreGeneral = Math.max(user.scoreGeneral || 0, pct);
+      updateData.scoreGeneral = pct;
     } else if (sNorm.includes('สังคม') || sNorm.includes('จริยธรรม')) {
-      updateData.scoreSocial = Math.max(user.scoreSocial || 0, pct);
+      updateData.scoreSocial = pct;
     } else if (sNorm.includes('ไทย') || sNorm.includes('๕๔') || sNorm.includes('54')) {
-      updateData.scoreThai = Math.max(user.scoreThai || 0, pct);
+      updateData.scoreThai = pct;
+    } else if (sNorm.includes('อังกฤษ') || sNorm.includes('english')) {
+      updateData.scoreEnglish = pct;
     }
 
     // 1. Update user XP, points & subject scores

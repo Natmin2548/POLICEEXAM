@@ -2744,25 +2744,30 @@
           historyList = [...uList, ...dbList];
         } catch (e) { }
 
-        const getSubjScore = (subKeywords, defaultScore) => {
-          if (defaultScore && defaultScore > 0) return defaultScore;
+        const getSubjScore = (subKeywords, fallbackScore) => {
           const matched = historyList.filter(h => {
+            if (!h) return false;
             const str = `${h.subject || ''} ${h.setTitle || ''}`.replace(/[\s_]/g, '').replace('กฏ', 'กฎ');
             return subKeywords.some(k => str.includes(k));
           });
-          if (matched.length === 0) return 0;
-          return Math.max(...matched.map(m => m.scorePct || 0));
+          if (matched.length > 0) {
+            const latest = matched[matched.length - 1];
+            return Math.round(Number(latest.scorePct) || 0);
+          }
+          return fallbackScore !== undefined && fallbackScore !== null ? Number(fallbackScore) || 0 : 0;
         };
 
-        const scoreSecretariat = getSubjScore(['สารบรรณ'], Number(user.scoreSecretariat) || 0);
-        const scoreGeneral = getSubjScore(['ทั่วไป', 'คณิต', 'คำนวณ', 'อนุกรม'], Number(user.scoreGeneral) || 0);
-        const scoreSocial = getSubjScore(['สังคม', 'จริยธรรม', 'อาเซียน'], Number(user.scoreSocial) || 0);
-        const scoreLaw = getSubjScore(['กฎหมาย', 'กม', 'วิ.อาญา', 'พ.ร.บ.ตำรวจ'], Number(user.scoreLaw) || 0);
-        const scoreComputer = getSubjScore(['คอม', 'สารสนเทศ', 'ไอที', 'เทคโนโลยี'], Number(user.scoreComputer) || 0);
-        const scoreThai = getSubjScore(['ไทย', 'ภาษาไทย', '๕๔', '54'], Number(user.scoreThai) || 0);
+        const scoreSecretariat = getSubjScore(['ระเบียบสารบรรณ', 'สารบรรณ๒๕๒๖', '๒๕๒๖'], user.scoreSecretariat);
+        const scoreSaraban54 = getSubjScore(['ลักษณะที่๕๔', 'ลักษณะ๕๔', 'สารบรรณตำรวจ', '๕๔', '54'], user.scoreThai);
+        const scoreGeneral = getSubjScore(['ทั่วไป', 'คณิต', 'คำนวณ', 'อนุกรม'], user.scoreGeneral);
+        const scoreThai = getSubjScore(['ภาษาไทย', 'วิชาไทย'], user.scoreThai);
+        const scoreEnglish = getSubjScore(['อังกฤษ', 'ภาษาอังกฤษ', 'english'], user.scoreEnglish);
+        const scoreSocial = getSubjScore(['สังคม', 'จริยธรรม', 'อาเซียน'], user.scoreSocial);
+        const scoreLaw = getSubjScore(['กฎหมาย', 'กม', 'วิ.อาญา', 'พ.ร.บ.ตำรวจ'], user.scoreLaw);
+        const scoreComputer = getSubjScore(['คอม', 'สารสนเทศ', 'ไอที', 'เทคโนโลยี'], user.scoreComputer);
 
-        // Proper order matching labels: ['สารบรรณ', 'คำนวณ', 'สังคม', 'กฎหมาย', 'ไอที/คอม', 'ลักษณะ๕๔']
-        const scores = [scoreSecretariat, scoreGeneral, scoreSocial, scoreLaw, scoreComputer, scoreThai];
+        const labels = ['สารบรรณ', 'ลักษณะ๕๔', 'คำนวณ', 'ภาษาไทย', 'อังกฤษ', 'สังคม', 'กฎหมาย', 'ไอที/คอม'];
+        const scores = [scoreSecretariat, scoreSaraban54, scoreGeneral, scoreThai, scoreEnglish, scoreSocial, scoreLaw, scoreComputer];
         const nonZero = scores.filter(s => s > 0);
         const avgScore = nonZero.length > 0 ? Math.round(nonZero.reduce((a, b) => a + b, 0) / nonZero.length) : 0;
 
@@ -2780,7 +2785,7 @@
           radarChart = new Chart(radarCanvas.getContext('2d'), {
             type: 'radar',
             data: {
-              labels: ['สารบรรณ', 'คำนวณ', 'สังคม', 'กฎหมาย', 'ไอที/คอม', 'ลักษณะ๕๔'],
+              labels: labels,
               datasets: [{
                 data: scores,
                 backgroundColor: 'rgba(189, 27, 11, 0.12)',
@@ -2801,7 +2806,7 @@
                   angleLines: { color: '#F1F5F9' },
                   grid: { color: '#F1F5F9' },
                   pointLabels: {
-                    font: { family: 'Kanit', size: 11, weight: '500' },
+                    font: { family: 'Kanit', size: 10, weight: '600' },
                     color: '#64748B'
                   },
                   ticks: { display: false },
@@ -2820,12 +2825,12 @@
           barChart = new Chart(barCanvas.getContext('2d'), {
             type: 'bar',
             data: {
-              labels: ['สารบรรณ', 'คำนวณ', 'สังคม', 'กฎหมาย', 'ไอที/คอม', 'ลักษณะ๕๔'],
+              labels: labels,
               datasets: [{
                 data: scores,
                 backgroundColor: scores.map(s => s >= 70 ? '#16A34A' : (s >= 50 ? '#D97706' : '#BD1B0B')),
                 borderRadius: 4,
-                barThickness: 12
+                barThickness: 10
               }]
             },
             options: {

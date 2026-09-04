@@ -2756,16 +2756,40 @@ function updateStatsTabDetails() {
     statsLastUpdateText.textContent = `อัปเดตล่าสุด: วันนี้ (${today.getDate()} ${months[today.getMonth()]})`;
   }
 
-  // 2. Exact 6 Subjects Matching Screenshot & Database
-  const scoreSecretariat = Number(userProfile.scoreSecretariat) || 0;
-  const scoreGeneral = Number(userProfile.scoreGeneral) || 0; // คำนวณ
-  const scoreSocial = Number(userProfile.scoreSocial) || 0; // สังคม
-  const scoreLaw = Number(userProfile.scoreLaw) || 0; // กฎหมาย
-  const scoreComputer = Number(userProfile.scoreComputer) || 0; // ไอที/คอม
-  const scoreThai = Number(userProfile.scoreThai) || 0; // ลักษณะ๕๔ / ไทย
+  // 2. Exact 8 Subjects Matching Database & Actual Quiz History
+  let historyList = [];
+  try {
+    const uid = userProfile.id || 'guest';
+    const uRaw = localStorage.getItem(`userQuizHistory_${uid}`);
+    const uList = uRaw ? JSON.parse(uRaw) : [];
+    const dbList = (typeof userDbQuizHistory !== 'undefined' && Array.isArray(userDbQuizHistory)) ? userDbQuizHistory : [];
+    historyList = [...uList, ...dbList];
+  } catch (e) { }
 
-  const labels = ['สารบรรณ', 'คำนวณ', 'สังคม', 'กฎหมาย', 'ไอที/คอม', 'ลักษณะ๕๔'];
-  const scores = [scoreSecretariat, scoreGeneral, scoreSocial, scoreLaw, scoreComputer, scoreThai];
+  const getSubjScore = (subKeywords, fallbackScore) => {
+    const matched = historyList.filter(h => {
+      if (!h) return false;
+      const str = `${h.subject || ''} ${h.setTitle || ''}`.replace(/[\s_]/g, '').replace('กฏ', 'กฎ');
+      return subKeywords.some(k => str.includes(k));
+    });
+    if (matched.length > 0) {
+      const latest = matched[matched.length - 1];
+      return Math.round(Number(latest.scorePct) || 0);
+    }
+    return fallbackScore !== undefined && fallbackScore !== null ? Number(fallbackScore) || 0 : 0;
+  };
+
+  const scoreSecretariat = getSubjScore(['ระเบียบสารบรรณ', 'สารบรรณ๒๕๒๖', '๒๕๒๖'], userProfile.scoreSecretariat);
+  const scoreSaraban54 = getSubjScore(['ลักษณะที่๕๔', 'ลักษณะ๕๔', 'สารบรรณตำรวจ', '๕๔', '54'], userProfile.scoreThai);
+  const scoreGeneral = getSubjScore(['ทั่วไป', 'คณิต', 'คำนวณ', 'อนุกรม'], userProfile.scoreGeneral);
+  const scoreThai = getSubjScore(['ภาษาไทย', 'วิชาไทย'], userProfile.scoreThai);
+  const scoreEnglish = getSubjScore(['อังกฤษ', 'ภาษาอังกฤษ', 'english'], userProfile.scoreEnglish);
+  const scoreSocial = getSubjScore(['สังคม', 'จริยธรรม', 'อาเซียน'], userProfile.scoreSocial);
+  const scoreLaw = getSubjScore(['กฎหมาย', 'กม', 'วิ.อาญา', 'พ.ร.บ.ตำรวจ'], userProfile.scoreLaw);
+  const scoreComputer = getSubjScore(['คอม', 'สารสนเทศ', 'ไอที', 'เทคโนโลยี'], userProfile.scoreComputer);
+
+  const labels = ['สารบรรณ', 'ลักษณะ๕๔', 'คำนวณ', 'ภาษาไทย', 'อังกฤษ', 'สังคม', 'กฎหมาย', 'ไอที/คอม'];
+  const scores = [scoreSecretariat, scoreSaraban54, scoreGeneral, scoreThai, scoreEnglish, scoreSocial, scoreLaw, scoreComputer];
 
   const nonZeroScores = scores.filter(s => s > 0);
   const avg = nonZeroScores.length > 0
@@ -2807,7 +2831,7 @@ function updateStatsTabDetails() {
             angleLines: { color: '#F1F5F9' },
             grid: { color: '#F1F5F9' },
             pointLabels: {
-              font: { family: 'Kanit', size: 11, weight: '500' },
+              font: { family: 'Kanit', size: 10, weight: '600' },
               color: '#64748B'
             },
             ticks: { display: false },
@@ -6238,24 +6262,27 @@ function renderSubjectChaptersGrid(subjectKey) {
       return recs.length > 0 ? Math.max(...recs.map(r => r.scorePct || 0)) : 0;
     });
     const avgScore = completedScores.length > 0 ? Math.round(completedScores.reduce((a, b) => a + b, 0) / completedScores.length) : 0;
+    const isPassed = isFullyCompleted && avgScore >= 60;
 
-    if (isFullyCompleted) completedChaptersCount++;
+    if (isPassed) completedChaptersCount++;
 
     // Badge styling & subtitle status
     let statusSubtitle = '<span style="color: #94A3B8;">ยังไม่ได้ทำ</span>';
     if (totalQuestions === 0) {
       statusSubtitle = '<span style="color: #94A3B8; font-size: 12px; font-weight: 600;">ยังไม่อัปโหลดข้อสอบ</span>';
+    } else if (isPassed) {
+      statusSubtitle = `${totalQuestions} ข้อ &nbsp;•&nbsp; <span style="color: #16A34A; font-weight: 800;">✓ ผ่าน ${avgScore}% (ครบ ${matchingSets.length}/${matchingSets.length} ชุด)</span>`;
     } else if (isFullyCompleted) {
-      statusSubtitle = `${totalQuestions} ข้อ &nbsp;•&nbsp; <span style="color: #16A34A; font-weight: 800;">✓ ${avgScore}% (ครบ ${matchingSets.length}/${matchingSets.length} ชุด)</span>`;
+      statusSubtitle = `${totalQuestions} ข้อ &nbsp;•&nbsp; <span style="color: #EF4444; font-weight: 700;">ทำแล้ว ${avgScore}% (ยังไม่ผ่านเกณฑ์ 60%)</span>`;
     } else if (isPartiallyCompleted) {
       statusSubtitle = `${totalQuestions} ข้อ &nbsp;•&nbsp; <span style="color: #D97706; font-weight: 700;">ทำแล้ว ${completedMatchingSets.length}/${matchingSets.length} ชุด (${avgScore}%)</span>`;
     } else {
       statusSubtitle = `${totalQuestions} ข้อ &nbsp;•&nbsp; <span style="color: #94A3B8;">ยังไม่ได้ทำ (${matchingSets.length} ชุด)</span>`;
     }
 
-    const badgeBg = isFullyCompleted ? '#F0FDF4' : (isPartiallyCompleted ? '#FFFBEB' : '#F8FAFC');
-    const badgeBorder = isFullyCompleted ? '#86EFAC' : (isPartiallyCompleted ? '#FDE68A' : '#E2E8F0');
-    const badgeColor = isFullyCompleted ? '#16A34A' : (isPartiallyCompleted ? '#D97706' : '#64748B');
+    const badgeBg = isPassed ? '#F0FDF4' : (isFullyCompleted ? '#FEF2F2' : (isPartiallyCompleted ? '#FFFBEB' : '#F8FAFC'));
+    const badgeBorder = isPassed ? '#86EFAC' : (isFullyCompleted ? '#FECACA' : (isPartiallyCompleted ? '#FDE68A' : '#E2E8F0'));
+    const badgeColor = isPassed ? '#16A34A' : (isFullyCompleted ? '#EF4444' : (isPartiallyCompleted ? '#D97706' : '#64748B'));
 
     return `
       <div onclick="selectBankChapter('${subjectKey}', '${ch.replace(/'/g, "\\'")}')" style="background: #FFFFFF; border: 1.5px solid #F1F5F9; border-radius: 20px; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.02); margin-bottom: 4px;">
@@ -6276,7 +6303,7 @@ function renderSubjectChaptersGrid(subjectKey) {
 
         <!-- Right Side: Check Circle / Partial Tag + Chevron -->
         <div style="display: flex; align-items: center; gap: 8px;">
-          ${isFullyCompleted ? `
+          ${isPassed ? `
             <div style="width: 22px; height: 22px; border-radius: 50%; border: 1.8px solid #16A34A; display: flex; align-items: center; justify-content: center; color: #16A34A; font-size: 12px; font-weight: 900;">
               ✓
             </div>
