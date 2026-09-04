@@ -1403,6 +1403,7 @@ async function finishQuiz() {
 }
 
 
+const btnExamModePretest = document.getElementById('btnExamModePretest');
 if (btnExamModePretest) {
   btnExamModePretest.addEventListener('click', () => handleStartExam('pretest'));
 }
