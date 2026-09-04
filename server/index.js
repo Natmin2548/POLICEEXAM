@@ -8391,11 +8391,8 @@ ${contextText ? `คลังข้อมูลอ้างอิง:\n${context
     });
 
 // --- Admin API: Delete ALL Exam Sets & Questions ---
-app.delete('/api/admin/exams/all', authenticateToken, async (req, res) => {
+app.delete('/api/admin/exams/all', requireAdmin, async (req, res) => {
   try {
-    if (req.user.role !== 'ADMIN' && req.user.role !== 'OWNER') {
-      return res.status(403).json({ error: 'คุณไม่มีสิทธิ์ใช้งานคำสั่งนี้ (สำหรับ Admin เท่านั้น)' });
-    }
     const deletedQuestions = await prisma.question.deleteMany({});
     const deletedSets = await prisma.examSet.deleteMany({});
     res.json({
@@ -8409,11 +8406,8 @@ app.delete('/api/admin/exams/all', authenticateToken, async (req, res) => {
 });
 
 // --- Admin API: Delete Single Exam Set ---
-app.delete('/api/admin/exams/:id', authenticateToken, async (req, res) => {
+app.delete('/api/admin/exams/:id', requireAdmin, async (req, res) => {
   try {
-    if (req.user.role !== 'ADMIN' && req.user.role !== 'OWNER') {
-      return res.status(403).json({ error: 'คุณไม่มีสิทธิ์ใช้งานคำสั่งนี้' });
-    }
     const id = parseInt(req.params.id);
     await prisma.question.deleteMany({ where: { examSetId: id } });
     await prisma.examSet.delete({ where: { id } });
@@ -8425,11 +8419,8 @@ app.delete('/api/admin/exams/:id', authenticateToken, async (req, res) => {
 });
 
 // --- Admin API: Get Exam Set with Full Questions List for Editing ---
-app.get('/api/admin/exams/:id', authenticateToken, async (req, res) => {
+app.get('/api/admin/exams/:id', requireAdmin, async (req, res) => {
   try {
-    if (req.user.role !== 'ADMIN' && req.user.role !== 'OWNER') {
-      return res.status(403).json({ error: 'คุณไม่มีสิทธิ์ใช้งานคำสั่งนี้' });
-    }
     const id = parseInt(req.params.id);
     const examSet = await prisma.examSet.findUnique({
       where: { id },
@@ -8448,11 +8439,8 @@ app.get('/api/admin/exams/:id', authenticateToken, async (req, res) => {
 });
 
 // --- Admin API: Update Exam Set and its Questions ---
-app.put('/api/admin/exams/:id', authenticateToken, async (req, res) => {
+app.put('/api/admin/exams/:id', requireAdmin, async (req, res) => {
   try {
-    if (req.user.role !== 'ADMIN' && req.user.role !== 'OWNER') {
-      return res.status(403).json({ error: 'คุณไม่มีสิทธิ์ใช้งานคำสั่งนี้' });
-    }
     const id = parseInt(req.params.id);
     const { title, category, subcategory, status, questions } = req.body;
 

@@ -406,7 +406,8 @@ window.openEditExamModal = async function(examId) {
     });
 
     if (!res.ok) {
-      alert('ไม่สามารถโหลดข้อมูลชุดข้อสอบนี้ได้');
+      const errData = await res.json().catch(() => ({}));
+      alert('ไม่สามารถโหลดข้อมูลชุดข้อสอบนี้ได้: ' + (errData.error || res.statusText || 'รหัสข้อผิดพลาด ' + res.status));
       return;
     }
 
