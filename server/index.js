@@ -8040,7 +8040,11 @@ app.post('/api/admin/exams/preview-ai', authenticateToken, async (req, res) => {
 
     let topicInstruction = '';
     const combinedStr = `${subject || ''} ${subcategory || ''} ${title || ''}`.toLowerCase();
-    if (combinedStr.includes('อนุกรม')) {
+    if (combinedStr.includes('ภาษาไทย') || combinedStr.includes('ไทย')) {
+      topicInstruction = 'คำแนะนำพิเศษ: ข้อสอบวิชาภาษาไทยสำหรับสอบตำรวจ เน้นตามหัวข้อที่ระบุ (เช่น การใช้คำให้ถูกต้อง, การสะกดคำ, ราชาศัพท์, สำนวนไทย, ประโยคความเดียว/ความรวม/ความซ้อน, ระดับภาษา, โวหารการเขียน, การจับใจความบทความ) พร้อม 4 ตัวเลือก และคำอธิบายเฉลยที่ชัดเจน';
+    } else if (combinedStr.includes('ภาษาอังกฤษ') || combinedStr.includes('อังกฤษ') || combinedStr.includes('english')) {
+      topicInstruction = 'Special Instruction: English exam for Thai Police Examination. Focus on the specified topic (Conversation / Vocabulary / Reading comprehension / Grammar: Tenses, Subject-Verb Agreement, Passive Voice, Prepositions, Connectors). Questions and choices should be in English (with Thai explanation in the explanation field). Provide 4 choices (optionA, optionB, optionC, optionD) and detailed explanation in Thai.';
+    } else if (combinedStr.includes('อนุกรม')) {
       topicInstruction = 'คำแนะนำพิเศษ: ข้อสอบชุดนี้เน้นเรื่อง "อนุกรมตัวเลขและอนุกรมตัวอักษร" (Number & Letter Series) สำหรับสอบตำรวจ โปรดสร้างคำถามอนุกรมตัวเลข (เช่น 2, 5, 10, 17, 26, ...) พร้อม 4 ตัวเลือก และอธิบายวิธีคิดหาตัวเลขถัดไปอย่างเป็นขั้นตอนในช่อง explanation';
     } else if (combinedStr.includes('คำนวณ') || combinedStr.includes('คณิต')) {
       topicInstruction = 'คำแนะนำพิเศษ: เน้นออกข้อสอบการคิดคำนวณคณิตศาสตร์ โจทย์ปัญหา สมการ อัตราส่วน เปอร์เซ็นต์ และการคำนวณอายุ';

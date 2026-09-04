@@ -1699,7 +1699,9 @@ window.startBatchAutoExamGeneration = async function() {
           const isSameSubject = ex.category === subject || 
             (subject.includes('สารบรรณ') && ex.category && ex.category.includes('สารบรรณ')) ||
             (subject === 'กฏหมาย' && ex.category && (ex.category.includes('กฎหมาย') || ex.category.includes('กฏหมาย'))) ||
-            (subject === 'คอม' && ex.category && (ex.category.includes('คอม') || ex.category.includes('สารสนเทศ')));
+            (subject === 'คอม' && ex.category && (ex.category.includes('คอม') || ex.category.includes('สารสนเทศ'))) ||
+            (subject.includes('ไทย') && ex.category && ex.category.includes('ไทย')) ||
+            (subject.includes('อังกฤษ') && ex.category && (ex.category.includes('อังกฤษ') || ex.category.toLowerCase().includes('english')));
           if (!isSameSubject) return false;
 
           const cleanCh = chapterName.replace(/บทที่\s*\d+\s*/, '').trim();
