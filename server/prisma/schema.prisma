@@ -20,7 +20,8 @@ model User {
   points           Int      @default(0)
   level            Int      @default(1)
   xp               Int      @default(0)
-  streak           Int      @default(0)
+  streak           Int      @default(1)
+  streakLastDate   DateTime?
   battleWins       Int      @default(0)
   scoreGeneral     Int      @default(0)
   scoreThai        Int      @default(0)

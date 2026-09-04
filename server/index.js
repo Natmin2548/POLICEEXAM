@@ -637,6 +637,8 @@ app.post('/api/auth/login', async (req, res) => {
 
     const redirectTo = (user.role === 'ADMIN' || user.role === 'OWNER') ? '/admin-dashboard/' : '/home/';
 
+    user = await updateDailyVisitStreak(user);
+
     res.json({
       message: 'เข้าสู่ระบบสำเร็จ!',
       token,
@@ -688,10 +690,48 @@ app.get('/api/exams/sets', async (req, res) => {
   try {
     const where = { isPublic: true };
     if (category) {
-      where.OR = [
-        { category: { contains: category, mode: 'insensitive' } },
-        { subcategory: { contains: category, mode: 'insensitive' } }
-      ];
+      const cat = String(category).trim();
+      if (cat === 'สบ' || cat === 'สารบรรณ' || cat === 'งานสารบรรณ') {
+        where.AND = [
+          {
+            OR: [
+              { category: { contains: 'งานสารบรรณ', mode: 'insensitive' } },
+              { category: { equals: 'สารบรรณ' } },
+              { category: { contains: '๒๕๒๖' } },
+              { category: { contains: '2526' } },
+              { subcategory: { contains: 'งานสารบรรณ', mode: 'insensitive' } },
+              { title: { contains: 'งานสารบรรณ', mode: 'insensitive' } }
+            ]
+          },
+          {
+            NOT: [
+              { category: { contains: '๕๔' } },
+              { category: { contains: '54' } },
+              { category: { contains: 'สารบรรณตำรวจ', mode: 'insensitive' } },
+              { subcategory: { contains: 'สารบรรณตำรวจ', mode: 'insensitive' } },
+              { subcategory: { contains: '๕๔' } },
+              { subcategory: { contains: '54' } },
+              { title: { contains: 'สารบรรณตำรวจ', mode: 'insensitive' } },
+              { title: { contains: '๕๔' } }
+            ]
+          }
+        ];
+      } else if (cat === 'ลักษณะที่54' || cat === '54' || cat === 'สารบรรณตำรวจ_๕๔' || cat === 'สารบรรณตำรวจ' || cat === 'ลักษณะที่ ๕๔') {
+        where.OR = [
+          { category: { contains: '๕๔' } },
+          { category: { contains: '54' } },
+          { category: { contains: 'สารบรรณตำรวจ', mode: 'insensitive' } },
+          { subcategory: { contains: 'สารบรรณตำรวจ', mode: 'insensitive' } },
+          { subcategory: { contains: '๕๔' } },
+          { title: { contains: 'สารบรรณตำรวจ', mode: 'insensitive' } },
+          { title: { contains: '๕๔' } }
+        ];
+      } else {
+        where.OR = [
+          { category: { contains: cat, mode: 'insensitive' } },
+          { subcategory: { contains: cat, mode: 'insensitive' } }
+        ];
+      }
     }
 
     const sets = await prisma.examSet.findMany({
@@ -1385,15 +1425,78 @@ const requireAdmin = async (req, res, next) => {
   });
 };
 
+// --- Daily Visit Streak Counter ---
+async function updateDailyVisitStreak(user) {
+  if (!user) return user;
+  try {
+    const now = new Date();
+    const todayStr = now.toLocaleDateString('en-CA'); // Format: YYYY-MM-DD
+    
+    let lastDateStr = null;
+    if (user.streakLastDate) {
+      lastDateStr = new Date(user.streakLastDate).toLocaleDateString('en-CA');
+    }
+    
+    // Already recorded today -> ensure streak is at least 1 and return
+    if (lastDateStr === todayStr) {
+      const currentStreak = Math.max(1, user.streak || 1);
+      if (user.streak !== currentStreak) {
+        return await prisma.user.update({
+          where: { id: user.id },
+          data: { streak: currentStreak }
+        });
+      }
+      return user;
+    }
+    
+    let newStreak = 1;
+    if (lastDateStr) {
+      const d1 = new Date(todayStr);
+      const d2 = new Date(lastDateStr);
+      const diffTime = d1.getTime() - d2.getTime();
+      const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (diffDays === 1) {
+        // Logged in on consecutive day
+        newStreak = Math.max(1, user.streak || 0) + 1;
+      } else if (diffDays <= 0) {
+        // Same day fallback
+        newStreak = Math.max(1, user.streak || 1);
+      } else {
+        // Missed more than 24-48 hours (skipped a day) -> Reset to Day 1
+        newStreak = 1;
+      }
+    } else {
+      // First visit ever -> Start at 1
+      newStreak = 1;
+    }
+    
+    const updated = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        streak: newStreak,
+        streakLastDate: now
+      }
+    });
+    return updated;
+  } catch (err) {
+    console.error('updateDailyVisitStreak error:', err);
+    return user;
+  }
+}
+
 app.get(['/api/user', '/api/user/profile'], authenticateToken, async (req, res) => {
   try {
-    const user = await prisma.user.findUnique({
+    let user = await prisma.user.findUnique({
       where: { id: req.user.userId }
     });
 
     if (!user) {
       return res.status(404).json({ error: 'ไม่พบข้อมูลผู้ใช้งาน' });
     }
+
+    // Automatically count daily visit streak on website visit/profile load
+    user = await updateDailyVisitStreak(user);
 
     // Calculate actual answered questions count from completed stages
     const completedProgress = await prisma.userStageProgress.findMany({
@@ -1746,20 +1849,32 @@ app.get('/api/exams/generate-ai', authenticateToken, async (req, res) => {
   };
   const catName = subjectMeta[subject]?.name || subject;
 
-  const systemPrompt = `คุณคืออาจารย์ผู้ออกข้อสอบสำหรับเตรียมสอบนายสิบตำรวจของไทย
-กรุณาสร้างข้อสอบแบบปรนัย (4 ตัวเลือก ก, ข, ค, ง) จำนวน 10 ข้อสำหรับวิชา: "${catName}"
-ระดับความยาก: ปานกลางถึงยาก (ใกล้เคียงกับข้อสอบจริงของสำนักงานตำรวจแห่งชาติ)
+  const systemPrompt = `คุณคือผู้เชี่ยวชาญระดับปรมาจารย์ในการออกข้อสอบคัดเลือกข้าราชการตำรวจ (กองการสอบ กองบัญชาการศึกษา)
+กรุณาสร้างข้อสอบแบบปรนัย (4 ตัวเลือก ก, ข, ค, ง) คุณภาพสูงจำนวน 10 ข้อ สำหรับวิชา: "${catName}"
 
-ผลลัพธ์ที่คุณส่งกลับต้องเป็น JSON Array ของข้อสอบ 10 ข้อนี้เท่านั้น ห้ามมี markdown (เช่น \`\`\`json) หรือข้อความอธิบายใดๆ ทั้งสิ้น ตอบเฉพาะ JSON เท่านั้น โครงสร้าง JSON ของแต่ละข้อมีรูปแบบดังนี้:
+🎯 สัดส่วนโครงสร้างข้อสอบตามแนวข้อสอบตำรวจจริง (ง่าย-ปานกลาง-ยาก คละกัน):
+1. **70% ข้อสอบถามนิยาม ตัวบทระเบียบ หลักการ และความจำแม่นยำ (Definitions & Core Rules 70%)**:
+   - ถามนิยามความหมายตามระเบียบ, ประเภท/ชนิดเอกสาร, มาตรฐานแบบพิมพ์/ขนาดตราครุฑ, ลำดับขั้นตอน, ระยะเวลา/จำนวนวัน, ชั้นความเร็ว/ชั้นความลับ, ผู้มีอำนาจลงนาม/สั่งการ, ข้อยกเว้นตามระเบียบ
+   - **เทคนิคตัวเลือกหลอกในข้อสอบนิยาม**: ตัวเลือกต้องหลอกอย่างคมกริบ เช่น สลับคำใกล้เคียง, สลับคำเชื่อมเงื่อนไข ("และ" vs "หรือ", "ต้อง" vs "อาจ"), สลับตัวเลข/จำนวนวัน, สลับตำแหน่งผู้มีอำนาจ
+2. **30% ข้อสอบสถานการณ์จำลองและการประยุกต์ใช้ (Applied Scenarios & Case Study 30%)**:
+   - ผูกโจทย์เป็นสถานการณ์สมมติในการปฏิบัติหน้าที่ของตำรวจ การจัดทำเอกสาร การสั่งการ หรือการวิเคราะห์ข้อผิดพลาดในเคสตัวอย่าง
+3. **ระดับความยากง่าย (Difficulty Mix)**:
+   - มีทั้งข้อง่าย (จำได้ตอบได้ทันที ~30%), ปานกลาง (ต้องแม่นระเบียบ ~50%) และข้อยาก/ดักจุดผิดเล็กๆ น้อยๆ (~20%) ปะปนกันอย่างลงตัว
+4. **ความถูกต้องของเนื้อหาจริง 100% (100% Factually Grounded)**:
+   - คำตอบที่ถูกต้องและคำอธิบายเฉลยต้องตรงตามตัวบทกฎหมายและระเบียบจริง ไม่มั่วข้อเท็จจริง
+5. **คำอธิบายเฉลยที่เจาะลึก (Deep-Dive Explanation)**:
+   - อธิบายว่าทำไมข้อที่ถูกจึงถูกต้อง และชี้จุดว่าตัวเลือกหลอกข้ออื่นผิดตรงจุดไหนอย่างชัดเจน
+
+ผลลัพธ์ที่คุณส่งกลับต้องเป็น JSON Array ของข้อสอบ 10 ข้อนี้เท่านั้น ห้ามมี markdown (เช่น \`\`\`json) หรือข้อความอธิบายใดๆ นอกเหนือจาก JSON:
 [
   {
-    "questionText": "โจทย์คำถามวิชา ${catName} ...",
+    "questionText": "โจทย์คำถาม...",
     "choice1": "ตัวเลือก ก...",
     "choice2": "ตัวเลือก ข...",
     "choice3": "ตัวเลือก ค...",
     "choice4": "ตัวเลือก ง...",
-    "correctAnswer": 0, // ดัชนีคำตอบที่ถูกต้องเป็นตัวเลข (0 = ตัวเลือก 1, 1 = ตัวเลือก 2, 2 = ตัวเลือก 3, 3 = ตัวเลือก 4)
-    "explanation": "อธิบายเฉลยอย่างละเอียดเชิงข้อกฎหมายหรือหลักการคิด..."
+    "correctAnswer": 0, // ดัชนีคำตอบที่ถูกต้อง (0 = ก, 1 = ข, 2 = ค, 3 = ง)
+    "explanation": "อธิบายเฉลยอย่างละเอียด อ้างอิงระเบียบ/ข้อกฎหมาย และชี้จุดที่ตัวเลือกอื่นหลอก..."
   }
 ]`;
 
@@ -7890,26 +8005,37 @@ app.post('/api/admin/exams/preview-ai', authenticateToken, async (req, res) => {
       topicInstruction = 'คำแนะนำพิเศษ: เน้นออกข้อสอบการคิดเชิงเหตุผล ตรรกศาสตร์ เงื่อนไขภาษา และเงื่อนไขสัญลักษณ์';
     }
 
-    const prompt = `คุณเป็นผู้เชี่ยวชาญระดับสูงในการออกข้อสอบแข่งขันบรรจุเป็นข้าราชการตำรวจ (สายอำนวยการและปราบปราม)
-โปรดสร้างข้อสอบภาษาไทยคุณภาพสูงจำนวน ${count} ข้อ สำหรับวิชา: "${subject}"
+    const prompt = `คุณคือผู้เชี่ยวชาญระดับปรมาจารย์ในการออกข้อสอบคัดเลือกข้าราชการตำรวจ (สายอำนวยการและสายปราบปราม)
+โปรดสร้างข้อสอบภาษาไทยจำนวน ${count} ข้อ สำหรับวิชา: "${subject}"
 ${subcategory ? `หมวดย่อย/หัวข้อเรื่อง: "${subcategory}"\n` : ''}${title ? `ชื่อชุดข้อสอบ: "${title}"\n` : ''}
 ${topicInstruction ? `${topicInstruction}\n` : ''}
-${contextText ? `คลังข้อมูลอ้างอิงทางกฎหมายและระเบียบตำรวจที่ต้องใช้ออกข้อสอบ:\n${contextText.substring(0, 16000)}\n\n` : ''}
-ข้อกำหนดสำคัญในการสร้างข้อสอบ:
-1. ออกข้อสอบจำนวน ${count} ข้อ แบบปรนัย 4 ตัวเลือก (A, B, C, D)
-2. ${contextText ? 'เนื้อหาข้อสอบ ตัวเลือก และคำอธิบายเฉลย ต้องอ้างอิงระเบียบ/กฎหมายในคลังข้อมูลอ้างอิงด้านบนอย่างถูกต้อง 100%' : 'เนื้อหาต้องตรงตามขอบเขตข้อสอบตำรวจล่าสุด'}
-3. แต่ละข้อต้องมีคำอธิบายเฉลยอย่างละเอียด อ้างอิงระเบียบหรือเหตุผลทางวิชาการ
-4. ตอบกลับเฉพาะโครงสร้าง JSON Array ตามรูปแบบนี้เท่านั้น ห้ามใส่ข้อความเกริ่นหรือ Markdown ล้อมรอบนอกเหนือจาก JSON:
+${contextText ? `คลังข้อมูลอ้างอิงและระเบียบ/กฎหมายที่ต้องใช้ออกข้อสอบ:\n${contextText.substring(0, 16000)}\n\n` : ''}
 
+🎯 สัดส่วนและแนวทางการออกแบบข้อสอบตามข้อสอบแข่งขันตำรวจจริง:
+1. **70% ข้อสอบถามนิยาม ตัวบทระเบียบ มาตรฐาน และหลักการจำ (Definitions & Core Rules ~70%)**:
+   - เน้นถามนิยามความหมายตามระเบียบ, ประเภท/ชนิดของหนังสือราชการ, มาตรฐานแบบพิมพ์/ขนาดตราครุฑ/ระยะเวลา/จำนวนวัน, ชั้นความเร็ว/ชั้นความลับ, ผู้มีอำนาจลงนาม/สั่งการ, ลำดับขั้นตอนตามระเบียบ, ข้อยกเว้นตามตัวบท
+   - **ศิลปะตัวเลือกหลอกในข้อนิยาม**: ตัวเลือกหลอกทั้ง 3 ตัว ต้องหลอกอย่างแนบเนียนในเนื้อหาจริง เช่น สลับคำใกล้เคียง, สลับคำเชื่อม ("และ" vs "หรือ", "ต้อง" vs "อาจ"), สลับตัวเลข/จำนวนวัน, สลับผู้มีอำนาจ
+2. **30% ข้อสอบประยุกต์และสถานการณ์จำลอง (Applied Scenarios & Case Study ~30%)**:
+   - ผูกโจทย์เป็นสถานการณ์สมมติในการปฏิบัติงานจริงของตำรวจ การออกหนังสือ การสั่งการ หรือการวิเคราะห์ข้อผิดพลาดในเอกสารจำลอง
+3. **ระดับความยากง่าย (Difficulty Mix)**:
+   - มีข้อยกจำได้ตอบได้ (~30%), ข้อปานกลางที่ต้องแม่นระเบียบ (~50%) และข้อยากที่ดักจุดผิดเล็กๆ น้อยๆ (~20%) ปะปนกันอย่างเป็นธรรมชาติ
+4. **ความถูกต้องทางวิชาการและระเบียบจริง 100% (100% Factually Grounded)**:
+   - คำตอบที่ถูกต้องและคำอธิบายเฉลยต้องอ้างอิงตัวบทกฎหมาย ระเบียบ หรือหลักวิชาการจริงอย่างแม่นยำ ไม่แต่งข้อเท็จจริงผิดเพี้ยน
+5. **ความหลากหลาย ไม่จำเจ แม้เจนในบทเดิมซ้ำๆ (High Novelty)**:
+   - กระจายคำถามไปยังประเด็นต่างๆ เปลี่ยนคำถามและตัวหลอก เพื่อให้ผู้สอบเข้าใจหลักการจริง
+6. **คำอธิบายเฉลยเจาะลึก (Deep-Dive Explanation)**:
+   - อธิบายว่าทำไมคำตอบที่ถูกจึงถูกต้อง และชี้ให้เห็นว่าตัวเลือกหลอกข้ออื่นผิดตรงคำไหน/จุดใด
+
+รูปแบบผลลัพธ์: ตอบกลับเฉพาะโครงสร้าง JSON Array ตามรูปแบบนี้เท่านั้น ห้ามใส่ข้อความเกริ่นหรือ Markdown ใดๆ นอกเหนือจาก JSON:
 [
   {
-    "questionText": "คำถามข้อที่ 1...",
+    "questionText": "โจทย์คำถาม...",
     "optionA": "ตัวเลือก ก...",
     "optionB": "ตัวเลือก ข...",
     "optionC": "ตัวเลือก ค...",
     "optionD": "ตัวเลือก ง...",
     "correctOption": "A",
-    "explanation": "คำอธิบายเฉลย..."
+    "explanation": "คำอธิบายเฉลยอย่างละเอียด อ้างอิงระเบียบ/ข้อกฎหมาย และชี้จุดที่ตัวเลือกอื่นหลอก..."
   }
 ]
 `;
@@ -8091,10 +8217,18 @@ ${d.content}`).join('\n\n');
 
     const modelsToTry = ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.0-flash', 'gemini-1.5-flash'];
 
-    const prompt = `คุณเป็นผู้เชี่ยวชาญการออกข้อสอบแข่งขันบรรจุเป็นข้าราชการตำรวจ
-โปรดสร้างข้อสอบเพิ่มเติมจำนวน ${count} ข้อ สำหรับวิชา: "${examSet.category}" (สร้างเนื้อหาไม่ซ้ำกับข้อสอบเดิม)
+    const prompt = `คุณคือผู้เชี่ยวชาญระดับปรมาจารย์ในการออกข้อสอบแข่งขันบรรจุเป็นข้าราชการตำรวจ
+โปรดสร้างข้อสอบเพิ่มเติมจำนวน ${count} ข้อ สำหรับวิชา: "${examSet.category}" (เน้นสัดส่วนนิยาม 70% + สถานการณ์ประยุกต์ 30% คละง่าย-ยาก)
 
 ${contextText ? `คลังข้อมูลอ้างอิง:\n${contextText.substring(0, 16000)}\n\n` : ''}
+
+🎯 ข้อกำหนด:
+1. ประมาณ 70% เน้นถามนิยาม ตัวบทระเบียบ มาตรฐาน และความจำแม่นยำ พร้อมตัวเลือกหลอกที่คมกริบ (สลับเงื่อนไข/คำเชื่อม/ตัวเลข/ผู้มีอำนาจ)
+2. ประมาณ 30% เป็นโจทย์สถานการณ์จำลอง (Scenario-Based) ให้วิเคราะห์
+3. มีข้อง่าย ปานกลาง และข้อยากดักจุดผิด คละกันอย่างลงตัว
+4. คงความถูกต้องตามตัวบทระเบียบ/กฎหมายจริง 100%
+5. เขียนคำอธิบายเฉลยอย่างละเอียด อ้างอิงระเบียบและชี้ชัดว่าตัวเลือกอื่นผิดตรงจุดใด
+
 ตอบกลับเฉพาะ JSON Array เท่านั้น:
 [
   {
@@ -8104,7 +8238,7 @@ ${contextText ? `คลังข้อมูลอ้างอิง:\n${context
     "optionC": "ตัวเลือก ค...",
     "optionD": "ตัวเลือก ง...",
     "correctOption": "A",
-    "explanation": "คำอธิบายเฉลย..."
+    "explanation": "คำอธิบายเฉลยอย่างละเอียด อ้างอิงระเบียบและชี้จุดที่ตัวเลือกอื่นหลอก..."
   }
 ]
 `;
@@ -8213,115 +8347,7 @@ ${contextText ? `คลังข้อมูลอ้างอิง:\n${context
 
 
 
-// GET /api/exams/sets - Fetch exam sets list for Question Bank
-app.get('/api/exams/sets', async (req, res) => {
-  try {
-    const { category } = req.query;
-    const cat = (category || '').trim();
 
-    let searchConditions = [];
-    if (cat) {
-      if (cat === 'สบ' || cat === 'สารบรรณ' || cat === 'งานสารบรรณ') {
-        searchConditions = ['สารบรรณ', 'งานสารบรรณ', 'สบ', '๒๕๒๖'];
-      } else if (cat === 'ทป' || cat === 'ทั่วไป' || cat === 'ความสามารถทั่วไป') {
-        searchConditions = ['ทั่วไป', 'ความสามารถทั่วไป', 'คณิต'];
-      } else if (cat === 'กม' || cat === 'กฎหมาย' || cat === 'กฏหมาย' || cat === 'กฎหมายที่ประชาชนควรรู้') {
-        searchConditions = ['กฎหมาย', 'กฏหมาย', 'กม'];
-      } else if (cat === 'คอม' || cat === 'เทคโนโลยีสารสนเทศ' || cat === 'คอมพิวเตอร์') {
-        searchConditions = ['คอม', 'เทคโนโลยีสารสนเทศ', 'คอมพิวเตอร์'];
-      } else if (cat === 'สังคม') {
-        searchConditions = ['สังคม', 'วัฒนธรรม', 'อาเซียน'];
-      } else if (cat === 'ลักษณะที่54' || cat === '54') {
-        searchConditions = ['ลักษณะที่ ๕๔', 'ลักษณะที่54', '๕๔'];
-      } else {
-        searchConditions = [cat];
-      }
-    }
-
-    const orClauses = [];
-    searchConditions.forEach(sc => {
-      orClauses.push({ category: { contains: sc } });
-      orClauses.push({ subcategory: { contains: sc } });
-      orClauses.push({ title: { contains: sc } });
-    });
-
-    let sets = await prisma.examSet.findMany({
-      where: orClauses.length > 0 ? { OR: orClauses } : {},
-      include: { questions: { select: { id: true } } },
-      orderBy: { id: 'asc' }
-    });
-
-    const formattedSets = sets.map(s => ({
-      id: s.id,
-      title: s.title,
-      category: s.category,
-      subcategory: s.subcategory,
-      desc: s.desc || `ชุดข้อสอบหมวด ${s.category} (จำนวน ${(s.questions && s.questions.length) ? s.questions.length : (s.totalCount || 0)} ข้อ)`,
-      questionsCount: (s.questions && s.questions.length) ? s.questions.length : (s.totalCount || 0),
-      timeMinutes: Math.max(Math.round(((s.questions && s.questions.length) ? s.questions.length : (s.totalCount || 20)) * 1.1), 15),
-      tag: 'ชุดข้อสอบจริง'
-    }));
-
-    res.json(formattedSets);
-  } catch (err) {
-    console.error('Fetch exam sets error:', err);
-    res.status(500).json({ error: 'เกิดข้อผิดพลาดในการโหลดชุดข้อสอบ: ' + err.message });
-  }
-});
-
-// GET /api/exams/questions - Fetch questions for a specific set
-app.get('/api/exams/questions', async (req, res) => {
-  try {
-    const { subject, setId, count } = req.query;
-    const numCount = parseInt(count) || 10;
-
-    // 1. If numeric setId, try to find in prisma.examSet
-    if (setId && !isNaN(parseInt(setId))) {
-      const set = await prisma.examSet.findUnique({
-        where: { id: parseInt(setId) },
-        include: { questions: true }
-      });
-      if (set && set.questions && set.questions.length > 0) {
-        return res.json(set.questions.map((q) => ({
-          id: q.id,
-          questionText: q.questionText,
-          choices: [q.choice1, q.choice2, q.choice3, q.choice4],
-          correctAnswer: q.correctAnswer || 1,
-          explanation: q.explanation || 'คำอธิบายเฉลยอ้างอิงตามระเบียบและมาตรฐานข้อสอบ'
-        })));
-      }
-    }
-
-    // 2. Fetch from prisma.question
-    const questions = await prisma.question.findMany({
-      where: subject ? { category: { contains: subject } } : {},
-      take: numCount
-    });
-
-    if (questions.length > 0) {
-      return res.json(questions.map((q) => ({
-        id: q.id,
-        questionText: q.questionText,
-        choices: [q.choice1, q.choice2, q.choice3, q.choice4],
-        correctAnswer: q.correctAnswer || 1,
-        explanation: q.explanation || 'คำอธิบายเฉลยอ้างอิงตามระเบียบและมาตรฐานข้อสอบ'
-      })));
-    }
-
-    // 3. Fallback default questions
-    const fallbackQuestions = defaultQuestions[0]?.questions || [];
-    res.json(fallbackQuestions.slice(0, numCount).map((q, idx) => ({
-      id: idx + 1,
-      questionText: q.questionText,
-      choices: [q.choice1, q.choice2, q.choice3, q.choice4],
-      correctAnswer: q.correctAnswer || 1,
-      explanation: q.explanation || 'คำอธิบายเฉลยอ้างอิงตามระเบียบและมาตรฐานข้อสอบตำรวจ'
-    })));
-  } catch (err) {
-    console.error('Fetch questions error:', err);
-    res.status(500).json({ error: 'เกิดข้อผิดพลาดในการโหลดคำถาม: ' + err.message });
-  }
-});
 
 // GET /api/exams/subject-questions - Fetch real questions for Question Bank Mode
 app.get('/api/exams/subject-questions', authenticateToken, async (req, res) => {

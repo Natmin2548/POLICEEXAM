@@ -150,15 +150,12 @@ function initializeDashboard() {
   const greetingStreakSubtitle = document.getElementById('greetingStreakSubtitle');
   
   if (userProfile) {
+    const streakCount = Math.max(1, userProfile.streak || 1);
     if (greetingStreakTitle) {
-      greetingStreakTitle.innerHTML = `${userProfile.streak || 0} วันติดต่อกัน! 🔥`;
+      greetingStreakTitle.innerHTML = `${streakCount} วันติดต่อกัน! 🔥`;
     }
     if (greetingStreakSubtitle) {
-      if ((userProfile.streak || 0) > 0) {
-        greetingStreakSubtitle.textContent = 'ทำข้อสอบวันนี้เพื่อรักษา streak';
-      } else {
-        greetingStreakSubtitle.textContent = 'เริ่มทำข้อสอบเพื่อสะสม streak เลย!';
-      }
+      greetingStreakSubtitle.textContent = `เข้าใช้งานต่อเนื่อง ${streakCount} วันแล้ว! กลับมาเข้าเว็บทุกวันเพื่อสะสม Streak ต่อเนื่อง`;
     }
   }
   
@@ -213,6 +210,20 @@ async function loadRealProfile() {
         localStorage.setItem('userProfile', JSON.stringify(userProfile));
         initializeDashboard();
         updateStatsFromProfile(data.user);
+        
+        // Fetch real quiz history from DB for this user
+        if (authToken) {
+          fetch(`${API_BASE}/api/user/quiz-history?_t=${Date.now()}`, {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+          }).then(r => r.ok ? r.json() : []).then(hist => {
+            if (Array.isArray(hist)) {
+              userDbQuizHistory = hist;
+              if (typeof window.updateHomeDashboardCharts === 'function') {
+                window.updateHomeDashboardCharts(userProfile);
+              }
+            }
+          }).catch(() => {});
+        }
         
         // Admin Panel Check
         const btnAdminPanel = document.getElementById('btnAdminPanel');
@@ -539,7 +550,8 @@ const SUBJECT_CONFIG = {
       'บทที่ 9 การเก็บรักษา',
       'บทที่ 10 การยืม',
       'บทที่ 11 การทำลาย',
-      'บทที่ 12 ระบบสารบรรณอิเล็กทรอนิกส์'
+      'บทที่ 12 ระบบสารบรรณอิเล็กทรอนิกส์',
+      'บทที่ 13 รหัสพยัญชนะประจำส่วนราชการ'
     ],
     sets: []
   },
@@ -735,6 +747,19 @@ window.startBankSubject = async function(subjectKey) {
     if (res.ok) {
       activeSubjectDBSets = await res.json();
       if (Array.isArray(activeSubjectDBSets)) {
+        if (subjectKey === 'งานสารบรรณ') {
+          activeSubjectDBSets = activeSubjectDBSets.filter(s => !(
+            (s.category && (s.category.includes('๕๔') || s.category.includes('54') || s.category.includes('ตำรวจ'))) ||
+            (s.subcategory && (s.subcategory.includes('๕๔') || s.subcategory.includes('ตำรวจ'))) ||
+            (s.title && (s.title.includes('๕๔') || s.title.includes('ลักษณะที่') || s.title.includes('สารบรรณตำรวจ')))
+          ));
+        } else if (subjectKey === 'ลักษณะที่54') {
+          activeSubjectDBSets = activeSubjectDBSets.filter(s => (
+            (s.category && (s.category.includes('๕๔') || s.category.includes('54') || s.category.includes('ตำรวจ'))) ||
+            (s.subcategory && (s.subcategory.includes('๕๔') || s.subcategory.includes('ตำรวจ'))) ||
+            (s.title && (s.title.includes('๕๔') || s.title.includes('ลักษณะที่') || s.title.includes('สารบรรณตำรวจ')))
+          ));
+        }
         activeSubjectDBSets.forEach(s => {
           if (s.subcategory && s.subcategory.trim() && !s.subcategory.includes('รวมทุก')) {
             chaptersSet.add(s.subcategory.trim());
@@ -991,8 +1016,9 @@ function updateSubjectStatsView() {
   const avgBar = document.getElementById('subjStatAvgBar');
   const masteryEl = document.getElementById('subjStatMastery');
 
+  const userId = (typeof userProfile !== 'undefined' && userProfile && userProfile.id) ? userProfile.id : 'guest';
   const history = getLocalQuizHistory(activeSubjectKey);
-  const savedScores = JSON.parse(localStorage.getItem(`stats_${activeSubjectKey}`) || '[]');
+  const savedScores = JSON.parse(localStorage.getItem(`stats_${userId}_${activeSubjectKey}`) || '[]');
 
   // Combine real history records and saved scores
   const allScores = [
@@ -1298,7 +1324,8 @@ async function finishQuiz() {
 
   // Save to subject stats
   try {
-    const key = `stats_${currentQuizSubject}`;
+    const userId = (typeof userProfile !== 'undefined' && userProfile && userProfile.id) ? userProfile.id : 'guest';
+    const key = `stats_${userId}_${currentQuizSubject}`;
     const cur = JSON.parse(localStorage.getItem(key) || '[]');
     cur.push({ percent: percent, score: currentQuizScore, total: total, date: new Date().toISOString() });
     localStorage.setItem(key, JSON.stringify(cur));
@@ -1335,9 +1362,12 @@ const btnProfileLogout = document.getElementById('btnProfileLogout');
 async function handleLogout() {
   const confirmLog = await showCenteredConfirm('ยืนยันการออกจากระบบ', 'คุณต้องการออกจากระบบใช่หรือไม่?', { okText: 'ออกจากระบบ', okColor: '#EF4444' });
   if (confirmLog) {
+    userDbQuizHistory = [];
     localStorage.removeItem('authToken');
     localStorage.removeItem('userProfile');
     localStorage.removeItem('loginProvider');
+    localStorage.removeItem('userQuizHistory');
+    localStorage.removeItem('userVocabHistory');
     window.location.replace('/?login=1');
   }
 }
@@ -1518,6 +1548,7 @@ if (profileTabBtn) {
     if (communityView) communityView.classList.remove('active');
     if (battleView) battleView.classList.remove('active');
     if (statsView) statsView.classList.remove('active');
+    if (questionBankView) questionBankView.classList.remove('active');
     
     // Bind profile view details from userProfile object
     updateProfileTabDetails();
@@ -4729,7 +4760,7 @@ window.openVocabStatsModal = function() {
   const vKey = `userVocabHistory_${userId}`;
   let history = [];
   try {
-    const raw = localStorage.getItem(vKey) || localStorage.getItem('userVocabHistory');
+    const raw = localStorage.getItem(vKey);
     history = raw ? JSON.parse(raw) : [];
   } catch (e) {
     history = [];
@@ -5054,7 +5085,6 @@ async function completeVocabSession() {
       date: new Date().toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })
     });
     localStorage.setItem(vKey, JSON.stringify(vList.slice(0, 50)));
-    localStorage.setItem('userVocabHistory', JSON.stringify(vList.slice(0, 50)));
   } catch (e) {}
 
   try {
@@ -5850,7 +5880,8 @@ const BANK_SUBJECT_CHAPTERS = {
     'บทที่ 9 การเก็บรักษา',
     'บทที่ 10 การยืม',
     'บทที่ 11 การทำลาย',
-    'บทที่ 12 ระบบสารบรรณอิเล็กทรอนิกส์'
+    'บทที่ 12 ระบบสารบรรณอิเล็กทรอนิกส์',
+    'บทที่ 13 รหัสพยัญชนะประจำส่วนราชการ'
   ],
   'ลักษณะที่54': [
     'บทที่ 1 บทนำและนิยามงานสารบรรณ ตร.',
@@ -5973,7 +6004,15 @@ function renderSubjectChaptersGrid(subjectKey) {
   // 1. Get Canonical List of Chapters + Dynamically Merge Custom Chapters from DB
   const presetList = BANK_SUBJECT_CHAPTERS[subjectKey] || (SUBJECT_CONFIG[subjectKey]?.chapters || []).filter(c => c !== 'ทุกหมวด') || [];
   
+  const isSarabanMain = subjectKey === 'งานสารบรรณ' || subjectKey === 'สารบรรณ';
   const dbSubcategories = (currentFetchedExamSets || [])
+    .filter(s => {
+      if (isSarabanMain) {
+        const text = `${s.category || ''} ${s.subcategory || ''} ${s.title || ''}`;
+        if (text.includes('๕๔') || text.includes('54') || text.includes('สารบรรณตำรวจ')) return false;
+      }
+      return true;
+    })
     .map(s => s.subcategory || '')
     .filter(sub => sub && sub !== 'ALL' && !sub.includes('ทุกหมวด') && !presetList.includes(sub));
   
@@ -6306,7 +6345,7 @@ window.backToBankSubjects = function() {
 function getLocalQuizHistory(subjectKey) {
   try {
     const userId = (typeof userProfile !== 'undefined' && userProfile && userProfile.id) ? userProfile.id : 'guest';
-    const raw = localStorage.getItem(`userQuizHistory_${userId}`) || localStorage.getItem('userQuizHistory');
+    const raw = localStorage.getItem(`userQuizHistory_${userId}`);
     let localList = raw ? JSON.parse(raw) : [];
     if (!Array.isArray(localList)) localList = [];
 
@@ -6314,7 +6353,7 @@ function getLocalQuizHistory(subjectKey) {
     const combined = [...(userDbQuizHistory || []), ...localList];
     const uniqueMap = new Map();
     combined.forEach(item => {
-      const key = `${item.subject}_${item.setId || ''}_${item.setTitle || ''}_${item.scorePct || 0}`;
+      const key = `${item.subject}_${item.setId || ''}_${item.setTitle || ''}_${item.scorePct || 0}_${item.date || item.createdAt || ''}`;
       if (!uniqueMap.has(key)) {
         uniqueMap.set(key, item);
       }
@@ -6948,14 +6987,13 @@ function saveQuizHistoryRecord(record) {
     if (!Array.isArray(list)) list = [];
     list.unshift(record);
     localStorage.setItem(userKey, JSON.stringify(list.slice(0, 100)));
-    localStorage.setItem('userQuizHistory', JSON.stringify(list.slice(0, 100)));
 
     if (!userDbQuizHistory) userDbQuizHistory = [];
     userDbQuizHistory.unshift(record);
 
     // Immediately trigger real-time dashboard charts refresh
     if (typeof window.updateHomeDashboardCharts === 'function') {
-      window.updateHomeDashboardCharts();
+      window.updateHomeDashboardCharts(userProfile);
     }
 
     // Send real stats to backend PostgreSQL if authenticated
