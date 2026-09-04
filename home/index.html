@@ -2849,10 +2849,6 @@
         }
 
         // 3. Line Chart (พัฒนาการ 8 สัปดาห์ - คำนวณจากประวัติการทำข้อสอบจริง 100%)
-        const now = Date.now();
-        const oneWeekMs = 7 * 24 * 60 * 60 * 1000;
-        const weeklyBuckets = [[], [], [], [], [], [], [], []];
-
         const validHistory = historyList
           .filter(h => h && (h.scorePct !== undefined || h.score !== undefined || h.correctCount !== undefined))
           .map(h => {
@@ -2860,7 +2856,7 @@
             if (h.createdAt) time = new Date(h.createdAt).getTime();
             else if (h.timestamp) time = new Date(h.timestamp).getTime();
             else if (h.date) time = new Date(h.date).getTime();
-            if (!time || isNaN(time)) time = now;
+            if (!time || isNaN(time)) time = 0;
 
             const scorePct = Number(h.scorePct) !== undefined && !isNaN(Number(h.scorePct))
               ? Math.round(Number(h.scorePct))
@@ -2870,59 +2866,44 @@
           .sort((a, b) => a.time - b.time);
 
         let lineData = [0, 0, 0, 0, 0, 0, 0, 0];
-        let currentProgressionScore = 0;
+        let currentProgressionScore = avgScore;
         let progressionDelta = 0;
 
-        if (validHistory.length === 0) {
+        const totalAttempts = validHistory.length;
+        if (totalAttempts === 0) {
           lineData = [0, 0, 0, 0, 0, 0, 0, 0];
           currentProgressionScore = avgScore;
           progressionDelta = 0;
-        } else if (validHistory.length === 1) {
-          currentProgressionScore = validHistory[0].scorePct;
-          lineData = [0, 0, 0, 0, 0, 0, 0, currentProgressionScore];
+        } else if (totalAttempts === 1) {
+          const s = validHistory[0].scorePct;
+          lineData = [s, s, s, s, s, s, s, s];
+          currentProgressionScore = s;
           progressionDelta = 0;
-        } else {
-          currentProgressionScore = validHistory[validHistory.length - 1].scorePct;
-          progressionDelta = currentProgressionScore - validHistory[0].scorePct;
-
-          let placedInWeeks = false;
-          validHistory.forEach(h => {
-            const diffWeeks = Math.floor((now - h.time) / oneWeekMs);
-            const weekIdx = 7 - diffWeeks;
-            if (weekIdx >= 0 && weekIdx < 8) {
-              weeklyBuckets[weekIdx].push(h.scorePct);
-              placedInWeeks = true;
-            }
-          });
-
-          const weeksWithData = weeklyBuckets.filter(b => b.length > 0).length;
-          if (weeksWithData >= 2) {
-            for (let i = 0; i < 8; i++) {
-              if (weeklyBuckets[i].length > 0) {
-                lineData[i] = Math.round(weeklyBuckets[i].reduce((a, b) => a + b, 0) / weeklyBuckets[i].length);
-              } else {
-                lineData[i] = 0;
-              }
-            }
-          } else {
-            const totalAttempts = validHistory.length;
-            if (totalAttempts <= 8) {
-              const offset = 8 - totalAttempts;
-              for (let i = 0; i < totalAttempts; i++) {
-                lineData[offset + i] = validHistory[i].scorePct;
-              }
-            } else {
-              const chunkSize = totalAttempts / 8;
-              for (let i = 0; i < 8; i++) {
-                const start = Math.floor(i * chunkSize);
-                const end = Math.floor((i + 1) * chunkSize);
-                const chunk = validHistory.slice(start, end);
-                lineData[i] = chunk.length > 0
-                  ? Math.round(chunk.reduce((a, b) => a + b.scorePct, 0) / chunk.length)
-                  : 0;
-              }
-            }
+        } else if (totalAttempts <= 8) {
+          // Smooth continuous progression across 8 points from actual attempts
+          const scoresArr = validHistory.map(h => h.scorePct);
+          for (let i = 0; i < 8; i++) {
+            const relIndex = (i / 7) * (scoresArr.length - 1);
+            const low = Math.floor(relIndex);
+            const high = Math.ceil(relIndex);
+            const weight = relIndex - low;
+            lineData[i] = Math.round(scoresArr[low] * (1 - weight) + scoresArr[high] * weight);
           }
+          currentProgressionScore = scoresArr[scoresArr.length - 1];
+          progressionDelta = currentProgressionScore - scoresArr[0];
+        } else {
+          // Group attempts evenly into 8 chronological intervals
+          const chunkSize = totalAttempts / 8;
+          for (let i = 0; i < 8; i++) {
+            const start = Math.floor(i * chunkSize);
+            const end = Math.floor((i + 1) * chunkSize);
+            const chunk = validHistory.slice(start, end);
+            lineData[i] = chunk.length > 0
+              ? Math.round(chunk.reduce((a, b) => a + b.scorePct, 0) / chunk.length)
+              : 0;
+          }
+          currentProgressionScore = lineData[7];
+          progressionDelta = lineData[7] - lineData[0];
         }
 
         const overallProgEl = document.getElementById('statOverallPercent');
