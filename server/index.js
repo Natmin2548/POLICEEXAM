@@ -8390,15 +8390,156 @@ ${contextText ? `คลังข้อมูลอ้างอิง:\n${context
       totalCount: newTotalCount
     });
 
+// --- Admin API: Delete ALL Exam Sets & Questions ---
+app.delete('/api/admin/exams/all', authenticateToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'ADMIN' && req.user.role !== 'OWNER') {
+      return res.status(403).json({ error: 'คุณไม่มีสิทธิ์ใช้งานคำสั่งนี้ (สำหรับ Admin เท่านั้น)' });
+    }
+    const deletedQuestions = await prisma.question.deleteMany({});
+    const deletedSets = await prisma.examSet.deleteMany({});
+    res.json({
+      success: true,
+      message: `ลบข้อสอบทั้งหมดในระบบเรียบร้อยแล้ว (${deletedSets.count} ชุด, ${deletedQuestions.count} ข้อ)`
+    });
   } catch (err) {
-    console.error('Append questions error:', err);
-    res.status(500).json({ error: 'เกิดข้อผิดพลาดในการเพิ่มข้อสอบ: ' + err.message });
+    console.error('Delete all exams error:', err);
+    res.status(500).json({ error: 'เกิดข้อผิดพลาดในการลบข้อสอบทั้งหมด: ' + err.message });
   }
 });
 
+// --- Admin API: Delete Single Exam Set ---
+app.delete('/api/admin/exams/:id', authenticateToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'ADMIN' && req.user.role !== 'OWNER') {
+      return res.status(403).json({ error: 'คุณไม่มีสิทธิ์ใช้งานคำสั่งนี้' });
+    }
+    const id = parseInt(req.params.id);
+    await prisma.question.deleteMany({ where: { examSetId: id } });
+    await prisma.examSet.delete({ where: { id } });
+    res.json({ success: true, message: 'ลบชุดข้อสอบเรียบร้อยแล้ว' });
+  } catch (err) {
+    console.error('Delete exam set error:', err);
+    res.status(500).json({ error: 'ไม่สามารถลบชุดข้อสอบได้: ' + err.message });
+  }
+});
 
+// --- Admin API: Get Exam Set with Full Questions List for Editing ---
+app.get('/api/admin/exams/:id', authenticateToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'ADMIN' && req.user.role !== 'OWNER') {
+      return res.status(403).json({ error: 'คุณไม่มีสิทธิ์ใช้งานคำสั่งนี้' });
+    }
+    const id = parseInt(req.params.id);
+    const examSet = await prisma.examSet.findUnique({
+      where: { id },
+      include: {
+        questions: {
+          orderBy: { sortOrder: 'asc' }
+        }
+      }
+    });
+    if (!examSet) return res.status(404).json({ error: 'ไม่พบชุดข้อสอบ' });
+    res.json(examSet);
+  } catch (err) {
+    console.error('Fetch exam set details error:', err);
+    res.status(500).json({ error: 'เกิดข้อผิดพลาดในการดึงข้อมูลชุดข้อสอบ: ' + err.message });
+  }
+});
 
+// --- Admin API: Update Exam Set and its Questions ---
+app.put('/api/admin/exams/:id', authenticateToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'ADMIN' && req.user.role !== 'OWNER') {
+      return res.status(403).json({ error: 'คุณไม่มีสิทธิ์ใช้งานคำสั่งนี้' });
+    }
+    const id = parseInt(req.params.id);
+    const { title, category, subcategory, status, questions } = req.body;
 
+    // Update exam set info
+    const updatedSet = await prisma.examSet.update({
+      where: { id },
+      data: {
+        title: title || undefined,
+        category: category || undefined,
+        subcategory: subcategory !== undefined ? subcategory : undefined,
+        status: status || undefined,
+        totalCount: Array.isArray(questions) ? questions.length : undefined
+      }
+    });
+
+    // If questions list is provided, update/insert/delete questions
+    if (Array.isArray(questions)) {
+      await prisma.$transaction(async (tx) => {
+        const existingQList = await tx.question.findMany({
+          where: { examSetId: id },
+          select: { id: true }
+        });
+        const existingIds = new Set(existingQList.map(q => q.id));
+        const keepIds = new Set();
+
+        for (let idx = 0; idx < questions.length; idx++) {
+          const q = questions[idx];
+          let correctNum = 1;
+          const opt = String(q.correctAnswer ?? q.correctOption ?? '1').toUpperCase();
+          if (opt === 'B' || opt === '2') correctNum = 2;
+          else if (opt === 'C' || opt === '3') correctNum = 3;
+          else if (opt === 'D' || opt === '4') correctNum = 4;
+          else correctNum = 1;
+
+          if (q.id && existingIds.has(parseInt(q.id))) {
+            const qId = parseInt(q.id);
+            keepIds.add(qId);
+            await tx.question.update({
+              where: { id: qId },
+              data: {
+                questionText: q.questionText || '',
+                choice1: q.choice1 || q.optionA || '',
+                choice2: q.choice2 || q.optionB || '',
+                choice3: q.choice3 || q.optionC || '',
+                choice4: q.choice4 || q.optionD || '',
+                correctAnswer: correctNum,
+                explanation: q.explanation || '',
+                sortOrder: idx + 1
+              }
+            });
+          } else {
+            const created = await tx.question.create({
+              data: {
+                examSetId: id,
+                questionText: q.questionText || '',
+                choice1: q.choice1 || q.optionA || '',
+                choice2: q.choice2 || q.optionB || '',
+                choice3: q.choice3 || q.optionC || '',
+                choice4: q.choice4 || q.optionD || '',
+                correctAnswer: correctNum,
+                explanation: q.explanation || '',
+                sortOrder: idx + 1
+              }
+            });
+            keepIds.add(created.id);
+          }
+        }
+
+        const toDeleteIds = [...existingIds].filter(qid => !keepIds.has(qid));
+        if (toDeleteIds.length > 0) {
+          await tx.question.deleteMany({
+            where: { id: { in: toDeleteIds } }
+          });
+        }
+      });
+    }
+
+    res.json({
+      success: true,
+      message: `บันทึกการแก้ไขชุดข้อสอบ "${updatedSet.title}" เรียบร้อยแล้ว`,
+      examSet: updatedSet
+    });
+  } catch (err) {
+    console.error('Update exam set error:', err);
+    res.status(500).json({ error: 'เกิดข้อผิดพลาดในการแก้ไขชุดข้อสอบ: ' + err.message });
+  }
+});
 
 // GET /api/exams/subject-questions - Fetch real questions for Question Bank Mode
 app.get('/api/exams/subject-questions', authenticateToken, async (req, res) => {
@@ -8457,203 +8598,7 @@ app.get('/api/exams/subject-questions', authenticateToken, async (req, res) => {
     console.error('Subject questions error:', err);
     res.status(500).json({ error: 'เกิดข้อผิดพลาดในการโหลดข้อสอบ: ' + err.message });
   }
-});
 
-// ==========================================
-// Main Exam Simulation for สายปราบปราม (150 Questions)
-// Order:
-// 1. ความรู้ความสามารถทั่วไป (30 ข้อ)
-// 2. ภาษาไทย (25 ข้อ)
-// 3. ภาษาอังกฤษ (30 ข้อ)
-// 4. คอมพิวเตอร์และสารสนเทศ (25 ข้อ)
-// 5. กฎหมายที่ประชาชนควรรู้ (20 ข้อ)
-// 6. สังคม วัฒนธรรม จริยธรรมและอาเซียน (20 ข้อ)
-// ==========================================
-function getSubjectFallbackQuestions(subjectKey, count, subjectTitle) {
-  const fallbacks = {
-    general: [
-      {
-        questionText: "อนุกรมตัวเลข: 2, 5, 10, 17, 26, ... ตัวเลขถัดไปคือจำนวนใด?",
-        choice1: "35", choice2: "37", choice3: "39", choice4: "41",
-        correctAnswer: 2,
-        explanation: "ลำดับของผลต่างคือ +3, +5, +7, +9, +11 ดังนั้น 26 + 11 = 37"
-      },
-      {
-        questionText: "ถ้า A ทำงานเสร็จใน 6 วัน และ B ทำงานเดียวกันเสร็จใน 12 วัน หากทั้งสองช่วยกันทำจะเสร็จในกี่วัน?",
-        choice1: "3 วัน", choice2: "4 วัน", choice3: "5 วัน", choice4: "6 วัน",
-        correctAnswer: 2,
-        explanation: "1/6 + 1/12 = 3/12 = 1/4 ดังนั้นทำงานร่วมกันเสร็จใน 4 วัน"
-      },
-      {
-        questionText: "สินค้าชิ้นหนึ่งติดราคาไว้ 1,200 บาท หากลดราคา 15% ผู้ซื้อจะต้องจ่ายเงินกี่บาท?",
-        choice1: "1,000 บาท", choice2: "1,020 บาท", choice3: "1,040 บาท", choice4: "1,080 บาท",
-        correctAnswer: 2,
-        explanation: "ลด 15% คือลด 180 บาท ดังนั้นราคาที่ต้องจ่าย = 1,200 - 180 = 1,020 บาท"
-      },
-      {
-        questionText: "นายตำรวจ 4 นาย สามารถตรวจค้นพื้นที่ 800 ตร.ม. ได้ในเวลา 2 ชั่วโมง ถ้ามีนายตำรวจ 8 นาย จะตรวจพื้นที่ 1,600 ตร.ม. ในเวลากี่ชั่วโมง?",
-        choice1: "1 ชั่วโมง", choice2: "2 ชั่วโมง", choice3: "3 ชั่วโมง", choice4: "4 ชั่วโมง",
-        correctAnswer: 2,
-        explanation: "สัดส่วนคนและพื้นที่เพิ่มขึ้นเป็น 2 เท่าเท่ากัน เวลาจึงยังคงเท่าเดิมคือ 2 ชั่วโมง"
-      },
-      {
-        questionText: "อายุของบิดาเป็น 3 เท่าของบุตร เมื่อ 5 ปีที่แล้ว บิดาอายุ 40 ปี ปัจจุบันบุตรมีอายุกี่ปี?",
-        choice1: "12 ปี", choice2: "15 ปี", choice3: "18 ปี", choice4: "20 ปี",
-        correctAnswer: 2,
-        explanation: "ปัจจุบันบิดาอายุ 45 ปี บุตรมีอายุเป็น 1 ใน 3 เท่าของบิดา คือ 45 / 3 = 15 ปี"
-      }
-    ],
-    thai: [
-      {
-        questionText: "ข้อใดใช้คำราชาศัพท์ได้ถูกต้องตามหลักภาษาไทย?",
-        choice1: "ทรงเสวยพระกระยาหาร", choice2: "เสวยพระกระยาหาร", choice3: "ทรงรับประทาน", choice4: "ทรงฉันภัตตาหาร",
-        correctAnswer: 2,
-        explanation: "คำว่า 'เสวย' เป็นกริยาราชาศัพท์ในตัวเองแล้ว ไม่ต้องใส่ 'ทรง' นำหน้าซ้ำซ้อน"
-      },
-      {
-        questionText: "ข้อใดเขียนสะกดคำได้ถูกต้องทุกคำ?",
-        choice1: "กะเพรา, อนุญาต, อภิปราย", choice2: "กระเพรา, อนุญาติ, อภิปราย", choice3: "กะเพรา, อนุญาติ, อภิปราย", choice4: "กระเพรา, อนุญาต, อภิปราย",
-        correctAnswer: 1,
-        explanation: "คำที่ถูกต้องคือ กะเพรา (ไม่มี ร), อนุญาต (ไม่มีสระอิ), อภิปราย"
-      },
-      {
-        questionText: "สำนวนใดมีความหมายตรงกับคำว่า 'ทำสิ่งที่ไม่เกิดประโยชน์และเสียเวลาโดยเปล่าประโยชน์'?",
-        choice1: "ตำน้ำพริกละลายแม่น้ำ", choice2: "ขี่ช้างจับตั๊กแตน", choice3: "จับปลาสองมือ", choice4: "งมเข็มในมหาสมุทร",
-        correctAnswer: 1,
-        explanation: "ตำน้ำพริกละลายแม่น้ำ หมายถึง เสียทรัพย์หรือแรงงานไปเป็นอันมากแต่ไม่ได้ประโยชน์อะไรกลับคืนมา"
-      },
-      {
-        questionText: "ประโยคในข้อใดมีโครงสร้างประโยคสมบูรณ์และสื่อความหมายชัดเจนที่สุด?",
-        choice1: "ตำรวจปฏิบัติหน้าที่ด้วยความซื่อสัตย์สุจริตเพื่อประชาชน", choice2: "การเดินทางโดยรถยนต์ในเวลากลางคืนที่มีฝนตก", choice3: "เพราะเนื่องจากว่าเขาไม่ได้มาเข้าแถวเคารพธงชาติ", choice4: "ตามที่สำนักงานตำรวจแห่งชาติได้แจ้งให้ทราบแล้วนั้น",
-        correctAnswer: 1,
-        explanation: "ข้อ 1 มีประธาน (ตำรวจ) กริยา (ปฏิบัติหน้าที่) และส่วนขยายสมบูรณ์ชัดเจน"
-      }
-    ],
-    english: [
-      {
-        questionText: "Police Officer: \"Could you please describe the suspect's appearance?\"\nWitness: \"______.\"",
-        choice1: "He was about 180 cm tall with a black jacket", choice2: "He will go to the police station", choice3: "I am fine, thank you", choice4: "It happened yesterday afternoon",
-        correctAnswer: 1,
-        explanation: "คำถามถามถึงรูปพรรณสัณฐานของผู้ต้องสงสัย (describe appearance) คำตอบที่ถูกต้องคือการบอกส่วนสูงและการแต่งกาย"
-      },
-      {
-        questionText: "The police officers ______ the crime scene before the forensic team arrived.",
-        choice1: "secure", choice2: "have secured", choice3: "had secured", choice4: "securing",
-        correctAnswer: 3,
-        explanation: "Past Perfect Tense (had + V.3) ใช้กับเหตุการณ์ที่เกิดขึ้นและเสร็จสิ้นก่อนอีกเหตุการณ์หนึ่งในอดีต (arrived)"
-      },
-      {
-        questionText: "Choose the synonym of the word 'INVESTIGATE':",
-        choice1: "Examine", choice2: "Arrest", choice3: "Release", choice4: "Ignore",
-        correctAnswer: 1,
-        explanation: "Investigate หมายถึง ตรวจสอบ, ไต่สวน ซึ่งมีความหมายเหมือนกับ Examine"
-      },
-      {
-        questionText: "Driver: \"I am sorry officer, I didn't see the red light.\"\nPolice: \"______.\"",
-        choice1: "You must show me your driver's license, please.", choice2: "Have a nice trip.", choice3: "I don't care at all.", choice4: "Yes, you can drive faster.",
-        correctAnswer: 1,
-        explanation: "ตำรวจปฏิบัติหน้าที่ตรวจสอบใบอนุญาตขับขี่เมื่อพบผู้กระทำผิดกฎจราจร"
-      }
-    ],
-    computer: [
-      {
-        questionText: "ตาม พ.ร.บ.ว่าด้วยการกระทำความผิดเกี่ยวกับคอมพิวเตอร์ การเข้าถึงระบบคอมพิวเตอร์ของผู้อื่นโดยมิชอบ มีโทษอย่างไร?",
-        choice1: "ปรับไม่เกิน 10,000 บาท", choice2: "จำคุกไม่เกิน 6 เดือน หรือปรับไม่เกิน 10,000 บาท หรือทั้งจำทั้งปรับ", choice3: "จำคุกไม่เกิน 2 ปี", choice4: "จำคุกไม่เกิน 5 ปี",
-        correctAnswer: 2,
-        explanation: "มาตรา 5 บัญญัติว่า ผู้ใดเข้าถึงโดยมิชอบซึ่งระบบคอมพิวเตอร์ที่มีมาตรการป้องกัน ต้องระวางโทษจำคุกไม่เกิน 6 เดือน หรือปรับไม่เกิน 10,000 บาท หรือทั้งจำทั้งปรับ"
-      },
-      {
-        questionText: "โปรโตคอลใดที่ใช้ในการรับ-ส่งข้อมูลบนเครือข่ายอินเทอร์เน็ตแบบเข้ารหัสความปลอดภัยสูง (Encrypted)?",
-        choice1: "HTTP", choice2: "HTTPS", choice3: "FTP", choice4: "SMTP",
-        correctAnswer: 2,
-        explanation: "HTTPS (Hypertext Transfer Protocol Secure) ใช้ SSL/TLS ในการเข้ารหัสข้อมูลเพื่อความปลอดภัย"
-      },
-      {
-        questionText: "การโจมตีทางไซเบอร์ที่ใช้วิธีหลอกลวงเหยื่อด้วยอีเมลหรือเว็บไซต์ปลอมเพื่อขโมยรหัสผ่าน เรียกว่าอะไร?",
-        choice1: "Phishing", choice2: "DDoS", choice3: "Malware", choice4: "Ransomware",
-        correctAnswer: 1,
-        explanation: "Phishing คือการหลอกลวงผ่านอีเมลหรือหน้าเว็บปลอมเพื่อขโมยข้อมูลสำคัญ"
-      },
-      {
-        questionText: "คีย์ลัด (Keyboard Shortcut) ในระบบปฏิบัติการ Windows สำหรับการ 'ค้นหาข้อความ' ในเอกสารหรือหน้าเว็บคือข้อใด?",
-        choice1: "Ctrl + C", choice2: "Ctrl + V", choice3: "Ctrl + F", choice4: "Ctrl + Z",
-        correctAnswer: 3,
-        explanation: "Ctrl + F (Find) ใช้สำหรับค้นหาคำหรือข้อความ"
-      }
-    ],
-    law: [
-      {
-        questionText: "ตามประมวลกฎหมายวิธีพิจารณาความอาญา ผู้ใดเป็น 'เจ้าพนักงานฝ่ายปกครองหรือตำรวจ' มีอำนาจจับกุมผู้กระทำความผิดซึ่งหน้าได้?",
-        choice1: "เจ้าพนักงานฝ่ายปกครองหรือตำรวจทุกคน", choice2: "เฉพาะนายตำรวจสัญญาบัตรเท่านั้น", choice3: "เฉพาะพนักงานสอบสวนเท่านั้น", choice4: "เฉพาะผู้กำกับการสถานีตำรวจเท่านั้น",
-        correctAnswer: 1,
-        explanation: "ป.วิ.อ. มาตรา 78 บัญญัติให้เจ้าพนักงานฝ่ายปกครองหรือตำรวจสามารถจับผู้กระทำความผิดซึ่งหน้าได้โดยไม่ต้องมีหมายจับ"
-      },
-      {
-        questionText: "การควบคุมตัวผู้ต้องหาของเจ้าพนักงานตำรวจในชั้นสอบสวน สามารถควบคุมตัวได้ไม่เกินกี่ชั่วโมง?",
-        choice1: "24 ชั่วโมง", choice2: "48 ชั่วโมง", choice3: "72 ชั่วโมง", choice4: "7 วัน",
-        correctAnswer: 2,
-        explanation: "ป.วิ.อ. มาตรา 87 วรรคสาม ห้ามมิให้ควบคุมตัวผู้ถูกจับไว้เกินกว่า 48 ชั่วโมงนับแต่เวลาที่ผู้ถูกจับมาถึงที่ทำการของพนักงานสอบสวน"
-      },
-      {
-        questionText: "ตาม พ.ร.บ.ตำรวจแห่งชาติ พ.ศ. 2565 ข้อใดเป็นหน้าที่และอำนาจหลักของสำนักงานตำรวจแห่งชาติ?",
-        choice1: "การรักษาความสงบเรียบร้อย ป้องกันและปราบปรามอาชญากรรม และอำนวยความยุติธรรมทางอาญา", choice2: "การตัดสินคดีความในศาล", choice3: "การออกกฎหมายพระราชบัญญัติ", choice4: "การควบคุมเรือนจำและทัณฑสถาน",
-        correctAnswer: 1,
-        explanation: "พ.ร.บ.ตำรวจแห่งชาติ กำหนดหน้าที่ในการรักษาความสงบเรียบร้อย ป้องกันปราบปรามอาชญากรรม และคุ้มครองความปลอดภัยของประชาชน"
-      },
-      {
-        questionText: "การตรวจค้นบุคคลในที่สาธารณสถาน เจ้าพนักงานตำรวจจะกระทำได้ต่อเมื่อมีเหตุใด?",
-        choice1: "เมื่อสงสัยว่าบุคคลนั้นมีสิ่งของผิดกฎหมายหรือได้มาโดยการกระทำความผิด", choice2: "กระทำได้ตลอดเวลาโดยไม่มีเงื่อนไข", choice3: "เมื่อได้รับความยินยอมเป็นลายลักษณ์อักษรเท่านั้น", choice4: "เมื่อมีคำสั่งศาลชั้นต้นเท่านั้น",
-        correctAnswer: 1,
-        explanation: "ป.วิ.อ. มาตรา 93 ห้ามมิให้ค้นบุคคลในที่สาธารณสถาน เว้นแต่เมื่อมีเหตุอันควรสงสัยว่าบุคคลนั้นมีสิ่งของที่ผิดกฎหมายหรือได้มาโดยการกระทำผิด"
-      }
-    ],
-    social: [
-      {
-        questionText: "หลักธรรม 'พรหมวิหาร ๔' ข้อใดที่หมายถึง ความยินดีเมื่อผู้อื่นได้ดี มีความสุขและประสบความสำเร็จ?",
-        choice1: "เมตตา", choice2: "กรุณา", choice3: "มุทิตา", choice4: "อุเบกขา",
-        correctAnswer: 3,
-        explanation: "มุทิตา หมายถึง ความยินดีเมื่อผู้อื่นได้ดีหรือมีความสุข"
-      },
-      {
-        questionText: "ประชาคมอาเซียน (ASEAN Community) ประกอบด้วย 3 เสาหลัก ข้อใดไม่ใช่หนึ่งใน 3 เสาหลักของอาเซียน?",
-        choice1: "ประชาคมการเมืองและความมั่นคงอาเซียน (APSC)", choice2: "ประชาคมเศรษฐกิจอาเซียน (AEC)", choice3: "ประชาคมสังคมและวัฒนธรรมอาเซียน (ASCC)", choice4: "ประชาคมการเงินและการแลกเปลี่ยนเงินตราอาเซียน (AFCC)",
-        correctAnswer: 4,
-        explanation: "3 เสาหลักของอาเซียนได้แก่ การเมืองความมั่นคง (APSC), เศรษฐกิจ (AEC), และสังคมวัฒนธรรม (ASCC)"
-      },
-      {
-        questionText: "ค่านิยมหลักของข้าราชการตำรวจที่ดีตามประมวลจริยธรรมข้าราชการตำรวจ คือข้อใด?",
-        choice1: "ยึดมั่นในความถูกต้อง ซื่อสัตย์สุจริต และเคารพศักดิ์ศรีความเป็นมนุษย์", choice2: "การทำงานตามความพอใจของผู้บังคับบัญชาโดยไม่คำนึงถึงระเบียบ", choice3: "การใช้อำนาจตามอำเภอใจเพื่อความรวดเร็ว", choice4: "การละเว้นการปฏิบัติหน้าที่ในคดีเล็กน้อย",
-        correctAnswer: 1,
-        explanation: "ประมวลจริยธรรมข้าราชการตำรวจมุ่งเน้นความซื่อสัตย์สุจริต เที่ยงธรรม ยึดมั่นในความถูกต้อง และเคารพศักดิ์ศรีความเป็นมนุษย์"
-      },
-      {
-        questionText: "หลักปรัชญาเศรษฐกิจพอเพียง ประกอบด้วย 3 ห่วง 2 เงื่อนไข ข้อใดจัดอยู่ใน '3 ห่วง'?",
-        choice1: "ความพอประมาณ, ความมีเหตุผล, การมีภูมิคุ้มกันที่ดี", choice2: "ความรู้, คุณธรรม, ความขยัน", choice3: "ความมัธยัสถ์, ความอดทน, ความเสียสละ", choice4: "ความมั่งคั่ง, ความยั่งยืน, ความเท่าเทียม",
-        correctAnswer: 1,
-        explanation: "3 ห่วง ได้แก่ ความพอประมาณ ความมีเหตุผล และการมีภูมิคุ้มกันที่ดีในตัว"
-      }
-    ]
-  };
-
-  const list = fallbacks[subjectKey] || fallbacks.general;
-  const result = [];
-  for (let i = 0; i < count; i++) {
-    const template = list[i % list.length];
-    result.push({
-      id: 900000 + i + 1,
-      questionText: `${template.questionText}`,
-      choice1: template.choice1,
-      choice2: template.choice2,
-      choice3: template.choice3,
-      choice4: template.choice4,
-      correctAnswer: template.correctAnswer,
-      explanation: template.explanation,
-      chapter: `หมวดบทเรียนที่ ${(i % 5) + 1}`,
-      set: `ชุดข้อสอบมาตรฐาน ตร.ชุดที่ ${(i % 4) + 1}`
-    });
-  }
-  return result;
-}
 
 // GET /api/exams/prabpram - Main Exam Simulation for สายปราบปราม (100% Real DB Questions Only)
 app.get('/api/exams/prabpram', async (req, res) => {

@@ -318,7 +318,8 @@ function renderExamsWithFilters() {
           ${ex.status === 'PUBLISHED' ? 'เปิดสอบ' : 'ฉบับร่าง'}
         </span>
       </td>
-      <td class="action-buttons" style="text-align: right;">
+      <td class="action-buttons" style="text-align: right; white-space: nowrap;">
+        <button class="btn btn-outline" style="background: #FEF3C7; color: #B45309; border: 1px solid #FDE68A; padding: 6px 10px; font-size: 11.5px; font-weight: 700;" onclick="openEditExamModal(${ex.id})">✏️ แก้ไขเนื้อหา</button>
         <button class="btn btn-outline" style="background: #EEF2FF; color: #4F46E5; border: 1px solid #C7D2FE; padding: 6px 10px; font-size: 11.5px;" onclick="openAppendModal(${ex.id}, '${escapeHTML(ex.title)}', ${ex.totalCount})">➕ เพิ่มข้อสอบ</button>
         <button class="btn btn-danger" style="padding: 6px 10px; font-size: 11.5px;" onclick="confirmDelete('exam', ${ex.id})">🗑️ ลบ</button>
       </td>
@@ -362,6 +363,302 @@ window.resetExamFilters = function() {
 
   updateFilterChapterDropdown();
   renderExamsWithFilters();
+};
+
+// ==========================================
+// Clear All Exams Feature
+// ==========================================
+window.clearAllExams = async function() {
+  const confirmFirst = confirm('⚠️ คำเตือนสำคัญ!\n\nคุณต้องการ "ลบข้อสอบทั้งหมดทุกวิชาและทุกคำถาม" ในระบบใช่หรือไม่?\n\nข้อสอบที่เคยเจนไว้ทั้งหมดจะถูกลบทิ้งอย่างถาวรเพื่อให้คุณเริ่มต้นสร้างใหม่ได้');
+  if (!confirmFirst) return;
+
+  const confirmSecond = confirm('ยืนยันครั้งสุดท้าย: ลบชุดข้อสอบทั้งหมดในฐานข้อมูลใช่หรือไม่?');
+  if (!confirmSecond) return;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/exams/all`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${authToken}` }
+    });
+    const data = await res.json();
+    if (res.ok) {
+      alert(`🎉 ${data.message || 'ลบข้อสอบทั้งหมดเรียบร้อยแล้ว'}`);
+      loadExams();
+    } else {
+      alert('เกิดข้อผิดพลาดในการลบข้อสอบ: ' + (data.error || 'ไม่สามารถลบได้'));
+    }
+  } catch (err) {
+    console.error('Clear all exams error:', err);
+    alert('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์: ' + err.message);
+  }
+};
+
+// ==========================================
+// Edit Exam Set & Questions Content Logic
+// ==========================================
+let currentEditExamId = null;
+let currentEditQuestions = [];
+
+window.openEditExamModal = async function(examId) {
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/exams/${examId}`, {
+      headers: { 'Authorization': `Bearer ${authToken}` }
+    });
+
+    if (!res.ok) {
+      alert('ไม่สามารถโหลดข้อมูลชุดข้อสอบนี้ได้');
+      return;
+    }
+
+    const exam = await res.json();
+    currentEditExamId = exam.id;
+    currentEditQuestions = (exam.questions || []).map(q => ({
+      id: q.id || null,
+      questionText: q.questionText || '',
+      choice1: q.choice1 || '',
+      choice2: q.choice2 || '',
+      choice3: q.choice3 || '',
+      choice4: q.choice4 || '',
+      correctAnswer: parseInt(q.correctAnswer) || 1,
+      explanation: q.explanation || ''
+    }));
+
+    document.getElementById('editExamId').value = exam.id;
+    document.getElementById('editExamTitle').value = exam.title || '';
+    document.getElementById('editExamCategory').value = exam.category || 'งานสารบรรณ_๒๕๒๖';
+    document.getElementById('editExamSubcategory').value = exam.subcategory || '';
+    document.getElementById('editExamStatus').value = exam.status || 'PUBLISHED';
+    document.getElementById('editExamModalSubtitle').textContent = `แก้ไขชุด ID #${exam.id}: ${exam.title || ''}`;
+
+    renderEditQuestionsList();
+    document.getElementById('editExamModal').style.display = 'flex';
+
+  } catch (err) {
+    console.error('Open edit exam error:', err);
+    alert('เกิดข้อผิดพลาดในการโหลดข้อมูล: ' + err.message);
+  }
+};
+
+window.closeEditExamModal = function() {
+  document.getElementById('editExamModal').style.display = 'none';
+  currentEditExamId = null;
+  currentEditQuestions = [];
+};
+
+function syncEditQuestionsFromDOM() {
+  currentEditQuestions.forEach((q, idx) => {
+    const textEl = document.getElementById(`edit_q_text_${idx}`);
+    const c1El = document.getElementById(`edit_q_c1_${idx}`);
+    const c2El = document.getElementById(`edit_q_c2_${idx}`);
+    const c3El = document.getElementById(`edit_q_c3_${idx}`);
+    const c4El = document.getElementById(`edit_q_c4_${idx}`);
+    const ansEl = document.getElementById(`edit_q_ans_${idx}`);
+    const expEl = document.getElementById(`edit_q_exp_${idx}`);
+
+    if (textEl) q.questionText = textEl.value;
+    if (c1El) q.choice1 = c1El.value;
+    if (c2El) q.choice2 = c2El.value;
+    if (c3El) q.choice3 = c3El.value;
+    if (c4El) q.choice4 = c4El.value;
+    if (ansEl) q.correctAnswer = parseInt(ansEl.value) || 1;
+    if (expEl) q.explanation = expEl.value;
+  });
+}
+
+function renderEditQuestionsList() {
+  const container = document.getElementById('editQuestionsContainer');
+  const badge = document.getElementById('editExamQuestionBadge');
+  if (!container) return;
+
+  if (badge) badge.textContent = `${currentEditQuestions.length} ข้อ`;
+  container.innerHTML = '';
+
+  if (currentEditQuestions.length === 0) {
+    container.innerHTML = `
+      <div style="text-align: center; padding: 32px 16px; background: #F8FAFC; border: 1.5px dashed #CBD5E1; border-radius: 16px; color: #64748B;">
+        <div style="font-size: 28px; margin-bottom: 8px;">📝</div>
+        <div style="font-weight: 700; margin-bottom: 4px;">ยังไม่มีข้อสอบในชุดนี้</div>
+        <p style="font-size: 13px; margin: 0 0 12px 0;">คุณสามารถกดปุ่มด้านล่างเพื่อเพิ่มข้อสอบใหม่ได้เลย</p>
+        <button type="button" onclick="addNewQuestionToEditList()" class="btn btn-outline" style="border: 1.5px solid #4F46E5; color: #4F46E5; font-weight: 700; font-size: 13px; padding: 6px 14px; border-radius: 10px;">+ เพิ่มข้อสอบข้อแรก</button>
+      </div>
+    `;
+    return;
+  }
+
+  currentEditQuestions.forEach((q, idx) => {
+    const card = document.createElement('div');
+    card.style.cssText = 'background: white; border: 1.5px solid #E2E8F0; border-radius: 16px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);';
+
+    card.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid #F1F5F9; padding-bottom: 8px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: #EEF2FF; color: #4F46E5; font-weight: 800; font-size: 12.5px;">
+            ${idx + 1}
+          </span>
+          <span style="font-weight: 800; color: #1E293B; font-size: 13.5px;">ข้อที่ ${idx + 1}</span>
+          ${q.id ? `<span style="font-size: 11px; color: #94A3B8; font-family: monospace;">(ID: ${q.id})</span>` : '<span style="font-size: 11px; color: #059669; font-weight: 700; background: #ECFDF5; padding: 1px 6px; border-radius: 6px;">(ข้อใหม่)</span>'}
+        </div>
+        <button type="button" onclick="removeQuestionFromEditList(${idx})" style="background: #FEF2F2; border: 1px solid #FECACA; color: #EF4444; padding: 4px 10px; border-radius: 8px; font-size: 11.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+          🗑️ ลบข้อนี้
+        </button>
+      </div>
+
+      <!-- โจทย์ / คำถาม -->
+      <div style="margin-bottom: 14px;">
+        <label style="display: block; font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 4px;">โจทย์คำถาม (Question Text):</label>
+        <textarea id="edit_q_text_${idx}" class="form-input" rows="2" style="width: 100%; padding: 10px 12px; border-radius: 10px; border: 1.5px solid #CBD5E1; font-size: 13px; font-family: inherit; box-sizing: border-box; resize: vertical;" placeholder="พิมพ์โจทย์คำถามข้อสอบ...">${escapeHTML(q.questionText)}</textarea>
+      </div>
+
+      <!-- ตัวเลือก 4 ข้อ -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; margin-bottom: 14px;">
+        <div>
+          <label style="display: block; font-size: 11.5px; font-weight: 700; color: #475569; margin-bottom: 4px;">ก. (Choice 1):</label>
+          <input type="text" id="edit_q_c1_${idx}" value="${escapeHTML(q.choice1)}" placeholder="ตัวเลือก ก" style="width: 100%; padding: 8px 10px; border-radius: 8px; border: 1.5px solid #CBD5E1; font-size: 12.5px; box-sizing: border-box;">
+        </div>
+        <div>
+          <label style="display: block; font-size: 11.5px; font-weight: 700; color: #475569; margin-bottom: 4px;">ข. (Choice 2):</label>
+          <input type="text" id="edit_q_c2_${idx}" value="${escapeHTML(q.choice2)}" placeholder="ตัวเลือก ข" style="width: 100%; padding: 8px 10px; border-radius: 8px; border: 1.5px solid #CBD5E1; font-size: 12.5px; box-sizing: border-box;">
+        </div>
+        <div>
+          <label style="display: block; font-size: 11.5px; font-weight: 700; color: #475569; margin-bottom: 4px;">ค. (Choice 3):</label>
+          <input type="text" id="edit_q_c3_${idx}" value="${escapeHTML(q.choice3)}" placeholder="ตัวเลือก ค" style="width: 100%; padding: 8px 10px; border-radius: 8px; border: 1.5px solid #CBD5E1; font-size: 12.5px; box-sizing: border-box;">
+        </div>
+        <div>
+          <label style="display: block; font-size: 11.5px; font-weight: 700; color: #475569; margin-bottom: 4px;">ง. (Choice 4):</label>
+          <input type="text" id="edit_q_c4_${idx}" value="${escapeHTML(q.choice4)}" placeholder="ตัวเลือก ง" style="width: 100%; padding: 8px 10px; border-radius: 8px; border: 1.5px solid #CBD5E1; font-size: 12.5px; box-sizing: border-box;">
+        </div>
+      </div>
+
+      <!-- เฉลย & คำอธิบาย -->
+      <div style="display: grid; grid-template-columns: 180px 1fr; gap: 12px; background: #F8FAFC; padding: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
+        <div>
+          <label style="display: block; font-size: 12px; font-weight: 800; color: #059669; margin-bottom: 4px;">✅ เฉลยข้อที่ถูก:</label>
+          <select id="edit_q_ans_${idx}" style="width: 100%; padding: 8px 10px; border-radius: 8px; border: 1.5px solid #10B981; font-size: 12.5px; font-weight: 800; color: #047857; background: white;">
+            <option value="1" ${q.correctAnswer === 1 ? 'selected' : ''}>ข้อ 1 (ก)</option>
+            <option value="2" ${q.correctAnswer === 2 ? 'selected' : ''}>ข้อ 2 (ข)</option>
+            <option value="3" ${q.correctAnswer === 3 ? 'selected' : ''}>ข้อ 3 (ค)</option>
+            <option value="4" ${q.correctAnswer === 4 ? 'selected' : ''}>ข้อ 4 (ง)</option>
+          </select>
+        </div>
+        <div>
+          <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">💡 คำอธิบายเฉลยละเอียด:</label>
+          <textarea id="edit_q_exp_${idx}" rows="1" style="width: 100%; padding: 8px 10px; border-radius: 8px; border: 1.5px solid #CBD5E1; font-size: 12.5px; font-family: inherit; box-sizing: border-box; resize: vertical;" placeholder="ใส่เหตุผลหรือคำอธิบายเฉลย...">${escapeHTML(q.explanation || '')}</textarea>
+        </div>
+      </div>
+    `;
+
+    container.appendChild(card);
+  });
+}
+
+window.addNewQuestionToEditList = function() {
+  syncEditQuestionsFromDOM();
+  currentEditQuestions.push({
+    id: null,
+    questionText: '',
+    choice1: '',
+    choice2: '',
+    choice3: '',
+    choice4: '',
+    correctAnswer: 1,
+    explanation: ''
+  });
+  renderEditQuestionsList();
+  
+  // Auto scroll to bottom
+  const container = document.getElementById('editQuestionsContainer');
+  if (container && container.lastElementChild) {
+    container.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+};
+
+window.removeQuestionFromEditList = function(index) {
+  syncEditQuestionsFromDOM();
+  currentEditQuestions.splice(index, 1);
+  renderEditQuestionsList();
+};
+
+window.saveEditExam = async function() {
+  if (!currentEditExamId) return;
+
+  syncEditQuestionsFromDOM();
+
+  const title = document.getElementById('editExamTitle').value.trim();
+  const category = document.getElementById('editExamCategory').value;
+  const subcategory = document.getElementById('editExamSubcategory').value.trim();
+  const status = document.getElementById('editExamStatus').value;
+
+  if (!title) {
+    alert('กรุณากรอกชื่อชุดข้อสอบ');
+    return;
+  }
+
+  // Validate questions
+  for (let i = 0; i < currentEditQuestions.length; i++) {
+    const q = currentEditQuestions[i];
+    if (!q.questionText.trim()) {
+      alert(`กรุณากรอกโจทย์คำถามในข้อที่ ${i + 1}`);
+      return;
+    }
+    if (!q.choice1.trim() || !q.choice2.trim()) {
+      alert(`กรุณากรอกตัวเลือกอย่างน้อย ก และ ข ในข้อที่ ${i + 1}`);
+      return;
+    }
+  }
+
+  const btn = document.getElementById('btnSaveEditExam');
+  try {
+    if (btn) {
+      btn.disabled = true;
+      btn.style.opacity = '0.6';
+    }
+
+    const payload = {
+      title,
+      category,
+      subcategory,
+      status,
+      questions: currentEditQuestions.map((q, idx) => ({
+        id: q.id || null,
+        questionText: q.questionText,
+        choice1: q.choice1,
+        choice2: q.choice2,
+        choice3: q.choice3,
+        choice4: q.choice4,
+        correctAnswer: parseInt(q.correctAnswer) || 1,
+        explanation: q.explanation || '',
+        sortOrder: idx + 1
+      }))
+    };
+
+    const res = await fetch(`${API_BASE}/api/admin/exams/${currentEditExamId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      alert('เกิดข้อผิดพลาดในการบันทึก: ' + (data.error || 'ไม่สามารถบันทึกได้'));
+      return;
+    }
+
+    alert(`🎉 ${data.message || 'บันทึกการแก้ไขชุดข้อสอบเรียบร้อยแล้ว'}`);
+    closeEditExamModal();
+    loadExams();
+
+  } catch (err) {
+    console.error('Save edit exam error:', err);
+    alert('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์: ' + err.message);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.style.opacity = '1';
+    }
+  }
 };
 
 // ==========================================
