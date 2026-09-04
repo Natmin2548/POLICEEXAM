@@ -2873,25 +2873,100 @@
           });
         }
 
-        // 3. Line Chart (พัฒนาการ 8 สัปดาห์)
+        // 3. Line Chart (พัฒนาการ 8 สัปดาห์ - คำนวณจากประวัติการทำข้อสอบจริง 100%)
+        const now = Date.now();
+        const oneWeekMs = 7 * 24 * 60 * 60 * 1000;
+        const weeklyBuckets = [[], [], [], [], [], [], [], []];
+
+        const validHistory = historyList
+          .filter(h => h && (h.scorePct !== undefined || h.score !== undefined || h.correctCount !== undefined))
+          .map(h => {
+            let time = 0;
+            if (h.createdAt) time = new Date(h.createdAt).getTime();
+            else if (h.timestamp) time = new Date(h.timestamp).getTime();
+            else if (h.date) time = new Date(h.date).getTime();
+            if (!time || isNaN(time)) time = now;
+
+            const scorePct = Number(h.scorePct) !== undefined && !isNaN(Number(h.scorePct))
+              ? Math.round(Number(h.scorePct))
+              : (h.totalQuestions ? Math.round((Number(h.correctCount || h.score || 0) / Number(h.totalQuestions)) * 100) : 0);
+            return { time, scorePct };
+          })
+          .sort((a, b) => a.time - b.time);
+
+        let lineData = [0, 0, 0, 0, 0, 0, 0, 0];
+        let currentProgressionScore = 0;
+        let progressionDelta = 0;
+
+        if (validHistory.length === 0) {
+          lineData = [0, 0, 0, 0, 0, 0, 0, 0];
+          currentProgressionScore = avgScore;
+          progressionDelta = 0;
+        } else if (validHistory.length === 1) {
+          currentProgressionScore = validHistory[0].scorePct;
+          lineData = [0, 0, 0, 0, 0, 0, 0, currentProgressionScore];
+          progressionDelta = 0;
+        } else {
+          currentProgressionScore = validHistory[validHistory.length - 1].scorePct;
+          progressionDelta = currentProgressionScore - validHistory[0].scorePct;
+
+          let placedInWeeks = false;
+          validHistory.forEach(h => {
+            const diffWeeks = Math.floor((now - h.time) / oneWeekMs);
+            const weekIdx = 7 - diffWeeks;
+            if (weekIdx >= 0 && weekIdx < 8) {
+              weeklyBuckets[weekIdx].push(h.scorePct);
+              placedInWeeks = true;
+            }
+          });
+
+          const weeksWithData = weeklyBuckets.filter(b => b.length > 0).length;
+          if (weeksWithData >= 2) {
+            for (let i = 0; i < 8; i++) {
+              if (weeklyBuckets[i].length > 0) {
+                lineData[i] = Math.round(weeklyBuckets[i].reduce((a, b) => a + b, 0) / weeklyBuckets[i].length);
+              } else {
+                lineData[i] = 0;
+              }
+            }
+          } else {
+            const totalAttempts = validHistory.length;
+            if (totalAttempts <= 8) {
+              const offset = 8 - totalAttempts;
+              for (let i = 0; i < totalAttempts; i++) {
+                lineData[offset + i] = validHistory[i].scorePct;
+              }
+            } else {
+              const chunkSize = totalAttempts / 8;
+              for (let i = 0; i < 8; i++) {
+                const start = Math.floor(i * chunkSize);
+                const end = Math.floor((i + 1) * chunkSize);
+                const chunk = validHistory.slice(start, end);
+                lineData[i] = chunk.length > 0
+                  ? Math.round(chunk.reduce((a, b) => a + b.scorePct, 0) / chunk.length)
+                  : 0;
+              }
+            }
+          }
+        }
+
+        const overallProgEl = document.getElementById('statOverallPercent');
+        if (overallProgEl) overallProgEl.textContent = `${currentProgressionScore}%`;
+
+        const statProgDeltaEl = document.getElementById('statOverallProgression');
+        if (statProgDeltaEl) {
+          if (progressionDelta > 0) {
+            statProgDeltaEl.innerHTML = `<span style="color: #16A34A; font-weight: 700;">▲ +${progressionDelta}% พัฒนาการ</span>`;
+          } else if (progressionDelta < 0) {
+            statProgDeltaEl.innerHTML = `<span style="color: #DC2626; font-weight: 700;">▼ ${progressionDelta}% พัฒนาการ</span>`;
+          } else {
+            statProgDeltaEl.innerHTML = `<span style="color: #94A3B8; font-weight: 600;">+0% พัฒนาการ</span>`;
+          }
+        }
+
         const lineCanvas = document.getElementById('statsLineChartCanvas');
         if (lineCanvas) {
           if (lineChart) lineChart.destroy();
-
-          // Generate realistic progression curve from user's history
-          let lineData = [0, 0, 0, 0, 0, 0, 0, 0];
-          if (avgScore > 0) {
-            lineData = [
-              Math.max(0, avgScore - 22),
-              Math.max(0, avgScore - 18),
-              Math.max(0, avgScore - 14),
-              Math.max(0, avgScore - 10),
-              Math.max(0, avgScore - 7),
-              Math.max(0, avgScore - 4),
-              Math.max(0, avgScore - 1),
-              avgScore
-            ];
-          }
 
           lineChart = new Chart(lineCanvas.getContext('2d'), {
             type: 'line',
