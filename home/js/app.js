@@ -1202,68 +1202,21 @@ window.launchSelectedExamSet = async function(subjectKey, setId, questionCount, 
     console.warn('API questions fetch failed, using fallback set:', err);
   }
 
-  // Fallback offline curated questions if server is offline or returns empty
+  // If server returns empty or error, notify user (strictly no demo questions)
   if (currentQuizQuestions.length === 0) {
-    currentQuizQuestions = generateFallbackQuestions(subjectKey);
+    bodyContent.innerHTML = `
+      <div style="text-align: center; padding: 36px 20px;">
+        <div style="font-size: 40px; margin-bottom: 12px;">📂</div>
+        <h3 style="font-size: 16px; font-weight: 800; color: #0F172A; margin-bottom: 8px;">ยังไม่มีข้อสอบจริงในหมวดนี้</h3>
+        <p style="font-size: 13px; color: #64748B; margin-bottom: 18px;">ระบบตั้งค่าให้แสดงเฉพาะข้อสอบจริงจากฐานข้อมูลเท่านั้น ไม่พบข้อสอบในวิชา "${escapeHTML(subjectKey)}"</p>
+        <button onclick="closeSubjectQuiz()" class="btn btn-primary" style="padding: 8px 18px; border-radius: 10px; font-size: 13px;">ปิดหน้าต่าง</button>
+      </div>
+    `;
+    return;
   }
 
   renderCurrentQuizQuestion();
 };
-
-function generateFallbackQuestions(subjectKey) {
-  return [
-    {
-      id: 1,
-      questionText: 'ตามระเบียบสำนักนายกรัฐมนตรี หนังสือราชการมีกี่ชนิด?',
-      optionA: '4 ชนิด',
-      optionB: '5 ชนิด',
-      optionC: '6 ชนิด',
-      optionD: '7 ชนิด',
-      correctOption: 'C',
-      explanation: 'หนังสือราชการตามระเบียบสำนักนายกรัฐมนตรีฯ มี 6 ชนิด ได้แก่ หนังสือภายนอก, หนังสือภายใน, หนังสือประทับตรา, หนังสือสั่งการ, หนังสือประชาสัมพันธ์ และหนังสือที่เจ้าหน้าที่ทำขึ้นหรือรับไว้เป็นหลักฐาน'
-    },
-    {
-      id: 2,
-      questionText: 'หนังสือที่มีข้อความสั้น หรือส่งเรื่องที่ไม่สำคัญ ให้ใช้หนังสือชนิดใด?',
-      optionA: 'หนังสือภายนอก',
-      optionB: 'หนังสือประทับตรา',
-      optionC: 'หนังสือภายใน',
-      optionD: 'หนังสือสั่งการ',
-      correctOption: 'B',
-      explanation: 'หนังสือประทับตรา คือหนังสือที่ใช้ประทับตราแทนการลงชื่อของหัวหน้าส่วนราชการ ใช้ในกรณีส่งเรื่องที่ไม่สำคัญ การเตือน หรือการส่งเอกสาร'
-    },
-    {
-      id: 3,
-      questionText: 'ชั้นความเร็วของหนังสือราชการข้อใด ต้องปฏิบัติ "ทันทีที่ได้รับ"?',
-      optionA: 'ด่วนที่สุด',
-      optionB: 'ด่วนมาก',
-      optionC: 'ด่วน',
-      optionD: 'ด่วนพิเศษ',
-      correctOption: 'A',
-      explanation: 'ชั้นความเร็วมี 3 ชั้น ได้แก่ ด่วนที่สุด (ปฏิบัติทันทีที่ได้รับ), ด่วนมาก (ปฏิบัติโดยเร็ว) และ ด่วน (ปฏิบัติเร็วกว่าปกติ)'
-    },
-    {
-      id: 4,
-      questionText: 'ตราครุฑสำหรับหนังสือราชการมาตรฐานมีขนาดเท่าใด?',
-      optionA: 'ขนาด 2.5 ซม. และ 1.5 ซม.',
-      optionB: 'ขนาด 3 ซม. และ 1.5 ซม.',
-      optionC: 'ขนาด 3.5 ซม. และ 2 ซม.',
-      optionD: 'ขนาด 4 ซม. และ 2.5 ซม.',
-      correctOption: 'B',
-      explanation: 'ขนาดตราครุฑมี 2 ขนาด คือ ขนาดใหญ่สูง 3 ซม. (สำหรับหนังสือภายนอก) และขนาดเล็กสูง 1.5 ซม. (สำหรับหนังสือภายใน/บันทึกข้อความ)'
-    },
-    {
-      id: 5,
-      questionText: 'อายุการเก็บรักษาหนังสือราชการ โดยปกติให้เก็บไว้ไม่น้อยกว่ากี่ปี?',
-      optionA: '5 ปี',
-      optionB: '10 ปี',
-      optionC: '15 ปี',
-      optionD: '20 ปี',
-      correctOption: 'B',
-      explanation: 'ตามระเบียบสารบรรณ โดยปกติหนังสือราชการให้เก็บไว้ไม่น้อยกว่า 10 ปี เว้นแต่หนังสือที่เป็นหลักฐานทางการเงินหรือประวัติศาสตร์'
-    }
-  ];
-}
 
 window.closeSubjectQuiz = function() {
   const modal = document.getElementById('subjectQuizModal');
@@ -7254,7 +7207,7 @@ function renderQuizResults() {
             <div style="background: white; border-radius: 12px; padding: 10px 14px; border: 1px solid #E2E8F0; display: flex; justify-content: space-between; align-items: center;">
               <div>
                 <div style="font-weight: 700; font-size: 13px; color: #1E293B;">กลุ่มที่ 1: ความสามารถทั่วไป + ภาษาไทย</div>
-                <div style="font-size: 11px; color: #64748B;">เกณฑ์ผ่าน 60% (ขั้นต่ำ 24 / 40 ข้อ)</div>
+                <div style="font-size: 11px; color: #64748B;">เกณฑ์ผ่าน 60% (ขั้นต่ำ ${Math.ceil(g1Total * 0.6)} / ${g1Total} ข้อ)</div>
               </div>
               <div style="text-align: right;">
                 <div style="font-weight: 800; font-size: 14px; color: ${g1Pass ? '#059669' : '#DC2626'};">${g1Correct} / ${g1Total} (${g1Pct}%)</div>
@@ -7266,7 +7219,7 @@ function renderQuizResults() {
             <div style="background: white; border-radius: 12px; padding: 10px 14px; border: 1px solid #E2E8F0; display: flex; justify-content: space-between; align-items: center;">
               <div>
                 <div style="font-weight: 700; font-size: 13px; color: #1E293B;">กลุ่มที่ 2: คอมพิวเตอร์ + สารบรรณ&๕๔ + กฎหมาย + ภาษาอังกฤษ</div>
-                <div style="font-size: 11px; color: #64748B;">เกณฑ์ผ่าน 60% (ขั้นต่ำ 66 / 110 ข้อ)</div>
+                <div style="font-size: 11px; color: #64748B;">เกณฑ์ผ่าน 60% (ขั้นต่ำ ${Math.ceil(g2Total * 0.6)} / ${g2Total} ข้อ)</div>
               </div>
               <div style="text-align: right;">
                 <div style="font-weight: 800; font-size: 14px; color: ${g2Pass ? '#059669' : '#DC2626'};">${g2Correct} / ${g2Total} (${g2Pct}%)</div>
@@ -7281,7 +7234,7 @@ function renderQuizResults() {
     subjectBreakdownHtml = `
       ${groupSummaryHtml}
       <div style="margin-top: 14px; margin-bottom: 24px; border: 1.5px solid #E2E8F0; border-radius: 16px; padding: 14px; background: white;">
-        <h4 style="margin: 0 0 10px 0; font-size: 14px; font-weight: 800; color: #0F172A; text-align: left;">📊 คะแนนแยกราย 6 วิชา (150 ข้อ):</h4>
+        <h4 style="margin: 0 0 10px 0; font-size: 14px; font-weight: 800; color: #0F172A; text-align: left;">📊 คะแนนแยกรายวิชา (${questions.length} ข้อ):</h4>
         <div style="display: flex; flex-direction: column; gap: 6px;">
           ${rows}
         </div>

@@ -8776,45 +8776,7 @@ app.get('/api/exams/prabpram', async (req, res) => {
   }
 });
 
-// Helper for Amnuay dynamic fallback questions
-function generateFallbackSubjectQuestions(subjectKey, count) {
-  const bank = {
-    general: [
-      { questionText: 'ลำดับตัวเลข 2, 5, 10, 17, 26, ... ตัวเลขถัดไปคือข้อใด?', choice1: '35', choice2: '37', choice3: '39', choice4: '41', correctAnswer: 2, explanation: 'ผลต่างเป็นเลขคี่บวกเพิ่มทีละ 2: +3, +5, +7, +9, +11 ดังนั้น 26 + 11 = 37' },
-      { questionText: 'สินค้าชิ้นหนึ่งติดราคาไว้ 1,200 บาท หากลดราคา 15% ผู้ซื้อต้องจ่ายเงินกี่บาท?', choice1: '1,000 บาท', choice2: '1,020 บาท', choice3: '1,050 บาท', choice4: '1,080 บาท', correctAnswer: 2, explanation: 'ส่วนลด 15% ของ 1,200 คือ 180 บาท ดังนั้น 1,200 - 180 = 1,020 บาท' },
-      { questionText: 'ถ้า 3x - 7 = 14 แล้วค่าของ 2x + 5 เท่ากับเท่าใด?', choice1: '17', choice2: '19', choice3: '21', choice4: '23', correctAnswer: 2, explanation: '3x = 21 -> x = 7; 2(7) + 5 = 19' },
-      { questionText: 'กำหนดให้ สมชาย วิ่งเร็วกว่า สมศักดิ์ แต่ สมศักดิ์ วิ่งเร็วกว่า สมหมาย ข้อใดถูกต้อง?', choice1: 'สมหมายวิ่งเร็วที่สุด', choice2: 'สมชายวิ่งเร็วที่สุด', choice3: 'สมศักดิ์วิ่งเร็วที่สุด', choice4: 'ทุกคนวิ่งเร็วเท่ากัน', correctAnswer: 2, explanation: 'สมชาย > สมศักดิ์ > สมหมาย ดังนั้นสมชายวิ่งเร็วที่สุด' },
-      { questionText: 'อัตราส่วนเงินเดือนของ A ต่อ B คือ 3 : 4 ถ้า B ได้เงินเดือน 20,000 บาท แล้ว A ได้เงินเดือนเท่าใด?', choice1: '12,000 บาท', choice2: '15,000 บาท', choice3: '16,000 บาท', choice4: '18,000 บาท', correctAnswer: 2, explanation: '1 ส่วน = 20,000 / 4 = 5,000 บาท; A ได้ 3 x 5,000 = 15,000 บาท' }
-    ],
-    thai: [
-      { questionText: 'ข้อใดสะกดคำได้ถูกต้องทุกคำตามพจนานุกรมฉบับราชบัณฑิตยสถาน?', choice1: 'กะเพรา, อนุญาต, สังเกต', choice2: 'กระเพรา, อนุญาติ, สังเกตุ', choice3: 'กะเพรา, อนุญาติ, สังเกตุ', choice4: 'กระเพรา, อนุญาต, สังเกต', correctAnswer: 1, explanation: 'กะเพรา อนุญาต สังเกต สะกดถูกต้องโดยไม่มีสระหรือรูปผิด' },
-      { questionText: 'สำนวน "ชี้โพรงให้กระรอก" มีความหมายตรงกับข้อใด?', choice1: 'แนะนำให้ผู้อื่นทำความดี', choice2: 'ชี้แนะหรือบอกลู่ทางให้คนทำความผิดหรือแสวงหาประโยชน์', choice3: 'สั่งสอนคนที่มีความชำนาญอยู่แล้ว', choice4: 'ช่วยเหลือผู้ที่กำลังเดือดร้อน', correctAnswer: 2, explanation: 'ชี้โพรงให้กระรอก หมายถึง การชี้ช่องทางหรือบอกโอกาสให้คนทำสิ่งที่ไม่ดีหรือเอาเปรียบ' },
-      { questionText: 'คำราชาศัพท์สำหรับคำว่า "กิน" ของพระมหากษัตริย์คือข้อใด?', choice1: 'เสวย', choice2: 'ฉัน', choice3: 'รับประทาน', choice4: 'บริโภค', correctAnswer: 1, explanation: 'เสวย เป็นคำราชาศัพท์สำหรับพระมหากษัตริย์และพระบรมวงศานุวงศ์' },
-      { questionText: 'ข้อใดเป็นประโยคความซ้อน (สังกรประโยค)?', choice1: 'ฉันกินข้าวและน้องดื่มนม', choice2: 'คุณครูชื่นชมนักเรียนที่ตั้งใจเรียน', choice3: 'เขาร้องเพลงอย่างไพเราะ', choice4: 'ฝนตกหนักน้ำจึงท่วมถนน', correctAnswer: 2, explanation: 'มีประโยคย่อย "ที่ตั้งใจเรียน" ทำหน้าที่ขยาย "นักเรียน"' },
-      { questionText: 'คำในข้อใดเป็นคำสมาสที่มีการสนธิ?', choice1: 'ราชการ', choice2: 'ธรรมาภิบาล', choice3: 'ภูมิศาสตร์', choice4: 'ประวัติศาสตร์', correctAnswer: 2, explanation: 'ธรรม + อภิบาล เชื่อมเสียงเป็น ธรรมาภิบาล' }
-    ],
-    english: [
-      { questionText: 'Choose the best word: The investigator needs to ______ all the evidence before making a report.', choice1: 'examine', choice2: 'examining', choice3: 'examined', choice4: 'examines', correctAnswer: 1, explanation: 'After modal verb "needs to", use base form of the verb (examine).' },
-      { questionText: 'What is the opposite meaning (Antonym) of the word "GUILTY"?', choice1: 'Innocent', choice2: 'Criminal', choice3: 'Suspect', choice4: 'Victim', correctAnswer: 1, explanation: 'Guilty (มีความผิด) ตรงข้ามกับ Innocent (บริสุทธิ์/ไม่มีความผิด)' },
-      { questionText: 'The officer said, "Please keep quiet ______ the meeting is in progress."', choice1: 'while', choice2: 'during', choice3: 'because of', choice4: 'despite', correctAnswer: 1, explanation: '"While" is followed by a clause (subject + verb).' },
-      { questionText: 'Which word means "a person who sees an event and can report what happened"?', choice1: 'Witness', choice2: 'Suspect', choice3: 'Victim', choice4: 'Judge', correctAnswer: 1, explanation: 'Witness หมายถึง พยานผู้เห็นเหตุการณ์' },
-      { questionText: 'Select the grammatically correct sentence:', choice1: 'Neither of the suspects have confessed.', choice2: 'Neither of the suspects has confessed.', choice3: 'Neither of the suspects having confessed.', choice4: 'Neither of the suspects to confess.', correctAnswer: 2, explanation: '"Neither of + plural noun" takes a singular verb (has confessed).' }
-    ]
-  };
-
-  const pool = bank[subjectKey] || bank.general;
-  const list = [];
-  for (let i = 0; i < count; i++) {
-    const template = pool[i % pool.length];
-    list.push({
-      ...template,
-      questionText: `[ข้อ ${i + 1}] ${template.questionText}`
-    });
-  }
-  return list;
-}
-
-// GET /api/exams/amnuay - Main Exam Simulation for สายอำนวยการ / พิสูจน์หลักฐาน (อก./พฐ.) (150 ข้อ)
+// GET /api/exams/amnuay - Main Exam Simulation for สายอำนวยการ / พิสูจน์หลักฐาน (อก./พฐ.) (100% Real DB Questions Only)
 app.get('/api/exams/amnuay', async (req, res) => {
   try {
     const subjects = [
@@ -8864,7 +8826,7 @@ app.get('/api/exams/amnuay', async (req, res) => {
         }
       });
 
-      // Pick questions using Round-Robin across distinct sets/chapters
+      // Pick questions using Round-Robin across distinct sets/chapters (Only 100% real DB questions)
       const pickedForSubject = [];
       if (groupPools.length > 0) {
         let poolIndex = 0;
@@ -8899,32 +8861,7 @@ app.get('/api/exams/amnuay', async (req, res) => {
         }
       }
 
-      // If DB has fewer questions than required, fill from fallback questions bank
-      if (pickedForSubject.length < sub.count) {
-        const needed = sub.count - pickedForSubject.length;
-        const fallbackList = generateFallbackSubjectQuestions(sub.key, needed);
-        fallbackList.forEach(q => {
-          pickedForSubject.push({
-            id: `gen_${sub.key}_${Date.now()}_${Math.random()}`,
-            questionText: q.questionText,
-            choice1: q.choice1,
-            choice2: q.choice2,
-            choice3: q.choice3,
-            choice4: q.choice4,
-            correctAnswer: q.correctAnswer,
-            explanation: q.explanation,
-            subjectKey: sub.key,
-            group: sub.group,
-            groupName: sub.groupName,
-            subjectName: sub.title,
-            shortSubjectName: sub.shortTitle,
-            chapter: 'แบบฝึกหัดมาตรฐาน',
-            set: 'ชุดข้อสอบจำลอง อก./พฐ.'
-          });
-        });
-      }
-
-      // Add to main list with exact ordering
+      // Add to main list with exact ordering (Only 100% real DB questions)
       pickedForSubject.forEach(q => {
         allOrderedQuestions.push({
           ...q,
@@ -8936,6 +8873,15 @@ app.get('/api/exams/amnuay', async (req, res) => {
           subjectName: sub.title,
           shortSubjectName: sub.shortTitle
         });
+      });
+    }
+
+    if (allOrderedQuestions.length === 0) {
+      return res.json({
+        success: false,
+        totalCount: 0,
+        message: 'ยังไม่มีชุดข้อสอบจริงในระบบ กรุณาเพิ่มชุดข้อสอบผ่าน Admin Panel ก่อนเริ่มทำข้อสอบ',
+        questions: []
       });
     }
 
