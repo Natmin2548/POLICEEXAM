@@ -1068,62 +1068,6 @@ export default function App() {
               </ResponsiveContainer>
             </div>
 
-            {/* ── AI Recommendation ── */}
-            <div
-              style={{
-                background: "#fff",
-                border: "1px solid #F1F5F9",
-                borderRadius: 20,
-                padding: "18px 20px",
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-                <div style={{ width: 32, height: 32, borderRadius: 10, background: "#FDF2F1", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <BrainIcon />
-                </div>
-                <div>
-                  <p style={{ fontSize: 13, fontWeight: 700, color: "#0F172A", margin: "0 0 2px 0" }}>AI แนะนำแนวทางอ่านสอบ</p>
-                  <p style={{ fontSize: 11, color: "#94A3B8", margin: 0 }}>Smart Study Advice</p>
-                </div>
-                <span style={{ marginLeft: "auto", padding: "2px 8px", background: "#FDF2F1", borderRadius: 20, fontSize: 10, fontWeight: 700, color: "#BD1B0B" }}>AI</span>
-              </div>
-
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {[
-                  { priority: "สำคัญมาก", color: "#BD1B0B", bg: "#FDF2F1", text: "วิชา ไอที/คอมพิวเตอร์ ควรทบทวน พ.ร.บ.คอมพิวเตอร์ และระบบความมั่นคงปลอดภัยไซเบอร์" },
-                  { priority: "แนะนำ", color: "#D97706", bg: "#FFFBEB", text: "วิชา สังคมฯ ควรติดตามเหตุการณ์ปัจจุบันปี 2568-2569 และความสัมพันธ์อาเซียน" },
-                  { priority: "ทำต่อเนื่อง", color: "#16A34A", bg: "#F0FDF4", text: "วิชา งานสารบรรณ และ ลักษณะที่ ๕๔ มีความแม่นยำสูง (>85%) รักษาระดับไว้ได้ดีเยี่ยม" },
-                ].map((item) => (
-                  <div
-                    key={item.priority}
-                    style={{
-                      display: "flex",
-                      alignItems: "flex-start",
-                      gap: 10,
-                      padding: "10px 12px",
-                      background: "#F8FAFC",
-                      borderRadius: 12,
-                    }}
-                  >
-                    <span
-                      style={{
-                        flexShrink: 0,
-                        padding: "2px 8px",
-                        borderRadius: 20,
-                        background: item.bg,
-                        color: item.color,
-                        fontSize: 10,
-                        fontWeight: 700,
-                        marginTop: 2,
-                      }}
-                    >
-                      {item.priority}
-                    </span>
-                    <p style={{ fontSize: 12.5, color: "#334155", lineHeight: 1.5, margin: 0 }}>{item.text}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
           </>
         )}
       </main>
