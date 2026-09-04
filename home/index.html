@@ -2929,90 +2929,123 @@
           });
         }
 
-        // 4. Render Smart Study Advice for 6 Main Subjects
+        // 4. Render Smart Study Advice for 6 Main Subjects based on Real Attempt History
         const adviceContainer = document.getElementById('aiStudyAdviceList');
         if (adviceContainer) {
-          const subjectsAdviceConfig = [
+          const analyzeSubjectPerformance = (subKeywords, subjectTitle, defaultKeyChapters) => {
+            const matched = historyList.filter(h => {
+              if (!h) return false;
+              const str = `${h.subject || ''} ${h.setTitle || ''}`.replace(/[\s_]/g, '').replace('กฏ', 'กฎ');
+              return subKeywords.some(k => str.includes(k));
+            });
+
+            if (matched.length === 0) {
+              return {
+                status: 'untested',
+                score: 0,
+                badgeText: 'ยังไม่เริ่มสอบ ⏳',
+                badgeBg: '#F1F5F9',
+                badgeColor: '#64748B',
+                adviceText: `ยังไม่พบประวัติการทำข้อสอบใน${subjectTitle} แนะนำให้เริ่มทำแบบทดสอบเพื่อค้นหาจุดแข็งและจุดที่ต้องพัฒนา (แนะนำเริ่มจาก <strong>${defaultKeyChapters[0]}</strong>)`
+              };
+            }
+
+            // Calculate actual latest score & details
+            const latestAttempt = matched[matched.length - 1];
+            const latestScore = Math.round(Number(latestAttempt.scorePct) || 0);
+            const correctCount = latestAttempt.correctCount !== undefined ? latestAttempt.correctCount : 0;
+            const totalQuestions = latestAttempt.totalQuestions || 10;
+            const attemptedChapter = (latestAttempt.setTitle || '').replace(/แบบทดสอบ[^:]*:\s*/, '').replace(/\(ชุดที่\s*\d+\)/, '').trim() || defaultKeyChapters[0];
+
+            // Find lowest scoring chapters and highest scoring chapters
+            const lowAttempts = matched.filter(m => (Number(m.scorePct) || 0) < 60);
+
+            if (latestScore >= 80) {
+              const weakCh = lowAttempts.length > 0 
+                ? (lowAttempts[0].setTitle || '').replace(/แบบทดสอบ[^:]*:\s*/, '').replace(/\(ชุดที่\s*\d+\)/, '').trim() 
+                : (defaultKeyChapters[1] || defaultKeyChapters[0]);
+              return {
+                status: 'good',
+                score: latestScore,
+                badgeText: `ยอดเยี่ยม 🏆 (${latestScore}%)`,
+                badgeBg: '#ECFDF5',
+                badgeColor: '#059669',
+                adviceText: `คุณทำข้อสอบล่าสุดใน <strong>${attemptedChapter}</strong> ได้ยอดเยี่ยมมาก (${latestScore}% - ตอบถูก ${correctCount}/${totalQuestions} ข้อ) แต่ยังมี <strong>${weakCh}</strong> ที่ควรฝึกทำซ้ำเพื่อรักษาความแม่นยำ`
+              };
+            } else if (latestScore >= 50) {
+              return {
+                status: 'average',
+                score: latestScore,
+                badgeText: `พอใช้ ⚡ (${latestScore}%)`,
+                badgeBg: '#FFFBEB',
+                badgeColor: '#D97706',
+                adviceText: `ผลการทดสอบล่าสุดใน <strong>${attemptedChapter}</strong> ได้ ${latestScore}% (${correctCount}/${totalQuestions} ข้อ) แนะนำให้ทบทวนข้อที่ตอบผิดและฝึกทำโจทย์ใน <strong>${defaultKeyChapters[1] || defaultKeyChapters[0]}</strong> เพิ่มเติม`
+              };
+            } else {
+              return {
+                status: 'needs-improvement',
+                score: latestScore,
+                badgeText: `ควรเน้นอ่าน ⚠️ (${latestScore}%)`,
+                badgeBg: '#FEF2F2',
+                badgeColor: '#DC2626',
+                adviceText: `จากการทดสอบล่าสุดใน <strong>${attemptedChapter}</strong> คุณทำได้ ${latestScore}% (${correctCount}/${totalQuestions} ข้อ) ซึ่งยังไม่ผ่านเกณฑ์ 60% แนะนำให้อ่านเนื้อหาและฝึกทำโจทย์ซ้ำในบทนี้ด่วน!`
+              };
+            }
+          };
+
+          const subjectsConfig = [
             {
               subject: 'วิชาคอมพิวเตอร์และสารสนเทศ (IT)',
               icon: '💻',
-              score: scoreComputer,
-              highAdvice: 'คุณทำได้ยอดเยี่ยมมาก คะแนนเกือบเต็มตลอด (${score}%) แต่ยังมี <strong>บทที่ 10 ความปลอดภัยไซเบอร์</strong> และ <strong>บทที่ 7 ระบบเครือข่าย</strong> ที่ควรทบทวนคำศัพท์เฉพาะเพิ่ม',
-              midAdvice: 'ความรู้พื้นฐานคอมพิวเตอร์อยู่ในเกณฑ์ดี (${score}%) แนะนำให้เน้นทบทวน <strong>บทที่ 13 Microsoft Excel & สูตรลัด</strong> และ <strong>บทที่ 6 ผังงาน Flowchart</strong> เพิ่มเติม',
-              lowAdvice: 'แนะนำให้เริ่มปูพื้นฐานจาก <strong>บทที่ 1 ความรู้พื้นฐานคอมพิวเตอร์</strong> และ <strong>บทที่ 4 ซอฟต์แวร์</strong> เพื่อเก็บคะแนนส่วนแรกก่อน (${score}%)'
+              keywords: ['คอม', 'สารสนเทศ', 'ไอที', 'เทคโนโลยี'],
+              keyChapters: ['บทที่ 1 ความรู้พื้นฐานคอมพิวเตอร์', 'บทที่ 10 ความปลอดภัยไซเบอร์', 'บทที่ 13 Microsoft Excel']
             },
             {
               subject: 'วิชาความสามารถทั่วไป (คณิตศาสตร์และเหตุผล)',
               icon: '🧮',
-              score: scoreGeneral,
-              highAdvice: 'ทักษะคำนวณและตรรกะของคุณแข็งแกร่งมาก (${score}%) แต่ยังมี <strong>บทที่ 3 IQ (โอเปเรชั่น)</strong> และ <strong>บทที่ 1 อนุกรมเชิงซ้อน</strong> ที่ควรฝึกจับเวลาทำโจทย์ให้เร็วขึ้น',
-              midAdvice: 'ทำคะแนนได้ในเกณฑ์น่าพอใจ (${score}%) แต่ยังมี <strong>บทที่ 7 ร้อยละ/กำไรขาดทุน</strong> และ <strong>บทที่ 8 สมการ</strong> ที่ยังอ่อนไปบ้าง ควรเน้นฝึกสูตรลัด',
-              lowAdvice: 'ควรเน้นปูพื้นฐานการคิดเลข (${score}%) แนะนำให้เริ่มฝึกจาก <strong>บทที่ 4 เลขพื้นฐาน (บวก ลบ คูณ หาร)</strong> และ <strong>บทที่ 1 อนุกรมพื้นฐาน</strong>'
+              keywords: ['ทั่วไป', 'คณิต', 'คำนวณ', 'อนุกรม'],
+              keyChapters: ['บทที่ 1 อนุกรม', 'บทที่ 3 IQ (โอเปเรชั่น)', 'บทที่ 7 ร้อยละ']
             },
             {
               subject: 'วิชางานสารบรรณ (๒๕๒๖ & ลักษณะ ๕๔)',
               icon: '📜',
-              score: Math.max(scoreSecretariat, scoreSaraban54),
-              highAdvice: 'แม่นยำในระเบียบงานสารบรรณเป็นอย่างยิ่ง (${score}%) แต่ควรระวังจุดหลอกใน <strong>บทที่ 3 ชนิดหนังสือภายนอก/ภายใน</strong> และ <strong>บทที่ ๘ คำย่อยศตำรวจ</strong>',
-              midAdvice: 'เข้าใจโครงสร้างงานสารบรรณดี (${score}%) แต่ยังมี <strong>บทที่ ๗ เลขที่หนังสือออก ตร.</strong> และ <strong>บทที่ ๑๑ การทำลายหนังสือ</strong> ที่ควรทบทวนขั้นตอน',
-              lowAdvice: 'ควรอ่านทบทวนตัวบทแม่บทอย่างละเอียด (${score}%) เริ่มจาก <strong>บทที่ ๑ บทนำและนิยาม</strong> และ <strong>บทที่ ๒ รูปแบบตราครุฑ</strong>'
+              keywords: ['ระเบียบสารบรรณ', 'สารบรรณ๒๕๒๖', '๒๕๒๖', 'ลักษณะที่๕๔', 'ลักษณะ๕๔', 'สารบรรณตำรวจ', '๕๔', '54'],
+              keyChapters: ['บทที่ 1 บทนำและนิยาม', 'บทที่ 3 ชนิดหนังสือภายนอก/ภายใน', 'บทที่ ๘ คำย่อยศตำรวจ']
             },
             {
               subject: 'วิชากฎหมายที่ประชาชนควรรู้',
               icon: '⚖️',
-              score: scoreLaw,
-              highAdvice: 'ความเข้าใจในหลักกฎหมายดีเยี่ยม (${score}%) แต่ยังมี <strong>บทที่ 12 โครงสร้างความรับผิดทางอาญา</strong> และ <strong>บทที่ 18 PDPA</strong> ที่ควรเก็งฎีกาสำคัญ',
-              midAdvice: 'คะแนนอยู่ในระดับปานกลาง (${score}%) ควรเน้นอ่าน <strong>บทที่ 1 กฎหมายแพ่ง (นิติกรรม-สัญญา)</strong> และ <strong>บทที่ 16 ความผิดเกี่ยวกับทรัพย์</strong>',
-              lowAdvice: 'เน้นทำความเข้าใจฐานความผิดพื้นฐาน (${score}%) เริ่มต้นจาก <strong>บทที่ 12 กฎหมายอาญาหลักทั่วไป</strong> และ <strong>พ.ร.บ.ตำรวจแห่งชาติ</strong>'
+              keywords: ['กฎหมาย', 'กม', 'วิ.อาญา', 'พ.ร.บ.ตำรวจ'],
+              keyChapters: ['บทที่ 12 กฎหมายอาญาหลักทั่วไป', 'บทที่ 1 กฎหมายแพ่ง', 'บทที่ 18 PDPA']
             },
             {
               subject: 'วิชาภาษาไทย',
               icon: '🇹🇭',
-              score: scoreThai,
-              highAdvice: 'การจับใจความและไวยากรณ์ภาษาไทยดีมาก (${score}%) แต่ยังมี <strong>บทที่ 9 คำราชาศัพท์</strong> และ <strong>บทที่ 3 โวหารภาพพจน์</strong> ที่มักมีตัวลวง',
-              midAdvice: 'คะแนนภาษาไทยพอใช้ (${score}%) แนะนำให้ฝึกทำโจทย์ <strong>บทที่ 1 การวิเคราะห์บทความยาว</strong> และ <strong>บทที่ 8 คำสะกด/คำทับศัพท์</strong>',
-              lowAdvice: 'ควรเก็บคะแนนจากหลักภาษาพื้นฐาน (${score}%) เริ่มจาก <strong>บทที่ 4 ระดับภาษา</strong> และ <strong>บทที่ 5 การใช้คำตรงความหมาย</strong>'
+              keywords: ['ภาษาไทย', 'วิชาไทย'],
+              keyChapters: ['บทที่ 1 การวิเคราะห์บทความ', 'บทที่ 9 คำราชาศัพท์', 'บทที่ 8 สะกดคำ']
             },
             {
               subject: 'วิชาภาษาอังกฤษ',
               icon: '🇬🇧',
-              score: scoreEnglish,
-              highAdvice: 'คลังศัพท์และไวยากรณ์แข็งแกร่งมาก (${score}%) ควรเน้นฝึกทำ Speed Test ใน <strong>บทที่ 3 Reading จับใจความเร็ว</strong>',
-              midAdvice: 'สื่อสารพื้นฐานได้ดี (${score}%) แต่ยังมี <strong>บทที่ 4 Tenses & Passive Voice</strong> และ <strong>บทที่ 2 Vocabulary ตำรวจ</strong> ที่ยังจำสับสน',
-              lowAdvice: 'เริ่มจำคำศัพท์ที่ออกสอบบ่อย (${score}%) จาก <strong>Flashcards คลังคำศัพท์</strong> และฝึกบทสนทนาจาก <strong>บทที่ 1 Conversation</strong>'
+              keywords: ['อังกฤษ', 'ภาษาอังกฤษ', 'english'],
+              keyChapters: ['บทที่ 1 Conversation', 'บทที่ 2 Vocabulary ตำรวจ', 'บทที่ 4 Grammar']
             }
           ];
 
-          adviceContainer.innerHTML = subjectsAdviceConfig.map(cfg => {
-            let badgeText = 'ดีมาก 🏆';
-            let badgeBg = '#ECFDF5';
-            let badgeColor = '#059669';
-            let adviceText = cfg.highAdvice.replace('${score}', cfg.score);
-
-            if (cfg.score < 50) {
-              badgeText = 'ควรเน้นอ่าน ⚠️';
-              badgeBg = '#FEF2F2';
-              badgeColor = '#DC2626';
-              adviceText = cfg.lowAdvice.replace('${score}', cfg.score);
-            } else if (cfg.score < 80) {
-              badgeText = 'พอใช้ ⚡';
-              badgeBg = '#FFFBEB';
-              badgeColor = '#D97706';
-              adviceText = cfg.midAdvice.replace('${score}', cfg.score);
-            }
-
+          adviceContainer.innerHTML = subjectsConfig.map(cfg => {
+            const analysis = analyzeSubjectPerformance(cfg.keywords, cfg.subject, cfg.keyChapters);
             return `
               <div style="display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; background: #F8FAFC; border-radius: 14px; border: 1px solid #F1F5F9;">
                 <div style="font-size: 20px; line-height: 1; margin-top: 2px;">${cfg.icon}</div>
                 <div style="flex: 1;">
                   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; flex-wrap: wrap; gap: 6px;">
                     <span style="font-size: 13px; font-weight: 800; color: #0F172A;">${cfg.subject}</span>
-                    <span style="font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: ${badgeBg}; color: ${badgeColor};">
-                      ${badgeText} (${cfg.score}%)
+                    <span style="font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: ${analysis.badgeBg}; color: ${analysis.badgeColor};">
+                      ${analysis.badgeText}
                     </span>
                   </div>
                   <p style="font-size: 12px; color: #475569; line-height: 1.55; margin: 0;">
-                    ${adviceText}
+                    ${analysis.adviceText}
                   </p>
                 </div>
               </div>
