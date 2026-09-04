@@ -2796,12 +2796,6 @@ function updateStatsTabDetails() {
     ? Math.round(nonZeroScores.reduce((a, b) => a + b, 0) / nonZeroScores.length)
     : 0;
 
-  const statOverallEl = document.getElementById('statOverallPercent');
-  if (statOverallEl) statOverallEl.textContent = `${avg}%`;
-
-  const progEl = document.getElementById('statOverallProgression');
-  if (progEl) progEl.textContent = avg > 0 ? `▲ +${Math.min(22, avg)}% พัฒนาการ` : `▲ +0% พัฒนาการ`;
-
   // 3. Render Radar Chart
   const radarCanvas = document.getElementById('statsRadarChartCanvas');
   if (radarCanvas && typeof Chart !== 'undefined') {
