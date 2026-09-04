@@ -76,23 +76,30 @@ function setupTabs() {
     { id: 'tabDashboard', view: 'viewDashboard', loadFn: loadDashboard },
     { id: 'tabUsers', view: 'viewUsers', loadFn: loadUsers },
     { id: 'tabExams', view: 'viewExams', loadFn: loadExams },
-    { id: 'tabAnnouncements', view: 'viewAnnouncements', loadFn: loadAnnouncements }
+    { id: 'tabAnnouncements', view: 'viewAnnouncements', loadFn: loadAnnouncements },
+    { id: 'tabReports', view: 'viewReports', loadFn: loadAdminReports }
   ];
 
   tabs.forEach(tab => {
-    document.getElementById(tab.id).addEventListener('click', () => {
+    const tabEl = document.getElementById(tab.id);
+    if (!tabEl) return;
+    tabEl.addEventListener('click', () => {
       // Remove active classes
       tabs.forEach(t => {
-        document.getElementById(t.id).classList.remove('active');
-        document.getElementById(t.view).classList.remove('active');
+        const el = document.getElementById(t.id);
+        const vEl = document.getElementById(t.view);
+        if (el) el.classList.remove('active');
+        if (vEl) vEl.classList.remove('active');
       });
       // Set active
-      document.getElementById(tab.id).classList.add('active');
-      document.getElementById(tab.view).classList.add('active');
+      tabEl.classList.add('active');
+      const targetView = document.getElementById(tab.view);
+      if (targetView) targetView.classList.add('active');
       
       // Update Title & Load data
-      document.getElementById('pageTitle').textContent = document.getElementById(tab.id).textContent.trim();
-      tab.loadFn();
+      const pageTitleEl = document.getElementById('pageTitle');
+      if (pageTitleEl) pageTitleEl.textContent = tabEl.textContent.trim();
+      if (typeof tab.loadFn === 'function') tab.loadFn();
     });
   });
 }
@@ -117,6 +124,11 @@ async function loadDashboard() {
     if (resAnn.ok) {
       const announcements = await resAnn.json();
       document.getElementById('statAnnouncements').textContent = announcements.length || 0;
+    }
+
+    // Update pending reports badge count
+    if (typeof updateReportsCount === 'function') {
+      updateReportsCount();
     }
   } catch (err) {
     console.error('Dashboard load error:', err);
@@ -2109,4 +2121,309 @@ window.startBatchAutoExamGeneration = async function() {
     };
   }
 };
+
+// ==========================================
+// Reported Questions View & Management
+// ==========================================
+let allLoadedReports = [];
+
+async function updateReportsCount() {
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/reports`, {
+      headers: { 'Authorization': `Bearer ${authToken}` }
+    });
+    if (res.ok) {
+      const reports = await res.json();
+      const badge = document.getElementById('reportsBadge');
+      const headerBadge = document.getElementById('reportsHeaderBadge');
+      if (badge) {
+        if (reports.length > 0) {
+          badge.textContent = reports.length;
+          badge.style.display = 'inline-block';
+        } else {
+          badge.style.display = 'none';
+        }
+      }
+      if (headerBadge) {
+        headerBadge.textContent = `${reports.length} รายการ`;
+      }
+    }
+  } catch (e) {
+    console.warn('Update reports badge error:', e);
+  }
+}
+
+window.loadAdminReports = async function() {
+  try {
+    const tbody = document.getElementById('reportsTableBody');
+    if (tbody) {
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 24px; color: #64748B;">⏳ กำลังโหลดรายการข้อสอบที่ถูกรายงาน...</td></tr>`;
+    }
+
+    const res = await fetch(`${API_BASE}/api/admin/reports`, {
+      headers: { 'Authorization': `Bearer ${authToken}` }
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #EF4444; padding: 20px;">ไม่สามารถโหลดรายงานได้: ${err.error || res.statusText}</td></tr>`;
+      return;
+    }
+
+    const reports = await res.json();
+    allLoadedReports = reports;
+
+    const badge = document.getElementById('reportsBadge');
+    const headerBadge = document.getElementById('reportsHeaderBadge');
+    if (badge) {
+      if (reports.length > 0) {
+        badge.textContent = reports.length;
+        badge.style.display = 'inline-block';
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+    if (headerBadge) headerBadge.textContent = `${reports.length} รายการ`;
+
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    if (reports.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="6" style="text-align: center; padding: 40px 20px; color: #64748B;">
+            <div style="font-size: 32px; margin-bottom: 8px;">🎉</div>
+            <div style="font-weight: 700; font-size: 15px; color: #1E293B;">ไม่มีข้อสอบที่ถูกแจ้งผิดพลาด</div>
+            <div style="font-size: 12.5px; color: #94A3B8; margin-top: 4px;">เมื่อมีนักเรียนกดแจ้งข้อสอบผิด ข้อมูลจะปรากฏที่นี่ทันที</div>
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    reports.forEach((rep, idx) => {
+      let reasonData = {};
+      try {
+        reasonData = JSON.parse(rep.reason);
+      } catch (e) {
+        reasonData = { reasonType: rep.reason, details: '' };
+      }
+
+      const subject = reasonData.subject || 'ทั่วไป';
+      const chapter = reasonData.chapter || '-';
+      const qNum = reasonData.questionNumber ? `ข้อที่ ${reasonData.questionNumber}` : 'ข้อสอบ';
+      const reasonType = reasonData.reasonType || 'เฉลยคำตอบผิด';
+      const details = reasonData.details || '';
+      const reporterName = rep.user ? (rep.user.name || rep.user.email || `User #${rep.user.id}`) : `User #${rep.userId}`;
+      const dateStr = rep.createdAt ? new Date(rep.createdAt).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' }) : '-';
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="text-align: center; font-weight: 700; color: #64748B;">#${idx + 1}</td>
+        <td>
+          <div style="font-weight: 700; color: #0F172A; font-size: 13.5px;">${escapeHTML(subject)}</div>
+          <div style="font-size: 11.5px; color: #64748B;">${escapeHTML(chapter)}</div>
+        </td>
+        <td style="text-align: center;">
+          <span class="badge" style="background: #EFF6FF; color: #1D4ED8; font-weight: 800; font-size: 12px; padding: 4px 8px; border-radius: 8px;">
+            ${escapeHTML(qNum)}
+          </span>
+        </td>
+        <td>
+          <div style="font-weight: 600; color: #1E293B; margin-bottom: 4px; line-height: 1.4; font-size: 13px;">
+            ${escapeHTML(rep.questionText || 'ไม่มีข้อความคำถาม')}
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+            <span class="badge" style="background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA; font-weight: 700; font-size: 11px;">
+              ⚠️ ${escapeHTML(reasonType)}
+            </span>
+            ${details ? `<span style="font-size: 12px; color: #475569; background: #F1F5F9; padding: 2px 8px; border-radius: 6px;">💬 "${escapeHTML(details)}"</span>` : ''}
+          </div>
+        </td>
+        <td>
+          <div style="font-weight: 600; font-size: 12.5px; color: #334155;">${escapeHTML(reporterName)}</div>
+          <div style="font-size: 11px; color: #94A3B8;">${dateStr}</div>
+        </td>
+        <td style="text-align: right; white-space: nowrap;">
+          <button class="btn btn-outline" style="background: #FEF3C7; color: #B45309; border: 1px solid #FDE68A; padding: 6px 10px; font-size: 12px; font-weight: 700; border-radius: 8px; cursor: pointer;" onclick="openEditSingleQuestionModal('${rep.questionId}', ${rep.id}, ${idx})">
+            ✏️ แก้ไขข้อนี้
+          </button>
+          <button class="btn btn-outline" style="background: #ECFDF5; color: #059669; border: 1px solid #A7F3D0; padding: 6px 10px; font-size: 12px; font-weight: 700; border-radius: 8px; cursor: pointer;" onclick="resolveReport(${rep.id})">
+            ✓ จัดการแล้ว
+          </button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+  } catch (err) {
+    console.error('Load admin reports error:', err);
+    alert('เกิดข้อผิดพลาดในการโหลดรายงาน: ' + err.message);
+  }
+};
+
+window.openEditSingleQuestionModal = async function(questionId, reportId, reportIndex) {
+  try {
+    const rep = (reportIndex !== undefined && allLoadedReports[reportIndex]) ? allLoadedReports[reportIndex] : null;
+    let reasonData = {};
+    if (rep && rep.reason) {
+      try { reasonData = JSON.parse(rep.reason); } catch (e) {}
+    }
+
+    document.getElementById('editSingleQuestionId').value = questionId || '';
+    document.getElementById('editSingleReportId').value = reportId || '';
+
+    // Default values from report
+    let qText = (rep && rep.questionText) ? rep.questionText : '';
+    let c1 = (reasonData.choices && reasonData.choices[0]) || '';
+    let c2 = (reasonData.choices && reasonData.choices[1]) || '';
+    let c3 = (reasonData.choices && reasonData.choices[2]) || '';
+    let c4 = (reasonData.choices && reasonData.choices[3]) || '';
+    let ans = reasonData.correctAnswer || 1;
+    let exp = reasonData.explanation || '';
+
+    // If questionId is numeric, try fetching real DB question record
+    const numId = parseInt(questionId);
+    if (!isNaN(numId) && numId > 0) {
+      try {
+        const res = await fetch(`${API_BASE}/api/admin/questions/${numId}`, {
+          headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        if (res.ok) {
+          const dbQ = await res.json();
+          qText = dbQ.questionText || qText;
+          c1 = dbQ.choice1 || c1;
+          c2 = dbQ.choice2 || c2;
+          c3 = dbQ.choice3 || c3;
+          c4 = dbQ.choice4 || c4;
+          ans = dbQ.correctAnswer || ans;
+          exp = dbQ.explanation || exp;
+        }
+      } catch (e) {
+        console.warn('Fetch DB question fallback to report data:', e);
+      }
+    }
+
+    const titleEl = document.getElementById('singleQuestionModalTitle');
+    const subEl = document.getElementById('singleQuestionModalSubtitle');
+    if (titleEl) titleEl.textContent = `แก้ไขข้อสอบ (ID: ${questionId})`;
+    if (subEl) {
+      subEl.textContent = `วิชา: ${reasonData.subject || 'ทั่วไป'} | ${reasonData.chapter || ''} (${reasonData.questionNumber ? 'ข้อที่ ' + reasonData.questionNumber : ''})`;
+    }
+
+    document.getElementById('editSingleQuestionText').value = qText;
+    document.getElementById('editSingleChoice1').value = c1;
+    document.getElementById('editSingleChoice2').value = c2;
+    document.getElementById('editSingleChoice3').value = c3;
+    document.getElementById('editSingleChoice4').value = c4;
+    document.getElementById('editSingleCorrectAnswer').value = String(ans || '1');
+    document.getElementById('editSingleExplanation').value = exp;
+
+    document.getElementById('editSingleQuestionModal').style.display = 'flex';
+  } catch (err) {
+    console.error('Open edit single question modal error:', err);
+    alert('เกิดข้อผิดพลาด: ' + err.message);
+  }
+};
+
+window.closeEditSingleQuestionModal = function() {
+  const modal = document.getElementById('editSingleQuestionModal');
+  if (modal) modal.style.display = 'none';
+};
+
+window.saveSingleQuestionEdit = async function() {
+  const questionId = document.getElementById('editSingleQuestionId').value;
+  const reportId = document.getElementById('editSingleReportId').value;
+  const questionText = document.getElementById('editSingleQuestionText').value.trim();
+  const choice1 = document.getElementById('editSingleChoice1').value.trim();
+  const choice2 = document.getElementById('editSingleChoice2').value.trim();
+  const choice3 = document.getElementById('editSingleChoice3').value.trim();
+  const choice4 = document.getElementById('editSingleChoice4').value.trim();
+  const correctAnswer = parseInt(document.getElementById('editSingleCorrectAnswer').value) || 1;
+  const explanation = document.getElementById('editSingleExplanation').value.trim();
+
+  if (!questionText) {
+    alert('กรุณากรอกข้อความโจทย์คำถาม');
+    return;
+  }
+
+  const btn = document.getElementById('btnSaveSingleQuestion');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = 'กำลังบันทึก... ⏳';
+  }
+
+  try {
+    const numId = parseInt(questionId);
+    let updatedInDb = false;
+
+    if (!isNaN(numId) && numId > 0) {
+      const res = await fetch(`${API_BASE}/api/admin/questions/${numId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: JSON.stringify({
+          questionText,
+          choice1,
+          choice2,
+          choice3,
+          choice4,
+          correctAnswer,
+          explanation
+        })
+      });
+
+      if (res.ok) {
+        updatedInDb = true;
+      }
+    }
+
+    // Auto-resolve / delete the report if reportId is present
+    if (reportId) {
+      await fetch(`${API_BASE}/api/admin/reports/${reportId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${authToken}` }
+      }).catch(() => {});
+    }
+
+    alert('✅ บันทึกการแก้ไขข้อสอบเรียบร้อยแล้ว' + (updatedInDb ? ' และอัปเดตลงฐานข้อมูลสำเร็จ' : ''));
+    closeEditSingleQuestionModal();
+    loadAdminReports();
+
+  } catch (err) {
+    console.error('Save single question error:', err);
+    alert('เกิดข้อผิดพลาดในการบันทึก: ' + err.message);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<span>💾 บันทึกการแก้ไขข้อนี้</span>';
+    }
+  }
+};
+
+window.resolveReport = async function(reportId) {
+  if (!confirm('ต้องการทำเครื่องหมายว่าจัดการรายงานนี้เรียบร้อยแล้ว และลบออกจากรายการใช่หรือไม่?')) {
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/reports/${reportId}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${authToken}` }
+    });
+
+    if (res.ok) {
+      loadAdminReports();
+    } else {
+      const data = await res.json().catch(() => ({}));
+      alert('ไม่สามารถลบรายงานได้: ' + (data.error || 'เกิดข้อผิดพลาด'));
+    }
+  } catch (err) {
+    console.error('Resolve report error:', err);
+    alert('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + err.message);
+  }
+};
+
 

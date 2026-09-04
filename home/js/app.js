@@ -7420,3 +7420,112 @@ setTimeout(() => {
     fetchActiveBattleRooms();
   }
 }, 1000);
+
+// =========================================================
+// Report Question (แจ้งข้อสอบผิดพลาด)
+// =========================================================
+window.openReportCurrentQuestionModal = function() {
+  if (!currentQuizState || !currentQuizState.questions || currentQuizState.questions.length === 0) {
+    alert('ไม่พบข้อสอบในขณะนี้');
+    return;
+  }
+  const q = currentQuizState.questions[currentQuizState.currentIndex];
+  if (!q) {
+    alert('ไม่พบข้อมูลข้อสอบข้อนี้');
+    return;
+  }
+
+  const subject = currentQuizState.subject || q.subject || q.category || 'ข้อสอบทั่วไป';
+  const chapter = currentQuizState.chapter || q.chapter || q.subcategory || 'หมวดหมู่ทั่วไป';
+  const qNum = currentQuizState.currentIndex + 1;
+  const total = currentQuizState.questions.length;
+
+  const infoLabel = document.getElementById('reportQuestionInfoLabel');
+  if (infoLabel) {
+    infoLabel.textContent = `ข้อที่ ${qNum}/${total} | วิชา: ${subject} (${chapter})`;
+  }
+
+  const previewEl = document.getElementById('reportQuestionPreviewText');
+  if (previewEl) {
+    previewEl.textContent = `คำถาม: ${q.questionText || q.question || 'ไม่มีข้อความโจทย์'}`;
+  }
+
+  const detailsInput = document.getElementById('reportQuestionDetailsText');
+  if (detailsInput) detailsInput.value = '';
+
+  const defaultRadio = document.querySelector('input[name="reportReasonType"][value="เฉลยคำตอบผิด"]');
+  if (defaultRadio) defaultRadio.checked = true;
+
+  const modal = document.getElementById('reportQuestionModal');
+  if (modal) modal.style.display = 'flex';
+};
+
+window.closeReportQuestionModal = function() {
+  const modal = document.getElementById('reportQuestionModal');
+  if (modal) modal.style.display = 'none';
+};
+
+window.submitReportCurrentQuestion = async function() {
+  if (!currentQuizState || !currentQuizState.questions) return;
+  const q = currentQuizState.questions[currentQuizState.currentIndex];
+  if (!q) return;
+
+  const reasonTypeEl = document.querySelector('input[name="reportReasonType"]:checked');
+  const reasonType = reasonTypeEl ? reasonTypeEl.value : 'เฉลยคำตอบผิด';
+  const detailsEl = document.getElementById('reportQuestionDetailsText');
+  const details = detailsEl ? detailsEl.value.trim() : '';
+
+  const subject = currentQuizState.subject || q.subject || q.category || 'ทั่วไป';
+  const chapter = currentQuizState.chapter || q.chapter || q.subcategory || '-';
+  const qNum = currentQuizState.currentIndex + 1;
+
+  const payloadReason = {
+    subject: subject,
+    chapter: chapter,
+    questionNumber: qNum,
+    reasonType: reasonType,
+    details: details,
+    examSetId: currentQuizState.setId || q.examSetId || null,
+    choices: q.choices || [q.choice1, q.choice2, q.choice3, q.choice4],
+    correctAnswer: q.correctAnswer || 1,
+    explanation: q.explanation || ''
+  };
+
+  const btn = document.getElementById('btnSubmitReportQuestion');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = 'กำลังส่งข้อมูล... ⏳';
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/api/user/reports`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`
+      },
+      body: JSON.stringify({
+        questionId: String(q.id || `q_${Date.now()}`),
+        questionText: q.questionText || q.question || '',
+        reason: JSON.stringify(payloadReason)
+      })
+    });
+
+    const data = await res.json();
+    if (res.ok) {
+      alert('✅ ส่งรายงานข้อผิดพลาดไปยังผู้ดูแลระบบเรียบร้อยแล้ว ขอบคุณสำหรับการช่วยพัฒนาข้อสอบครับ!');
+      closeReportQuestionModal();
+    } else {
+      alert('❌ ไม่สามารถส่งรายงานได้: ' + (data.error || 'เกิดข้อผิดพลาด'));
+    }
+  } catch (err) {
+    console.error('Submit report question error:', err);
+    alert('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + err.message);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '🚀 ส่งรายงานข้อสอบ';
+    }
+  }
+};
+

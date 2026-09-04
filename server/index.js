@@ -8389,6 +8389,11 @@ ${contextText ? `คลังข้อมูลอ้างอิง:\n${context
       message: `เพิ่มข้อสอบเข้าชุด "${examSet.title}" อีก ${createdQuestions.length} ข้อสำเร็จ! (รวมทั้งหมดเป็น ${newTotalCount} ข้อ)`,
       totalCount: newTotalCount
     });
+  } catch (err) {
+    console.error('Append AI questions error:', err);
+    res.status(500).json({ error: 'เกิดข้อผิดพลาดในการเพิ่มข้อสอบ: ' + err.message });
+  }
+});
 
 // --- Admin API: Delete ALL Exam Sets & Questions ---
 app.delete('/api/admin/exams/all', requireAdmin, async (req, res) => {
@@ -8418,10 +8423,99 @@ app.delete('/api/admin/exams/:id', requireAdmin, async (req, res) => {
   }
 });
 
+// --- Admin API: Get All Reported Questions ---
+app.get('/api/admin/reports', requireAdmin, async (req, res) => {
+  try {
+    const reports = await prisma.reportedQuestion.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: {
+        user: {
+          select: { id: true, name: true, email: true, role: true }
+        }
+      }
+    });
+    res.json(reports);
+  } catch (err) {
+    console.error('Fetch reported questions error:', err);
+    res.status(500).json({ error: 'เกิดข้อผิดพลาดในการโหลดรายงานข้อสอบ: ' + err.message });
+  }
+});
+
+// --- Admin API: Delete / Resolve Reported Question ---
+app.delete('/api/admin/reports/:id', requireAdmin, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ error: 'รหัสรายงานไม่ถูกต้อง' });
+    await prisma.reportedQuestion.delete({
+      where: { id }
+    });
+    res.json({ success: true, message: 'ลบรายงานข้อสอบเรียบร้อยแล้ว' });
+  } catch (err) {
+    console.error('Delete reported question error:', err);
+    res.status(500).json({ error: 'เกิดข้อผิดพลาดในการลบรายงาน: ' + err.message });
+  }
+});
+
+// --- Admin API: Get a Single Question by ID ---
+app.get('/api/admin/questions/:id', requireAdmin, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ error: 'รหัสข้อสอบไม่ถูกต้อง' });
+    const q = await prisma.question.findUnique({
+      where: { id },
+      include: {
+        examSet: {
+          select: { id: true, title: true, category: true, subcategory: true }
+        }
+      }
+    });
+    if (!q) return res.status(404).json({ error: 'ไม่พบข้อสอบข้อนี้ในฐานข้อมูล' });
+    res.json(q);
+  } catch (err) {
+    console.error('Get single question error:', err);
+    res.status(500).json({ error: 'เกิดข้อผิดพลาด: ' + err.message });
+  }
+});
+
+// --- Admin API: Update a Single Question Directly ---
+app.put('/api/admin/questions/:id', requireAdmin, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ error: 'รหัสข้อสอบไม่ถูกต้อง' });
+    const { questionText, choice1, choice2, choice3, choice4, correctAnswer, explanation } = req.body;
+
+    let correctNum = 1;
+    const opt = String(correctAnswer ?? '1').toUpperCase();
+    if (opt === 'B' || opt === '2') correctNum = 2;
+    else if (opt === 'C' || opt === '3') correctNum = 3;
+    else if (opt === 'D' || opt === '4') correctNum = 4;
+    else correctNum = parseInt(opt) || 1;
+
+    const updated = await prisma.question.update({
+      where: { id },
+      data: {
+        questionText: questionText !== undefined ? questionText : undefined,
+        choice1: choice1 !== undefined ? choice1 : undefined,
+        choice2: choice2 !== undefined ? choice2 : undefined,
+        choice3: choice3 !== undefined ? choice3 : undefined,
+        choice4: choice4 !== undefined ? choice4 : undefined,
+        correctAnswer: correctNum,
+        explanation: explanation !== undefined ? explanation : undefined
+      }
+    });
+
+    res.json({ success: true, message: 'บันทึกการแก้ไขข้อสอบเรียบร้อยแล้ว', question: updated });
+  } catch (err) {
+    console.error('Update single question error:', err);
+    res.status(500).json({ error: 'เกิดข้อผิดพลาดในการแก้ไขข้อสอบ: ' + err.message });
+  }
+});
+
 // --- Admin API: Get Exam Set with Full Questions List for Editing ---
 app.get('/api/admin/exams/:id', requireAdmin, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ error: 'รหัสชุดข้อสอบไม่ถูกต้อง' });
     const examSet = await prisma.examSet.findUnique({
       where: { id },
       include: {
@@ -8430,7 +8524,7 @@ app.get('/api/admin/exams/:id', requireAdmin, async (req, res) => {
         }
       }
     });
-    if (!examSet) return res.status(404).json({ error: 'ไม่พบชุดข้อสอบ' });
+    if (!examSet) return res.status(404).json({ error: 'ไม่พบชุดข้อสอบรหัส #' + id });
     res.json(examSet);
   } catch (err) {
     console.error('Fetch exam set details error:', err);
@@ -8586,7 +8680,7 @@ app.get('/api/exams/subject-questions', authenticateToken, async (req, res) => {
     console.error('Subject questions error:', err);
     res.status(500).json({ error: 'เกิดข้อผิดพลาดในการโหลดข้อสอบ: ' + err.message });
   }
-
+});
 
 // GET /api/exams/prabpram - Main Exam Simulation for สายปราบปราม (100% Real DB Questions Only)
 app.get('/api/exams/prabpram', async (req, res) => {
