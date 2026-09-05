@@ -8182,30 +8182,190 @@ ${exampleJson}`;
 }
 
 function buildGeneralMathPrompt({ count, subcategory, title, contextText }) {
-  return `คุณคือผู้เชี่ยวชาญระดับปรมาจารย์ในการออกข้อสอบวิชา "ความรู้ความสามารถทั่วไป (คณิตศาสตร์และเหตุผล)" สำหรับการสอบคัดเลือกข้าราชการตำรวจ
-โปรดสร้างข้อสอบคณิตศาสตร์และตรรกศาสตร์จำนวน ${count} ข้อ ${subcategory ? `เน้นหัวข้อ: "${subcategory}"` : ''} ${title ? `ชื่อชุดข้อสอบ: "${title}"` : ''}
-${contextText ? `คลังเนื้อหาอ้างอิง:\n${contextText.substring(0, 16000)}\n\n` : ''}
+  const target = `${subcategory || ''} ${title || ''}`.toLowerCase();
 
-🎯 โครงสร้างและแนวข้อสอบคณิตศาสตร์และตรรกศาสตร์ตำรวจจริง:
-1. **โอเปเรชั่น (Operations)**: กำหนดนิยามเครื่องหมายพิเศษ เช่น a * b = (a + b) x 2 - 3 หรือ a @ b = a² - 2b + 1 แล้วถามค่า x * y
-2. **อนุกรมตัวเลขและอนุกรมตัวอักษร**: ลำดับตัวเลขซับซ้อน เช่น ลำดับชั้น, ลำดับยกกำลัง, ลำดับผลต่างสะสม, ลำดับสองชุดสลับ
-3. **โจทย์ปัญหาคณิตศาสตร์ (Word Problems)**:
-   - โจทย์อายุคนในอดีต-ปัจจุบัน-อนาคต
-   - โจทย์อัตราส่วน สัดส่วน และร้อยละ/เปอร์เซ็นต์
-   - โจทย์ความเร็ว ระยะทาง เวลา และการวิ่งสวนทาง/ตามกัน
-   - โจทย์งานและคนงาน (อัตราการทำงาน)
-   - โจทย์กำไร ขาดทุน ทุน และราคาขาย
-   - โจทย์พื้นที่ ปริมาตร และรูปทรงเรขาคณิต
-4. **การคิดเชิงเหตุผลและตรรกศาสตร์**:
-   - เงื่อนไขภาษา และเงื่อนไขสัญลักษณ์
-   - ตรรกศาสตร์ การสมมูล นิเสธ และการสรุปความสมเหตุสมผล
-5. 💡 **คำอธิบายเฉลย (Step-by-Step Math Calculation)**:
-   - ต้องแสดงวิธีคิด คำนวณ และสูตรทีละขั้นตอนอย่างละเอียด 100%
+  let chapterTitle = 'วิชาความสามารถทั่วไป (คณิตศาสตร์และเหตุผล)';
+  let chapterSpecificRules = '';
+  let exampleJson = '';
 
-รูปแบบผลลัพธ์: ตอบกลับเฉพาะโครงสร้าง JSON Array ตามรูปแบบนี้เท่านั้น:
-[
+  if (target.includes('อนุกรม') || target.includes('บทที่ 1') || target.includes('บทที่1')) {
+    chapterTitle = 'บทที่ 1: อนุกรมตัวเลขและตัวอักษร';
+    chapterSpecificRules = `🎯 กฎเหล็กเฉพาะสำหรับ "บทที่ 1 อนุกรม":
+1. **ทุกข้อ (100%) ต้องเป็นโจทย์อนุกรมตัวเลขหรืออนุกรมตัวอักษร 100%:**
+   - อนุกรมผลต่างคงที่, อนุกรมหลายชั้น, อนุกรมยกกำลัง (n², n³, n²±1), อนุกรมสองชุดสลับ, อนุกรมผลบวกสะสม (Fibonacci)
+2. 💡 **คำอธิบายเฉลย:** ต้องแสดงลำดับผลต่าง หรือสูตรความสัมพันธ์ของตัวเลขทีละขั้นตอนอย่างละเอียด 100%`;
+    exampleJson = `[
   {
-    "questionText": "โจทย์ปัญหาทางคณิตศาสตร์หรือตรรกศาสตร์...",
+    "questionText": "จงหาตัวเลขถัดไปของอนุกรม: 2, 5, 10, 17, 26, ...",
+    "optionA": "37",
+    "optionB": "35",
+    "optionC": "39",
+    "optionD": "36",
+    "correctOption": "A",
+    "explanation": "ผลต่างระหว่างพจน์: 5-2 = 3, 10-5 = 5, 17-10 = 7, 26-17 = 9 (ผลต่างเพิ่มขึ้นทีละ 2: +3, +5, +7, +9, +11) ดังนั้น พจน์ถัดไปคือ 26 + 11 = 37"
+  }
+]`;
+  } else if (target.includes('อุปมา') || target.includes('บทที่ 2') || target.includes('บทที่2')) {
+    chapterTitle = 'บทที่ 2: อุปมา-อุปไมย (ความสัมพันธ์ของคำ)';
+    chapterSpecificRules = `🎯 กฎเหล็กเฉพาะสำหรับ "บทที่ 2 อุปมา-อุปไมย":
+1. **ทุกข้อ (100%) ต้องเป็นโจทย์อุปมา-อุปไมย (A : B :: C : ? หรือ ? : B :: C : D):**
+   - ความสัมพันธ์ด้านหน้าที่ เครื่องมือ ส่วนประกอบ ชนิด คำตรงข้าม สาเหตุและผลลัพธ์
+2. 💡 **คำอธิบายเฉลย:** อธิบายประโยคความสัมพันธ์ของคู่คำต้นแบบและคู่คำเฉลย`;
+    exampleJson = `[
+  {
+    "questionText": "เข็มทิศ : นำทาง :: นาฬิกา : ?",
+    "optionA": "บอกเวลา",
+    "optionB": "ข้อมือ",
+    "optionC": "ตัวเลข",
+    "optionD": "เดิน",
+    "correctOption": "A",
+    "explanation": "ความสัมพันธ์เชิงหน้าที่การใช้งาน: 'เข็มทิศ' มีหน้าที่ 'นำทาง' เช่นเดียวกับ 'นาฬิกา' มีหน้าที่ 'บอกเวลา'"
+  }
+]`;
+  } else if (target.includes('โอเปเรชั่น') || target.includes('iq') || target.includes('บทที่ 3') || target.includes('บทที่3')) {
+    chapterTitle = 'บทที่ 3: โอเปเรชั่น (Operations) และตรรกะตัวเลข';
+    chapterSpecificRules = `🎯 กฎเหล็กเฉพาะสำหรับ "บทที่ 3 โอเปเรชั่น":
+1. **ทุกข้อ (100%) ต้องเป็นโจทย์กำหนดสัญลักษณ์พิเศษ เช่น a * b หรือ a @ b:**
+   - มีตัวอย่างเงื่อนไข 2 ชุด แล้วให้หาค่าชุดที่ 3
+2. 💡 **คำอธิบายเฉลย:** แสดงสมการรูปทั่วไป เช่น a * b = (a + b) × 2 - 1 และแทนค่าคำนวณทีละขั้น`;
+    exampleJson = `[
+  {
+    "questionText": "กำหนดให้ 2 * 3 = 13 และ 3 * 4 = 25 จงหาค่าของ 4 * 5 = ?",
+    "optionA": "41",
+    "optionB": "39",
+    "optionC": "45",
+    "optionD": "37",
+    "correctOption": "A",
+    "explanation": "ความสัมพันธ์คือ a * b = a² + b² → 2² + 3² = 4 + 9 = 13 | 3² + 4² = 9 + 16 = 25 ดังนั้น 4 * 5 = 4² + 5² = 16 + 25 = 41"
+  }
+]`;
+  } else if (target.includes('ห.ร.ม') || target.includes('ค.ร.น') || target.includes('บทที่ 5') || target.includes('บทที่5')) {
+    chapterTitle = 'บทที่ 5: ห.ร.ม. และ ค.ร.น.';
+    chapterSpecificRules = `🎯 กฎเหล็กเฉพาะสำหรับ "บทที่ 5 ห.ร.ม. และ ค.ร.น.":
+1. **ทุกข้อ (100%) ต้องเป็นโจทย์ ห.ร.ม. / ค.ร.น. และโจทย์ปัญหาประยุกต์:**
+   - การตัดเชือก/แบ่งกองของไม่ให้เหลือ (ห.ร.ม.), นาฬิกาปลุกพร้อมกัน/วิ่งรอบสนามเจอกัน (ค.ร.น.), A × B = ห.ร.ม. × ค.ร.น.`;
+    exampleJson = `[
+  {
+    "questionText": "มีเชือก 3 เส้น ยาว 24, 36 และ 48 เมตร ต้องการตัดเป็นท่อนยาวเท่าๆ กันและยาวที่สุดโดยไม่เหลือเศษ จะตัดได้เชือกยาวท่อนละกี่เมตร และได้ทั้งหมดกี่ท่อน?",
+    "optionA": "ยาวท่อนละ 12 เมตร ได้ทั้งหมด 9 ท่อน",
+    "optionB": "ยาวท่อนละ 6 เมตร ได้ทั้งหมด 18 ท่อน",
+    "optionC": "ยาวท่อนละ 12 เมตร ได้ทั้งหมด 8 ท่อน",
+    "optionD": "ยาวท่อนละ 8 เมตร ได้ทั้งหมด 12 ท่อน",
+    "correctOption": "A",
+    "explanation": "หา ห.ร.ม. ของ 24, 36, 48 คือ 12 เมตร (ยาวที่สุด) จำนวนท่อน = (24/12) + (36/12) + (48/12) = 2 + 3 + 4 = 9 ท่อน"
+  }
+]`;
+  } else if (target.includes('อัตราส่วน') || target.includes('บทที่ 6') || target.includes('บทที่6')) {
+    chapterTitle = 'บทที่ 6: อัตราส่วนและสัดส่วน';
+    chapterSpecificRules = `🎯 กฎเหล็กเฉพาะสำหรับ "บทที่ 6 อัตราส่วน":
+1. **ทุกข้อ (100%) ต้องเป็นโจทย์อัตราส่วนต่อเนื่อง สัดส่วนตรง สัดส่วนผกผัน และการแบ่งส่วนเงิน/สิ่งของ**`;
+    exampleJson = `[
+  {
+    "questionText": "ถ้า A : B = 2 : 3 และ B : C = 4 : 5 จงหาอัตราส่วนของ A : B : C",
+    "optionA": "8 : 12 : 15",
+    "optionB": "2 : 3 : 5",
+    "optionC": "8 : 10 : 15",
+    "optionD": "6 : 12 : 15",
+    "correctOption": "A",
+    "explanation": "ทำตัวร่วม B ให้เท่ากัน (ค.ร.น. 3 และ 4 คือ 12) A:B = 8:12, B:C = 12:15 ดังนั้น A : B : C = 8 : 12 : 15"
+  }
+]`;
+  } else if (target.includes('ร้อยละ') || target.includes('กำไร') || target.includes('ขาดทุน') || target.includes('บทที่ 7') || target.includes('บทที่7')) {
+    chapterTitle = 'บทที่ 7: ร้อยละ เปอร์เซ็นต์ กำไร ขาดทุน';
+    chapterSpecificRules = `🎯 กฎเหล็กเฉพาะสำหรับ "บทที่ 7 ร้อยละ":
+1. **ทุกข้อ (100%) ต้องเป็นโจทย์ร้อยละ กำไร ขาดทุน ดอกเบี้ย และส่วนลดราคาป้าย**`;
+    exampleJson = `[
+  {
+    "questionText": "ซื้อสินค้าราคาต้นทุน 800 บาท ติดป้ายราคาไว้โดยต้องการกำไร 25% แต่ตอนขายลดราคาให้ผู้ซื้อ 10% จากป้าย อยากทราบว่าได้กำไรกี่บาท?",
+    "optionA": "100 บาท",
+    "optionB": "120 บาท",
+    "optionC": "80 บาท",
+    "optionD": "150 บาท",
+    "correctOption": "A",
+    "explanation": "ราคาป้ายตั้งไว้กำไร 25% = 800 × 1.25 = 1,000 บาท ลดให้ 10% ขายจริง = 1,000 × 0.90 = 900 บาท กำไรจริง = 900 - 800 = 100 บาท"
+  }
+]`;
+  } else if (target.includes('สมการ') || target.includes('บทที่ 8') || target.includes('บทที่8')) {
+    chapterTitle = 'บทที่ 8: สมการและโจทย์ปัญหาคลาสสิก (อายุ, ขาสัตว์, จับมือ)';
+    chapterSpecificRules = `🎯 กฎเหล็กเฉพาะสำหรับ "บทที่ 8 สมการ":
+1. **ทุกข้อ (100%) ต้องเป็นโจทย์ปัญหาเชิงสมการ เช่น นับหัว/ขาสัตว์, ปัญหาอายุ, การจับมือ, ปักเสาไฟ**`;
+    exampleJson = `[
+  {
+    "questionText": "ในฟาร์มแห่งหนึ่งมีไก่และหมูรวมกัน 30 หัว นับขารวมกันได้ 84 ขา อยากทราบว่าในฟาร์มนี้มีหมูกี่ตัว?",
+    "optionA": "12 ตัว",
+    "optionB": "18 ตัว",
+    "optionC": "15 ตัว",
+    "optionD": "10 ตัว",
+    "correctOption": "A",
+    "explanation": "สูตรสัตว์ 4 ขา = (จำนวนขา - [หัว × 2]) / 2 = (84 - [30 × 2]) / 2 = (84 - 60) / 2 = 24 / 2 = 12 ตัว (หมู 12 ตัว, ไก่ 18 ตัว)"
+  }
+]`;
+  } else if (target.includes('ความน่าจะเป็น') || target.includes('บทที่ 11') || target.includes('บทที่11')) {
+    chapterTitle = 'บทที่ 11: ความน่าจะเป็นและกฎการนับ';
+    chapterSpecificRules = `🎯 กฎเหล็กเฉพาะสำหรับ "บทที่ 11 ความน่าจะเป็น":
+1. **ทุกข้อ (100%) ต้องเป็นโจทย์ความน่าจะเป็น P(E) = n(E)/n(S) ลูกเต๋า เหรียญ ไพ่ ลูกบอล การเรียงสับเปลี่ยน**`;
+    exampleJson = `[
+  {
+    "questionText": "ทอยลูกเต๋าที่เที่ยงตรง 2 ลูกพร้อมกัน 1 ครั้ง ความน่าจะเป็นที่ผลรวมของแต้มบนหน้าลูกเต๋าจะเท่ากับ 8 มีค่าเท่าใด?",
+    "optionA": "5/36",
+    "optionB": "1/6",
+    "optionC": "7/36",
+    "optionD": "1/9",
+    "correctOption": "A",
+    "explanation": "n(S) = 6 × 6 = 36 เหตุการณ์ที่ผลรวมเป็น 8: (2,6), (3,5), (4,4), (5,3), (6,2) รวม 5 เหตุการณ์ ดังนั้น P(E) = 5/36"
+  }
+]`;
+  } else if (target.includes('ความเร็ว') || target.includes('ระยะทาง') || target.includes('งาน') || target.includes('บทที่ 12') || target.includes('บทที่12')) {
+    chapterTitle = 'บทที่ 12: เลขคณิต ความเร็ว ระยะทาง เวลา และอัตราทำงาน';
+    chapterSpecificRules = `🎯 กฎเหล็กเฉพาะสำหรับ "บทที่ 12 ความเร็วและงาน":
+1. **ทุกข้อ (100%) ต้องเป็นโจทย์ S=VT, วิ่งสวนทาง/ตามกัน, ความเร็วเฉลี่ย, คนงานช่วยกันทำงาน**`;
+    exampleJson = `[
+  {
+    "questionText": "นาย ก ขับรถจากเมือง A ไปเมือง B ด้วยความเร็ว 60 กม./ชม. และขับกลับเส้นทางเดิมด้วยความเร็ว 40 กม./ชม. ความเร็วเฉลี่ยตลอดการเดินทางไป-กลับเป็นกี่กม./ชม.?",
+    "optionA": "48 กม./ชม.",
+    "optionB": "50 กม./ชม.",
+    "optionC": "52 กม./ชม.",
+    "optionD": "45 กม./ชม.",
+    "correctOption": "A",
+    "explanation": "สูตรความเร็วเฉลี่ยไป-กลับระยะทางเท่ากัน: V_avg = (2 × v₁ × v₂) / (v₁ + v₂) = (2 × 60 × 40) / (60 + 40) = 4800 / 100 = 48 กม./ชม."
+  }
+]`;
+  } else if (target.includes('พื้นที่') || target.includes('ปริมาตร') || target.includes('บทที่ 13') || target.includes('บทที่13')) {
+    chapterTitle = 'บทที่ 13: พื้นที่ ปริมาตร และเรขาคณิต';
+    chapterSpecificRules = `🎯 กฎเหล็กเฉพาะสำหรับ "บทที่ 13 พื้นที่และปริมาตร":
+1. **ทุกข้อ (100%) ต้องเป็นโจทย์คำนวณพื้นที่ 2 มิติ หรือปริมาตร 3 มิติ (วงกลม สี่เหลี่ยม ทรงกระบอก ทรงกลม)**`;
+    exampleJson = `[
+  {
+    "questionText": "ถังน้ำทรงกระบอกมีรัศมีของฐานยาว 7 เมตร และสูง 10 เมตร จะมีความจุของน้ำเต็มถังประมาณกี่ลูกบาศก์เมตร? (กำหนด π ≈ 22/7)",
+    "optionA": "1,540 ลบ.ม.",
+    "optionB": "1,440 ลบ.ม.",
+    "optionC": "1,680 ลบ.ม.",
+    "optionD": "2,200 ลบ.ม.",
+    "correctOption": "A",
+    "explanation": "ปริมาตรทรงกระบอก = πr²h = (22/7) × 7 × 7 × 10 = 22 × 7 × 10 = 1,540 ลูกบาศก์เมตร"
+  }
+]`;
+  } else if (target.includes('ตรรกศาสตร์') || target.includes('บทที่ 18') || target.includes('บทที่18')) {
+    chapterTitle = 'บทที่ 18: ตรรกศาสตร์และตารางค่าความจริง';
+    chapterSpecificRules = `🎯 กฎเหล็กเฉพาะสำหรับ "บทที่ 18 ตรรกศาสตร์":
+1. **ทุกข้อ (100%) ต้องเป็นโจทย์ประพจน์ ตารางค่าความจริง และการสมมูล/นิเสธ**`;
+    exampleJson = `[
+  {
+    "questionText": "ประพจน์ในข้อใด 'สมมูล' (Equivalent) กับประพจน์ p → q ?",
+    "optionA": "~q → ~p",
+    "optionB": "~p → ~q",
+    "optionC": "q → p",
+    "optionD": "p ∧ ~q",
+    "correctOption": "A",
+    "explanation": "ตามกฎการแย้งสลับที่ (Contrapositive) ในตรรกศาสตร์ p → q ≡ ~q → ~p ≡ ~p ∨ q"
+  }
+]`;
+  } else {
+    chapterTitle = 'วิชาความรู้ความสามารถทั่วไป (คณิตศาสตร์และเหตุผล)';
+    chapterSpecificRules = `🎯 คำแนะนำ: ออกข้อสอบคละหัวข้ออย่างสมดุล (อนุกรม, โอเปเรชั่น, อุปมา-อุปไมย, ร้อยละ, สมการ, เรขาคณิต, ความน่าจะเป็น, ตรรกศาสตร์)`;
+    exampleJson = `[
+  {
+    "questionText": "โจทย์ปัญหาคณิตศาสตร์หรือตรรกศาสตร์...",
     "optionA": "ตัวเลือก ก",
     "optionB": "ตัวเลือก ข",
     "optionC": "ตัวเลือก ค",
@@ -8214,6 +8374,21 @@ ${contextText ? `คลังเนื้อหาอ้างอิง:\n${cont
     "explanation": "แสดงวิธีทำและสูตรคำนวณทีละขั้นตอนอย่างละเอียด..."
   }
 ]`;
+  }
+
+  return `คุณคือผู้เชี่ยวชาญระดับปรมาจารย์ในการออกข้อสอบวิชา "${chapterTitle}" สำหรับการสอบคัดเลือกข้าราชการตำรวจและข้อสอบ ก.พ. ภาค ก.
+โปรดสร้างข้อสอบจำนวน ${count} ข้อ ${subcategory ? `เน้นหัวข้อ/บทเรียน: "${subcategory}"` : ''} ${title ? `ชื่อชุดข้อสอบ: "${title}"` : ''}
+${contextText ? `คลังเนื้อหาอ้างอิง:\n${contextText.substring(0, 16000)}\n\n` : ''}
+
+⛔️ กฎเหล็กความถูกต้องทางคณิตศาสตร์ (Strict Accuracy):
+1. **ตัวเลขและคำตอบต้องถูกต้องตามหลักคณิตศาสตร์ 100%** (คำนวณซ้ำสองรอบให้แน่ใจว่าตัวเลขและคำตอบถูกต้อง)
+2. ❌ **ห้ามออกข้อสอบข้ามหมวดบทเรียนที่ระบุ** ต้องออกเฉพาะหัวข้อ ${chapterTitle} เท่านั้น 100%
+3. 💡 **คำอธิบายเฉลย (Step-by-Step Math Calculation):** ต้องแสดงวิธีคิด สูตร และขั้นตอนการคำนวณอย่างละเอียดครบถ้วนทุกข้อ
+
+${chapterSpecificRules}
+
+รูปแบบผลลัพธ์: ตอบกลับเฉพาะโครงสร้าง JSON Array ตามรูปแบบนี้เท่านั้น ห้ามมี markdown อื่น:
+${exampleJson}`;
 }
 
 function buildEnglishPrompt({ count, subcategory, title, contextText }) {
@@ -8606,6 +8781,7 @@ app.post('/api/admin/exams/preview-ai', authenticateToken, async (req, res) => {
 
     const isThaiSubject = subject === 'thai' || subject === 'ภาษาไทย' || (title && (title.includes('ไทย') || title.includes('ภาษาไทย')));
     const isSocialSubject = subject === 'social' || subject === 'สังคม' || subject === 'จริยธรรม' || subject === 'สังคมและวัฒนธรรม' || (title && (title.includes('สังคม') || title.includes('จริยธรรม') || title.includes('อาเซียน')));
+    const isMathSubject = subject === 'general' || subject === 'ทั่วไป' || subject === 'คำนวณ' || subject === 'คณิต' || subject === 'คณิตศาสตร์' || (title && (title.includes('คำนวณ') || title.includes('คณิต') || title.includes('ทั่วไป') || title.includes('อนุกรม')));
     const isSarabanSubject = subject === 'secretariat' || subject === 'งานสารบรรณ' || subject === 'สารบรรณ' || subject === 'งานสารบรรณ_๒๕๒๖' || subject === 'สารบรรณตำรวจ_๕๔' || (knowledgeBase && knowledgeBase.includes('สารบรรณ'));
 
     let contextText = '';
@@ -8736,6 +8912,26 @@ app.post('/api/admin/exams/preview-ai', authenticateToken, async (req, res) => {
         }
       } catch (e) {
         console.error('Fetch social error:', e);
+      }
+    } else if (!contextText && isMathSubject) {
+      try {
+        const p = path.join(__dirname, 'data', 'math_full.json');
+        if (fs.existsSync(p)) {
+          const raw = JSON.parse(fs.readFileSync(p, 'utf8'));
+          if (subcategory && subcategory !== 'ALL') {
+            const cleanSub = subcategory.replace(/บทที่\s*\d+\s*/, '').trim().toLowerCase();
+            const matched = raw.filter(d => d.title.toLowerCase().includes(cleanSub) || (cleanSub && d.content.toLowerCase().includes(cleanSub)));
+            if (matched.length > 0) {
+              contextText = matched.map(d => `[${d.title}]\n${d.content}`).join('\n\n');
+            } else {
+              contextText = raw.map(d => `[${d.title}]\n${d.content}`).join('\n\n');
+            }
+          } else {
+            contextText = raw.map(d => `[${d.title}]\n${d.content}`).join('\n\n');
+          }
+        }
+      } catch (e) {
+        console.error('Fetch math error:', e);
       }
     } else if (!contextText && (knowledgeBase === 'ALL_SARABAN' || subject === 'งานสารบรรณ')) {
       const docs = await prisma.knowledgeDocument.findMany({});
@@ -8954,6 +9150,14 @@ app.post('/api/admin/exams/:examSetId/append-ai', authenticateToken, async (req,
       }
     } else if (cat.includes('สังคม') || cat.includes('จริยธรรม') || cat.includes('social') || cat.includes('อาเซียน')) {
       const p = path.join(__dirname, 'data', 'social_full.json');
+      if (fs.existsSync(p)) {
+        const raw = JSON.parse(fs.readFileSync(p, 'utf8'));
+        const cleanSub = (examSet.subcategory || '').replace(/บทที่\s*\d+\s*/, '').trim().toLowerCase();
+        const matched = raw.filter(d => cleanSub && (d.title.toLowerCase().includes(cleanSub) || d.content.toLowerCase().includes(cleanSub)));
+        contextText = (matched.length > 0 ? matched : raw).map(d => `[${d.title}]\n${d.content}`).join('\n\n');
+      }
+    } else if (cat.includes('คำนวณ') || cat.includes('คณิต') || cat.includes('ทั่วไป') || cat.includes('general') || cat.includes('อนุกรม')) {
+      const p = path.join(__dirname, 'data', 'math_full.json');
       if (fs.existsSync(p)) {
         const raw = JSON.parse(fs.readFileSync(p, 'utf8'));
         const cleanSub = (examSet.subcategory || '').replace(/บทที่\s*\d+\s*/, '').trim().toLowerCase();
