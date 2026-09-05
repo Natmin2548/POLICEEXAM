@@ -8499,6 +8499,26 @@ app.post('/api/admin/exams/preview-ai', authenticateToken, async (req, res) => {
       } catch (e) {
         console.error('Fetch law error:', e);
       }
+    } else if (!contextText && isThaiSubject) {
+      try {
+        const p = path.join(__dirname, 'data', 'thai_full.json');
+        if (fs.existsSync(p)) {
+          const raw = JSON.parse(fs.readFileSync(p, 'utf8'));
+          if (subcategory && subcategory !== 'ALL') {
+            const cleanSub = subcategory.replace(/บทที่\s*\d+\s*/, '').trim().toLowerCase();
+            const matched = raw.filter(d => d.title.toLowerCase().includes(cleanSub) || (cleanSub && d.content.toLowerCase().includes(cleanSub)));
+            if (matched.length > 0) {
+              contextText = matched.map(d => `[${d.title}]\n${d.content}`).join('\n\n');
+            } else {
+              contextText = raw.map(d => `[${d.title}]\n${d.content}`).join('\n\n');
+            }
+          } else {
+            contextText = raw.map(d => `[${d.title}]\n${d.content}`).join('\n\n');
+          }
+        }
+      } catch (e) {
+        console.error('Fetch thai error:', e);
+      }
     } else if (!contextText && (knowledgeBase === 'ALL_SARABAN' || subject === 'งานสารบรรณ')) {
       const docs = await prisma.knowledgeDocument.findMany({});
       if (docs && docs.length > 0) {
@@ -8685,14 +8705,36 @@ app.post('/api/admin/exams/:examSetId/append-ai', authenticateToken, async (req,
       return res.status(404).json({ error: 'ไม่พบชุดข้อสอบนี้' });
     }
 
-    const currentCount = examSet.questions.length;
+    let contextText = '';
+    const cat = (examSet.category || '').toLowerCase();
+    const isThai = cat.includes('ไทย') || cat.includes('thai');
+    const isComp = cat.includes('คอม') || cat.includes('computer');
+    const isLaw = cat.includes('กฎหมาย') || cat.includes('กฏหมาย') || cat.includes('law');
 
-    let docs = [];
-    if (examSet.category === 'งานสารบรรณ') {
-      docs = await prisma.knowledgeDocument.findMany({});
+    if (examSet.category === 'งานสารบรรณ' || cat.includes('สารบรรณ')) {
+      const docs = await prisma.knowledgeDocument.findMany({});
+      if (docs && docs.length > 0) contextText = docs.map(d => `[${d.title}]\n${d.content}`).join('\n\n');
+    } else if (isThai) {
+      const p = path.join(__dirname, 'data', 'thai_full.json');
+      if (fs.existsSync(p)) {
+        const raw = JSON.parse(fs.readFileSync(p, 'utf8'));
+        const cleanSub = (examSet.subcategory || '').replace(/บทที่\s*\d+\s*/, '').trim().toLowerCase();
+        const matched = raw.filter(d => cleanSub && (d.title.toLowerCase().includes(cleanSub) || d.content.toLowerCase().includes(cleanSub)));
+        contextText = (matched.length > 0 ? matched : raw).map(d => `[${d.title}]\n${d.content}`).join('\n\n');
+      }
+    } else if (isComp) {
+      const p = path.join(__dirname, 'data', 'computer_full.json');
+      if (fs.existsSync(p)) {
+        const raw = JSON.parse(fs.readFileSync(p, 'utf8'));
+        contextText = raw.map(d => `[${d.title}]\n${d.content}`).join('\n\n');
+      }
+    } else if (isLaw) {
+      const p = path.join(__dirname, 'data', 'law_full.json');
+      if (fs.existsSync(p)) {
+        const raw = JSON.parse(fs.readFileSync(p, 'utf8'));
+        contextText = raw.map(d => `[${d.title}]\n${d.content}`).join('\n\n');
+      }
     }
-    const contextText = docs.map(d => `[${d.title}]
-${d.content}`).join('\n\n');
 
     let apiKey = (req.body.apiKey || process.env.GEMINI_API_KEY || '').trim().replace(/^['"]|['"]$/g, '');
     if (!apiKey) {
