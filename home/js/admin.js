@@ -936,8 +936,20 @@ function renderEditQuestionsList() {
   }
 
   currentEditQuestions.forEach((q, idx) => {
+    const conflict = clientDetectConflict(q);
     const card = document.createElement('div');
-    card.style.cssText = 'background: white; border: 1.5px solid #E2E8F0; border-radius: 16px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);';
+    card.style.cssText = conflict.hasConflict
+      ? 'background: #FFF5F5; border: 1.5px solid #F87171; border-radius: 16px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);'
+      : 'background: white; border: 1.5px solid #E2E8F0; border-radius: 16px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);';
+
+    const conflictHTML = conflict.hasConflict ? `
+      <div style="background: #FEF2F2; border: 1px solid #FECACA; border-radius: 8px; padding: 7px 10px; margin-bottom: 10px; font-size: 12px; color: #991B1B; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+        <span style="font-weight: 700;">⚠️ ${escapeHTML(conflict.reason)}</span>
+        <button type="button" onclick="editQuickFixChoice(${idx}, ${conflict.detectedAnswer})" style="background: #DC2626; color: white; border: none; padding: 3px 10px; border-radius: 6px; font-weight: 800; font-size: 11px; cursor: pointer;">
+          สลับเป็นข้อ ${conflict.detectedAnswerLabel} ทันที
+        </button>
+      </div>
+    ` : '';
 
     card.innerHTML = `
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid #F1F5F9; padding-bottom: 8px;">
@@ -947,11 +959,14 @@ function renderEditQuestionsList() {
           </span>
           <span style="font-weight: 800; color: #1E293B; font-size: 13.5px;">ข้อที่ ${idx + 1}</span>
           ${q.id ? `<span style="font-size: 11px; color: #94A3B8; font-family: monospace;">(ID: ${q.id})</span>` : '<span style="font-size: 11px; color: #059669; font-weight: 700; background: #ECFDF5; padding: 1px 6px; border-radius: 6px;">(ข้อใหม่)</span>'}
+          ${conflict.hasConflict ? '<span style="background: #FEE2E2; color: #DC2626; font-size: 10.5px; font-weight: 800; padding: 1px 6px; border-radius: 6px;">เฉลยขัดแย้ง</span>' : ''}
         </div>
         <button type="button" onclick="removeQuestionFromEditList(${idx})" style="background: #FEF2F2; border: 1px solid #FECACA; color: #EF4444; padding: 4px 10px; border-radius: 8px; font-size: 11.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 4px;">
           🗑️ ลบข้อนี้
         </button>
       </div>
+
+      ${conflictHTML}
 
       <!-- โจทย์ / คำถาม -->
       <div style="margin-bottom: 14px;">
@@ -1657,46 +1672,70 @@ async function generateAIExamPreview() {
 function renderExamPreviewModal(title, subject, knowledgeBase) {
   document.getElementById('previewSummaryBadge').textContent = `รวม ${previewExamQuestions.length} ข้อ`;
   const container = document.getElementById('previewQuestionsContainer');
+  const banner = document.getElementById('previewAiRecheckBanner');
+  const titleEl = document.getElementById('previewAiRecheckTitle');
+  const descEl = document.getElementById('previewAiRecheckDesc');
   container.innerHTML = '';
 
+  let conflictCount = 0;
+
   previewExamQuestions.forEach((q, idx) => {
+    const conflict = clientDetectConflict(q);
+    if (conflict.hasConflict) conflictCount++;
+
     const card = document.createElement('div');
     card.className = 'stat-card';
-    card.style.cssText = 'padding: 16px; border: 1px solid #E2E8F0; border-radius: 12px; background: #F8FAFC; text-align: left;';
+    card.style.cssText = conflict.hasConflict
+      ? 'padding: 16px; border: 1.5px solid #F87171; border-radius: 14px; background: #FFF5F5; text-align: left; position: relative;'
+      : 'padding: 16px; border: 1px solid #E2E8F0; border-radius: 12px; background: #F8FAFC; text-align: left;';
+
+    const conflictHTML = conflict.hasConflict ? `
+      <div style="background: #FEF2F2; border: 1px solid #FECACA; border-radius: 8px; padding: 7px 10px; margin-bottom: 10px; font-size: 12px; color: #991B1B; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+        <span style="font-weight: 700;">⚠️ ${escapeHTML(conflict.reason)}</span>
+        <button type="button" onclick="previewQuickFixChoice(${idx}, '${conflict.detectedOptionLetter}')" style="background: #DC2626; color: white; border: none; padding: 3px 10px; border-radius: 6px; font-weight: 800; font-size: 11px; cursor: pointer;">
+          สลับเป็นข้อ ${conflict.detectedAnswerLabel} ทันที
+        </button>
+      </div>
+    ` : '';
 
     card.innerHTML = `
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-        <span style="font-weight: 700; color: #BD1B0B; font-size: 14px;">ข้อที่ ${idx + 1}</span>
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <span style="font-weight: 800; color: #BD1B0B; font-size: 14px;">ข้อที่ ${idx + 1}</span>
+          ${conflict.hasConflict ? '<span style="background: #FEE2E2; color: #DC2626; font-size: 10.5px; font-weight: 800; padding: 1px 6px; border-radius: 6px;">เฉลยขัดแย้ง</span>' : ''}
+        </div>
         <button type="button" onclick="removePreviewQuestion(${idx})" style="background: none; border: none; color: #EF4444; font-size: 12px; font-weight: 600; cursor: pointer;">🗑️ ลบข้อนี้</button>
       </div>
 
+      ${conflictHTML}
+
       <div class="form-group" style="margin-bottom: 10px;">
-        <label style="font-size: 12px;">คำถาม</label>
+        <label style="font-size: 12px; font-weight: 700;">คำถาม</label>
         <textarea id="q_text_${idx}" class="form-input" rows="2" style="font-size: 13px;">${escapeHTML(q.questionText)}</textarea>
       </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
         <div>
-          <label style="font-size: 11px;">ตัวเลือก ก (Option A)</label>
+          <label style="font-size: 11px; font-weight: 600;">ตัวเลือก ก (Option A)</label>
           <input type="text" id="q_a_${idx}" class="form-input" value="${escapeHTML(q.optionA)}" style="font-size: 12px;">
         </div>
         <div>
-          <label style="font-size: 11px;">ตัวเลือก ข (Option B)</label>
+          <label style="font-size: 11px; font-weight: 600;">ตัวเลือก ข (Option B)</label>
           <input type="text" id="q_b_${idx}" class="form-input" value="${escapeHTML(q.optionB)}" style="font-size: 12px;">
         </div>
         <div>
-          <label style="font-size: 11px;">ตัวเลือก ค (Option C)</label>
+          <label style="font-size: 11px; font-weight: 600;">ตัวเลือก ค (Option C)</label>
           <input type="text" id="q_c_${idx}" class="form-input" value="${escapeHTML(q.optionC)}" style="font-size: 12px;">
         </div>
         <div>
-          <label style="font-size: 11px;">ตัวเลือก ง (Option D)</label>
+          <label style="font-size: 11px; font-weight: 600;">ตัวเลือก ง (Option D)</label>
           <input type="text" id="q_d_${idx}" class="form-input" value="${escapeHTML(q.optionD)}" style="font-size: 12px;">
         </div>
       </div>
 
       <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 12px;">
         <div>
-          <label style="font-size: 11px; color: #10B981; font-weight: 700;">ข้อที่ถูกต้อง (Correct Option)</label>
+          <label style="font-size: 11px; color: #10B981; font-weight: 800;">ข้อที่ถูกต้อง (Correct Option)</label>
           <select id="q_correct_${idx}" class="form-input" style="font-size: 12px; font-weight: 700; color: #10B981;">
             <option value="A" ${q.correctOption === 'A' ? 'selected' : ''}>ก (A)</option>
             <option value="B" ${q.correctOption === 'B' ? 'selected' : ''}>ข (B)</option>
@@ -1705,7 +1744,7 @@ function renderExamPreviewModal(title, subject, knowledgeBase) {
           </select>
         </div>
         <div>
-          <label style="font-size: 11px;">คำอธิบายเฉลย</label>
+          <label style="font-size: 11px; font-weight: 700;">คำอธิบายเฉลย</label>
           <textarea id="q_exp_${idx}" class="form-input" rows="1" style="font-size: 12px;">${escapeHTML(q.explanation || '')}</textarea>
         </div>
       </div>
@@ -1714,8 +1753,28 @@ function renderExamPreviewModal(title, subject, knowledgeBase) {
     container.appendChild(card);
   });
 
+  if (conflictCount > 0 && banner) {
+    banner.style.display = 'flex';
+    banner.style.background = '#FEF2F2';
+    banner.style.borderColor = '#FECACA';
+    if (titleEl) titleEl.textContent = `⚠️ ตรวจพบเฉลยขัดแย้งกับคำอธิบาย ${conflictCount} ข้อ!`;
+    if (descEl) descEl.textContent = `คำอธิบายเฉลยระบุข้อหนึ่งแต่ระบบเลือกอีกข้อ กดปุ่มด้านขวาเพื่อสลับเฉลยให้ถูกต้องออโต้ทันที`;
+  }
+
   document.getElementById('examPreviewModal').style.display = 'flex';
 }
+
+window.previewQuickFixChoice = function(idx, correctLetter) {
+  if (previewExamQuestions[idx]) {
+    previewExamQuestions[idx].correctOption = correctLetter;
+    const selectEl = document.getElementById(`q_correct_${idx}`);
+    if (selectEl) selectEl.value = correctLetter;
+    const title = document.getElementById('examTitle') ? document.getElementById('examTitle').value : '';
+    const subject = document.getElementById('examSubject') ? document.getElementById('examSubject').value : '';
+    const knowledgeBase = document.getElementById('knowledgeBaseSelect') ? document.getElementById('knowledgeBaseSelect').value : '';
+    renderExamPreviewModal(title, subject, knowledgeBase);
+  }
+};
 
 function removePreviewQuestion(index) {
   previewExamQuestions.splice(index, 1);
@@ -3286,7 +3345,10 @@ window.loadAdminReports = async function() {
           <div style="font-weight: 600; font-size: 12.5px; color: #334155;">${escapeHTML(reporterName)}</div>
           <div style="font-size: 11px; color: #94A3B8;">${dateStr}</div>
         </td>
-        <td style="text-align: right; white-space: nowrap;">
+        <td style="text-align: right; white-space: nowrap; display: flex; gap: 6px; justify-content: flex-end;">
+          <button class="btn btn-outline" style="background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE; padding: 6px 11px; font-size: 12px; font-weight: 700; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" onclick="openReportAiAuditModal(${rep.id})">
+            🤖 AI Audit
+          </button>
           <button class="btn btn-outline" style="background: #FEF3C7; color: #B45309; border: 1px solid #FDE68A; padding: 6px 10px; font-size: 12px; font-weight: 700; border-radius: 8px; cursor: pointer;" onclick="openEditSingleQuestionModal('${rep.questionId}', ${rep.id}, ${idx})">
             ✏️ แก้ไขข้อนี้
           </button>
@@ -3467,5 +3529,681 @@ window.resolveReport = async function(reportId) {
     alert('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + err.message);
   }
 };
+
+window.editQuickFixChoice = function(idx, ansNum) {
+  if (currentEditQuestions[idx]) {
+    currentEditQuestions[idx].correctAnswer = ansNum;
+    const sel = document.getElementById(`edit_q_ans_${idx}`);
+    if (sel) sel.value = String(ansNum);
+    renderEditQuestionsList();
+  }
+};
+
+// =======================================================
+// 🤖 AI 3-PASS RE-CHECK & REPORT AUDITOR CLIENT FUNCTIONS
+// =======================================================
+
+let pendingAiFixedPreviewQuestions = null;
+let currentAuditReportData = null;
+
+// Client-side rule-based conflict detector
+function clientDetectConflict(q) {
+  const exp = (q.explanation || '').trim();
+  if (!exp) return { hasConflict: false };
+
+  let currentAns = 1;
+  const rawAns = String(q.correctAnswer !== undefined ? q.correctAnswer : (q.correctOption || '1')).trim().toUpperCase();
+  if (rawAns === '2' || rawAns === 'B' || rawAns === 'ข') currentAns = 2;
+  else if (rawAns === '3' || rawAns === 'C' || rawAns === 'ค') currentAns = 3;
+  else if (rawAns === '4' || rawAns === 'D' || rawAns === 'ง') currentAns = 4;
+  else {
+    const num = parseInt(rawAns);
+    if (!isNaN(num) && num >= 1 && num <= 4) currentAns = num;
+  }
+
+  const mapChoice = {
+    'ก': 1, '1': 1, 'A': 1,
+    'ข': 2, '2': 2, 'B': 2,
+    'ค': 3, '3': 3, 'C': 3,
+    'ง': 4, '4': 4, 'D': 4
+  };
+
+  const pat1 = /(?:ข้อ|ตัวเลือกที่?)\s*([1-4ก-งA-D])[.)]?\s*(?:จึง|เป็น|คือ)?\s*(?:ถูกต้อง|ถูก|คำตอบ|เฉลย)/i;
+  const pat2 = /(?:ตอบ|เฉลย|คำตอบคือ|คำตอบที่ถูกต้องคือ|ดังนั้น)\s*(?:ข้อ|ตัวเลือกที่?)?\s*([1-4ก-งA-D])[.)]?/i;
+  const pat3 = /ถูกต้องคือ\s*(?:ข้อ|ตัวเลือก)?\s*([1-4ก-งA-D])[.)]?/i;
+
+  let detectedAns = null;
+  let matchSnippet = '';
+
+  const m1 = exp.match(pat1);
+  if (m1 && m1[1] && mapChoice[m1[1].toUpperCase()]) {
+    detectedAns = mapChoice[m1[1].toUpperCase()];
+    matchSnippet = m1[0];
+  } else {
+    const m2 = exp.match(pat2);
+    if (m2 && m2[1] && mapChoice[m2[1].toUpperCase()]) {
+      detectedAns = mapChoice[m2[1].toUpperCase()];
+      matchSnippet = m2[0];
+    } else {
+      const m3 = exp.match(pat3);
+      if (m3 && m3[1] && mapChoice[m3[1].toUpperCase()]) {
+        detectedAns = mapChoice[m3[1].toUpperCase()];
+        matchSnippet = m3[0];
+      }
+    }
+  }
+
+  if (detectedAns !== null && detectedAns !== currentAns) {
+    const thaiChoiceNames = ['', 'ก (1)', 'ข (2)', 'ค (3)', 'ง (4)'];
+    const optLetters = ['', 'A', 'B', 'C', 'D'];
+    return {
+      hasConflict: true,
+      currentAnswer: currentAns,
+      currentAnswerLabel: thaiChoiceNames[currentAns],
+      detectedAnswer: detectedAns,
+      detectedAnswerLabel: thaiChoiceNames[detectedAns],
+      detectedOptionLetter: optLetters[detectedAns],
+      matchSnippet,
+      reason: `คำอธิบายระบุว่า "${matchSnippet}" แต่ระบบเลือกข้อ ${thaiChoiceNames[currentAns]}`
+    };
+  }
+
+  return { hasConflict: false, currentAnswer: currentAns };
+}
+
+// 1. Run 3-Pass AI Recheck on Preview Modal
+window.runAi3PassRecheckOnPreview = async function() {
+  if (!previewExamQuestions || previewExamQuestions.length === 0) {
+    alert('ไม่มีข้อสอบให้ตรวจสอบ');
+    return;
+  }
+
+  // Sync inputs from DOM
+  previewExamQuestions.forEach((q, idx) => {
+    const t = document.getElementById(`q_text_${idx}`);
+    const a = document.getElementById(`q_a_${idx}`);
+    const b = document.getElementById(`q_b_${idx}`);
+    const c = document.getElementById(`q_c_${idx}`);
+    const d = document.getElementById(`q_d_${idx}`);
+    const cor = document.getElementById(`q_correct_${idx}`);
+    const exp = document.getElementById(`q_exp_${idx}`);
+    if (t) q.questionText = t.value;
+    if (a) q.optionA = a.value;
+    if (b) q.optionB = b.value;
+    if (c) q.optionC = c.value;
+    if (d) q.optionD = d.value;
+    if (cor) q.correctOption = cor.value;
+    if (exp) q.explanation = exp.value;
+  });
+
+  const btn = document.getElementById('btnRunAiRecheckPreview');
+  const banner = document.getElementById('previewAiRecheckBanner');
+  const titleEl = document.getElementById('previewAiRecheckTitle');
+  const descEl = document.getElementById('previewAiRecheckDesc');
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span>⏳ AI กำลังรีเช็ค 3 รอบ...</span>';
+  }
+
+  try {
+    const title = document.getElementById('examTitle') ? document.getElementById('examTitle').value : '';
+    const subject = document.getElementById('examSubject') ? document.getElementById('examSubject').value : '';
+
+    const res = await fetch(`${API_BASE}/api/admin/exams/recheck-ai`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`
+      },
+      body: JSON.stringify({
+        questions: previewExamQuestions,
+        subject,
+        title
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Server error: ' + res.statusText);
+    }
+
+    const data = await res.json();
+    if (data.issuesCount > 0) {
+      pendingAiFixedPreviewQuestions = data.fixedQuestions.map(fq => ({
+        questionText: fq.questionText,
+        optionA: fq.choice1 || fq.optionA,
+        optionB: fq.choice2 || fq.optionB,
+        optionC: fq.choice3 || fq.optionC,
+        optionD: fq.choice4 || fq.optionD,
+        correctOption: fq.correctAnswer === 2 ? 'B' : fq.correctAnswer === 3 ? 'C' : fq.correctAnswer === 4 ? 'D' : 'A',
+        explanation: fq.explanation
+      }));
+
+      if (banner) {
+        banner.style.display = 'flex';
+        banner.style.background = '#FEF2F2';
+        banner.style.borderColor = '#FECACA';
+        if (titleEl) titleEl.textContent = `🤖 AI ตรวจพบจุดที่ควรแก้ไข ${data.issuesCount} ข้อ (จาก ${data.totalAudited} ข้อ)`;
+        if (descEl) descEl.textContent = `พบข้อที่เฉลยไม่ตรงกับตัวเลือก หรือคำอธิบายยาว/แปลก AI ได้เตรียมเฉลยและขัดเกลาคำอธิบายใหม่ให้เรียบร้อยแล้ว`;
+      }
+    } else {
+      if (banner) {
+        banner.style.display = 'flex';
+        banner.style.background = '#ECFDF5';
+        banner.style.borderColor = '#A7F3D0';
+        if (titleEl) titleEl.innerHTML = `✅ ผลการรีเช็ค 3 รอบ: ข้อสอบทั้ง ${data.totalAudited} ข้อ ถูกต้องสมบูรณ์ 100%`;
+        if (descEl) descEl.textContent = `ไม่พบข้อขัดแย้ง ตัวเลือกและคำอธิบายสอดคล้องกันตามหลักวิชาการตำรวจ`;
+      }
+    }
+
+  } catch (err) {
+    console.error('AI Recheck error:', err);
+    alert('เกิดข้อผิดพลาดในการตรวจสอบด้วย AI: ' + err.message);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<span>🤖 AI 3-Pass รีเช็ค & แก้ไขออโต้</span>';
+    }
+  }
+};
+
+// 2. Apply AI Fixes to Preview Questions
+window.applyAi3PassFixesToPreview = function() {
+  if (!pendingAiFixedPreviewQuestions || pendingAiFixedPreviewQuestions.length === 0) {
+    alert('ไม่มีข้อมูลการแก้ไขของ AI');
+    return;
+  }
+
+  previewExamQuestions = pendingAiFixedPreviewQuestions;
+  pendingAiFixedPreviewQuestions = null;
+
+  const banner = document.getElementById('previewAiRecheckBanner');
+  if (banner) {
+    banner.style.background = '#ECFDF5';
+    banner.style.borderColor = '#A7F3D0';
+    const titleEl = document.getElementById('previewAiRecheckTitle');
+    const descEl = document.getElementById('previewAiRecheckDesc');
+    if (titleEl) titleEl.textContent = `✨ นำการแก้ไขของ AI ไปใช้เรียบร้อยแล้วทุกข้อ!`;
+    if (descEl) descEl.textContent = `ปรับปรุงตัวเลือกที่ถูกต้องและขัดเกลาคำอธิบายให้กระชับ ชัดเจนแล้ว`;
+  }
+
+  const title = document.getElementById('examTitle') ? document.getElementById('examTitle').value : '';
+  const subject = document.getElementById('examSubject') ? document.getElementById('examSubject').value : '';
+  const knowledgeBase = document.getElementById('knowledgeBaseSelect') ? document.getElementById('knowledgeBaseSelect').value : '';
+  renderExamPreviewModal(title, subject, knowledgeBase);
+};
+
+// 3. Run AI 3-Pass Recheck on Edit Exam Modal
+window.runAi3PassRecheckOnEditModal = async function() {
+  syncEditQuestionsFromDOM();
+  if (!currentEditQuestions || currentEditQuestions.length === 0) {
+    alert('ไม่มีข้อสอบในชุดนี้');
+    return;
+  }
+
+  const btn = document.getElementById('btnEditExamAiRecheck');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span>⏳ AI กำลังรีเช็ค...</span>';
+  }
+
+  try {
+    const subject = document.getElementById('editExamCategory') ? document.getElementById('editExamCategory').value : '';
+    const title = document.getElementById('editExamTitle') ? document.getElementById('editExamTitle').value : '';
+
+    const res = await fetch(`${API_BASE}/api/admin/exams/recheck-ai`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`
+      },
+      body: JSON.stringify({
+        questions: currentEditQuestions,
+        subject,
+        title
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || res.statusText);
+    }
+
+    const data = await res.json();
+    if (data.issuesCount > 0) {
+      const issuesSummary = data.issues.map(i => `• ข้อที่ ${i.questionNumber}: ${i.title} (${i.description})`).join('\n');
+      if (confirm(`🤖 AI ตรวจสอบพบจุดที่ควรปรับปรุง ${data.issuesCount} ข้อ:\n\n${issuesSummary}\n\nต้องการให้ AI แก้ไขออโต้ทันทีหรือไม่?`)) {
+        currentEditQuestions = data.fixedQuestions;
+        renderEditQuestionsList();
+        alert(`✅ นำการแก้ไขออโต้ของ AI ไปปรับใช้เรียบร้อยแล้ว ${data.issuesCount} ข้อ! (อย่าลืมกดปุ่มบันทึกทั้งหมด)`);
+      }
+    } else {
+      alert(`🎉 ตรวจสอบสมบูรณ์: ข้อสอบทั้ง ${data.totalAudited} ข้อ ถูกต้อง สอดคล้องกับเฉลย และคำอธิบายชัดเจน 100%!`);
+    }
+
+  } catch (err) {
+    console.error('Run AI Recheck on edit modal error:', err);
+    alert('เกิดข้อผิดพลาด: ' + err.message);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<span>🤖 AI 3-Pass รีเช็คชุดนี้</span>';
+    }
+  }
+};
+
+// 4. Open AI Report Auditor Modal
+window.openReportAiAuditModal = async function(reportId) {
+  const modal = document.getElementById('reportAiAuditModal');
+  const body = document.getElementById('reportAuditModalBody');
+  const badge = document.getElementById('reportAuditVerdictBadge');
+  const subtitle = document.getElementById('reportAuditMetaSubtitle');
+
+  if (!modal) return;
+  modal.style.display = 'flex';
+  badge.textContent = 'กำลังประมวลผล...';
+  badge.style.background = '#FEF3C7';
+  badge.style.color = '#B45309';
+
+  body.innerHTML = `
+    <div style="text-align: center; padding: 48px 20px; color: #64748B;">
+      <div style="font-size: 36px; margin-bottom: 12px;">🤖</div>
+      <div style="font-weight: 800; font-size: 16px; color: #0F172A; margin-bottom: 6px;">Gemini AI กำลังวิเคราะห์รายงานข้อสอบ...</div>
+      <div style="font-size: 13px; color: #64748B;">อ่านข้อสอบ เปรียบเทียบกับเหตุผลและเฉลยที่ผู้เข้าสอบพิมพ์ทักท้วง ตรวจสอบตัวบทกฎหมายและหลักวิชาการ</div>
+    </div>
+  `;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/reports/${reportId}/ai-audit`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`
+      }
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || res.statusText);
+    }
+
+    const data = await res.json();
+    currentAuditReportData = data;
+
+    const q = data.question;
+    const audit = data.aiAudit || {};
+    const feedback = data.studentFeedback || {};
+    const reporterName = data.reporter ? data.reporter.name : 'ผู้เข้าสอบ';
+
+    if (subtitle) {
+      subtitle.textContent = `วิชา: ${data.subject} | หมวด: ${data.chapter} | ผู้แจ้ง: ${reporterName}`;
+    }
+
+    // Verdict Badge
+    let badgeBg = '#FEF3C7';
+    let badgeColor = '#B45309';
+    let badgeText = audit.verdictTitle || 'ผลการตรวจสอบ';
+    if (audit.verdict === 'VALID_REPORT') {
+      badgeBg = '#FEF2F2';
+      badgeColor = '#DC2626';
+    } else if (audit.verdict === 'FALSE_ALARM') {
+      badgeBg = '#ECFDF5';
+      badgeColor = '#059669';
+    } else if (audit.verdict === 'AMBIGUOUS') {
+      badgeBg = '#FFFBEB';
+      badgeColor = '#D97706';
+    }
+    badge.textContent = badgeText;
+    badge.style.background = badgeBg;
+    badge.style.color = badgeColor;
+
+    const thaiChoices = ['', 'ก', 'ข', 'ค', 'ง'];
+    const currentAnsChar = thaiChoices[q.correctAnswer] || q.correctAnswer;
+    const suggestedAnsChar = thaiChoices[audit.suggestedCorrectAnswer] || audit.suggestedCorrectAnswer;
+
+    body.innerHTML = `
+      <!-- 1. รายงานของผู้เข้าสอบ -->
+      <div style="background: white; border: 1.5px solid #E2E8F0; border-radius: 16px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <span style="font-weight: 800; font-size: 13.5px; color: #DC2626; display: flex; align-items: center; gap: 6px;">
+            🚩 รายงานที่ผู้สอบส่งเข้ามา: ${escapeHTML(feedback.reasonType || 'เฉลยคำตอบผิด')}
+          </span>
+          <span style="font-size: 11.5px; color: #94A3B8;">โดย ${escapeHTML(reporterName)}</span>
+        </div>
+        ${feedback.details ? `
+          <div style="background: #F8FAFC; border-left: 3px solid #DC2626; padding: 10px 14px; border-radius: 0 10px 10px 0; font-size: 13px; color: #334155; font-style: italic;">
+            "${escapeHTML(feedback.details)}"
+          </div>
+        ` : '<div style="font-size: 12px; color: #94A3B8;">(ผู้สอบไม่ได้พิมพ์รายละเอียดข้อความเพิ่มเติม)</div>'}
+      </div>
+
+      <!-- 2. AI Verdict & Analysis Box -->
+      <div style="background: ${audit.verdict === 'VALID_REPORT' ? '#FFF1F2' : audit.verdict === 'FALSE_ALARM' ? '#F0FDF4' : '#FFFBEB'}; border: 1.5px solid ${audit.verdict === 'VALID_REPORT' ? '#FECACA' : audit.verdict === 'FALSE_ALARM' ? '#BBF7D0' : '#FDE68A'}; border-radius: 16px; padding: 18px; margin-bottom: 18px;">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+          <span style="font-size: 22px;">${audit.verdict === 'VALID_REPORT' ? '🎯' : audit.verdict === 'FALSE_ALARM' ? '🛡️' : '⚖️'}</span>
+          <div>
+            <div style="font-weight: 900; font-size: 15px; color: ${audit.verdict === 'VALID_REPORT' ? '#991B1B' : audit.verdict === 'FALSE_ALARM' ? '#166534' : '#92400E'};">
+              ${escapeHTML(audit.verdictTitle || 'ผลการวินิจฉัย')}
+            </div>
+            <div style="font-size: 11.5px; color: #64748B;">ความมั่นใจของ AI: ${audit.confidenceScore || 95}%</div>
+          </div>
+        </div>
+
+        <div style="font-size: 13px; color: #1E293B; line-height: 1.5; margin-bottom: 12px;">
+          <strong>บทวิเคราะห์:</strong> ${escapeHTML(audit.analysis || '')}
+        </div>
+
+        ${audit.studentFeedbackEvaluation ? `
+          <div style="font-size: 12.5px; color: #475569; background: rgba(255,255,255,0.7); padding: 8px 12px; border-radius: 10px;">
+            <strong>ประเมินความเห็นนักเรียน:</strong> ${escapeHTML(audit.studentFeedbackEvaluation)}
+          </div>
+        ` : ''}
+      </div>
+
+      <!-- 3. เปรียบเทียบข้อสอบปัจจุบัน vs เฉลยที่ถูกต้องที่ AI แนะนำ -->
+      <div style="background: white; border: 1.5px solid #E2E8F0; border-radius: 16px; padding: 18px; margin-bottom: 16px;">
+        <div style="font-size: 13.5px; font-weight: 800; color: #0F172A; margin-bottom: 10px;">
+          โจทย์: ${escapeHTML(q.questionText)}
+        </div>
+
+        <!-- ตัวเลือก 1-4 -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px;">
+          <div style="padding: 8px 12px; border-radius: 10px; font-size: 12.5px; ${q.correctAnswer === 1 ? 'background: #F1F5F9; border: 1.5px solid #CBD5E1; font-weight: 700;' : 'background: #F8FAFC; border: 1px solid #E2E8F0;'} ${audit.suggestedCorrectAnswer === 1 ? 'border: 2px solid #059669; background: #ECFDF5; color: #059669; font-weight: 800;' : ''}">
+            ก. ${escapeHTML(q.choice1)} ${audit.suggestedCorrectAnswer === 1 ? '✨ (AI แนะนำ)' : ''}
+          </div>
+          <div style="padding: 8px 12px; border-radius: 10px; font-size: 12.5px; ${q.correctAnswer === 2 ? 'background: #F1F5F9; border: 1.5px solid #CBD5E1; font-weight: 700;' : 'background: #F8FAFC; border: 1px solid #E2E8F0;'} ${audit.suggestedCorrectAnswer === 2 ? 'border: 2px solid #059669; background: #ECFDF5; color: #059669; font-weight: 800;' : ''}">
+            ข. ${escapeHTML(q.choice2)} ${audit.suggestedCorrectAnswer === 2 ? '✨ (AI แนะนำ)' : ''}
+          </div>
+          <div style="padding: 8px 12px; border-radius: 10px; font-size: 12.5px; ${q.correctAnswer === 3 ? 'background: #F1F5F9; border: 1.5px solid #CBD5E1; font-weight: 700;' : 'background: #F8FAFC; border: 1px solid #E2E8F0;'} ${audit.suggestedCorrectAnswer === 3 ? 'border: 2px solid #059669; background: #ECFDF5; color: #059669; font-weight: 800;' : ''}">
+            ค. ${escapeHTML(q.choice3)} ${audit.suggestedCorrectAnswer === 3 ? '✨ (AI แนะนำ)' : ''}
+          </div>
+          <div style="padding: 8px 12px; border-radius: 10px; font-size: 12.5px; ${q.correctAnswer === 4 ? 'background: #F1F5F9; border: 1.5px solid #CBD5E1; font-weight: 700;' : 'background: #F8FAFC; border: 1px solid #E2E8F0;'} ${audit.suggestedCorrectAnswer === 4 ? 'border: 2px solid #059669; background: #ECFDF5; color: #059669; font-weight: 800;' : ''}">
+            ง. ${escapeHTML(q.choice4)} ${audit.suggestedCorrectAnswer === 4 ? '✨ (AI แนะนำ)' : ''}
+          </div>
+        </div>
+
+        <!-- เปรียบเทียบคำตอบและคำอธิบายเฉลย -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <!-- เดิม -->
+          <div style="background: #F8FAFC; border: 1px solid #CBD5E1; border-radius: 12px; padding: 12px;">
+            <div style="font-size: 11.5px; font-weight: 800; color: #64748B; margin-bottom: 4px;">เฉลยเดิมในระบบ:</div>
+            <div style="font-size: 13.5px; font-weight: 800; color: #DC2626; margin-bottom: 6px;">
+              ข้อ ${currentAnsChar} (${q.correctAnswer})
+            </div>
+            <div style="font-size: 12px; color: #475569; line-height: 1.4;">
+              ${escapeHTML(q.explanation || 'ไม่มีคำอธิบายเดิม')}
+            </div>
+          </div>
+
+          <!-- AI แนะนำใหม่ -->
+          <div style="background: #ECFDF5; border: 1.5px solid #6EE7B7; border-radius: 12px; padding: 12px;">
+            <div style="font-size: 11.5px; font-weight: 800; color: #059669; margin-bottom: 4px;">เฉลยใหม่ที่ AI แนะนำ:</div>
+            <div style="font-size: 13.5px; font-weight: 900; color: #059669; margin-bottom: 6px;">
+              ข้อ ${suggestedAnsChar} (${audit.suggestedCorrectAnswer}) ✨
+            </div>
+            <div style="font-size: 12.5px; color: #065F46; line-height: 1.4; font-weight: 500;">
+              ${escapeHTML(audit.suggestedExplanation || q.explanation || '')}
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+  } catch (err) {
+    console.error('Open Report AI Audit error:', err);
+    body.innerHTML = `
+      <div style="text-align: center; padding: 40px; color: #DC2626;">
+        <div style="font-size: 32px; margin-bottom: 8px;">⚠️</div>
+        <div style="font-weight: 700;">เกิดข้อผิดพลาดในการตรวจสอบด้วย AI: ${escapeHTML(err.message)}</div>
+      </div>
+    `;
+  }
+};
+
+window.closeReportAiAuditModal = function() {
+  const modal = document.getElementById('reportAiAuditModal');
+  if (modal) modal.style.display = 'none';
+  currentAuditReportData = null;
+};
+
+// 5. Apply AI Fix to DB & Resolve Report
+window.applyReportAiFix = async function() {
+  if (!currentAuditReportData) {
+    alert('ไม่พบข้อมูลการตรวจสอบ');
+    return;
+  }
+
+  const btn = document.getElementById('btnApplyReportAiFix');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span>กำลังบันทึกและปรับปรุงเฉลย... ⏳</span>';
+  }
+
+  try {
+    const q = currentAuditReportData.question;
+    const audit = currentAuditReportData.aiAudit || {};
+
+    const res = await fetch(`${API_BASE}/api/admin/reports/${currentAuditReportData.reportId}/ai-apply-fix`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`
+      },
+      body: JSON.stringify({
+        questionId: currentAuditReportData.questionId,
+        questionText: q.questionText,
+        choice1: q.choice1,
+        choice2: q.choice2,
+        choice3: q.choice3,
+        choice4: q.choice4,
+        correctAnswer: audit.suggestedCorrectAnswer || q.correctAnswer,
+        explanation: audit.suggestedExplanation || q.explanation,
+        auditNote: audit.verdictTitle || 'ปรับปรุงเฉลยตามที่ AI ตรวจสอบ'
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || res.statusText);
+    }
+
+    alert('✅ ปรับปรุงเฉลยข้อสอบ อัปเดตประวัติ และปิดรายงานเรียบร้อยแล้ว!');
+    closeReportAiAuditModal();
+    loadAdminReports();
+
+  } catch (err) {
+    console.error('Apply Report AI Fix error:', err);
+    alert('เกิดข้อผิดพลาด: ' + err.message);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<span>✨ ปรับปรุงเฉลยตามที่ AI แนะนำ & ปิดรายงาน</span>';
+    }
+  }
+};
+
+// 6. Open Manual Edit Form from AI Audit
+window.openManualEditFromAudit = function() {
+  if (!currentAuditReportData) return;
+  const q = currentAuditReportData.question;
+  const audit = currentAuditReportData.aiAudit || {};
+  const reportId = currentAuditReportData.reportId;
+  const questionId = currentAuditReportData.questionId;
+
+  closeReportAiAuditModal();
+
+  document.getElementById('editSingleQuestionId').value = questionId || '';
+  document.getElementById('editSingleReportId').value = reportId || '';
+  document.getElementById('editSingleQuestionText').value = q.questionText || '';
+  document.getElementById('editSingleChoice1').value = q.choice1 || '';
+  document.getElementById('editSingleChoice2').value = q.choice2 || '';
+  document.getElementById('editSingleChoice3').value = q.choice3 || '';
+  document.getElementById('editSingleChoice4').value = q.choice4 || '';
+  document.getElementById('editSingleCorrectAnswer').value = String(audit.suggestedCorrectAnswer || q.correctAnswer || 1);
+  document.getElementById('editSingleExplanation').value = audit.suggestedExplanation || q.explanation || '';
+
+  const titleEl = document.getElementById('singleQuestionModalTitle');
+  const subEl = document.getElementById('singleQuestionModalSubtitle');
+  if (titleEl) titleEl.textContent = `แก้ไขข้อสอบ (ID: ${questionId})`;
+  if (subEl) subEl.textContent = `วิชา: ${currentAuditReportData.subject || 'ทั่วไป'} (นำเข้าข้อมูลจากผล AI Audit แล้ว)`;
+
+  document.getElementById('editSingleQuestionModal').style.display = 'flex';
+};
+
+// 7. AI Check for Single Question Modal
+window.runAiCheckOnSingleModal = async function() {
+  const qText = document.getElementById('editSingleQuestionText').value.trim();
+  const c1 = document.getElementById('editSingleChoice1').value.trim();
+  const c2 = document.getElementById('editSingleChoice2').value.trim();
+  const c3 = document.getElementById('editSingleChoice3').value.trim();
+  const c4 = document.getElementById('editSingleChoice4').value.trim();
+  const ans = parseInt(document.getElementById('editSingleCorrectAnswer').value) || 1;
+  const exp = document.getElementById('editSingleExplanation').value.trim();
+
+  if (!qText) {
+    alert('กรุณากรอกโจทย์คำถาม');
+    return;
+  }
+
+  const btn = document.getElementById('btnAiCheckSingle');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span>กำลังตรวจ... ⏳</span>';
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/exams/recheck-ai`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`
+      },
+      body: JSON.stringify({
+        questions: [{
+          questionText: qText,
+          choice1: c1, choice2: c2, choice3: c3, choice4: c4,
+          correctAnswer: ans,
+          explanation: exp
+        }]
+      })
+    });
+
+    if (!res.ok) throw new Error('AI Check failed');
+    const data = await res.json();
+    if (data.fixedQuestions && data.fixedQuestions[0]) {
+      const fixed = data.fixedQuestions[0];
+      document.getElementById('editSingleCorrectAnswer').value = String(fixed.correctAnswer);
+      document.getElementById('editSingleExplanation').value = fixed.explanation;
+      alert(`✨ AI ตรวจสอบและปรับปรุงให้เรียบร้อยแล้ว:\n• เฉลยเป็นข้อ: ${fixed.correctAnswer}\n• ปรับปรุงคำอธิบายให้กระชับ ชัดเจน`);
+    }
+
+  } catch (err) {
+    console.error('Run single AI check error:', err);
+    alert('เกิดข้อผิดพลาด: ' + err.message);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<span>🤖 AI ตรวจสอบข้อนี้</span>';
+    }
+  }
+};
+
+// 8. Batch AI Audit Modal
+window.openBatchAiAuditModal = async function() {
+  const modal = document.getElementById('batchAiAuditModal');
+  const body = document.getElementById('batchAuditModalBody');
+  if (!modal) return;
+  modal.style.display = 'flex';
+
+  body.innerHTML = `
+    <div style="text-align: center; padding: 48px 20px; color: #64748B;">
+      <div style="font-size: 36px; margin-bottom: 12px;">⚡</div>
+      <div style="font-weight: 800; font-size: 16px; color: #0F172A; margin-bottom: 6px;">กำลังรันระบบ AI ตรวจสอบรายงานข้อสอบทุกข้อ...</div>
+      <div style="font-size: 13px; color: #64748B;">สแกนความขัดแย้งของเฉลยและข้อกฎหมายพร้อมกัน</div>
+    </div>
+  `;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/reports/batch-ai-audit`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`
+      }
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || res.statusText);
+    }
+
+    const data = await res.json();
+    if (data.count === 0) {
+      body.innerHTML = `
+        <div style="text-align: center; padding: 40px; color: #64748B;">
+          <div style="font-size: 32px; margin-bottom: 8px;">🎉</div>
+          <div style="font-weight: 700; font-size: 15px; color: #1E293B;">ไม่มีรายงานข้อสอบคงค้าง</div>
+        </div>
+      `;
+      return;
+    }
+
+    body.innerHTML = '';
+    data.audits.forEach((item, idx) => {
+      const card = document.createElement('div');
+      card.style.cssText = 'background: white; border: 1.5px solid #E2E8F0; border-radius: 16px; padding: 16px; margin-bottom: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);';
+
+      const thaiChoices = ['', 'ก', 'ข', 'ค', 'ง'];
+      const curChar = thaiChoices[item.currentAnswer] || item.currentAnswer;
+      const sugChar = thaiChoices[item.suggestedAnswer] || item.suggestedAnswer;
+
+      card.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-weight: 800; font-size: 13.5px; color: #0F172A;">รายงาน #${idx + 1} (ข้อสอบ ID: ${item.questionId})</span>
+            ${item.hasConflict ? '<span style="background: #FEE2E2; color: #DC2626; font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 6px;">⚠️ เฉลยขัดแย้ง</span>' : '<span style="background: #F0FDF4; color: #15803D; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px;">เฉลยตรงกัน</span>'}
+          </div>
+          <button type="button" class="btn btn-outline" style="background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE; font-size: 12px; font-weight: 700; padding: 5px 12px; border-radius: 8px; cursor: pointer;" onclick="closeBatchAiAuditModal(); openReportAiAuditModal(${item.reportId});">
+            🤖 เปิดดู AI Audit ละเอียด
+          </button>
+        </div>
+
+        <div style="font-size: 13px; font-weight: 600; color: #1E293B; margin-bottom: 6px;">
+          ${escapeHTML(item.questionText || 'ไม่มีโจทย์')}
+        </div>
+
+        <div style="background: #F8FAFC; border-radius: 10px; padding: 10px 12px; font-size: 12px; margin-bottom: 8px; color: #475569;">
+          <div style="margin-bottom: 4px;"><strong>ผู้แจ้ง:</strong> ${escapeHTML(item.reporterName)} (ประเภท: ${escapeHTML(item.reasonType)})</div>
+          ${item.details ? `<div><strong>ข้อความที่แจ้ง:</strong> "${escapeHTML(item.details)}"</div>` : ''}
+          ${item.conflictReason ? `<div style="color: #DC2626; margin-top: 4px; font-weight: 700;">⚠️ ${escapeHTML(item.conflictReason)}</div>` : ''}
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #64748B;">
+          <div>เฉลยปัจจุบัน: <strong>ข้อ ${curChar}</strong> ${item.hasConflict ? `→ แนะนำเปลี่ยนเป็น: <strong style="color: #059669;">ข้อ ${sugChar}</strong>` : ''}</div>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn btn-outline" style="background: #FEF3C7; color: #B45309; border: 1px solid #FDE68A; padding: 4px 10px; font-size: 11.5px; font-weight: 700; border-radius: 8px; cursor: pointer;" onclick="closeBatchAiAuditModal(); openEditSingleQuestionModal('${item.questionId}', ${item.reportId});">
+              ✏️ แก้ไขข้อนี้
+            </button>
+            <button class="btn btn-outline" style="background: #ECFDF5; color: #059669; border: 1px solid #A7F3D0; padding: 4px 10px; font-size: 11.5px; font-weight: 700; border-radius: 8px; cursor: pointer;" onclick="resolveReport(${item.reportId}); closeBatchAiAuditModal();">
+              ✓ ปิดรายงาน
+            </button>
+          </div>
+        </div>
+      `;
+      body.appendChild(card);
+    });
+
+  } catch (err) {
+    console.error('Batch AI Audit error:', err);
+    body.innerHTML = `<div style="color: #DC2626; text-align: center; padding: 30px;">เกิดข้อผิดพลาด: ${escapeHTML(err.message)}</div>`;
+  }
+};
+
+window.closeBatchAiAuditModal = function() {
+  const modal = document.getElementById('batchAiAuditModal');
+  if (modal) modal.style.display = 'none';
+};
+
 
 

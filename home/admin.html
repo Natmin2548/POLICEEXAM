@@ -257,6 +257,9 @@
               <p style="margin: 0; font-size: 13px; color: #64748B;">กล่องรวบรวมข้อสอบที่นักเรียนส่งแจ้งผิดพลาด ระบุวิชา หมวดหมู่ ข้อที่ และสามารถกดแก้ไขข้อนั้นได้ทันที</p>
             </div>
             <div style="display: flex; gap: 8px;">
+              <button class="btn btn-primary" onclick="openBatchAiAuditModal()" style="background: linear-gradient(135deg, #4F46E5, #7C3AED); border: none; padding: 8px 16px; border-radius: 12px; font-weight: 700; font-size: 12.5px; display: flex; align-items: center; gap: 6px; color: white; cursor: pointer; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);">
+                <span>⚡ AI ตรวจสอบทุกรายงาน</span>
+              </button>
               <button class="btn btn-outline" onclick="loadAdminReports()" style="background: #F8FAFC; border: 1.5px solid #CBD5E1; padding: 8px 14px; border-radius: 12px; font-weight: 700; font-size: 12.5px; display: flex; align-items: center; gap: 6px; cursor: pointer;">
                 <span>🔄 รีเฟรชข้อมูล</span>
               </button>
@@ -270,8 +273,8 @@
                 <th style="width: 150px;">วิชา (หมวดหมู่/บท)</th>
                 <th style="width: 90px; text-align: center;">ข้อที่</th>
                 <th>โจทย์ข้อสอบ & รายละเอียดที่แจ้งผิด</th>
-                <th style="width: 160px;">ผู้รายงาน / วันที่</th>
-                <th style="width: 170px; text-align: right;">การจัดการ</th>
+                <th style="width: 150px;">ผู้รายงาน / วันที่</th>
+                <th style="width: 230px; text-align: right;">การจัดการ</th>
               </tr>
             </thead>
             <tbody id="reportsTableBody">
@@ -658,12 +661,31 @@
         <span id="previewSummaryBadge" style="background: #EEF2FF; color: #4F46E5; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600;">0 ข้อ</span>
       </div>
 
+      <!-- AI Conflict Alert & Auto-Fix Banner -->
+      <div id="previewAiRecheckBanner" style="display: none; background: #FFFBEB; border: 1.5px solid #FDE68A; border-radius: 14px; padding: 12px 16px; margin-bottom: 14px; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 22px;">🤖</span>
+          <div>
+            <div style="font-weight: 800; font-size: 13.5px; color: #92400E;" id="previewAiRecheckTitle">ผลการสแกนความถูกต้องโดย AI</div>
+            <div style="font-size: 12px; color: #B45309;" id="previewAiRecheckDesc">ตรวจพบจุดที่ควรปรับปรุงในบางข้อ</div>
+          </div>
+        </div>
+        <button type="button" class="btn btn-primary" onclick="applyAi3PassFixesToPreview()" style="background: #059669; border: none; padding: 8px 16px; border-radius: 10px; font-weight: 800; font-size: 12.5px; display: flex; align-items: center; gap: 6px; cursor: pointer; box-shadow: 0 4px 12px rgba(5,150,105,0.25);">
+          <span>⚡ ยอมรับและแก้ไขออโต้ทั้งหมด</span>
+        </button>
+      </div>
+
       <div id="previewQuestionsContainer" style="flex-grow: 1; overflow-y: auto; padding-right: 8px; margin-bottom: 16px; display: flex; flex-direction: column; gap: 16px;">
         <!-- Generated questions will be dynamically rendered here -->
       </div>
 
-      <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #E2E8F0; padding-top: 16px;">
-        <button type="button" class="btn btn-outline" onclick="addCustomQuestionToPreview()">+ เพิ่มข้อสอบกรอกเอง</button>
+      <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #E2E8F0; padding-top: 16px; flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; gap: 8px;">
+          <button type="button" class="btn btn-outline" onclick="addCustomQuestionToPreview()">+ เพิ่มข้อสอบกรอกเอง</button>
+          <button type="button" class="btn btn-outline" id="btnRunAiRecheckPreview" onclick="runAi3PassRecheckOnPreview()" style="background: #EFF6FF; border: 1.5px solid #93C5FD; color: #1D4ED8; font-weight: 800; font-size: 12.5px; display: flex; align-items: center; gap: 6px; border-radius: 10px; cursor: pointer;">
+            <span>🤖 AI 3-Pass รีเช็ค & แก้ไขออโต้</span>
+          </button>
+        </div>
         
         <div style="display: flex; gap: 10px;">
           <button type="button" class="btn btn-outline" onclick="saveVerifiedExamSet('DRAFT')">💾 บันทึกฉบับร่าง (Draft)</button>
@@ -946,9 +968,14 @@
             <span style="font-size: 15px; font-weight: 800; color: #0F172A;">📝 รายการข้อสอบทั้งหมด</span>
             <span id="editExamQuestionBadge" style="margin-left: 8px; font-size: 12px; font-weight: 700; background: #EEF2FF; color: #4F46E5; padding: 3px 10px; border-radius: 999px;">0 ข้อ</span>
           </div>
-          <button type="button" onclick="addNewQuestionToEditList()" class="btn btn-outline" style="border: 1.5px dashed #4F46E5; color: #4F46E5; background: #EEF2FF; font-weight: 700; font-size: 12.5px; padding: 6px 12px; border-radius: 10px;">
-            + เพิ่มข้อใหม่
-          </button>
+          <div style="display: flex; gap: 8px;">
+            <button type="button" id="btnEditExamAiRecheck" onclick="runAi3PassRecheckOnEditModal()" class="btn btn-outline" style="border: 1.5px solid #93C5FD; color: #1D4ED8; background: #EFF6FF; font-weight: 800; font-size: 12px; padding: 6px 12px; border-radius: 10px; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+              <span>🤖 AI 3-Pass รีเช็คชุดนี้</span>
+            </button>
+            <button type="button" onclick="addNewQuestionToEditList()" class="btn btn-outline" style="border: 1.5px dashed #4F46E5; color: #4F46E5; background: #EEF2FF; font-weight: 700; font-size: 12.5px; padding: 6px 12px; border-radius: 10px;">
+              + เพิ่มข้อใหม่
+            </button>
+          </div>
         </div>
 
         <!-- Questions List Container -->
@@ -1037,11 +1064,92 @@
       </div>
 
       <!-- Modal Footer -->
-      <div style="display: flex; justify-content: flex-end; gap: 10px; padding: 16px 24px; border-top: 1.5px solid #E2E8F0; background: #F8FAFC;">
-        <button type="button" class="btn btn-outline" onclick="closeEditSingleQuestionModal()" style="padding: 10px 18px; border-radius: 12px; font-weight: 700;">ยกเลิก</button>
-        <button type="button" class="btn btn-primary" onclick="saveSingleQuestionEdit()" id="btnSaveSingleQuestion" style="background: #BD1B0B; border: none; padding: 10px 22px; border-radius: 12px; font-weight: 800; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(189,27,11,0.25);">
-          <span>💾 บันทึกการแก้ไขข้อนี้</span>
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; border-top: 1.5px solid #E2E8F0; background: #F8FAFC; flex-wrap: wrap; gap: 10px;">
+        <button type="button" class="btn btn-outline" onclick="runAiCheckOnSingleModal()" id="btnAiCheckSingle" style="background: #EFF6FF; border: 1.5px solid #93C5FD; color: #1D4ED8; font-weight: 700; font-size: 12.5px; border-radius: 12px; padding: 10px 16px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+          <span>🤖 AI ตรวจสอบข้อนี้</span>
         </button>
+
+        <div style="display: flex; gap: 10px;">
+          <button type="button" class="btn btn-outline" onclick="closeEditSingleQuestionModal()" style="padding: 10px 18px; border-radius: 12px; font-weight: 700;">ยกเลิก</button>
+          <button type="button" class="btn btn-primary" onclick="saveSingleQuestionEdit()" id="btnSaveSingleQuestion" style="background: #BD1B0B; border: none; padding: 10px 22px; border-radius: 12px; font-weight: 800; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(189,27,11,0.25);">
+            <span>💾 บันทึกการแก้ไขข้อนี้</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI Report Audit Modal (วิเคราะห์ข้อสอบที่ถูกรายงานด้วย AI ละเอียดยิบ) -->
+  <div class="modal-overlay" id="reportAiAuditModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(8px); z-index: 10025; align-items: center; justify-content: center; padding: 16px;">
+    <div class="modal-card" style="background: white; max-width: 760px; width: 100%; max-height: 94vh; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); display: flex; flex-direction: column; overflow: hidden;">
+      <!-- Header -->
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 18px 24px; border-bottom: 1.5px solid #E2E8F0; background: #F8FAFC;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="width: 44px; height: 44px; border-radius: 14px; background: linear-gradient(135deg, #3B82F6, #1D4ED8); color: white; display: flex; align-items: center; justify-content: center; font-size: 22px; box-shadow: 0 4px 12px rgba(37,99,235,0.25);">
+            🤖
+          </div>
+          <div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <h3 style="font-size: 18px; font-weight: 800; color: #0F172A; margin: 0;">AI Audit: ตรวจสอบข้อสอบที่ถูกแจ้งผิด</h3>
+              <span id="reportAuditVerdictBadge" style="font-size: 11.5px; font-weight: 800; padding: 3px 10px; border-radius: 999px; background: #FEF3C7; color: #B45309;">กำลังประมวลผล...</span>
+            </div>
+            <p style="font-size: 12px; color: #64748B; margin: 2px 0 0 0;" id="reportAuditMetaSubtitle">วิชา: - | ผู้แจ้ง: -</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeReportAiAuditModal()" style="background: #E2E8F0; border: none; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 15px; cursor: pointer; color: #475569;">✕</button>
+      </div>
+
+      <!-- Body -->
+      <div id="reportAuditModalBody" style="padding: 22px 24px; overflow-y: auto; flex: 1; background: #FAFAFA;">
+        <div style="text-align: center; padding: 40px; color: #64748B;">
+          <div style="font-size: 32px; margin-bottom: 8px;">⏳</div>
+          <div style="font-weight: 700;">AI กำลังอ่านข้อสอบ วิเคราะห์ความถูกต้อง และประเมินข้อความที่นักเรียนส่งมา...</div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; border-top: 1.5px solid #E2E8F0; background: white; flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; gap: 8px;">
+          <button type="button" class="btn btn-outline" onclick="openManualEditFromAudit()" style="padding: 10px 16px; border-radius: 12px; font-weight: 700; font-size: 12.5px;">
+            ✏️ ปรับแก้ด้วยตนเอง
+          </button>
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <button type="button" class="btn btn-outline" onclick="closeReportAiAuditModal()" style="padding: 10px 18px; border-radius: 12px; font-weight: 700;">ปิด</button>
+          <button type="button" id="btnApplyReportAiFix" onclick="applyReportAiFix()" class="btn btn-primary" style="background: #059669; border: none; padding: 10px 22px; border-radius: 12px; font-weight: 800; font-size: 13px; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(5,150,105,0.25);">
+            <span>✨ ปรับปรุงเฉลยตามที่ AI แนะนำ & ปิดรายงาน</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Batch AI Reports Audit Modal -->
+  <div class="modal-overlay" id="batchAiAuditModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(8px); z-index: 10025; align-items: center; justify-content: center; padding: 16px;">
+    <div class="modal-card" style="background: white; max-width: 880px; width: 100%; max-height: 94vh; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); display: flex; flex-direction: column; overflow: hidden;">
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 18px 24px; border-bottom: 1.5px solid #E2E8F0; background: #F8FAFC;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="width: 44px; height: 44px; border-radius: 14px; background: linear-gradient(135deg, #4F46E5, #7C3AED); color: white; display: flex; align-items: center; justify-content: center; font-size: 22px;">
+            ⚡
+          </div>
+          <div>
+            <h3 style="font-size: 18px; font-weight: 800; color: #0F172A; margin: 0;">AI ตรวจสอบรายงานข้อสอบทั้งหมด (Batch Audit)</h3>
+            <p style="font-size: 12px; color: #64748B; margin: 2px 0 0 0;" id="batchAuditModalSubtitle">สแกนหาข้อสอบที่เฉลยขัดแย้ง และตรวจพิสูจน์ข้อที่นักเรียนแจ้งเข้ามา</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeBatchAiAuditModal()" style="background: #E2E8F0; border: none; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 15px; cursor: pointer; color: #475569;">✕</button>
+      </div>
+
+      <div id="batchAuditModalBody" style="padding: 22px 24px; overflow-y: auto; flex: 1; background: #FAFAFA;">
+        <div style="text-align: center; padding: 40px; color: #64748B;">
+          <div style="font-size: 32px; margin-bottom: 8px;">⏳</div>
+          <div style="font-weight: 700;">กำลังรันระบบ AI ตรวจสอบรายงานข้อสอบทั้งหมด...</div>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; border-top: 1.5px solid #E2E8F0; background: white;">
+        <span style="font-size: 12px; color: #64748B;">💡 ข้อที่ตรวจพบความขัดแย้ง จะมีปุ่มให้กดแก้ไขอัตโนมัติทันที</span>
+        <button type="button" class="btn btn-outline" onclick="closeBatchAiAuditModal()" style="padding: 10px 20px; border-radius: 12px; font-weight: 700;">ปิดหน้าต่าง</button>
       </div>
     </div>
   </div>

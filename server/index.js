@@ -9304,6 +9304,152 @@ function buildSubjectSpecificExamPrompt({ subject, subcategory, title, count, co
   return buildThaiPrompt({ count, subcategory, title, contextText });
 }
 
+// --- Shared Helper: Resolve Gemini API Key ---
+async function resolveGeminiApiKey(customKey = '') {
+  let apiKey = (customKey || process.env.GEMINI_API_KEY || '').trim().replace(/^['"]|['"]$/g, '');
+  if (!apiKey) {
+    try {
+      const dbSettings = await prisma.systemSetting.findMany({
+        where: { key: { in: ['settings_gemini_key', 'gemini_api_key', 'GEMINI_API_KEY', 'geminiKey', 'apiKey'] } }
+      });
+      for (const s of dbSettings) {
+        if (s.value && s.value.trim()) {
+          apiKey = s.value.trim().replace(/^['"]|['"]$/g, '');
+          break;
+        }
+      }
+    } catch (e) {
+      console.warn('Resolve Gemini API key DB lookup error:', e.message);
+    }
+  }
+  return apiKey;
+}
+
+// --- Shared Helper: Robust Universal Gemini AI Caller ---
+async function callGeminiAiText(prompt, customApiKey = '') {
+  const apiKey = await resolveGeminiApiKey(customApiKey);
+  if (!apiKey) {
+    throw new Error('KEY_NOT_FOUND: ไม่พบ API Key ของ Gemini กรุณาระบุ API Key ในเมนู Admin -> ตั้งค่าระบบ');
+  }
+
+  const modelsToTry = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.5-flash-lite', 'gemini-1.5-flash-latest', 'gemini-2.5-pro'];
+  let textResponse = '';
+  let lastErr = null;
+
+  // 1. Try SDK first
+  try {
+    const client = new GoogleGenerativeAI(apiKey);
+    for (const modelName of modelsToTry) {
+      try {
+        const model = client.getGenerativeModel({ model: modelName });
+        const result = await model.generateContent(prompt);
+        textResponse = result.response.text();
+        if (textResponse) break;
+      } catch (mErr) {
+        lastErr = mErr;
+      }
+    }
+  } catch (sdkErr) {
+    lastErr = sdkErr;
+  }
+
+  // 2. Direct HTTP Fetch fallback with x-goog-api-key
+  if (!textResponse) {
+    for (const m of modelsToTry) {
+      try {
+        const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent`, {
+          method: 'POST',
+          headers: {
+            'x-goog-api-key': apiKey,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }]
+          })
+        });
+        const data = await resp.json();
+        if (data && data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) {
+          textResponse = data.candidates[0].content.parts.map(p => p.text).join('\n');
+          if (textResponse) break;
+        } else if (data.error) {
+          lastErr = new Error(data.error.message);
+        }
+      } catch (hErr) {
+        lastErr = hErr;
+      }
+    }
+  }
+
+  if (!textResponse) {
+    throw lastErr || new Error('No response returned from Gemini models');
+  }
+
+  return textResponse;
+}
+
+// --- Shared Helper: Fast Conflict Detector between Explanation and Correct Answer ---
+function detectExplanationAnswerConflict(q) {
+  const exp = (q.explanation || '').trim();
+  if (!exp) return { hasConflict: false };
+
+  let currentAns = 1;
+  const rawAns = String(q.correctAnswer !== undefined ? q.correctAnswer : (q.correctOption || '1')).trim().toUpperCase();
+  if (rawAns === '2' || rawAns === 'B' || rawAns === 'ข') currentAns = 2;
+  else if (rawAns === '3' || rawAns === 'C' || rawAns === 'ค') currentAns = 3;
+  else if (rawAns === '4' || rawAns === 'D' || rawAns === 'ง') currentAns = 4;
+  else {
+    const num = parseInt(rawAns);
+    if (!isNaN(num) && num >= 1 && num <= 4) currentAns = num;
+  }
+
+  const mapChoice = {
+    'ก': 1, '1': 1, 'A': 1,
+    'ข': 2, '2': 2, 'B': 2,
+    'ค': 3, '3': 3, 'C': 3,
+    'ง': 4, '4': 4, 'D': 4
+  };
+
+  const pat1 = /(?:ข้อ|ตัวเลือกที่?)\s*([1-4ก-งA-D])[.)]?\s*(?:จึง|เป็น|คือ)?\s*(?:ถูกต้อง|ถูก|คำตอบ|เฉลย)/i;
+  const pat2 = /(?:ตอบ|เฉลย|คำตอบคือ|คำตอบที่ถูกต้องคือ|ดังนั้น)\s*(?:ข้อ|ตัวเลือกที่?)?\s*([1-4ก-งA-D])[.)]?/i;
+  const pat3 = /ถูกต้องคือ\s*(?:ข้อ|ตัวเลือก)?\s*([1-4ก-งA-D])[.)]?/i;
+
+  let detectedAns = null;
+  let matchSnippet = '';
+
+  const m1 = exp.match(pat1);
+  if (m1 && m1[1] && mapChoice[m1[1].toUpperCase()]) {
+    detectedAns = mapChoice[m1[1].toUpperCase()];
+    matchSnippet = m1[0];
+  } else {
+    const m2 = exp.match(pat2);
+    if (m2 && m2[1] && mapChoice[m2[1].toUpperCase()]) {
+      detectedAns = mapChoice[m2[1].toUpperCase()];
+      matchSnippet = m2[0];
+    } else {
+      const m3 = exp.match(pat3);
+      if (m3 && m3[1] && mapChoice[m3[1].toUpperCase()]) {
+        detectedAns = mapChoice[m3[1].toUpperCase()];
+        matchSnippet = m3[0];
+      }
+    }
+  }
+
+  if (detectedAns !== null && detectedAns !== currentAns) {
+    const thaiChoiceNames = ['', 'ก (1)', 'ข (2)', 'ค (3)', 'ง (4)'];
+    return {
+      hasConflict: true,
+      currentAnswer: currentAns,
+      currentAnswerLabel: thaiChoiceNames[currentAns],
+      detectedAnswer: detectedAns,
+      detectedAnswerLabel: thaiChoiceNames[detectedAns],
+      matchSnippet,
+      reason: `คำอธิบายเฉลยระบุว่า "${matchSnippet}" แต่ระบบตั้งค่าเฉลยไว้เป็นข้อ ${thaiChoiceNames[currentAns]}`
+    };
+  }
+
+  return { hasConflict: false, currentAnswer: currentAns };
+}
+
 // --- Admin API: Preview AI Exam Generation ---
 app.post('/api/admin/exams/preview-ai', authenticateToken, async (req, res) => {
   try {
@@ -9570,11 +9716,188 @@ app.post('/api/admin/exams/preview-ai', authenticateToken, async (req, res) => {
     else if (cleanJson.startsWith('```')) cleanJson = cleanJson.replace(/^```/, '').replace(/```$/, '').trim();
 
     const rawQuestions = JSON.parse(cleanJson);
-    res.json({ success: true, questions: rawQuestions });
+    const auditedQuestions = rawQuestions.map(q => {
+      const conflict = detectExplanationAnswerConflict(q);
+      if (conflict.hasConflict) {
+        return {
+          ...q,
+          correctOption: conflict.detectedAnswer === 2 ? 'B' : conflict.detectedAnswer === 3 ? 'C' : conflict.detectedAnswer === 4 ? 'D' : 'A',
+          correctAnswer: conflict.detectedAnswer,
+          _autoCorrectedConflict: conflict
+        };
+      }
+      return q;
+    });
+    res.json({ success: true, questions: auditedQuestions });
 
   } catch (err) {
     console.error('Preview AI Exam error:', err);
     res.status(500).json({ error: 'เกิดข้อผิดพลาดจาก Gemini: ' + err.message });
+  }
+});
+
+// --- Admin API: AI 3-Pass Re-check & Auto-Fix ---
+app.post('/api/admin/exams/recheck-ai', authenticateToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'ADMIN' && req.user.role !== 'OWNER') {
+      return res.status(403).json({ error: 'คุณไม่มีสิทธิ์ใช้งานคำสั่งนี้' });
+    }
+
+    const { questions, subject, subcategory } = req.body;
+    if (!questions || !Array.isArray(questions) || questions.length === 0) {
+      return res.status(400).json({ error: 'ไม่พบรายการข้อสอบที่ต้องการตรวจสอบ' });
+    }
+
+    // Pass 1: Fast Rule-based Consistency / Conflict Detection
+    const ruleConflicts = [];
+    const formattedQuestions = questions.map((q, idx) => {
+      const conflict = detectExplanationAnswerConflict(q);
+      if (conflict.hasConflict) {
+        ruleConflicts.push({
+          index: idx,
+          questionNumber: idx + 1,
+          conflict
+        });
+      }
+      return {
+        index: idx,
+        questionNumber: idx + 1,
+        questionText: q.questionText || q.question || '',
+        choice1: q.choice1 || q.optionA || '',
+        choice2: q.choice2 || q.optionB || '',
+        choice3: q.choice3 || q.optionC || '',
+        choice4: q.choice4 || q.optionD || '',
+        correctAnswer: parseInt(q.correctAnswer || (q.correctOption === 'B' ? 2 : q.correctOption === 'C' ? 3 : q.correctOption === 'D' ? 4 : 1)) || 1,
+        explanation: q.explanation || ''
+      };
+    });
+
+    // Pass 2 & 3: Deep AI Review (Fact-check & Explanation Optimization)
+    const auditPrompt = `คุณคือคณะกรรมการตรวจสอบและปรับปรุงคุณภาพข้อสอบตำรวจ (Police Exam Quality Auditor)
+วิชา: "${subject || 'ทั่วไป'}" ${subcategory ? `หัวข้อ: "${subcategory}"` : ''}
+โปรดทำการตรวจสอบข้อสอบ 3 รอบ (3-Pass Review):
+1. **Pass 1 - ตรวจสอบความสอดคล้องของเฉลยกับตัวเลือก (Answer-Explanation Consistency)**: ตรวจดูว่าคำอธิบายเฉลยกับคำตอบที่เลือกไว้ตรงกันหรือไม่ (เช่น ในคำอธิบายบอกตอบข้อ ข แต่ระบบเลือกข้อ 1 หรือไม่)
+2. **Pass 2 - ตรวจสอบความถูกต้องทางวิชาการและกฎหมาย (Fact & Law Check)**: ตรวจสอบความถูกต้องตามประมวลกฎหมาย, ระเบียบสารบรรณ, ไวยากรณ์อังกฤษ, สูตรคณิตศาสตร์ หรือสารสนเทศ มีตัวเลือกซ้ำหรือไม่มีคำตอบที่ถูกหรือไม่
+3. **Pass 3 - ขัดเกลาและแก้ไขออโต้ (Auto-Fix & Optimize)**: 
+   - หากเฉลยผิด หรือเลือกข้อผิด ให้แก้ให้ถูกต้อง
+   - หากคำอธิบายแปลกๆ คลุมเครือ หรือยาวเกินไป ให้เขียนใหม่ให้กระชับ ชัดเจน ตรงประเด็น (ความยาวประมาณ 1-3 ประโยค อ้างอิงมาตรา/หลักวิชาการชัดเจน)
+
+รายการข้อสอบที่ต้องตรวจสอบ (${formattedQuestions.length} ข้อ):
+${JSON.stringify(formattedQuestions, null, 2)}
+
+ตอบกลับเป็น JSON เท่านั้น (ห้ามใส่ Markdown อื่นนอกเหนือจาก json):
+{
+  "issues": [
+    {
+      "index": 0,
+      "questionNumber": 1,
+      "issueType": "CONFLICT",
+      "title": "ชื่อปัญหาแบบสรุปสั้น",
+      "description": "คำอธิบายว่าทำไมถึงผิดหรือแปลก",
+      "originalCorrectAnswer": 1,
+      "suggestedCorrectAnswer": 2,
+      "originalExplanation": "...",
+      "suggestedExplanation": "คำอธิบายที่แก้ไขให้ถูกต้องและกระชับ"
+    }
+  ],
+  "fixedQuestions": [
+    {
+      "index": 0,
+      "questionText": "...",
+      "choice1": "...",
+      "choice2": "...",
+      "choice3": "...",
+      "choice4": "...",
+      "correctAnswer": 2,
+      "explanation": "..."
+    }
+  ]
+}`;
+
+    let aiResult = { issues: [], fixedQuestions: [] };
+    try {
+      const aiText = await callGeminiAiText(auditPrompt, req.body.apiKey);
+      let clean = aiText.trim();
+      if (clean.startsWith('```json')) clean = clean.replace(/^```json/, '').replace(/```$/, '').trim();
+      else if (clean.startsWith('```')) clean = clean.replace(/^```/, '').replace(/```$/, '').trim();
+      aiResult = JSON.parse(clean);
+    } catch (aiErr) {
+      console.warn('AI 3-Pass Recheck LLM error, falling back to rule-based conflicts:', aiErr.message);
+      // Fallback to Rule-based conflicts
+      aiResult.issues = ruleConflicts.map(rc => ({
+        index: rc.index,
+        questionNumber: rc.questionNumber,
+        issueType: 'CONFLICT',
+        title: 'เฉลยไม่ตรงกับคำอธิบาย',
+        description: rc.conflict.reason,
+        originalCorrectAnswer: rc.conflict.currentAnswer,
+        suggestedCorrectAnswer: rc.conflict.detectedAnswer,
+        originalExplanation: formattedQuestions[rc.index].explanation,
+        suggestedExplanation: formattedQuestions[rc.index].explanation
+      }));
+
+      aiResult.fixedQuestions = formattedQuestions.map((q, idx) => {
+        const rc = ruleConflicts.find(r => r.index === idx);
+        if (rc) {
+          return {
+            ...q,
+            correctAnswer: rc.conflict.detectedAnswer
+          };
+        }
+        return q;
+      });
+    }
+
+    // Merge any rule conflict that AI might have missed
+    ruleConflicts.forEach(rc => {
+      const exists = (aiResult.issues || []).some(i => i.index === rc.index);
+      if (!exists) {
+        if (!aiResult.issues) aiResult.issues = [];
+        aiResult.issues.push({
+          index: rc.index,
+          questionNumber: rc.questionNumber,
+          issueType: 'CONFLICT',
+          title: 'เฉลยไม่ตรงกับคำอธิบาย (ตรวจพบโดย Rule Engine)',
+          description: rc.conflict.reason,
+          originalCorrectAnswer: rc.conflict.currentAnswer,
+          suggestedCorrectAnswer: rc.conflict.detectedAnswer,
+          originalExplanation: formattedQuestions[rc.index].explanation,
+          suggestedExplanation: formattedQuestions[rc.index].explanation
+        });
+
+        if (aiResult.fixedQuestions && aiResult.fixedQuestions[rc.index]) {
+          aiResult.fixedQuestions[rc.index].correctAnswer = rc.conflict.detectedAnswer;
+        }
+      }
+    });
+
+    const issues = aiResult.issues || [];
+    const fixedQuestions = (aiResult.fixedQuestions && aiResult.fixedQuestions.length === formattedQuestions.length)
+      ? aiResult.fixedQuestions
+      : formattedQuestions.map((q, idx) => {
+          const issue = issues.find(i => i.index === idx);
+          if (issue) {
+            return {
+              ...q,
+              correctAnswer: issue.suggestedCorrectAnswer || q.correctAnswer,
+              explanation: issue.suggestedExplanation || q.explanation
+            };
+          }
+          return q;
+        });
+
+    res.json({
+      success: true,
+      totalAudited: formattedQuestions.length,
+      issuesCount: issues.length,
+      hasIssues: issues.length > 0,
+      issues,
+      fixedQuestions
+    });
+
+  } catch (err) {
+    console.error('AI Recheck error:', err);
+    res.status(500).json({ error: 'เกิดข้อผิดพลาดในการตรวจสอบข้อสอบ: ' + err.message });
   }
 });
 
@@ -9971,6 +10294,298 @@ app.delete('/api/admin/reports/:id', requireAdmin, async (req, res) => {
   } catch (err) {
     console.error('Delete reported question error:', err);
     res.status(500).json({ error: 'เกิดข้อผิดพลาดในการลบรายงาน: ' + err.message });
+  }
+});
+
+// --- Admin API: AI Audit on a Reported Question ---
+app.post('/api/admin/reports/:id/ai-audit', requireAdmin, async (req, res) => {
+  try {
+    const reportId = parseInt(req.params.id);
+    if (isNaN(reportId)) return res.status(400).json({ error: 'รหัสรายงานไม่ถูกต้อง' });
+
+    const report = await prisma.reportedQuestion.findUnique({
+      where: { id: reportId },
+      include: {
+        user: { select: { id: true, fullName: true, username: true, email: true } }
+      }
+    });
+
+    if (!report) return res.status(404).json({ error: 'ไม่พบรายงานข้อสอบนี้' });
+
+    let reasonData = {};
+    try {
+      reasonData = JSON.parse(report.reason);
+    } catch (e) {
+      reasonData = { reasonType: report.reason, details: '' };
+    }
+
+    // Try finding the actual question in database
+    let dbQuestion = null;
+    const numQId = parseInt(report.questionId);
+    if (!isNaN(numQId) && numQId > 0) {
+      dbQuestion = await prisma.question.findUnique({
+        where: { id: numQId },
+        include: { examSet: { select: { id: true, title: true, category: true, subcategory: true } } }
+      });
+    }
+
+    if (!dbQuestion && report.questionText) {
+      const snippet = report.questionText.trim().substring(0, 40);
+      dbQuestion = await prisma.question.findFirst({
+        where: { questionText: { contains: snippet } },
+        include: { examSet: { select: { id: true, title: true, category: true, subcategory: true } } }
+      });
+    }
+
+    // Resolve question fields
+    const questionText = (dbQuestion && dbQuestion.questionText) || report.questionText || '';
+    const choice1 = (dbQuestion && dbQuestion.choice1) || (reasonData.choices && reasonData.choices[0]) || 'ตัวเลือก ก';
+    const choice2 = (dbQuestion && dbQuestion.choice2) || (reasonData.choices && reasonData.choices[1]) || 'ตัวเลือก ข';
+    const choice3 = (dbQuestion && dbQuestion.choice3) || (reasonData.choices && reasonData.choices[2]) || 'ตัวเลือก ค';
+    const choice4 = (dbQuestion && dbQuestion.choice4) || (reasonData.choices && reasonData.choices[3]) || 'ตัวเลือก ง';
+    const currentAnswer = (dbQuestion && dbQuestion.correctAnswer) || reasonData.correctAnswer || 1;
+    const explanation = (dbQuestion && dbQuestion.explanation) || reasonData.explanation || '';
+    const subject = (dbQuestion && dbQuestion.examSet && dbQuestion.examSet.category) || reasonData.subject || 'ทั่วไป';
+    const chapter = (dbQuestion && dbQuestion.examSet && dbQuestion.examSet.subcategory) || reasonData.chapter || '-';
+
+    const questionObj = {
+      id: dbQuestion ? dbQuestion.id : report.questionId,
+      questionText,
+      choice1,
+      choice2,
+      choice3,
+      choice4,
+      correctAnswer: currentAnswer,
+      explanation
+    };
+
+    // Rule-based conflict detector
+    const ruleConflict = detectExplanationAnswerConflict(questionObj);
+
+    // Call Gemini AI Auditor
+    const studentReasonType = reasonData.reasonType || 'เฉลยคำตอบผิด';
+    const studentDetails = reasonData.details || '';
+
+    const auditPrompt = `คุณคือคณะกรรมการตรวจสอบและระงับข้อพิพาทข้อสอบตำรวจและข้อสอบราชการ (Police Exam Report Auditor)
+วิชา: "${subject}" (หมวดหมู่: "${chapter}")
+
+มีผู้เข้าสอบส่งรายงานแจ้งข้อสอบข้อนี้ผิดพลาด กรุณาตรวจสอบและตัดสินอย่างเป็นธรรมและแม่นยำตามหลักกฎหมายและวิชาการ:
+
+📋 รายละเอียดข้อสอบปัจจุบัน:
+- โจทย์: "${questionText}"
+- ตัวเลือก 1 (ก): "${choice1}"
+- ตัวเลือก 2 (ข): "${choice2}"
+- ตัวเลือก 3 (ค): "${choice3}"
+- ตัวเลือก 4 (ง): "${choice4}"
+- เฉลยปัจจุบันในระบบ: ข้อ ${currentAnswer}
+- คำอธิบายเฉลยเดิม: "${explanation}"
+
+🚩 ข้อมูลรายงานจากผู้สอบ:
+- หัวข้อที่แจ้ง: "${studentReasonType}"
+- ข้อความ/เฉลยที่ผู้สอบพิมพ์ทักท้วง: "${studentDetails || '(ไม่ได้พิมพ์รายละเอียดเพิ่มเติม)'}"
+
+🎯 สิ่งที่คุณต้องวิเคราะห์และตอบกลับ:
+1. "verdict": เลือกระหว่าง:
+   - "VALID_REPORT" (ผู้สอบรายงานถูกต้อง ข้อสอบหรือเฉลยผิดจริง)
+   - "FALSE_ALARM" (ข้อสอบและเฉลยเดิมถูกต้องแล้ว ผู้สอบเข้าใจผิด)
+   - "AMBIGUOUS" (โจทย์กำกวม คลุมเครือ หรือมีคำตอบถูกมากกว่า 1 ข้อ)
+2. "verdictTitle": หัวข้อผลการวินิจฉัยสั้นๆ
+3. "analysis": วิเคราะห์ข้อเท็จจริงว่าผิดเพราะอะไร เช่น AI เลือกช้อยส์ผิด, คำอธิบายสลับข้อ, ข้อกฎหมายเปลี่ยน หรือคำอธิบายเดิมยาว/แปลกเกินไป
+4. "studentFeedbackEvaluation": ผู้สอบเสนอแนะมาว่าอย่างไร ถูกต้องหรือไม่ (หากผู้สอบพิมพ์เฉลยมาด้วย ให้ระบุว่าเฉลยของผู้สอบถูกหรือผิด)
+5. "suggestedCorrectAnswer": ตัวเลขตัวเลือกที่ถูกต้องแท้จริง (1, 2, 3 หรือ 4)
+6. "suggestedExplanation": เขียนคำอธิบายเฉลยใหม่ที่ถูกต้อง 100% กระชับ ชัดเจน อ้างอิงมาตรา/หลักเกณฑ์ตรงประเด็น (ความยาวประมาณ 2-3 ประโยค)
+7. "confidenceScore": ความมั่นใจในการตัดสิน (0-100)
+
+ตอบกลับเฉพาะ JSON เท่านั้น:
+{
+  "verdict": "VALID_REPORT",
+  "verdictTitle": "รายงานถูกต้อง - เฉลยข้อสอบผิดจริง",
+  "analysis": "...",
+  "studentFeedbackEvaluation": "...",
+  "suggestedCorrectAnswer": 2,
+  "suggestedExplanation": "...",
+  "confidenceScore": 98
+}`;
+
+    let aiAudit = null;
+    try {
+      const aiText = await callGeminiAiText(auditPrompt, req.body.apiKey);
+      let clean = aiText.trim();
+      if (clean.startsWith('```json')) clean = clean.replace(/^```json/, '').replace(/```$/, '').trim();
+      else if (clean.startsWith('```')) clean = clean.replace(/^```/, '').replace(/```$/, '').trim();
+      aiAudit = JSON.parse(clean);
+    } catch (aiErr) {
+      console.warn('AI Audit LLM error, using fallback verdict:', aiErr.message);
+      if (ruleConflict.hasConflict) {
+        aiAudit = {
+          verdict: 'VALID_REPORT',
+          verdictTitle: 'รายงานถูกต้อง - เฉลยไม่ตรงกับคำอธิบาย',
+          analysis: ruleConflict.reason,
+          studentFeedbackEvaluation: studentDetails ? `ผู้สอบระบุ: "${studentDetails}"` : 'ผู้สอบแจ้งข้อผิดพลาดถูกต้อง',
+          suggestedCorrectAnswer: ruleConflict.detectedAnswer,
+          suggestedExplanation: explanation,
+          confidenceScore: 90
+        };
+      } else {
+        aiAudit = {
+          verdict: 'MANUAL_REVIEW',
+          verdictTitle: 'ต้องตรวจสอบเพิ่มเติม',
+          analysis: 'ไม่สามารถเรียก AI อัตโนมัติได้ในขณะนี้: ' + aiErr.message,
+          studentFeedbackEvaluation: studentDetails,
+          suggestedCorrectAnswer: currentAnswer,
+          suggestedExplanation: explanation,
+          confidenceScore: 50
+        };
+      }
+    }
+
+    res.json({
+      success: true,
+      reportId: report.id,
+      questionId: dbQuestion ? String(dbQuestion.id) : String(report.questionId),
+      dbQuestionFound: !!dbQuestion,
+      subject,
+      chapter,
+      reporter: report.user ? {
+        name: report.user.fullName || report.user.username || report.user.email,
+        email: report.user.email
+      } : null,
+      createdAt: report.createdAt,
+      studentFeedback: {
+        reasonType: studentReasonType,
+        details: studentDetails
+      },
+      question: questionObj,
+      ruleConflict,
+      aiAudit
+    });
+
+  } catch (err) {
+    console.error('AI Audit report error:', err);
+    res.status(500).json({ error: 'เกิดข้อผิดพลาดในการตรวจสอบรายงานด้วย AI: ' + err.message });
+  }
+});
+
+// --- Admin API: Apply AI Audit Fix and Resolve Report ---
+app.post('/api/admin/reports/:id/ai-apply-fix', requireAdmin, async (req, res) => {
+  try {
+    const reportId = parseInt(req.params.id);
+    if (isNaN(reportId)) return res.status(400).json({ error: 'รหัสรายงานไม่ถูกต้อง' });
+
+    const { questionId, questionText, choice1, choice2, choice3, choice4, correctAnswer, explanation, auditNote } = req.body;
+
+    let updatedDbQuestion = false;
+    const numQId = parseInt(questionId);
+    if (!isNaN(numQId) && numQId > 0) {
+      const nowStr = new Date().toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      const historyTag = `\n\n[📝 ปรับปรุงเฉลยโดยระบบ AI เมื่อ ${nowStr} ตามรายงานผู้เข้าสอบ: ${auditNote || 'แก้ไขข้อถูกและปรับคำอธิบาย'}]`;
+      const finalExplanation = ((explanation || '').trim()) + historyTag;
+
+      await prisma.question.update({
+        where: { id: numQId },
+        data: {
+          questionText: questionText !== undefined ? questionText : undefined,
+          choice1: choice1 !== undefined ? choice1 : undefined,
+          choice2: choice2 !== undefined ? choice2 : undefined,
+          choice3: choice3 !== undefined ? choice3 : undefined,
+          choice4: choice4 !== undefined ? choice4 : undefined,
+          correctAnswer: parseInt(correctAnswer) || 1,
+          explanation: finalExplanation
+        }
+      });
+      updatedDbQuestion = true;
+    }
+
+    // Delete / resolve the report
+    await prisma.reportedQuestion.delete({
+      where: { id: reportId }
+    }).catch(e => console.warn('Delete resolved report error:', e.message));
+
+    res.json({
+      success: true,
+      updatedDbQuestion,
+      message: 'ปรับปรุงข้อสอบและบันทึกประวัติสำเร็จ พร้อมปิดรายงานเรียบร้อยแล้ว'
+    });
+
+  } catch (err) {
+    console.error('Apply AI audit fix error:', err);
+    res.status(500).json({ error: 'เกิดข้อผิดพลาดในการบันทึกการแก้ไข: ' + err.message });
+  }
+});
+
+// --- Admin API: Batch AI Audit for Pending Reports ---
+app.post('/api/admin/reports/batch-ai-audit', requireAdmin, async (req, res) => {
+  try {
+    const reports = await prisma.reportedQuestion.findMany({
+      take: 20,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        user: { select: { id: true, fullName: true, username: true, email: true } }
+      }
+    });
+
+    if (reports.length === 0) {
+      return res.json({ success: true, count: 0, audits: [] });
+    }
+
+    const results = [];
+    for (const rep of reports) {
+      try {
+        let reasonData = {};
+        try { reasonData = JSON.parse(rep.reason); } catch (e) { reasonData = { reasonType: rep.reason, details: '' }; }
+
+        let dbQuestion = null;
+        const numQId = parseInt(rep.questionId);
+        if (!isNaN(numQId) && numQId > 0) {
+          dbQuestion = await prisma.question.findUnique({ where: { id: numQId } });
+        }
+        if (!dbQuestion && rep.questionText) {
+          const snippet = rep.questionText.trim().substring(0, 40);
+          dbQuestion = await prisma.question.findFirst({ where: { questionText: { contains: snippet } } });
+        }
+
+        const qText = (dbQuestion && dbQuestion.questionText) || rep.questionText || '';
+        const c1 = (dbQuestion && dbQuestion.choice1) || (reasonData.choices && reasonData.choices[0]) || '';
+        const c2 = (dbQuestion && dbQuestion.choice2) || (reasonData.choices && reasonData.choices[1]) || '';
+        const c3 = (dbQuestion && dbQuestion.choice3) || (reasonData.choices && reasonData.choices[2]) || '';
+        const c4 = (dbQuestion && dbQuestion.choice4) || (reasonData.choices && reasonData.choices[3]) || '';
+        const ans = (dbQuestion && dbQuestion.correctAnswer) || reasonData.correctAnswer || 1;
+        const exp = (dbQuestion && dbQuestion.explanation) || reasonData.explanation || '';
+
+        const conflict = detectExplanationAnswerConflict({
+          correctAnswer: ans,
+          explanation: exp
+        });
+
+        results.push({
+          reportId: rep.id,
+          questionId: dbQuestion ? dbQuestion.id : rep.questionId,
+          dbQuestionFound: !!dbQuestion,
+          questionText: qText,
+          choice1: c1, choice2: c2, choice3: c3, choice4: c4,
+          currentAnswer: ans,
+          explanation: exp,
+          reporterName: rep.user ? (rep.user.fullName || rep.user.username || rep.user.email) : 'User',
+          reasonType: reasonData.reasonType || 'เฉลยคำตอบผิด',
+          details: reasonData.details || '',
+          hasConflict: conflict.hasConflict,
+          suggestedAnswer: conflict.hasConflict ? conflict.detectedAnswer : ans,
+          conflictReason: conflict.hasConflict ? conflict.reason : null
+        });
+      } catch (err) {
+        console.warn('Batch audit item error:', err);
+      }
+    }
+
+    res.json({
+      success: true,
+      count: results.length,
+      audits: results
+    });
+
+  } catch (err) {
+    console.error('Batch AI audit error:', err);
+    res.status(500).json({ error: 'เกิดข้อผิดพลาดในการรัน Batch AI Audit: ' + err.message });
   }
 });
 
