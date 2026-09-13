@@ -8512,7 +8512,7 @@ function buildThaiPrompt({ count, subcategory, title, contextText }) {
 
   return `คุณคือผู้เชี่ยวชาญระดับปรมาจารย์ในการออกข้อสอบวิชา "${chapterTitle}" (ตามมาตรฐานข้อสอบบรรจุเข้ารับราชการ และข้อสอบ ก.พ. ภาค ก.)
 โปรดสร้างข้อสอบภาษาไทยจำนวน ${count} ข้อ ${subcategory ? `เน้นหัวข้อ/บทเรียน: "${subcategory}"` : ''} ${title ? `ชื่อชุดข้อสอบ: "${title}"` : ''}
-${contextText ? `คลังเนื้อหาอ้างอิง:\n${contextText.substring(0, 16000)}\n\n` : ''}
+${contextText ? `คลังเนื้อหาอ้างอิง:\n${contextText.substring(0, 48000)}\n\n` : ''}
 
 ⛔️ ข้อห้ามเด็ดขาด (Strict Restrictions):
 1. ❌ **ห้ามมีเนื้อหาเกี่ยวกับ "งานสารบรรณ", "ระเบียบสำนักนายกรัฐมนตรี", "หนังสือราชการ", "ตราครุฑ", หรือ "กฎหมาย" ปะปนเด็ดขาด!** (วิชาภาษาไทยต้องเป็นหลักภาษาไทยและการอ่านบทความล้วนๆ 100%)
@@ -8725,7 +8725,7 @@ function buildGeneralMathPrompt({ count, subcategory, title, contextText }) {
 
   return `คุณคือผู้เชี่ยวชาญระดับปรมาจารย์ในการออกข้อสอบวิชา "${chapterTitle}" สำหรับการสอบคัดเลือกข้าราชการตำรวจและข้อสอบ ก.พ. ภาค ก.
 โปรดสร้างข้อสอบจำนวน ${count} ข้อ ${subcategory ? `เน้นหัวข้อ/บทเรียน: "${subcategory}"` : ''} ${title ? `ชื่อชุดข้อสอบ: "${title}"` : ''}
-${contextText ? `คลังเนื้อหาอ้างอิง:\n${contextText.substring(0, 16000)}\n\n` : ''}
+${contextText ? `คลังเนื้อหาอ้างอิง:\n${contextText.substring(0, 48000)}\n\n` : ''}
 
 ⛔️ กฎเหล็กความถูกต้องทางคณิตศาสตร์ (Strict Accuracy):
 1. **ตัวเลขและคำตอบต้องถูกต้องตามหลักคณิตศาสตร์ 100%** (คำนวณซ้ำสองรอบให้แน่ใจว่าตัวเลขและคำตอบถูกต้อง)
@@ -8741,7 +8741,7 @@ ${exampleJson}`;
 function buildEnglishPrompt({ count, subcategory, title, contextText }) {
   return `You are a master exam writer for the Royal Thai Police Examination (English Subject).
 Please create ${count} high-quality multiple-choice questions in English ${subcategory ? `focusing on topic: "${subcategory}"` : ''} ${title ? `Exam Set: "${title}"` : ''}.
-${contextText ? `Reference Context:\n${contextText.substring(0, 16000)}\n\n` : ''}
+${contextText ? `Reference Context:\n${contextText.substring(0, 48000)}\n\n` : ''}
 
 🎯 Exam Structure and Requirements:
 1. **Situational Dialogues (Conversation ~30%)**: Realistic dialogues at a police station, airport, street asking for directions, reporting crimes, or emergency assistance.
@@ -8769,7 +8769,7 @@ Output format: Return ONLY a valid JSON Array:
 function buildComputerPrompt({ count, subcategory, title, contextText }) {
   return `คุณคือผู้เชี่ยวชาญระดับปรมาจารย์ในการออกข้อสอบวิชา "เทคโนโลยีสารสนเทศและคอมพิวเตอร์เพื่อการสื่อสาร" สำหรับสอบตำรวจ
 โปรดสร้างข้อสอบจำนวน ${count} ข้อ ${subcategory ? `เน้นหัวข้อ: "${subcategory}"` : ''} ${title ? `ชื่อชุดข้อสอบ: "${title}"` : ''}
-${contextText ? `คลังเนื้อหาอ้างอิง:\n${contextText.substring(0, 16000)}\n\n` : ''}
+${contextText ? `คลังเนื้อหาอ้างอิง:\n${contextText.substring(0, 48000)}\n\n` : ''}
 
 🎯 โครงสร้างข้อสอบคอมพิวเตอร์และสารสนเทศตำรวจจริง:
 1. **ระบบปฏิบัติการและคีย์ลัด (OS & Shortcuts)**: การจัดการไฟล์ใน Windows, Task Manager, Shortcut Keys สำคัญ (Ctrl, Alt, Win, Shift)
@@ -8802,7 +8802,7 @@ ${contextText ? `คลังเนื้อหาอ้างอิง:\n${cont
 function buildLawPrompt({ count, subcategory, title, contextText }) {
   return `คุณคือผู้เชี่ยวชาญระดับปรมาจารย์ในการออกข้อสอบวิชา "กฎหมายที่ประชาชนควรรู้และกฎหมายตำรวจ" สำหรับสอบตำรวจ
 โปรดสร้างข้อสอบจำนวน ${count} ข้อ ${subcategory ? `เน้นหัวข้อ: "${subcategory}"` : ''} ${title ? `ชื่อชุดข้อสอบ: "${title}"` : ''}
-${contextText ? `คลังเนื้อหาอ้างอิง:\n${contextText.substring(0, 16000)}\n\n` : ''}
+${contextText ? `คลังเนื้อหาอ้างอิง:\n${contextText.substring(0, 48000)}\n\n` : ''}
 
 🎯 โครงสร้างข้อสอบกฎหมายตำรวจจริง (เน้นเคสสถานการณ์จำลอง 60% + ตัวบทแม่นยำ 40%):
 1. **ประมวลกฎหมายอาญา (Criminal Code)**:
@@ -8838,7 +8838,7 @@ ${contextText ? `คลังเนื้อหาอ้างอิง:\n${cont
 function buildSecretariatPrompt({ count, subcategory, title, contextText }) {
   return `คุณคือผู้เชี่ยวชาญระดับปรมาจารย์ในการออกข้อสอบวิชา "งานสารบรรณ" (ระเบียบสำนักนายกรัฐมนตรีว่าด้วยงานสารบรรณ พ.ศ. ๒๕๒๖ และที่แก้ไขเพิ่มเติม)
 โปรดสร้างข้อสอบจำนวน ${count} ข้อ ${subcategory ? `เน้นหัวข้อ: "${subcategory}"` : ''} ${title ? `ชื่อชุดข้อสอบ: "${title}"` : ''}
-${contextText ? `คลังเนื้อหาอ้างอิง:\n${contextText.substring(0, 16000)}\n\n` : ''}
+${contextText ? `คลังเนื้อหาอ้างอิง:\n${contextText.substring(0, 48000)}\n\n` : ''}
 
 🎯 โครงสร้างข้อสอบงานสารบรรณระเบียบสำนักนายกฯ ๒๕๒๖:
 1. **หนังสือราชการ ๖ ชนิด**: หนังสือภายนอก, หนังสือภายใน, หนังสือประทับตรา, หนังสือสั่งการ (คำสั่ง, ข้อบังคับ, ระเบียบ), หนังสือประชาสัมพันธ์ (ประกาศ, แถลงการณ์, ข่าว), หนังสือที่เจ้าหน้าที่ทำขึ้นหรือรับไว้เป็นหลักฐานในราชการ (หนังสือรับรอง, รายงานการประชุม, บันทึก, หนังสืออื่น)
@@ -9034,7 +9034,7 @@ function buildPoliceSaraban54Prompt({ count, subcategory, title, contextText }) 
 
   return `คุณคือผู้เชี่ยวชาญระดับปรมาจารย์ในการออกข้อสอบวิชา "${chapterTitle}" สำหรับการสอบคัดเลือกข้าราชการตำรวจ
 โปรดสร้างข้อสอบจำนวน ${count} ข้อ ${subcategory ? `เน้นหัวข้อ/บทเรียน: "${subcategory}"` : ''} ${title ? `ชื่อชุดข้อสอบ: "${title}"` : ''}
-${contextText ? `คลังเนื้อหาอ้างอิง:\n${contextText.substring(0, 16000)}\n\n` : ''}
+${contextText ? `คลังเนื้อหาอ้างอิง:\n${contextText.substring(0, 48000)}\n\n` : ''}
 
 ⛔️ ข้อห้ามเด็ดขาด (Strict Restrictions):
 1. ❌ **ห้ามออกข้อสอบข้ามหมวดบทเรียนที่ระบุ** ต้องออกเฉพาะหัวข้อ ${chapterTitle} เท่านั้น 100%
@@ -9258,7 +9258,7 @@ function buildSocialPrompt({ count, subcategory, title, contextText }) {
 
   return `คุณคือผู้เชี่ยวชาญระดับปรมาจารย์ในการออกข้อสอบวิชา "${chapterTitle}" สำหรับการสอบคัดเลือกข้าราชการตำรวจ
 โปรดสร้างข้อสอบจำนวน ${count} ข้อ ${subcategory ? `เน้นหัวข้อ/บทเรียน: "${subcategory}"` : ''} ${title ? `ชื่อชุดข้อสอบ: "${title}"` : ''}
-${contextText ? `คลังเนื้อหาอ้างอิง:\n${contextText.substring(0, 16000)}\n\n` : ''}
+${contextText ? `คลังเนื้อหาอ้างอิง:\n${contextText.substring(0, 48000)}\n\n` : ''}
 
 ⛔️ ข้อห้ามเด็ดขาด (Strict Restrictions):
 1. ❌ **ห้ามออกข้อสอบข้ามหมวดบทเรียนที่ระบุ** ต้องออกเฉพาะหัวข้อ ${chapterTitle} เท่านั้น 100%
@@ -9362,26 +9362,56 @@ async function callGeminiAiText(prompt, customApiKey = '') {
     throw new Error('KEY_NOT_FOUND: ไม่พบ API Key ของ Gemini กรุณาระบุ API Key ในเมนู Admin -> ตั้งค่าระบบ');
   }
 
-  const modelsToTry = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.5-flash-lite', 'gemini-1.5-flash-latest', 'gemini-2.5-pro'];
+  // Model priority: Flash (fast+good) → Pro (best quality) → older/lite fallbacks
+  const modelsToTry = ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash', 'gemini-2.5-flash-lite', 'gemini-1.5-flash-latest'];
+
+  // Low temperature for exam generation accuracy — prevents hallucination and wrong answers
+  const examGenerationConfig = {
+    temperature: 0.15,
+    topP: 0.85,
+    topK: 40,
+    responseMimeType: 'application/json'
+  };
+
   let lastErr = null;
 
   for (let ki = 0; ki < keys.length; ki++) {
     const apiKey = keys[ki];
     const keyPreview = apiKey.slice(0, 8) + '...';
 
-    // 1. Try SDK first
+    // 1. Try SDK first with generationConfig for accuracy
     try {
       const client = new GoogleGenerativeAI(apiKey);
       for (const modelName of modelsToTry) {
         try {
-          const model = client.getGenerativeModel({ model: modelName });
+          const model = client.getGenerativeModel({
+            model: modelName,
+            generationConfig: examGenerationConfig
+          });
           const result = await model.generateContent(prompt);
           const txt = result.response.text();
           if (txt && txt.trim()) {
+            console.log(`[Gemini OK] Key #${ki + 1} model=${modelName} temp=0.15`);
             return txt;
           }
         } catch (mErr) {
           lastErr = mErr;
+          // If responseMimeType not supported, retry without it
+          if (mErr.message && (mErr.message.includes('responseMimeType') || mErr.message.includes('not supported') || mErr.message.includes('INVALID_ARGUMENT'))) {
+            try {
+              const fallbackConfig = { temperature: 0.15, topP: 0.85, topK: 40 };
+              const model2 = client.getGenerativeModel({ model: modelName, generationConfig: fallbackConfig });
+              const result2 = await model2.generateContent(prompt);
+              const txt2 = result2.response.text();
+              if (txt2 && txt2.trim()) {
+                console.log(`[Gemini OK fallback] Key #${ki + 1} model=${modelName} temp=0.15 (no JSON mime)`);
+                return txt2;
+              }
+            } catch (retryErr) {
+              lastErr = retryErr;
+              console.warn(`[Gemini SDK Key #${ki + 1} (${keyPreview}) ${modelName} retry failed]:`, retryErr.message);
+            }
+          }
           console.warn(`[Gemini SDK Key #${ki + 1} (${keyPreview}) ${modelName} failed]:`, mErr.message);
         }
       }
@@ -9390,7 +9420,7 @@ async function callGeminiAiText(prompt, customApiKey = '') {
       console.warn(`[Gemini SDK Client Key #${ki + 1} (${keyPreview}) failed]:`, sdkErr.message);
     }
 
-    // 2. Direct HTTP Fetch fallback with both URL parameter and x-goog-api-key header
+    // 2. Direct HTTP Fetch fallback with generationConfig
     for (const m of modelsToTry) {
       try {
         const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${encodeURIComponent(apiKey)}`, {
@@ -9400,13 +9430,19 @@ async function callGeminiAiText(prompt, customApiKey = '') {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }]
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: {
+              temperature: 0.15,
+              topP: 0.85,
+              topK: 40
+            }
           })
         });
         const data = await resp.json();
         if (data && data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) {
           const txt = data.candidates[0].content.parts.map(p => p.text).join('\n');
           if (txt && txt.trim()) {
+            console.log(`[Gemini HTTP OK] Key #${ki + 1} model=${m} temp=0.15`);
             return txt;
           }
         } else if (data.error) {
