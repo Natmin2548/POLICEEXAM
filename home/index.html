@@ -978,251 +978,152 @@
       <!-- ==========================================
              SCREEN 1: 6 Main Subject Categories Grid
              ========================================== -->
-      <div id="questionBankSubjectsList">
-        <!-- Header Banner -->
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-          <div style="display: flex; align-items: center; gap: 12px;">
-            <div
-              style="width: 44px; height: 44px; border-radius: 14px; background: #FFF1F2; border: 1.5px solid #FFE4E6; display: flex; align-items: center; justify-content: center; font-size: 20px; color: #BD1B0B;">
-              📄
-            </div>
-            <div>
-              <h2 style="margin: 0; font-size: 19px; font-weight: 800; color: #0F172A;">คลังข้อสอบนายสิบตำรวจ</h2>
-              <p style="margin: 2px 0 0 0; font-size: 12px; color: #64748B;">เลือกหมวดวิชาเพื่อเริ่มฝึกฝนข้อสอบจริง</p>
-            </div>
-          </div>
-          <div
-            style="background: #FFF1F2; border: 1px solid #FFE4E6; color: #BD1B0B; font-weight: 700; font-size: 11.5px; padding: 5px 14px; border-radius: 999px;">
-            6 หมวดวิชาหลัก
-          </div>
+      <div id="questionBankSubjectsList" style="max-width: 680px; margin: 0 auto; padding: 4px 6px;">
+        <!-- Top Nav Bar: Arrow Back + Title (100% matching Image 1) -->
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 22px; padding: 4px 0;">
+          <button type="button" onclick="switchTabToHome(event)" style="background: none; border: none; cursor: pointer; padding: 4px 6px 4px 0; color: #475569; display: flex; align-items: center; justify-content: center; line-height: 1; transition: transform 0.15s ease;" title="กลับหน้าแรก">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+          </button>
+          <h2 style="margin: 0; font-size: 21px; font-weight: 800; color: #0F172A; letter-spacing: -0.3px;">คลังข้อสอบรายบท</h2>
         </div>
 
-        <!-- Search Bar -->
-        <div style="position: relative; margin-bottom: 20px;">
-          <span
-            style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); font-size: 15px; color: #94A3B8;">🔍</span>
-          <input type="text" id="txtSearchSubjects" oninput="filterBankSubjects(this.value)"
-            placeholder="ค้นหาวิชา หรือหัวข้อ..."
-            style="width: 100%; padding: 13px 16px 13px 44px; border-radius: 16px; border: 1px solid #E2E8F0; background: #FFFFFF; font-size: 13.5px; font-family: inherit; outline: none; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+        <!-- Section Label -->
+        <div style="font-size: 13.5px; font-weight: 600; color: #94A3B8; margin-bottom: 8px; padding-left: 2px;">
+          เลือกวิชา
         </div>
 
-        <!-- 6 Subjects Grid -->
-        <div class="bank-subjects-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px;">
-          <!-- 1. สารบรรณ -->
-          <div class="subject-card-item" onclick="startBankSubject('งานสารบรรณ')"
-            style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 22px; padding: 22px 20px; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease; position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between;">
-            <div
-              style="position: absolute; top: 0; right: 0; width: 80px; height: 80px; border-radius: 0 0 0 80px; background: #F0F7FF; opacity: 0.7; pointer-events: none;">
-            </div>
-            <div>
-              <div
-                style="width: 44px; height: 44px; border-radius: 14px; background: #F0F7FF; display: flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 14px;">
-                📄
+        <!-- Subject List Items (100% matching Image 1) -->
+        <div class="bank-subjects-list" style="display: flex; flex-direction: column;">
+
+          <!-- 1. ภาษาไทย -->
+          <div class="subject-card-item" onclick="startBankSubject('ภาษาไทย')"
+            style="display: flex; align-items: center; justify-content: space-between; padding: 16px 6px; border-bottom: 1px solid #F1F5F9; cursor: pointer; transition: all 0.15s ease; border-radius: 12px;"
+            onmouseover="this.style.backgroundColor='#F8FAFC'" onmouseout="this.style.backgroundColor='transparent'">
+            <div style="display: flex; align-items: center; gap: 16px;">
+              <div style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px; color: #334155; flex-shrink: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+                TH
               </div>
-              <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #0F172A;">งานสารบรรณ</h3>
-              <p style="margin: 4px 0 16px 0; font-size: 12px; color: #64748B;">ระเบียบสำนักนายกฯ ๒๕๒๖</p>
+              <div>
+                <div style="font-size: 15.5px; font-weight: 700; color: #0F172A; line-height: 1.35;">ภาษาไทย</div>
+                <div id="bankQCount_thai" style="font-size: 12px; color: #94A3B8; margin-top: 2px; font-weight: 500;">9 ข้อในคลัง</div>
+              </div>
             </div>
-            <div
-              style="display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px solid #F8FAFC;">
-              <span
-                style="background: #EFF6FF; color: #2563EB; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px; display: inline-flex; align-items: center; gap: 4px;">
-                📄 13 บทเรียน
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span id="bankChapBadge_thai" style="background: #FFF1F2; color: #E11D48; font-weight: 700; font-size: 12px; padding: 4px 12px; border-radius: 999px;">
+                3 บท
               </span>
-              <span
-                style="color: #2563EB; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px;">
-                เริ่มฝึกฝน ›
-              </span>
+              <span style="color: #CBD5E1; font-size: 16px; font-weight: 600;">›</span>
             </div>
           </div>
 
           <!-- 2. ความสามารถทั่วไป -->
           <div class="subject-card-item" onclick="startBankSubject('ทั่วไป')"
-            style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 22px; padding: 22px 20px; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease; position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between;">
-            <div
-              style="position: absolute; top: 0; right: 0; width: 80px; height: 80px; border-radius: 0 0 0 80px; background: #ECFDF5; opacity: 0.7; pointer-events: none;">
-            </div>
-            <div>
-              <div
-                style="width: 44px; height: 44px; border-radius: 14px; background: #ECFDF5; display: flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 14px;">
-                🧮
+            style="display: flex; align-items: center; justify-content: space-between; padding: 16px 6px; border-bottom: 1px solid #F1F5F9; cursor: pointer; transition: all 0.15s ease; border-radius: 12px;"
+            onmouseover="this.style.backgroundColor='#F8FAFC'" onmouseout="this.style.backgroundColor='transparent'">
+            <div style="display: flex; align-items: center; gap: 16px;">
+              <div style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
+                🧠
               </div>
-              <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #0F172A;">ความสามารถทั่วไป</h3>
-              <p style="margin: 4px 0 16px 0; font-size: 12px; color: #64748B;">อนุกรม ร้อยละ ตรรกศาสตร์ & คำนวณ</p>
+              <div>
+                <div style="font-size: 15.5px; font-weight: 700; color: #0F172A; line-height: 1.35;">ความสามารถทั่วไป</div>
+                <div id="bankQCount_general" style="font-size: 12px; color: #94A3B8; margin-top: 2px; font-weight: 500;">9 ข้อในคลัง</div>
+              </div>
             </div>
-            <div
-              style="display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px solid #F8FAFC;">
-              <span
-                style="background: #ECFDF5; color: #059669; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px; display: inline-flex; align-items: center; gap: 4px;">
-                📄 20 บทเรียน
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span id="bankChapBadge_general" style="background: #F3E8FF; color: #9333EA; font-weight: 700; font-size: 12px; padding: 4px 12px; border-radius: 999px;">
+                3 บท
               </span>
-              <span
-                style="color: #059669; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px;">
-                เริ่มฝึกฝน ›
-              </span>
+              <span style="color: #CBD5E1; font-size: 16px; font-weight: 600;">›</span>
             </div>
           </div>
 
-          <!-- 3. สังคม -->
-          <div class="subject-card-item" onclick="startBankSubject('สังคม')"
-            style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 22px; padding: 22px 20px; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease; position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between;">
-            <div
-              style="position: absolute; top: 0; right: 0; width: 80px; height: 80px; border-radius: 0 0 0 80px; background: #FFF7ED; opacity: 0.7; pointer-events: none;">
-            </div>
-            <div>
-              <div
-                style="width: 44px; height: 44px; border-radius: 14px; background: #FFF7ED; display: flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 14px;">
-                🌍
+          <!-- 3. คอมพิวเตอร์ -->
+          <div class="subject-card-item" onclick="startBankSubject('คอม')"
+            style="display: flex; align-items: center; justify-content: space-between; padding: 16px 6px; border-bottom: 1px solid #F1F5F9; cursor: pointer; transition: all 0.15s ease; border-radius: 12px;"
+            onmouseover="this.style.backgroundColor='#F8FAFC'" onmouseout="this.style.backgroundColor='transparent'">
+            <div style="display: flex; align-items: center; gap: 16px;">
+              <div style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
+                💻
               </div>
-              <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #0F172A;">สังคมและวัฒนธรรม</h3>
-              <p style="margin: 4px 0 16px 0; font-size: 12px; color: #64748B;">AEC ศาสนา และเหตุการณ์ปัจจุบัน</p>
+              <div>
+                <div style="font-size: 15.5px; font-weight: 700; color: #0F172A; line-height: 1.35;">คอมพิวเตอร์</div>
+                <div id="bankQCount_computer" style="font-size: 12px; color: #94A3B8; margin-top: 2px; font-weight: 500;">8 ข้อในคลัง</div>
+              </div>
             </div>
-            <div
-              style="display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px solid #F8FAFC;">
-              <span
-                style="background: #F5F3FF; color: #7C3AED; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px; display: inline-flex; align-items: center; gap: 4px;">
-                📄 10 บทเรียน
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span id="bankChapBadge_computer" style="background: #EFF6FF; color: #2563EB; font-weight: 700; font-size: 12px; padding: 4px 12px; border-radius: 999px;">
+                3 บท
               </span>
-              <span
-                style="color: #7C3AED; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px;">
-                เริ่มฝึกฝน ›
-              </span>
+              <span style="color: #CBD5E1; font-size: 16px; font-weight: 600;">›</span>
             </div>
           </div>
 
           <!-- 4. กฎหมาย -->
           <div class="subject-card-item" onclick="startBankSubject('กฏหมาย')"
-            style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 22px; padding: 22px 20px; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease; position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between;">
-            <div
-              style="position: absolute; top: 0; right: 0; width: 80px; height: 80px; border-radius: 0 0 0 80px; background: #FEF2F2; opacity: 0.7; pointer-events: none;">
-            </div>
-            <div>
-              <div
-                style="width: 44px; height: 44px; border-radius: 14px; background: #FEF2F2; display: flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 14px;">
+            style="display: flex; align-items: center; justify-content: space-between; padding: 16px 6px; border-bottom: 1px solid #F1F5F9; cursor: pointer; transition: all 0.15s ease; border-radius: 12px;"
+            onmouseover="this.style.backgroundColor='#F8FAFC'" onmouseout="this.style.backgroundColor='transparent'">
+            <div style="display: flex; align-items: center; gap: 16px;">
+              <div style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
                 ⚖️
               </div>
-              <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #0F172A;">กฎหมายที่ควรรู้</h3>
-              <p style="margin: 4px 0 16px 0; font-size: 12px; color: #64748B;">พ.ร.บ.ตำรวจ และ ป.วิ.อาญา</p>
+              <div>
+                <div style="font-size: 15.5px; font-weight: 700; color: #0F172A; line-height: 1.35;">กฎหมาย</div>
+                <div id="bankQCount_law" style="font-size: 12px; color: #94A3B8; margin-top: 2px; font-weight: 500;">9 ข้อในคลัง</div>
+              </div>
             </div>
-            <div
-              style="display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px solid #F8FAFC;">
-              <span
-                style="background: #FEF2F2; color: #DC2626; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px; display: inline-flex; align-items: center; gap: 4px;">
-                📄 22 บทเรียน
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span id="bankChapBadge_law" style="background: #FEF3C7; color: #D97706; font-weight: 700; font-size: 12px; padding: 4px 12px; border-radius: 999px;">
+                3 บท
               </span>
-              <span
-                style="color: #DC2626; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px;">
-                เริ่มฝึกฝน ›
-              </span>
+              <span style="color: #CBD5E1; font-size: 16px; font-weight: 600;">›</span>
             </div>
           </div>
 
-          <!-- 5. คอมพิวเตอร์ -->
-          <div class="subject-card-item" onclick="startBankSubject('คอม')"
-            style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 22px; padding: 22px 20px; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease; position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between;">
-            <div
-              style="position: absolute; top: 0; right: 0; width: 80px; height: 80px; border-radius: 0 0 0 80px; background: #ECFEFF; opacity: 0.7; pointer-events: none;">
-            </div>
-            <div>
-              <div
-                style="width: 44px; height: 44px; border-radius: 14px; background: #ECFEFF; display: flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 14px;">
-                💻
+          <!-- 5. สังคม -->
+          <div class="subject-card-item" onclick="startBankSubject('สังคม')"
+            style="display: flex; align-items: center; justify-content: space-between; padding: 16px 6px; border-bottom: 1px solid #F1F5F9; cursor: pointer; transition: all 0.15s ease; border-radius: 12px;"
+            onmouseover="this.style.backgroundColor='#F8FAFC'" onmouseout="this.style.backgroundColor='transparent'">
+            <div style="display: flex; align-items: center; gap: 16px;">
+              <div style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
+                🌍
               </div>
-              <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #0F172A;">เทคโนโลยีสารสนเทศ</h3>
-              <p style="margin: 4px 0 16px 0; font-size: 12px; color: #64748B;">พ.ร.บ.คอมฯ และความรู้ไซเบอร์</p>
+              <div>
+                <div style="font-size: 15.5px; font-weight: 700; color: #0F172A; line-height: 1.35;">สังคม</div>
+                <div id="bankQCount_social" style="font-size: 12px; color: #94A3B8; margin-top: 2px; font-weight: 500;">8 ข้อในคลัง</div>
+              </div>
             </div>
-            <div
-              style="display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px solid #F8FAFC;">
-              <span
-                style="background: #ECFEFF; color: #0891B2; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px; display: inline-flex; align-items: center; gap: 4px;">
-                📄 14 บทเรียน
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span id="bankChapBadge_social" style="background: #ECFDF5; color: #059669; font-weight: 700; font-size: 12px; padding: 4px 12px; border-radius: 999px;">
+                3 บท
               </span>
-              <span
-                style="color: #0891B2; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px;">
-                เริ่มฝึกฝน ›
-              </span>
+              <span style="color: #CBD5E1; font-size: 16px; font-weight: 600;">›</span>
             </div>
           </div>
 
-          <!-- 6. ลักษณะที่ 54 -->
-          <div class="subject-card-item" onclick="startBankSubject('ลักษณะที่54')"
-            style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 22px; padding: 22px 20px; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease; position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between;">
-            <div
-              style="position: absolute; top: 0; right: 0; width: 80px; height: 80px; border-radius: 0 0 0 80px; background: #FDF2F8; opacity: 0.7; pointer-events: none;">
-            </div>
-            <div>
-              <div
-                style="width: 44px; height: 44px; border-radius: 14px; background: #FDF2F8; display: flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 14px;">
-                📋
+          <!-- 6. งานสารบรรณ -->
+          <div class="subject-card-item" onclick="startBankSubject('งานสารบรรณ')"
+            style="display: flex; align-items: center; justify-content: space-between; padding: 16px 6px; border-bottom: 1px solid #F1F5F9; cursor: pointer; transition: all 0.15s ease; border-radius: 12px;"
+            onmouseover="this.style.backgroundColor='#F8FAFC'" onmouseout="this.style.backgroundColor='transparent'">
+            <div style="display: flex; align-items: center; gap: 16px;">
+              <div style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
+                📄
               </div>
-              <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #0F172A;">ลักษณะที่ ๕๔</h3>
-              <p style="margin: 4px 0 16px 0; font-size: 12px; color: #64748B;">ระเบียบสารบรรณตำรวจ ๒๕๕๖</p>
+              <div>
+                <div style="font-size: 15.5px; font-weight: 700; color: #0F172A; line-height: 1.35;">งานสารบรรณ</div>
+                <div id="bankQCount_saraban" style="font-size: 12px; color: #94A3B8; margin-top: 2px; font-weight: 500;">7 ข้อในคลัง</div>
+              </div>
             </div>
-            <div
-              style="display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px solid #F8FAFC;">
-              <span
-                style="background: #FDF2F8; color: #BE185D; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px; display: inline-flex; align-items: center; gap: 4px;">
-                📄 8 บทเรียน
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span id="bankChapBadge_saraban" style="background: #FFF7ED; color: #EA580C; font-weight: 700; font-size: 12px; padding: 4px 12px; border-radius: 999px;">
+                3 บท
               </span>
-              <span
-                style="color: #BE185D; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px;">
-                เริ่มฝึกฝน ›
-              </span>
+              <span style="color: #CBD5E1; font-size: 16px; font-weight: 600;">›</span>
             </div>
           </div>
 
-          <!-- 7. ภาษาไทย -->
-          <div class="subject-card-item" onclick="startBankSubject('ภาษาไทย')"
-            style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 22px; padding: 22px 20px; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease; position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between;">
-            <div
-              style="position: absolute; top: 0; right: 0; width: 80px; height: 80px; border-radius: 0 0 0 80px; background: #FEF3C7; opacity: 0.7; pointer-events: none;">
-            </div>
-            <div>
-              <div
-                style="width: 44px; height: 44px; border-radius: 14px; background: #FEF3C7; display: flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 14px;">
-                🇹🇭
-              </div>
-              <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #0F172A;">ภาษาไทย</h3>
-              <p style="margin: 4px 0 16px 0; font-size: 12px; color: #64748B;">วิเคราะห์บทความ โวหาร & คำราชาศัพท์</p>
-            </div>
-            <div
-              style="display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px solid #F8FAFC;">
-              <span
-                style="background: #FEF3C7; color: #D97706; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px; display: inline-flex; align-items: center; gap: 4px;">
-                📄 14 บทเรียน
-              </span>
-              <span
-                style="color: #D97706; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px;">
-                เริ่มฝึกฝน ›
-              </span>
-            </div>
-          </div>
-
-          <!-- 8. ภาษาอังกฤษ -->
-          <div class="subject-card-item" onclick="startBankSubject('ภาษาอังกฤษ')"
-            style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 22px; padding: 22px 20px; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease; position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between;">
-            <div
-              style="position: absolute; top: 0; right: 0; width: 80px; height: 80px; border-radius: 0 0 0 80px; background: #EEF2FF; opacity: 0.7; pointer-events: none;">
-            </div>
-            <div>
-              <div
-                style="width: 44px; height: 44px; border-radius: 14px; background: #EEF2FF; display: flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 14px;">
-                🇬🇧
-              </div>
-              <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #0F172A;">ภาษาอังกฤษ</h3>
-              <p style="margin: 4px 0 16px 0; font-size: 12px; color: #64748B;">Conversation, Vocab & Grammar</p>
-            </div>
-            <div
-              style="display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px solid #F8FAFC;">
-              <span
-                style="background: #EEF2FF; color: #4F46E5; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px; display: inline-flex; align-items: center; gap: 4px;">
-                📄 8 บทเรียน
-              </span>
-              <span
-                style="color: #4F46E5; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px;">
-                เริ่มฝึกฝน ›
-              </span>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -3041,8 +2942,8 @@
   </script>
 
   <!-- Real System Application Scripts -->
-  <script src="vocab-data.js?v=46"></script>
-  <script src="js/app.js?v=46"></script>
+  <script src="vocab-data.js?v=47"></script>
+  <script src="js/app.js?v=47"></script>
 
 </body>
 

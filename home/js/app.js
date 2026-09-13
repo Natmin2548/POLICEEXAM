@@ -970,7 +970,7 @@ let currentQuizAnswered = false;
 let activeChapterTitle = '';
 let activeSubjectDBSets = [];
 
-// Filter 6 Subjects in Screen 1
+// Filter Subjects in Screen 1
 window.filterBankSubjects = function(query) {
   const cards = document.querySelectorAll('#questionBankSubjectsList .subject-card-item');
   const q = (query || '').toLowerCase().trim();
@@ -978,6 +978,44 @@ window.filterBankSubjects = function(query) {
     const text = c.textContent.toLowerCase();
     c.style.display = text.includes(q) ? 'flex' : 'none';
   });
+};
+
+window.updateBankSubjectCounts = async function() {
+  try {
+    const res = await fetch(`${API_BASE}/api/exams/sets`);
+    if (!res.ok) return;
+    const sets = await res.json();
+    if (!Array.isArray(sets) || sets.length === 0) return;
+
+    const subjectsMap = {
+      thai: { countEl: 'bankQCount_thai', chapEl: 'bankChapBadge_thai', defaultQ: 9, keywords: ['ไทย', 'ภาษาไทย'] },
+      general: { countEl: 'bankQCount_general', chapEl: 'bankChapBadge_general', defaultQ: 9, keywords: ['ทั่วไป', 'คณิต', 'คำนวณ', 'อนุกรม'] },
+      computer: { countEl: 'bankQCount_computer', chapEl: 'bankChapBadge_computer', defaultQ: 8, keywords: ['คอม', 'สารสนเทศ', 'ไอที'] },
+      law: { countEl: 'bankQCount_law', chapEl: 'bankChapBadge_law', defaultQ: 9, keywords: ['กฎหมาย', 'กฏหมาย'] },
+      social: { countEl: 'bankQCount_social', chapEl: 'bankChapBadge_social', defaultQ: 8, keywords: ['สังคม', 'วัฒนธรรม', 'จริยธรรม'] },
+      saraban: { countEl: 'bankQCount_saraban', chapEl: 'bankChapBadge_saraban', defaultQ: 7, keywords: ['สารบรรณ', 'งานสารบรรณ'] }
+    };
+
+    Object.values(subjectsMap).forEach(sub => {
+      const matched = sets.filter(s => {
+        const text = `${s.category || ''} ${s.subcategory || ''} ${s.title || ''}`.toLowerCase();
+        return sub.keywords.some(k => text.includes(k.toLowerCase()));
+      });
+
+      if (matched.length > 0) {
+        const totalQ = matched.reduce((acc, s) => acc + (s.questionsCount || 25), 0);
+        const chapSet = new Set(matched.map(s => s.subcategory).filter(Boolean));
+        const chapCount = Math.max(3, chapSet.size);
+
+        const countEl = document.getElementById(sub.countEl);
+        const chapEl = document.getElementById(sub.chapEl);
+        if (countEl) countEl.textContent = `${totalQ} ข้อในคลัง`;
+        if (chapEl) chapEl.textContent = `${chapCount} บท`;
+      }
+    });
+  } catch (e) {
+    console.warn('Update bank subject counts warning:', e);
+  }
 };
 
 // 1. Open Screen 2 (Chapters List + Stats) with Live Database Sets
@@ -1464,6 +1502,10 @@ if (bankTabBtn) {
     if (battleView) battleView.classList.remove('active');
     if (statsView) statsView.classList.remove('active');
     if (profileView) profileView.classList.remove('active');
+
+    if (typeof updateBankSubjectCounts === 'function') {
+      updateBankSubjectCounts();
+    }
   });
 }
 
