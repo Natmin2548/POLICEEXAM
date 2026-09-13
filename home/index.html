@@ -286,10 +286,33 @@
 
             <button id="btnStartExam" onclick="event.stopPropagation(); openPoliceTrackModal();"
               style="background: #FFFFFF; color: #991007; border: none; padding: 9px 22px; border-radius: 999px; font-weight: 700; font-family: inherit; font-size: 13px; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,0.18); display: inline-flex; align-items: center; gap: 6px; transition: transform 0.15s ease;">
-              <span>⚡</span> เริ่มทำข้อสอบทันที
+              <span>📝</span> เข้าสอบเสมือนจริง 150 ข้อ
             </button>
           </div>
         </section>
+
+        <!-- Mock Exam 150 Questions Highlight Card -->
+        <div onclick="openPoliceTrackModal()"
+          style="background: #FFFFFF; border: 1.5px solid #FEE2E2; border-radius: 20px; padding: 16px 20px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 4px 16px -2px rgba(189, 27, 11, 0.08);">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <div
+              style="width: 44px; height: 44px; border-radius: 14px; background: #FFF1F2; border: 1px solid #FFE4E6; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
+              🎯
+            </div>
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <h3 style="margin: 0; font-size: 15.5px; font-weight: 800; color: #0F172A;">สอบเสมือนจริง 150 ข้อ (Mock Exam)</h3>
+                <span
+                  style="background: #FEF2F2; color: #BD1B0B; border: 1px solid #FECDD3; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px;">จับเวลาจริง 3 ชม.</span>
+              </div>
+              <p style="margin: 3px 0 0 0; font-size: 12px; color: #64748B;">เลือกสายงาน ปราบปราม / อำนวยการ / ตม. วัดผลเกณฑ์ผ่านจริง 60%</p>
+            </div>
+          </div>
+          <button onclick="event.stopPropagation(); openPoliceTrackModal();"
+            style="background: linear-gradient(135deg, #BD1B0B 0%, #991007 100%); color: white; border: none; padding: 9px 18px; border-radius: 999px; font-weight: 700; font-family: inherit; font-size: 13px; cursor: pointer; box-shadow: 0 4px 12px rgba(189, 27, 11, 0.25); flex-shrink: 0; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px;">
+            <span>เข้าสอบ</span> ›
+          </button>
+        </div>
 
         <!-- 2x2 Action Grid -->
         <section class="action-grid">
@@ -1001,6 +1024,29 @@
           <input type="text" id="txtSearchSubjects" oninput="filterBankSubjects(this.value)"
             placeholder="ค้นหาวิชา หรือหัวข้อ..."
             style="width: 100%; padding: 13px 16px 13px 44px; border-radius: 16px; border: 1px solid #E2E8F0; background: #FFFFFF; font-size: 13.5px; font-family: inherit; outline: none; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+        </div>
+
+        <!-- Realistic Mock Exam 150 Questions Banner -->
+        <div onclick="openPoliceTrackModal()"
+          style="background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%); border-radius: 20px; padding: 18px 22px; color: white; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.2); margin-bottom: 20px; cursor: pointer; border: 1px solid #334155; transition: transform 0.15s ease;">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <div
+              style="width: 46px; height: 46px; border-radius: 14px; background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%); display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.35);">
+              🎯
+            </div>
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #FFFFFF;">สอบเสมือนจริง 150 ข้อ (Mock Exam)</h3>
+                <span
+                  style="background: #EF4444; color: #FFFFFF; font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 999px;">จับเวลา 3 ชม.</span>
+              </div>
+              <p style="margin: 3px 0 0 0; font-size: 12px; color: #94A3B8;">จำลองเกณฑ์สอบตำรวจจริง ครบ 6 หมวดวิชา • เกณฑ์ผ่าน 60% แยกสายงาน</p>
+            </div>
+          </div>
+          <button onclick="event.stopPropagation(); openPoliceTrackModal();"
+            style="background: #BD1B0B; color: white; border: none; padding: 10px 20px; border-radius: 999px; font-weight: 700; font-family: inherit; font-size: 13px; cursor: pointer; box-shadow: 0 4px 12px rgba(189, 27, 11, 0.35); flex-shrink: 0; display: inline-flex; align-items: center; gap: 6px;">
+            <span>⚡</span> เข้าสอบทันที
+          </button>
         </div>
 
         <!-- 6 Subjects Grid -->

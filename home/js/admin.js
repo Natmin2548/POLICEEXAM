@@ -9,7 +9,13 @@ function escapeHTML(str) {
 }
 
 // Configuration
-const API_BASE = '';
+function getApiBase() {
+  const host = window.location.hostname;
+  if (host === 'localhost' || host === '127.0.0.1') return '';
+  if (host.includes('onrender.com')) return 'https://policeexam.onrender.com';
+  return '';
+}
+const API_BASE = getApiBase();
 
 const authToken = localStorage.getItem('authToken');
 let currentUser = null;
@@ -18,7 +24,7 @@ let currentUser = null;
 async function initAdmin() {
   if (!authToken) {
     alert('ไม่พบ Token สำหรับยืนยันตัวตน (Session ว่างเปล่า) กรุณาล็อกอินใหม่');
-    window.location.href = '/';
+    window.location.href = '/index.html';
     return;
   }
 
@@ -55,6 +61,13 @@ async function initAdmin() {
     }
 
     currentUser = currentUserProfile;
+
+    if (currentUser.role !== 'ADMIN' && currentUser.role !== 'OWNER') {
+      alert('คุณไม่มีสิทธิ์เข้าถึงหน้านี้ (สำหรับผู้ดูแลระบบเท่านั้น)');
+      window.location.href = 'index.html';
+      return;
+    }
+
     document.getElementById('adminUserInfo').textContent = `Admin: ${currentUser.username || currentUser.fullName || currentUser.email || 'Admin'}`;
     
     // Setup Navigation
@@ -154,7 +167,6 @@ async function loadUsers() {
         tr.innerHTML = `
           <td>${u.id}</td>
           <td>${u.username}</td>
-          <td>Lv ${u.level || 1}</td>
           <td>${u.points || 0}</td>
           <td><span class="badge ${roleBadge}">${u.role}</span></td>
           <td class="action-buttons">

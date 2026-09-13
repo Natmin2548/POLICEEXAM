@@ -403,12 +403,10 @@ function updateStatsFromProfile(user) {
   // Update stat cards
   const avgScoreEl = document.getElementById('statAvgScore');
   const streakEl = document.getElementById('statStreak');
-  const levelEl = document.getElementById('statLevel');
   const pointsEl = document.getElementById('statPoints');
 
   if (avgScoreEl) avgScoreEl.textContent = avgScore;
   if (streakEl) streakEl.textContent = `${user.streak || 0} วัน`;
-  if (levelEl) levelEl.textContent = `Lv.${user.level || 1}`;
   if (pointsEl) pointsEl.textContent = (user.points || 0).toLocaleString();
 
   // Calculate dynamic days until November 29, 2569 (2026-11-29)
@@ -1440,9 +1438,34 @@ async function finishQuiz() {
 
 
 const btnExamModePretest = document.getElementById('btnExamModePretest');
+const btnCloseExamMode = document.getElementById('btnCloseExamMode');
 if (btnExamModePretest) {
-  btnExamModePretest.addEventListener('click', () => handleStartExam('pretest'));
+  btnExamModePretest.addEventListener('click', () => {
+    const modal = document.getElementById('examModeModal');
+    if (modal) modal.style.display = 'none';
+    if (typeof openPoliceTrackModal === 'function') {
+      openPoliceTrackModal();
+    }
+  });
 }
+if (btnCloseExamMode) {
+  btnCloseExamMode.addEventListener('click', () => {
+    const modal = document.getElementById('examModeModal');
+    if (modal) modal.style.display = 'none';
+  });
+}
+
+// Helper to stop community & chat polling when leaving community view
+window.stopCommunityPolling = function() {
+  if (typeof postsPollInterval !== 'undefined' && postsPollInterval) {
+    clearInterval(postsPollInterval);
+    postsPollInterval = null;
+  }
+  if (typeof chatPollInterval !== 'undefined' && chatPollInterval) {
+    clearInterval(chatPollInterval);
+    chatPollInterval = null;
+  }
+};
 // 4. Logout Handlers
 const btnDropdownLogout = document.getElementById('btnDropdownLogout');
 const btnProfileLogout = document.getElementById('btnProfileLogout');
@@ -1492,6 +1515,7 @@ const profileView = document.getElementById('profileView');
 const questionBankView = document.getElementById('questionBankView');
 window.switchTabToHome = function(e) {
   if (e && typeof e.preventDefault === 'function') e.preventDefault();
+  if (typeof stopCommunityPolling === 'function') stopCommunityPolling();
   
   const navTabs = document.querySelectorAll('.bottom-nav .nav-tab');
   const homeTabBtn = navTabs[0];
@@ -1528,6 +1552,7 @@ if (btnBackFromBank) {
 if (bankTabBtn) {
   bankTabBtn.addEventListener('click', (e) => {
     if (e) e.preventDefault();
+    if (typeof stopCommunityPolling === 'function') stopCommunityPolling();
     navTabs.forEach(t => t.classList.remove('active'));
     bankTabBtn.classList.add('active');
     
@@ -1543,6 +1568,7 @@ if (bankTabBtn) {
 if (homeTabBtn) {
   homeTabBtn.addEventListener('click', (e) => {
     e.preventDefault();
+    if (typeof stopCommunityPolling === 'function') stopCommunityPolling();
     navTabs.forEach(t => t.classList.remove('active'));
     homeTabBtn.classList.add('active');
     
@@ -1604,6 +1630,7 @@ window.closeMaintenanceModal = function() {
 if (battleTabBtn) {
   battleTabBtn.addEventListener('click', (e) => {
     e.preventDefault();
+    if (typeof stopCommunityPolling === 'function') stopCommunityPolling();
     showBattleMaintenanceAlert(e);
   });
 }
@@ -1611,6 +1638,7 @@ if (battleTabBtn) {
 if (statsTabBtn) {
   statsTabBtn.addEventListener('click', (e) => {
     e.preventDefault();
+    if (typeof stopCommunityPolling === 'function') stopCommunityPolling();
     navTabs.forEach(t => t.classList.remove('active'));
     statsTabBtn.classList.add('active');
     
@@ -1628,6 +1656,7 @@ if (statsTabBtn) {
 if (profileTabBtn) {
   profileTabBtn.addEventListener('click', (e) => {
     e.preventDefault();
+    if (typeof stopCommunityPolling === 'function') stopCommunityPolling();
     navTabs.forEach(t => t.classList.remove('active'));
     profileTabBtn.classList.add('active');
     
@@ -4510,7 +4539,6 @@ window.showUserProfile = async function(userId) {
   const avatar = document.getElementById('userProfileModalAvatar');
   const fullName = document.getElementById('lblUserProfileModalFullName');
   const username = document.getElementById('lblUserProfileModalUsername');
-  const level = document.getElementById('lblUserProfileModalLevel');
   const points = document.getElementById('lblUserProfileModalPoints');
   const streak = document.getElementById('lblUserProfileModalStreak');
   const wins = document.getElementById('lblUserProfileModalWins');
@@ -4522,7 +4550,6 @@ window.showUserProfile = async function(userId) {
   if (avatar) avatar.textContent = '...';
   if (fullName) fullName.textContent = 'กำลังโหลดโปรไฟล์...';
   if (username) username.textContent = '';
-  if (level) level.textContent = '-';
   if (points) points.textContent = '-';
   if (streak) streak.textContent = '-';
   if (wins) wins.textContent = '-';
@@ -4547,7 +4574,6 @@ window.showUserProfile = async function(userId) {
     }
     if (fullName) fullName.textContent = nameStr;
     if (username) username.textContent = `@${u.username}`;
-    if (level) level.textContent = `Lv.${u.level || 1}`;
     if (points) points.textContent = `${u.points || 0} พ้อยต์`;
     if (streak) streak.textContent = `${u.streak || 0} วัน`;
     if (wins) wins.textContent = `${u.battleWins || 0} ครั้ง`;
