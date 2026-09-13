@@ -9686,11 +9686,20 @@ app.get('/api/admin/reports', requireAdmin, async (req, res) => {
       orderBy: { createdAt: 'desc' },
       include: {
         user: {
-          select: { id: true, name: true, email: true, role: true }
+          select: { id: true, fullName: true, username: true, email: true, role: true }
         }
       }
     });
-    res.json(reports);
+
+    const formatted = reports.map(r => ({
+      ...r,
+      user: r.user ? {
+        ...r.user,
+        name: r.user.fullName || r.user.username || r.user.email
+      } : null
+    }));
+
+    res.json(formatted);
   } catch (err) {
     console.error('Fetch reported questions error:', err);
     res.status(500).json({ error: 'เกิดข้อผิดพลาดในการโหลดรายงานข้อสอบ: ' + err.message });

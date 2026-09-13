@@ -2255,7 +2255,7 @@ window.loadAdminReports = async function() {
       const qNum = reasonData.questionNumber ? `ข้อที่ ${reasonData.questionNumber}` : 'ข้อสอบ';
       const reasonType = reasonData.reasonType || 'เฉลยคำตอบผิด';
       const details = reasonData.details || '';
-      const reporterName = rep.user ? (rep.user.name || rep.user.email || `User #${rep.user.id}`) : `User #${rep.userId}`;
+      const reporterName = rep.user ? (rep.user.fullName || rep.user.username || rep.user.name || rep.user.email || `User #${rep.user.id}`) : `User #${rep.userId}`;
       const dateStr = rep.createdAt ? new Date(rep.createdAt).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' }) : '-';
 
       const tr = document.createElement('tr');
