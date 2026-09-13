@@ -149,38 +149,220 @@ async function loadDashboard() {
 }
 
 // ==========================================
-// Users View
+// Users View & Detailed Statistics
 // ==========================================
+let allLoadedUsers = [];
+let currentUserFilterStatus = 'ALL';
+let currentUserSearchQuery = '';
+
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+const SUBJECT_ICON_MAP = {
+  'ความสามารถทั่วไป': '🧠',
+  'ทั่วไป': '🧠',
+  'ภาษาไทย': '🇹🇭',
+  'ไทย': '🇹🇭',
+  'ภาษาอังกฤษ': '🇬🇧',
+  'อังกฤษ': '🇬🇧',
+  'คอม': '💻',
+  'คอมพิวเตอร์': '💻',
+  'เทคโนโลยีสารสนเทศ': '💻',
+  'สังคม': '🏛️',
+  'สังคม วัฒนธรรม และอาเซียน': '🏛️',
+  'งานสารบรรณ': '📜',
+  'ระเบียบงานสารบรรณ': '📜',
+  'ลักษณะที่54': '📑',
+  'ลักษณะ ๕๔': '📑',
+  'สารบรรณตำรวจ': '📑',
+  'กฏหมาย': '⚖️',
+  'กฎหมาย': '⚖️',
+  'กฎหมายที่ควรรู้': '⚖️'
+};
+
+function getSubjectIcon(subName) {
+  if (!subName) return '📚';
+  for (const [key, icon] of Object.entries(SUBJECT_ICON_MAP)) {
+    if (subName.includes(key)) return icon;
+  }
+  return '📚';
+}
+
+function formatThaiDateTime(dateStr) {
+  if (!dateStr) return '-';
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return '-';
+    return d.toLocaleDateString('th-TH', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  } catch (e) {
+    return dateStr;
+  }
+}
+
 async function loadUsers() {
   try {
     const res = await fetch(`${API_BASE}/api/admin/users`, {
       headers: { 'Authorization': `Bearer ${authToken}` }
     });
     if (res.ok) {
-      const users = await res.json();
-      const tbody = document.getElementById('usersTableBody');
-      tbody.innerHTML = '';
-      
-      users.forEach(u => {
-        const tr = document.createElement('tr');
-        const roleBadge = u.role === 'ADMIN' ? 'badge-admin' : 'badge-user';
-        tr.innerHTML = `
-          <td>${u.id}</td>
-          <td>${u.username}</td>
-          <td>${u.points || 0}</td>
-          <td><span class="badge ${roleBadge}">${u.role}</span></td>
-          <td class="action-buttons">
-            <button class="btn btn-outline" onclick="toggleUserRole(${u.id}, '${u.role}')">สลับสิทธิ</button>
-            <button class="btn btn-danger" onclick="confirmDelete('user', ${u.id})">ลบ</button>
-          </td>
-        `;
-        tbody.appendChild(tr);
-      });
+      allLoadedUsers = await res.json();
+      renderUsersWithFilters();
     }
   } catch (err) {
     console.error('Users load error:', err);
   }
 }
+
+function renderUsersWithFilters() {
+  const tbody = document.getElementById('usersTableBody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  const q = currentUserSearchQuery.toLowerCase().trim();
+
+  const filtered = allLoadedUsers.filter(u => {
+    // 1. Search Query
+    if (q) {
+      const matchId = String(u.id).includes(q);
+      const matchUsername = (u.username || '').toLowerCase().includes(q);
+      const matchName = (u.fullName || '').toLowerCase().includes(q);
+      const matchEmail = (u.email || '').toLowerCase().includes(q);
+      if (!matchId && !matchUsername && !matchName && !matchEmail) return false;
+    }
+
+    // 2. Filter Status
+    const totalExams = (u.quizCount || 0) + (u.completionsCount || 0);
+    if (currentUserFilterStatus === 'HAS_EXAMS') {
+      return totalExams > 0;
+    }
+    if (currentUserFilterStatus === 'NO_EXAMS') {
+      return totalExams === 0;
+    }
+    if (currentUserFilterStatus === 'ADMIN_ONLY') {
+      return u.role === 'ADMIN' || u.role === 'OWNER';
+    }
+
+    return true;
+  });
+
+  // Update counters
+  const totalBadge = document.getElementById('usersTotalCountBadge');
+  if (totalBadge) {
+    totalBadge.textContent = `${filtered.length} / ${allLoadedUsers.length} คน`;
+  }
+
+  const summaryEl = document.getElementById('userFilterStatsSummary');
+  if (summaryEl) {
+    const activeQuizUsers = allLoadedUsers.filter(u => (u.quizCount || 0) > 0);
+    summaryEl.innerHTML = `ผู้ใช้ที่ทำข้อสอบแล้ว: <b style="color: #059669;">${activeQuizUsers.length} คน</b>`;
+  }
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" style="text-align: center; padding: 48px 16px; color: #64748B;">
+          <div style="font-size: 32px; margin-bottom: 8px;">🔍</div>
+          <div style="font-size: 15px; font-weight: 700; color: #1E293B;">ไม่พบข้อมูลผู้ใช้ที่ค้นหา</div>
+          <div style="font-size: 13px; margin-top: 4px;">ลองเปลี่ยนคำค้นหา หรือรีเซ็ตตัวกรองเป็น "ผู้ใช้ทั้งหมด"</div>
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  filtered.forEach(u => {
+    const tr = document.createElement('tr');
+    tr.style.transition = 'background 0.15s ease';
+
+    const roleBadge = u.role === 'ADMIN' || u.role === 'OWNER' ? 'badge-admin' : 'badge-user';
+    const initial = ((u.fullName && u.fullName.trim()) || u.username || 'U').charAt(0).toUpperCase();
+
+    // Exams Count Badge
+    let examBadgeHtml = '';
+    const examCount = u.quizCount || 0;
+    if (examCount > 0) {
+      examBadgeHtml = `<span class="badge" style="background: #EFF6FF; color: #1D4ED8; font-weight: 700; font-size: 12.5px; border: 1px solid #BFDBFE;">📝 ${examCount} ชุด</span>`;
+    } else {
+      examBadgeHtml = `<span style="color: #94A3B8; font-size: 12.5px;">-</span>`;
+    }
+
+    // Average Score Badge
+    let scoreBadgeHtml = '';
+    if (examCount > 0) {
+      const avg = u.avgScore || 0;
+      if (avg >= 60) {
+        scoreBadgeHtml = `<span class="badge" style="background: #ECFDF5; color: #059669; font-weight: 800; font-size: 12.5px; border: 1px solid #A7F3D0;">${avg}% ผ่าน</span>`;
+      } else {
+        scoreBadgeHtml = `<span class="badge" style="background: #FFFBEB; color: #D97706; font-weight: 800; font-size: 12.5px; border: 1px solid #FDE68A;">${avg}%</span>`;
+      }
+    } else {
+      scoreBadgeHtml = `<span style="color: #94A3B8; font-size: 12.5px;">-</span>`;
+    }
+
+    tr.innerHTML = `
+      <td style="font-weight: 700; color: #64748B;">#${u.id}</td>
+      <td>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #CBD5E1, #94A3B8); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; flex-shrink: 0;">
+            ${initial}
+          </div>
+          <div>
+            <div style="font-weight: 700; color: #0F172A; font-size: 14px; display: flex; align-items: center; gap: 6px;">
+              <span>${escapeHtml(u.fullName || u.username)}</span>
+            </div>
+            <div style="font-size: 12px; color: #64748B; margin-top: 1px;">
+              @${escapeHtml(u.username)} • ${escapeHtml(u.email || '-')}
+            </div>
+          </div>
+        </div>
+      </td>
+      <td style="text-align: center;">${examBadgeHtml}</td>
+      <td style="text-align: center;">${scoreBadgeHtml}</td>
+      <td style="text-align: center;">
+        <div style="font-weight: 700; color: #EA580C; font-size: 13px;">🔥 ${u.streak || 1} วัน</div>
+        <div style="font-size: 11.5px; color: #64748B;">⭐ ${u.points || 0} แต้ม (Lv.${u.level || 1})</div>
+      </td>
+      <td style="text-align: center;">
+        <span class="badge ${roleBadge}">${u.role}</span>
+      </td>
+      <td style="text-align: right;">
+        <div style="display: inline-flex; align-items: center; gap: 6px;">
+          <button class="btn" onclick="openUserStatsModal(${u.id})" style="background: linear-gradient(135deg, #0284C7, #0369A1); color: white; padding: 7px 13px; border-radius: 9px; font-weight: 700; font-size: 12.5px; box-shadow: 0 2px 6px rgba(2,132,199,0.25); display: inline-flex; align-items: center; gap: 4px; border: none; cursor: pointer;">
+            <span>📊 สถิติ</span>
+          </button>
+          <button class="btn btn-outline" onclick="toggleUserRole(${u.id}, '${u.role}')" style="padding: 7px 11px; font-size: 12.5px;">สลับสิทธิ</button>
+          <button class="btn btn-danger" onclick="confirmDelete('user', ${u.id})" style="padding: 7px 10px; font-size: 12.5px;">ลบ</button>
+        </div>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+window.onUserSearchInput = function() {
+  const input = document.getElementById('userSearchInput');
+  currentUserSearchQuery = input ? input.value : '';
+  renderUsersWithFilters();
+};
+
+window.onUserFilterStatusChange = function() {
+  const select = document.getElementById('userFilterExamStatus');
+  currentUserFilterStatus = select ? select.value : 'ALL';
+  renderUsersWithFilters();
+};
 
 async function toggleUserRole(id, currentRole) {
   const newRole = currentRole === 'ADMIN' ? 'USER' : 'ADMIN';
@@ -196,12 +378,255 @@ async function toggleUserRole(id, currentRole) {
     if (res.ok) {
       loadUsers();
     } else {
-      alert('ไม่สามารถเปลี่ยนสิทธิได้');
+      const err = await res.json();
+      alert(err.error || 'ไม่สามารถเปลี่ยนสิทธิได้');
     }
   } catch (err) {
     console.error(err);
   }
 }
+
+// ==========================================
+// User Detailed Statistics Modal
+// ==========================================
+window.openUserStatsModal = async function(userId) {
+  const modal = document.getElementById('adminUserStatsModal');
+  const body = document.getElementById('modalUserStatsBody');
+  if (!modal || !body) return;
+
+  modal.style.display = 'flex';
+  body.innerHTML = `
+    <div style="text-align: center; padding: 60px 20px; color: #64748B;">
+      <div style="font-size: 32px; animation: spin 1s linear infinite; display: inline-block; margin-bottom: 12px;">⏳</div>
+      <div style="font-size: 15px; font-weight: 700; color: #1E293B;">กำลังโหลดสถิติและประวัติการทำข้อสอบ...</div>
+    </div>
+  `;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/users/${userId}/stats`, {
+      headers: { 'Authorization': `Bearer ${authToken}` }
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      body.innerHTML = `<div style="text-align: center; padding: 40px; color: #EF4444; font-weight: 700;">${err.error || 'เกิดข้อผิดพลาดในการโหลดสถิติ'}</div>`;
+      return;
+    }
+
+    const data = await res.json();
+    const u = data.user;
+    const s = data.summary;
+    const subjects = data.subjectStats || [];
+    const attempts = data.attempts || [];
+
+    // Header updates
+    const avatarEl = document.getElementById('modalUserAvatar');
+    const nameEl = document.getElementById('modalUserFullName');
+    const roleBadgeEl = document.getElementById('modalUserRoleBadge');
+    const idBadgeEl = document.getElementById('modalUserIdBadge');
+    const metaEl = document.getElementById('modalUserMetaInfo');
+
+    const initial = ((u.fullName && u.fullName.trim()) || u.username || 'U').charAt(0).toUpperCase();
+    if (avatarEl) avatarEl.textContent = initial;
+    if (nameEl) nameEl.textContent = u.fullName || u.username;
+    if (roleBadgeEl) {
+      roleBadgeEl.textContent = u.role;
+      roleBadgeEl.className = `badge ${u.role === 'ADMIN' || u.role === 'OWNER' ? 'badge-admin' : 'badge-user'}`;
+    }
+    if (idBadgeEl) idBadgeEl.textContent = `ID: #${u.id}`;
+    if (metaEl) {
+      metaEl.textContent = `@${u.username} • ${u.email || '-'} • สมัครเมื่อ: ${formatThaiDateTime(u.createdAt)}`;
+    }
+
+    // Render Stats HTML
+    let html = `
+      <!-- KPI Overview Cards -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 24px;">
+        <div style="background: white; border: 1.5px solid #E2E8F0; border-radius: 16px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-size: 12.5px; font-weight: 700; color: #64748B;">ทำข้อสอบแล้ว</span>
+            <span style="font-size: 18px;">📝</span>
+          </div>
+          <div style="font-size: 26px; font-weight: 800; color: #0284C7; margin-top: 6px;">
+            ${s.totalAttempts} <span style="font-size: 14px; font-weight: 600; color: #64748B;">ชุด</span>
+          </div>
+          <div style="font-size: 11.5px; color: #94A3B8; margin-top: 2px;">จำนวนการทำข้อสอบทั้งหมด</div>
+        </div>
+
+        <div style="background: white; border: 1.5px solid #E2E8F0; border-radius: 16px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-size: 12.5px; font-weight: 700; color: #64748B;">คะแนนเฉลี่ยรวม</span>
+            <span style="font-size: 18px;">🎯</span>
+          </div>
+          <div style="font-size: 26px; font-weight: 800; color: ${s.avgScore >= 60 ? '#059669' : '#D97706'}; margin-top: 6px;">
+            ${s.avgScore}%
+          </div>
+          <div style="font-size: 11.5px; color: #94A3B8; margin-top: 2px;">สูงสุด: ${s.highestScore}%</div>
+        </div>
+
+        <div style="background: white; border: 1.5px solid #E2E8F0; border-radius: 16px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-size: 12.5px; font-weight: 700; color: #64748B;">ผ่านเกณฑ์ (≥60%)</span>
+            <span style="font-size: 18px;">🏆</span>
+          </div>
+          <div style="font-size: 26px; font-weight: 800; color: #059669; margin-top: 6px;">
+            ${s.passedCount} <span style="font-size: 14px; font-weight: 600; color: #64748B;">ชุด (${s.passRate}%)</span>
+          </div>
+          <div style="font-size: 11.5px; color: #94A3B8; margin-top: 2px;">ไม่ผ่าน: ${s.failedCount} ชุด</div>
+        </div>
+
+        <div style="background: white; border: 1.5px solid #E2E8F0; border-radius: 16px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-size: 12.5px; font-weight: 700; color: #64748B;">Streak ต่อเนื่อง</span>
+            <span style="font-size: 18px;">🔥</span>
+          </div>
+          <div style="font-size: 26px; font-weight: 800; color: #EA580C; margin-top: 6px;">
+            ${u.streak || 1} <span style="font-size: 14px; font-weight: 600; color: #64748B;">วัน</span>
+          </div>
+          <div style="font-size: 11.5px; color: #94A3B8; margin-top: 2px;">แต้มสะสม: ${u.points || 0} (Lv.${u.level || 1})</div>
+        </div>
+      </div>
+
+      <!-- Subject Performance Breakdown (8 หมวดวิชา) -->
+      <div style="background: white; border: 1.5px solid #E2E8F0; border-radius: 18px; padding: 20px; margin-bottom: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <div>
+            <h4 style="margin: 0; font-size: 15px; font-weight: 800; color: #0F172A; display: flex; align-items: center; gap: 6px;">
+              <span>📊 ผลคะแนนเฉลี่ยแยกตามหมวดวิชา (Subject Mastery)</span>
+            </h4>
+            <p style="margin: 2px 0 0 0; font-size: 12.5px; color: #64748B;">คำนวณจากประวัติการทำข้อสอบทุกชุดของผู้ใช้</p>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px;">
+    `;
+
+    subjects.forEach(sub => {
+      const icon = getSubjectIcon(sub.name || sub.key);
+      const avg = sub.avgScore || 0;
+      const barColor = avg >= 60 ? '#10B981' : avg >= 40 ? '#F59E0B' : avg > 0 ? '#EF4444' : '#E2E8F0';
+      const textColor = avg >= 60 ? '#059669' : avg >= 40 ? '#D97706' : avg > 0 ? '#DC2626' : '#94A3B8';
+
+      html += `
+        <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 14px; padding: 14px;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+            <div style="font-size: 13.5px; font-weight: 700; color: #1E293B; display: flex; align-items: center; gap: 6px;">
+              <span>${icon}</span>
+              <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 190px;" title="${escapeHtml(sub.name)}">${escapeHtml(sub.name)}</span>
+            </div>
+            <span style="font-size: 14px; font-weight: 800; color: ${textColor};">
+              ${avg}%
+            </span>
+          </div>
+
+          <!-- Progress Bar -->
+          <div style="width: 100%; height: 7px; background: #E2E8F0; border-radius: 999px; overflow: hidden; margin-bottom: 8px;">
+            <div style="width: ${Math.min(100, Math.max(0, avg))}%; height: 100%; background: ${barColor}; border-radius: 999px; transition: width 0.5s ease;"></div>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; font-size: 11.5px; color: #64748B;">
+            <span>ทำแล้ว: <b style="color: #0F172A;">${sub.attemptsCount}</b> ชุด</span>
+            <span>สูงสุด: <b style="color: #0F172A;">${sub.maxScore || 0}%</b></span>
+            <span>ผ่าน: <b style="color: #059669;">${sub.passedCount || 0}</b></span>
+          </div>
+        </div>
+      `;
+    });
+
+    html += `
+        </div>
+      </div>
+
+      <!-- Quiz Attempts Log (ประวัติการทำข้อสอบทุกครั้ง) -->
+      <div style="background: white; border: 1.5px solid #E2E8F0; border-radius: 18px; overflow: hidden;">
+        <div style="padding: 18px 20px; border-bottom: 1.5px solid #E2E8F0; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <h4 style="margin: 0; font-size: 15px; font-weight: 800; color: #0F172A; display: flex; align-items: center; gap: 6px;">
+              <span>📜 ประวัติการทำข้อสอบทั้งหมด (${attempts.length} ครั้งล่าสุด)</span>
+            </h4>
+            <p style="margin: 2px 0 0 0; font-size: 12.5px; color: #64748B;">แสดงรายการชุดข้อสอบที่ผู้ใช้คนนี้เคยทำ เรียงจากล่าสุด</p>
+          </div>
+        </div>
+    `;
+
+    if (attempts.length === 0) {
+      html += `
+        <div style="text-align: center; padding: 40px 20px; color: #64748B;">
+          <div style="font-size: 32px; margin-bottom: 8px;">📝</div>
+          <div style="font-size: 14.5px; font-weight: 700; color: #1E293B;">ผู้ใช้นี้ยังไม่มีประวัติการทำข้อสอบในระบบ</div>
+          <div style="font-size: 12.5px; margin-top: 2px;">เมื่อผู้ใช้เริ่มทำข้อสอบ สถิติและประวัติจะปรากฏที่นี่อัตโนมัติ</div>
+        </div>
+      `;
+    } else {
+      html += `
+        <div style="overflow-x: auto;">
+          <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+              <tr style="background: #F8FAFC; border-bottom: 1px solid #E2E8F0;">
+                <th style="padding: 12px 16px; font-size: 11.5px; font-weight: 700; color: #64748B; text-align: left; width: 50px;">#</th>
+                <th style="padding: 12px 16px; font-size: 11.5px; font-weight: 700; color: #64748B; text-align: left;">วันที่ / เวลา</th>
+                <th style="padding: 12px 16px; font-size: 11.5px; font-weight: 700; color: #64748B; text-align: left;">หมวดวิชา</th>
+                <th style="padding: 12px 16px; font-size: 11.5px; font-weight: 700; color: #64748B; text-align: left;">ชุดข้อสอบ</th>
+                <th style="padding: 12px 16px; font-size: 11.5px; font-weight: 700; color: #64748B; text-align: center;">ข้อที่ถูก</th>
+                <th style="padding: 12px 16px; font-size: 11.5px; font-weight: 700; color: #64748B; text-align: right;">ผลคะแนน / สถานะ</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+
+      attempts.forEach((att, idx) => {
+        const icon = getSubjectIcon(att.subject);
+        const isPassed = att.passed || (att.scorePct >= 60);
+        const statusBadge = isPassed
+          ? `<span class="badge" style="background: #ECFDF5; color: #059669; font-weight: 800; border: 1px solid #A7F3D0;">✅ ผ่าน (${att.scorePct}%)</span>`
+          : `<span class="badge" style="background: #FEF2F2; color: #DC2626; font-weight: 800; border: 1px solid #FECACA;">❌ ไม่ผ่าน (${att.scorePct}%)</span>`;
+
+        html += `
+          <tr style="border-bottom: 1px solid #F1F5F9;">
+            <td style="padding: 12px 16px; font-size: 12px; color: #64748B; font-weight: 600;">${idx + 1}</td>
+            <td style="padding: 12px 16px; font-size: 12.5px; color: #475569; white-space: nowrap;">
+              ${formatThaiDateTime(att.createdAt)}
+            </td>
+            <td style="padding: 12px 16px; font-size: 13px; font-weight: 700; color: #1E293B; white-space: nowrap;">
+              ${icon} ${escapeHtml(att.subject || '-')}
+            </td>
+            <td style="padding: 12px 16px; font-size: 13px; color: #334155;">
+              <div style="font-weight: 600;">${escapeHtml(att.setTitle || 'แบบทดสอบ')}</div>
+              ${att.setId ? `<div style="font-size: 11px; color: #94A3B8;">รหัสชุด: ${escapeHtml(att.setId)}</div>` : ''}
+            </td>
+            <td style="padding: 12px 16px; font-size: 13px; text-align: center; font-weight: 700; color: #0F172A; white-space: nowrap;">
+              ${att.correctCount} / ${att.totalQuestions}
+            </td>
+            <td style="padding: 12px 16px; text-align: right; white-space: nowrap;">
+              ${statusBadge}
+            </td>
+          </tr>
+        `;
+      });
+
+      html += `
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    html += `</div>`;
+
+    body.innerHTML = html;
+
+  } catch (err) {
+    console.error('Failed to load user stats:', err);
+    body.innerHTML = `<div style="text-align: center; padding: 40px; color: #EF4444; font-weight: 700;">เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์</div>`;
+  }
+};
+
+window.closeUserStatsModal = function() {
+  const modal = document.getElementById('adminUserStatsModal');
+  if (modal) {
+    modal.style.display = 'none';
+  }
+};
 
 // ==========================================
 // Exams View (Filtered by Subject & Chapter + Auto Set Numbering)

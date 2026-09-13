@@ -3968,31 +3968,59 @@ app.get('/api/admin/stats', requireAdmin, async (req, res) => {
 // --- Admin Users List ---
 app.get('/api/admin/users', requireAdmin, async (req, res) => {
   try {
-    const users = await prisma.user.findMany({
-      orderBy: { createdAt: 'desc' },
-      select: {
-        id: true,
-        username: true,
-        fullName: true,
-        email: true,
-        role: true,
-        level: true,
-        xp: true,
-        points: true,
-        streak: true,
-        premiumUntil: true,
-        createdAt: true,
-        stageProgress: {
-          where: { completed: true }
+    const [users, quizStats] = await Promise.all([
+      prisma.user.findMany({
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          username: true,
+          fullName: true,
+          email: true,
+          role: true,
+          level: true,
+          xp: true,
+          points: true,
+          streak: true,
+          streakLastDate: true,
+          premiumUntil: true,
+          createdAt: true,
+          scoreGeneral: true,
+          scoreThai: true,
+          scoreEnglish: true,
+          scoreComputer: true,
+          scoreSocial: true,
+          scoreSecretariat: true,
+          scoreLaw: true,
+          stageProgress: {
+            where: { completed: true }
+          }
         }
-      }
+      }),
+      prisma.quizAttempt.groupBy({
+        by: ['userId'],
+        _count: { _all: true },
+        _avg: { scorePct: true }
+      })
+    ]);
+
+    const quizMap = new Map();
+    quizStats.forEach(item => {
+      quizMap.set(item.userId, {
+        attemptsCount: item._count._all || 0,
+        avgScorePct: Math.round(item._avg.scorePct || 0)
+      });
     });
 
     const formatted = users.map(u => {
-      const completions = u.stageProgress.filter(p => p.completed);
-      const avg = completions.length > 0 
+      const qStat = quizMap.get(u.id) || { attemptsCount: 0, avgScorePct: 0 };
+      const completions = u.stageProgress ? u.stageProgress.filter(p => p.completed) : [];
+      const stageAvg = completions.length > 0 
         ? Math.round(completions.reduce((s, p) => s + p.score, 0) / completions.length) 
         : 0;
+
+      const totalQuizCount = qStat.attemptsCount;
+      const finalAvgScore = totalQuizCount > 0 ? qStat.avgScorePct : stageAvg;
+
       return {
         id: u.id,
         username: u.username,
@@ -4003,8 +4031,10 @@ app.get('/api/admin/users', requireAdmin, async (req, res) => {
         xp: u.xp,
         points: u.points,
         streak: u.streak,
+        streakLastDate: u.streakLastDate,
+        quizCount: totalQuizCount,
         completionsCount: completions.length,
-        avgScore: avg,
+        avgScore: finalAvgScore,
         createdAt: u.createdAt
       };
     });
@@ -4013,6 +4043,154 @@ app.get('/api/admin/users', requireAdmin, async (req, res) => {
   } catch (err) {
     console.error('Admin Users Error:', err);
     res.status(500).json({ error: 'ไม่สามารถดึงรายชื่อผู้ใช้ได้' });
+  }
+});
+
+// --- Admin User Detailed Statistics ---
+app.get('/api/admin/users/:id/stats', requireAdmin, async (req, res) => {
+  try {
+    const userId = parseInt(req.params.id);
+    if (isNaN(userId)) {
+      return res.status(400).json({ error: 'รหัสผู้ใช้ไม่ถูกต้อง' });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        username: true,
+        fullName: true,
+        email: true,
+        role: true,
+        level: true,
+        points: true,
+        xp: true,
+        streak: true,
+        streakLastDate: true,
+        createdAt: true,
+        scoreGeneral: true,
+        scoreThai: true,
+        scoreEnglish: true,
+        scoreComputer: true,
+        scoreSocial: true,
+        scoreSecretariat: true,
+        scoreLaw: true
+      }
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'ไม่พบผู้ใช้ในระบบ' });
+    }
+
+    // Fetch all quiz attempts for this user (most recent first)
+    const attempts = await prisma.quizAttempt.findMany({
+      where: { userId: userId },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    // Calculate aggregated overall stats
+    const totalAttempts = attempts.length;
+    let passedCount = 0;
+    let totalScoreSum = 0;
+    let highestScore = 0;
+
+    // Standard 8 subjects baseline
+    const standardSubjects = [
+      { key: 'ความสามารถทั่วไป', alias: ['ทั่วไป'], name: 'ความสามารถทั่วไป (คณิตศาสตร์)', userScore: user.scoreGeneral || 0 },
+      { key: 'ภาษาไทย', alias: ['ไทย'], name: 'ภาษาไทย', userScore: user.scoreThai || 0 },
+      { key: 'ภาษาอังกฤษ', alias: ['อังกฤษ'], name: 'ภาษาอังกฤษ', userScore: user.scoreEnglish || 0 },
+      { key: 'คอม', alias: ['คอมพิวเตอร์', 'เทคโนโลยีสารสนเทศ'], name: 'เทคโนโลยีสารสนเทศ (คอมพิวเตอร์)', userScore: user.scoreComputer || 0 },
+      { key: 'สังคม', alias: ['สังคม วัฒนธรรม และอาเซียน'], name: 'สังคม วัฒนธรรม และอาเซียน', userScore: user.scoreSocial || 0 },
+      { key: 'งานสารบรรณ', alias: ['ระเบียบงานสารบรรณ'], name: 'ระเบียบงานสารบรรณ (๒๕๒๖)', userScore: user.scoreSecretariat || 0 },
+      { key: 'ลักษณะที่54', alias: ['ลักษณะ ๕๔', 'สารบรรณตำรวจ'], name: 'สารบรรณตำรวจ (ลักษณะ ๕๔)', userScore: 0 },
+      { key: 'กฏหมาย', alias: ['กฎหมาย', 'กฎหมายที่ควรรู้'], name: 'กฎหมายที่ควรรู้', userScore: user.scoreLaw || 0 }
+    ];
+
+    const subjectStatsMap = {};
+    standardSubjects.forEach(s => {
+      subjectStatsMap[s.key] = {
+        key: s.key,
+        name: s.name,
+        attemptsCount: 0,
+        scoreSum: 0,
+        avgScore: 0,
+        maxScore: 0,
+        passedCount: 0,
+        userScore: s.userScore
+      };
+    });
+
+    attempts.forEach(att => {
+      const score = att.scorePct || 0;
+      totalScoreSum += score;
+      if (score >= 60) passedCount++;
+      if (score > highestScore) highestScore = score;
+
+      let matchedKey = null;
+      for (const s of standardSubjects) {
+        if (att.subject === s.key || (s.alias && s.alias.some(a => att.subject && att.subject.includes(a)))) {
+          matchedKey = s.key;
+          break;
+        }
+      }
+
+      if (!matchedKey) {
+        matchedKey = att.subject || 'อื่นๆ';
+        if (!subjectStatsMap[matchedKey]) {
+          subjectStatsMap[matchedKey] = {
+            key: matchedKey,
+            name: matchedKey,
+            attemptsCount: 0,
+            scoreSum: 0,
+            avgScore: 0,
+            maxScore: 0,
+            passedCount: 0,
+            userScore: 0
+          };
+        }
+      }
+
+      const st = subjectStatsMap[matchedKey];
+      st.attemptsCount += 1;
+      st.scoreSum += score;
+      if (score > st.maxScore) st.maxScore = score;
+      if (score >= 60) st.passedCount += 1;
+    });
+
+    Object.keys(subjectStatsMap).forEach(k => {
+      const st = subjectStatsMap[k];
+      st.avgScore = st.attemptsCount > 0 ? Math.round(st.scoreSum / st.attemptsCount) : st.userScore;
+    });
+
+    const avgScore = totalAttempts > 0 ? Math.round(totalScoreSum / totalAttempts) : 0;
+    const passRate = totalAttempts > 0 ? Math.round((passedCount / totalAttempts) * 100) : 0;
+
+    res.json({
+      user,
+      summary: {
+        totalAttempts,
+        passedCount,
+        failedCount: totalAttempts - passedCount,
+        passRate,
+        avgScore,
+        highestScore
+      },
+      subjectStats: Object.values(subjectStatsMap),
+      attempts: attempts.map(a => ({
+        id: a.id,
+        subject: a.subject,
+        setId: a.setId,
+        setTitle: a.setTitle || 'แบบทดสอบ',
+        scorePct: a.scorePct,
+        correctCount: a.correctCount,
+        totalQuestions: a.totalQuestions,
+        passed: (a.scorePct || 0) >= 60,
+        createdAt: a.createdAt
+      }))
+    });
+  } catch (err) {
+    console.error('Admin User Stats Error:', err);
+    res.status(500).json({ error: 'ไม่สามารถดึงสถิติของผู้ใช้ได้' });
   }
 });
 

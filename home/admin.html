@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Dashboard - POLICEEXAM</title>
   <link rel="stylesheet" href="css/admin.css">
-  <script src="js/admin.js?v=36" defer></script>
+  <script src="js/admin.js?v=37" defer></script>
 </head>
 <body>
 
@@ -90,23 +90,52 @@
       <!-- Users View -->
       <div id="viewUsers" class="tab-view">
         <div class="table-container">
-          <div class="table-header-row">
-            <div class="table-title">Manage Users</div>
+          <div class="table-header-row" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; padding: 18px 24px; border-bottom: 1.5px solid #E2E8F0;">
+            <div>
+              <div class="table-title" style="font-size: 18px; font-weight: 800; color: #0F172A; display: flex; align-items: center; gap: 8px;">
+                <span>👥 สมาชิกและสถิติการใช้งาน (Manage Users & Stats)</span>
+                <span id="usersTotalCountBadge" style="background: #EEF2F6; color: #475569; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px;">0 คน</span>
+              </div>
+              <p style="margin: 4px 0 0 0; font-size: 13px; color: #64748B;">ตรวจสอบข้อมูลสมาชิก สถิติการทำข้อสอบ คะแนนเฉลี่ย และคลิกดูผลทดสอบรายวิชาแบบละเอียด</p>
+            </div>
           </div>
-          <table>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Username</th>
-                <th>Points</th>
-                <th>Role</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody id="usersTableBody">
-              <!-- Users populated via JS -->
-            </tbody>
-          </table>
+
+          <!-- Search & Filter Controls -->
+          <div style="background: #F8FAFC; border-bottom: 1.5px solid #E2E8F0; padding: 14px 24px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
+            <div style="flex: 1.5; min-width: 220px;">
+              <input type="text" id="userSearchInput" oninput="onUserSearchInput()" placeholder="🔍 ค้นหาชื่อผู้ใช้ (Username), ชื่อจริง หรือ อีเมล..." style="width: 100%; box-sizing: border-box; padding: 9px 14px; border-radius: 10px; border: 1.5px solid #CBD5E1; font-size: 13px; font-family: inherit; outline: none; background: white;">
+            </div>
+            <div style="min-width: 180px;">
+              <select id="userFilterExamStatus" onchange="onUserFilterStatusChange()" style="width: 100%; padding: 9px 12px; border-radius: 10px; border: 1.5px solid #CBD5E1; font-size: 13px; font-family: inherit; font-weight: 600; background: white; outline: none;">
+                <option value="ALL">ผู้ใช้ทั้งหมด (All Users)</option>
+                <option value="HAS_EXAMS">ทำข้อสอบแล้ว (มีสถิติ)</option>
+                <option value="NO_EXAMS">ยังไม่เคยทำข้อสอบ</option>
+                <option value="ADMIN_ONLY">เฉพาะผู้ดูแล (Admin / Owner)</option>
+              </select>
+            </div>
+            <div id="userFilterStatsSummary" style="font-size: 12.5px; font-weight: 600; color: #64748B; margin-left: auto;">
+              <!-- Summary text populated by JS -->
+            </div>
+          </div>
+
+          <div style="overflow-x: auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width: 60px;">ID</th>
+                  <th>ผู้ใช้งาน (User)</th>
+                  <th style="text-align: center;">ทำข้อสอบแล้ว</th>
+                  <th style="text-align: center;">คะแนนเฉลี่ย</th>
+                  <th style="text-align: center;">Streak</th>
+                  <th style="text-align: center;">สิทธิ์ (Role)</th>
+                  <th style="text-align: right;">การจัดการ & สถิติ</th>
+                </tr>
+              </thead>
+              <tbody id="usersTableBody">
+                <!-- Users populated via JS -->
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -828,6 +857,42 @@
         <button type="button" class="btn btn-primary" onclick="saveSingleQuestionEdit()" id="btnSaveSingleQuestion" style="background: #BD1B0B; border: none; padding: 10px 22px; border-radius: 12px; font-weight: 800; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(189,27,11,0.25);">
           <span>💾 บันทึกการแก้ไขข้อนี้</span>
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- User Statistics Modal (ดูสถิติผู้ใช้รายบุคคลแบบเจาะลึก 8 วิชา + ประวัติการทำข้อสอบ) -->
+  <div class="modal-overlay" id="adminUserStatsModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(8px); z-index: 10020; align-items: center; justify-content: center; padding: 16px;">
+    <div class="modal-card" style="background: white; max-width: 900px; width: 100%; max-height: 94vh; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); display: flex; flex-direction: column; overflow: hidden;">
+      <!-- Modal Header -->
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 18px 24px; border-bottom: 1.5px solid #E2E8F0; background: #F8FAFC;">
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <div id="modalUserAvatar" style="width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #BD1B0B, #E11D48); color: white; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800; box-shadow: 0 4px 12px rgba(189,27,11,0.25);">
+            U
+          </div>
+          <div>
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <h3 style="font-size: 18px; font-weight: 800; color: #0F172A; margin: 0;" id="modalUserFullName">ชื่อผู้ใช้งาน</h3>
+              <span id="modalUserRoleBadge" class="badge badge-user">USER</span>
+              <span id="modalUserIdBadge" style="background: #E2E8F0; color: #475569; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px;">ID: -</span>
+            </div>
+            <p style="font-size: 12.5px; color: #64748B; margin: 2px 0 0 0;" id="modalUserMetaInfo">@username • สมัครเมื่อ: -</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeUserStatsModal()" style="background: #E2E8F0; border: none; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 15px; cursor: pointer; color: #475569; transition: background 0.2s;">✕</button>
+      </div>
+
+      <!-- Modal Body (Scrollable) -->
+      <div id="modalUserStatsBody" style="padding: 24px; overflow-y: auto; flex: 1; background: #FAFAFA;">
+        <div style="text-align: center; padding: 40px; color: #64748B;">กำลังโหลดสถิติ...</div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 24px; border-top: 1.5px solid #E2E8F0; background: white;">
+        <div style="font-size: 12.5px; color: #64748B;">
+          💡 สถิติอิงตามประวัติการทำข้อสอบจริงในระบบ
+        </div>
+        <button type="button" class="btn btn-outline" onclick="closeUserStatsModal()" style="padding: 9px 22px; border-radius: 12px; font-weight: 700;">ปิดหน้าต่าง</button>
       </div>
     </div>
   </div>
