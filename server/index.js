@@ -10397,7 +10397,7 @@ app.post('/api/admin/reports/:id/ai-audit', requireAdmin, async (req, res) => {
     const studentReasonType = reasonData.reasonType || 'เฉลยคำตอบผิด';
     const studentDetails = reasonData.details || '';
 
-    const auditPrompt = `คุณคือคณะกรรมการตรวจสอบและระงับข้อพิพาทข้อสอบตำรวจและข้อสอบราชการ (Police Exam Report Auditor)
+    const auditPrompt = `คุณคือประธานคณะกรรมการตรวจสอบ วินิจฉัย และซ่อมแซมข้อสอบตำรวจและข้อสอบราชการ (Police Exam Quality & Dispute Resolver)
 วิชา: "${subject}" (หมวดหมู่: "${chapter}")
 
 มีผู้เข้าสอบส่งรายงานแจ้งข้อสอบข้อนี้ผิดพลาด กรุณาตรวจสอบและตัดสินอย่างเป็นธรรมและแม่นยำตามหลักกฎหมายและวิชาการ:
@@ -10415,27 +10415,52 @@ app.post('/api/admin/reports/:id/ai-audit', requireAdmin, async (req, res) => {
 - หัวข้อที่แจ้ง: "${studentReasonType}"
 - ข้อความ/เฉลยที่ผู้สอบพิมพ์ทักท้วง: "${studentDetails || '(ไม่ได้พิมพ์รายละเอียดเพิ่มเติม)'}"
 
-🎯 สิ่งที่คุณต้องวิเคราะห์และตอบกลับ:
+🎯 สิ่งที่คุณต้องวิเคราะห์และตัดสินใจ:
 1. "verdict": เลือกระหว่าง:
    - "VALID_REPORT" (ผู้สอบรายงานถูกต้อง ข้อสอบหรือเฉลยผิดจริง)
    - "FALSE_ALARM" (ข้อสอบและเฉลยเดิมถูกต้องแล้ว ผู้สอบเข้าใจผิด)
-   - "AMBIGUOUS" (โจทย์กำกวม คลุมเครือ หรือมีคำตอบถูกมากกว่า 1 ข้อ)
-2. "verdictTitle": หัวข้อผลการวินิจฉัยสั้นๆ
-3. "analysis": วิเคราะห์ข้อเท็จจริงว่าผิดเพราะอะไร เช่น AI เลือกช้อยส์ผิด, คำอธิบายสลับข้อ, ข้อกฎหมายเปลี่ยน หรือคำอธิบายเดิมยาว/แปลกเกินไป
-4. "studentFeedbackEvaluation": ผู้สอบเสนอแนะมาว่าอย่างไร ถูกต้องหรือไม่ (หากผู้สอบพิมพ์เฉลยมาด้วย ให้ระบุว่าเฉลยของผู้สอบถูกหรือผิด)
+   - "AMBIGUOUS" (โจทย์กำกวม คลุมเครือ มีคำตอบถูกมากกว่า 1 ข้อ หรือไม่มีคำตอบที่ถูก)
+2. "verdictTitle": หัวข้อผลการวินิจฉัยสั้นๆ ชัดเจน
+3. "analysis": วิเคราะห์ข้อเท็จจริงว่าผิดเพราะอะไรอย่างละเอียด
+4. "studentFeedbackEvaluation": ประเมินข้อความที่ผู้สอบทักท้วง
 5. "suggestedCorrectAnswer": ตัวเลขตัวเลือกที่ถูกต้องแท้จริง (1, 2, 3 หรือ 4)
-6. "suggestedExplanation": เขียนคำอธิบายเฉลยใหม่ที่ถูกต้อง 100% กระชับ ชัดเจน อ้างอิงมาตรา/หลักเกณฑ์ตรงประเด็น (ความยาวประมาณ 2-3 ประโยค)
+6. "suggestedExplanation": คำอธิบายเฉลยใหม่ที่ถูกต้อง 100% กระชับ ชัดเจน อ้างอิงมาตรา/หลักวิชาการ
 7. "confidenceScore": ความมั่นใจในการตัดสิน (0-100)
+
+🛠️ "repairProposal" - อำนาจเต็มในการซ่อมแซมข้อสอบ (Crucial Repair Proposal):
+คุณมีหน้าที่ส่ง "ร่างการซ่อมแซมข้อสอบที่พร้อมใช้งานจริง 100%" กลับมา เพื่อให้ผู้ดูแลระบบกดอนุมัติเพียงคลิกเดียว:
+- กฎสำคัญ: หากโจทย์ถามหาข้อผิด (เช่น "ข้อใดสะกดผิด" หรือ "ข้อใดกล่าวไม่ถูกต้อง") แต่ตัวเลือกทุกข้อถูกหมด (ไม่มีข้อผิด):
+  -> ห้ามตอบแค่ตัวเลขเฉลยลอยๆ
+  -> ต้องตั้ง "action": "FIX_CHOICES"
+  -> คุณต้องจงใจแก้ไขตัวเลือกข้อใดข้อหนึ่ง (เช่น ข้อที่ตั้งใจให้เป็นเฉลย) ให้มีคำสะกดผิดจริงตามหลักภาษาไทย หรือให้มีข้อความที่ไม่ถูกต้องจริงตามหลักวิชาการ เพื่อให้ข้อสอบมีคำตอบที่ถูกต้องชัดเจนเพียงข้อเดียว!
+- หากตัวเลือกถูกต้องดีอยู่แล้วแต่ระบบเฉลยผิดข้อ:
+  -> ตั้ง "action": "FIX_ANSWER" (คงตัวเลือกเดิมไว้ และปรับเลขเฉลยกับคำอธิบาย)
+- หากโจทย์พิการ กำกวม หรือคำถามผิดพลาดจนซ่อมตัวเลือกไม่ได้:
+  -> ตั้ง "action": "REPLACE_QUESTION" (แต่งโจทย์และตัวเลือก ก-ง ใหม่ทั้งหมดในหัวข้อเดิม)
+- หากข้อสอบถูกต้องสมบูรณ์อยู่แล้ว (FALSE_ALARM):
+  -> ตั้ง "action": "KEEP_ORIGINAL"
 
 ตอบกลับเฉพาะ JSON เท่านั้น:
 {
   "verdict": "VALID_REPORT",
-  "verdictTitle": "รายงานถูกต้อง - เฉลยข้อสอบผิดจริง",
+  "verdictTitle": "รายงานถูกต้อง - ตัวเลือกไม่มีคำสะกดผิด โจทย์ข้อสอบมีปัญหา",
   "analysis": "...",
   "studentFeedbackEvaluation": "...",
   "suggestedCorrectAnswer": 2,
   "suggestedExplanation": "...",
-  "confidenceScore": 98
+  "confidenceScore": 98,
+  "repairProposal": {
+    "action": "FIX_CHOICES",
+    "actionTitle": "ซ่อมคำในตัวเลือก ข. ให้สะกดผิดจริงตามโจทย์",
+    "highlightChanges": "แก้ไขตัวเลือก ข. โดยเปลี่ยนคำว่า 'ต่างประเทศ' เป็น 'ต่างประเทส' (หรือคำสะกดผิดอื่นที่พบบ่อย) เพื่อให้ตรงตามเฉลยและโจทย์อย่างสมบูรณ์",
+    "repairedQuestionText": "ข้อใดมีคำที่เขียนสะกดผิด?",
+    "repairedChoice1": "ข้อความ ก...",
+    "repairedChoice2": "ข้อความ ข (ที่ซ่อมคำผิดแล้ว)...",
+    "repairedChoice3": "ข้อความ ค...",
+    "repairedChoice4": "ข้อความ ง...",
+    "repairedCorrectAnswer": 2,
+    "repairedExplanation": "เฉลยข้อ ข. เนื่องจาก '...' เขียนสะกดผิด ที่ถูกต้องคือ '...' ส่วนตัวเลือกอื่นสะกดถูกต้องทั้งหมด"
+  }
 }`;
 
     let aiAudit = null;
@@ -10455,7 +10480,19 @@ app.post('/api/admin/reports/:id/ai-audit', requireAdmin, async (req, res) => {
           studentFeedbackEvaluation: studentDetails ? `ผู้สอบระบุ: "${studentDetails}"` : 'ผู้สอบแจ้งข้อผิดพลาดถูกต้อง',
           suggestedCorrectAnswer: ruleConflict.detectedAnswer,
           suggestedExplanation: explanation,
-          confidenceScore: 90
+          confidenceScore: 90,
+          repairProposal: {
+            action: 'FIX_ANSWER',
+            actionTitle: 'ปรับปรุงเฉลยให้ตรงกับคำอธิบาย',
+            highlightChanges: `เปลี่ยนเฉลยจากข้อ ${currentAnswer} เป็นข้อ ${ruleConflict.detectedAnswer}`,
+            repairedQuestionText: questionText,
+            repairedChoice1: choice1,
+            repairedChoice2: choice2,
+            repairedChoice3: choice3,
+            repairedChoice4: choice4,
+            repairedCorrectAnswer: ruleConflict.detectedAnswer,
+            repairedExplanation: explanation
+          }
         };
       } else {
         aiAudit = {
@@ -10465,9 +10502,56 @@ app.post('/api/admin/reports/:id/ai-audit', requireAdmin, async (req, res) => {
           studentFeedbackEvaluation: studentDetails,
           suggestedCorrectAnswer: currentAnswer,
           suggestedExplanation: explanation,
-          confidenceScore: 50
+          confidenceScore: 50,
+          repairProposal: {
+            action: 'KEEP_ORIGINAL',
+            actionTitle: 'คงสถานะเดิม',
+            highlightChanges: 'ไม่มีการเปลี่ยนแปลง',
+            repairedQuestionText: questionText,
+            repairedChoice1: choice1,
+            repairedChoice2: choice2,
+            repairedChoice3: choice3,
+            repairedChoice4: choice4,
+            repairedCorrectAnswer: currentAnswer,
+            repairedExplanation: explanation
+          }
         };
       }
+    }
+
+    // Normalize and ensure repairProposal is fully formed
+    if (!aiAudit.repairProposal || typeof aiAudit.repairProposal !== 'object') {
+      const hasChange = aiAudit.suggestedCorrectAnswer && aiAudit.suggestedCorrectAnswer !== currentAnswer;
+      aiAudit.repairProposal = {
+        action: hasChange ? 'FIX_ANSWER' : 'KEEP_ORIGINAL',
+        actionTitle: hasChange ? 'ปรับปรุงเฉลยให้ถูกต้อง' : 'คงสถานะเดิม',
+        highlightChanges: hasChange ? `เปลี่ยนเฉลยจากข้อ ${currentAnswer} เป็นข้อ ${aiAudit.suggestedCorrectAnswer}` : 'ไม่มีการเปลี่ยนแปลงตัวเลือก',
+        repairedQuestionText: questionText,
+        repairedChoice1: choice1,
+        repairedChoice2: choice2,
+        repairedChoice3: choice3,
+        repairedChoice4: choice4,
+        repairedCorrectAnswer: aiAudit.suggestedCorrectAnswer || currentAnswer,
+        repairedExplanation: aiAudit.suggestedExplanation || explanation
+      };
+    } else {
+      const rp = aiAudit.repairProposal;
+      if (Array.isArray(rp.repairedChoices)) {
+        if (!rp.repairedChoice1) rp.repairedChoice1 = rp.repairedChoices[0];
+        if (!rp.repairedChoice2) rp.repairedChoice2 = rp.repairedChoices[1];
+        if (!rp.repairedChoice3) rp.repairedChoice3 = rp.repairedChoices[2];
+        if (!rp.repairedChoice4) rp.repairedChoice4 = rp.repairedChoices[3];
+      }
+      rp.repairedQuestionText = rp.repairedQuestionText || questionText;
+      rp.repairedChoice1 = rp.repairedChoice1 || choice1;
+      rp.repairedChoice2 = rp.repairedChoice2 || choice2;
+      rp.repairedChoice3 = rp.repairedChoice3 || choice3;
+      rp.repairedChoice4 = rp.repairedChoice4 || choice4;
+      rp.repairedCorrectAnswer = parseInt(rp.repairedCorrectAnswer || aiAudit.suggestedCorrectAnswer || currentAnswer) || 1;
+      rp.repairedExplanation = rp.repairedExplanation || aiAudit.suggestedExplanation || explanation;
+      rp.action = rp.action || 'FIX_ANSWER';
+      rp.actionTitle = rp.actionTitle || 'ข้อเสนอการซ่อมแซมจาก AI';
+      rp.highlightChanges = rp.highlightChanges || '';
     }
 
     res.json({
@@ -10503,17 +10587,36 @@ app.post('/api/admin/reports/:id/ai-apply-fix', requireAdmin, async (req, res) =
     const reportId = parseInt(req.params.id);
     if (isNaN(reportId)) return res.status(400).json({ error: 'รหัสรายงานไม่ถูกต้อง' });
 
+    const report = await prisma.reportedQuestion.findUnique({
+      where: { id: reportId }
+    });
+
     const { questionId, questionText, choice1, choice2, choice3, choice4, correctAnswer, explanation, auditNote } = req.body;
 
     let updatedDbQuestion = false;
-    const numQId = parseInt(questionId);
-    if (!isNaN(numQId) && numQId > 0) {
+    let targetQId = parseInt(questionId);
+    if ((isNaN(targetQId) || targetQId <= 0) && report) {
+      targetQId = parseInt(report.questionId);
+    }
+
+    if (isNaN(targetQId) || targetQId <= 0) {
+      // Try searching question by text snippet
+      const snippet = (questionText || (report && report.questionText) || '').trim().substring(0, 40);
+      if (snippet) {
+        const found = await prisma.question.findFirst({
+          where: { questionText: { contains: snippet } }
+        });
+        if (found) targetQId = found.id;
+      }
+    }
+
+    if (!isNaN(targetQId) && targetQId > 0) {
       const nowStr = new Date().toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' });
-      const historyTag = `\n\n[📝 ปรับปรุงเฉลยโดยระบบ AI เมื่อ ${nowStr} ตามรายงานผู้เข้าสอบ: ${auditNote || 'แก้ไขข้อถูกและปรับคำอธิบาย'}]`;
+      const historyTag = `\n\n[📝 ซ่อมแซมและปรับปรุงโดย AI เมื่อ ${nowStr}: ${auditNote || 'แก้ไขตัวเลือก/เฉลยตามผลการตรวจทาน'}]`;
       const finalExplanation = ((explanation || '').trim()) + historyTag;
 
       await prisma.question.update({
-        where: { id: numQId },
+        where: { id: targetQId },
         data: {
           questionText: questionText !== undefined ? questionText : undefined,
           choice1: choice1 !== undefined ? choice1 : undefined,
@@ -10535,7 +10638,7 @@ app.post('/api/admin/reports/:id/ai-apply-fix', requireAdmin, async (req, res) =
     res.json({
       success: true,
       updatedDbQuestion,
-      message: 'ปรับปรุงข้อสอบและบันทึกประวัติสำเร็จ พร้อมปิดรายงานเรียบร้อยแล้ว'
+      message: 'ซ่อมแซมข้อสอบและบันทึกประวัติสำเร็จ พร้อมปิดรายงานเรียบร้อยแล้ว'
     });
 
   } catch (err) {

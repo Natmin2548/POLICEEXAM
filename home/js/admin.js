@@ -3881,7 +3881,43 @@ window.openReportAiAuditModal = async function(reportId) {
 
     const thaiChoices = ['', 'ก', 'ข', 'ค', 'ง'];
     const currentAnsChar = thaiChoices[q.correctAnswer] || q.correctAnswer;
-    const suggestedAnsChar = thaiChoices[audit.suggestedCorrectAnswer] || audit.suggestedCorrectAnswer;
+    const rp = audit.repairProposal || {
+      action: audit.suggestedCorrectAnswer && audit.suggestedCorrectAnswer !== q.correctAnswer ? 'FIX_ANSWER' : 'KEEP_ORIGINAL',
+      actionTitle: 'ปรับปรุงเฉลยให้ถูกต้อง',
+      highlightChanges: audit.suggestedCorrectAnswer && audit.suggestedCorrectAnswer !== q.correctAnswer ? `เปลี่ยนเฉลยเป็นข้อ ${thaiChoices[audit.suggestedCorrectAnswer] || audit.suggestedCorrectAnswer}` : '',
+      repairedQuestionText: q.questionText,
+      repairedChoice1: q.choice1,
+      repairedChoice2: q.choice2,
+      repairedChoice3: q.choice3,
+      repairedChoice4: q.choice4,
+      repairedCorrectAnswer: audit.suggestedCorrectAnswer || q.correctAnswer,
+      repairedExplanation: audit.suggestedExplanation || q.explanation
+    };
+
+    const repairedAnsChar = thaiChoices[rp.repairedCorrectAnswer] || rp.repairedCorrectAnswer;
+    const isChoice1Changed = (rp.repairedChoice1 || '').trim() !== (q.choice1 || '').trim();
+    const isChoice2Changed = (rp.repairedChoice2 || '').trim() !== (q.choice2 || '').trim();
+    const isChoice3Changed = (rp.repairedChoice3 || '').trim() !== (q.choice3 || '').trim();
+    const isChoice4Changed = (rp.repairedChoice4 || '').trim() !== (q.choice4 || '').trim();
+    const isQuestionChanged = (rp.repairedQuestionText || '').trim() !== (q.questionText || '').trim();
+    const hasAnyChoiceRepair = isChoice1Changed || isChoice2Changed || isChoice3Changed || isChoice4Changed || isQuestionChanged;
+
+    let actionBadgeColor = '#2563EB';
+    let actionBadgeBg = '#EFF6FF';
+    let actionBadgeText = '⚖️ ปรับแก้เฉลยและคำอธิบาย';
+    if (rp.action === 'FIX_CHOICES') {
+      actionBadgeColor = '#059669';
+      actionBadgeBg = '#ECFDF5';
+      actionBadgeText = '🛠️ ซ่อมคำในตัวเลือกให้มีข้อผิดจริงตามโจทย์';
+    } else if (rp.action === 'REPLACE_QUESTION') {
+      actionBadgeColor = '#7C3AED';
+      actionBadgeBg = '#F5F3FF';
+      actionBadgeText = '🔄 สร้างข้อสอบใหม่ทดแทนทั้งข้อ';
+    } else if (rp.action === 'KEEP_ORIGINAL') {
+      actionBadgeColor = '#475569';
+      actionBadgeBg = '#F1F5F9';
+      actionBadgeText = '🛡️ ข้อสอบเดิมถูกต้องแล้ว';
+    }
 
     body.innerHTML = `
       <!-- 1. รายงานของผู้เข้าสอบ -->
@@ -3901,75 +3937,103 @@ window.openReportAiAuditModal = async function(reportId) {
 
       <!-- 2. AI Verdict & Analysis Box -->
       <div style="background: ${audit.verdict === 'VALID_REPORT' ? '#FFF1F2' : audit.verdict === 'FALSE_ALARM' ? '#F0FDF4' : '#FFFBEB'}; border: 1.5px solid ${audit.verdict === 'VALID_REPORT' ? '#FECACA' : audit.verdict === 'FALSE_ALARM' ? '#BBF7D0' : '#FDE68A'}; border-radius: 16px; padding: 18px; margin-bottom: 18px;">
-        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
-          <span style="font-size: 22px;">${audit.verdict === 'VALID_REPORT' ? '🎯' : audit.verdict === 'FALSE_ALARM' ? '🛡️' : '⚖️'}</span>
-          <div>
-            <div style="font-weight: 900; font-size: 15px; color: ${audit.verdict === 'VALID_REPORT' ? '#991B1B' : audit.verdict === 'FALSE_ALARM' ? '#166534' : '#92400E'};">
-              ${escapeHTML(audit.verdictTitle || 'ผลการวินิจฉัย')}
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 22px;">${audit.verdict === 'VALID_REPORT' ? '🎯' : audit.verdict === 'FALSE_ALARM' ? '🛡️' : '⚖️'}</span>
+            <div>
+              <div style="font-weight: 900; font-size: 15px; color: ${audit.verdict === 'VALID_REPORT' ? '#991B1B' : audit.verdict === 'FALSE_ALARM' ? '#166534' : '#92400E'};">
+                ${escapeHTML(audit.verdictTitle || 'ผลการวินิจฉัย')}
+              </div>
+              <div style="font-size: 11.5px; color: #64748B;">ความมั่นใจของ AI: ${audit.confidenceScore || 95}%</div>
             </div>
-            <div style="font-size: 11.5px; color: #64748B;">ความมั่นใจของ AI: ${audit.confidenceScore || 95}%</div>
           </div>
+          <span style="font-size: 11.5px; font-weight: 800; padding: 4px 10px; border-radius: 999px; background: ${actionBadgeBg}; color: ${actionBadgeColor}; border: 1px solid ${actionBadgeColor}33;">
+            ${actionBadgeText}
+          </span>
         </div>
 
-        <div style="font-size: 13px; color: #1E293B; line-height: 1.5; margin-bottom: 12px;">
+        <div style="font-size: 13px; color: #1E293B; line-height: 1.5; margin-bottom: 10px;">
           <strong>บทวิเคราะห์:</strong> ${escapeHTML(audit.analysis || '')}
         </div>
 
         ${audit.studentFeedbackEvaluation ? `
-          <div style="font-size: 12.5px; color: #475569; background: rgba(255,255,255,0.7); padding: 8px 12px; border-radius: 10px;">
+          <div style="font-size: 12.5px; color: #475569; background: rgba(255,255,255,0.7); padding: 8px 12px; border-radius: 10px; margin-bottom: 8px;">
             <strong>ประเมินความเห็นนักเรียน:</strong> ${escapeHTML(audit.studentFeedbackEvaluation)}
+          </div>
+        ` : ''}
+
+        ${rp.highlightChanges ? `
+          <div style="font-size: 12.5px; color: #065F46; background: #ECFDF5; border: 1px solid #A7F3D0; padding: 8px 12px; border-radius: 10px; font-weight: 600;">
+            💡 <strong>การซ่อมแซมโดย AI:</strong> ${escapeHTML(rp.highlightChanges)}
           </div>
         ` : ''}
       </div>
 
-      <!-- 3. เปรียบเทียบข้อสอบปัจจุบัน vs เฉลยที่ถูกต้องที่ AI แนะนำ -->
-      <div style="background: white; border: 1.5px solid #E2E8F0; border-radius: 16px; padding: 18px; margin-bottom: 16px;">
-        <div style="font-size: 13.5px; font-weight: 800; color: #0F172A; margin-bottom: 10px;">
-          โจทย์: ${escapeHTML(q.questionText)}
+      <!-- 3. เปรียบเทียบข้อสอบเดิม vs ข้อสอบฉบับซ่อมแซมสมบูรณ์โดย AI -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px;">
+        <!-- ข้อสอบเดิม -->
+        <div style="background: white; border: 1.5px solid #E2E8F0; border-radius: 16px; padding: 16px; display: flex; flex-direction: column;">
+          <div style="font-size: 12px; font-weight: 800; color: #64748B; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+            <span>📄 ข้อสอบเดิมในระบบ</span>
+            <span style="color: #DC2626; font-weight: 900;">เฉลยเดิม: ข้อ ${currentAnsChar} (${q.correctAnswer})</span>
+          </div>
+          <div style="font-size: 13px; font-weight: 700; color: #1E293B; margin-bottom: 12px; min-height: 38px;">
+            โจทย์: ${escapeHTML(q.questionText)}
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; flex: 1;">
+            <div style="padding: 7px 10px; border-radius: 8px; font-size: 12px; ${q.correctAnswer === 1 ? 'background: #FEE2E2; border: 1px solid #FCA5A5; font-weight: 700; color: #991B1B;' : 'background: #F8FAFC; border: 1px solid #E2E8F0; color: #475569;'}">
+              ก. ${escapeHTML(q.choice1)} ${q.correctAnswer === 1 ? ' (เฉลยเดิม)' : ''}
+            </div>
+            <div style="padding: 7px 10px; border-radius: 8px; font-size: 12px; ${q.correctAnswer === 2 ? 'background: #FEE2E2; border: 1px solid #FCA5A5; font-weight: 700; color: #991B1B;' : 'background: #F8FAFC; border: 1px solid #E2E8F0; color: #475569;'}">
+              ข. ${escapeHTML(q.choice2)} ${q.correctAnswer === 2 ? ' (เฉลยเดิม)' : ''}
+            </div>
+            <div style="padding: 7px 10px; border-radius: 8px; font-size: 12px; ${q.correctAnswer === 3 ? 'background: #FEE2E2; border: 1px solid #FCA5A5; font-weight: 700; color: #991B1B;' : 'background: #F8FAFC; border: 1px solid #E2E8F0; color: #475569;'}">
+              ค. ${escapeHTML(q.choice3)} ${q.correctAnswer === 3 ? ' (เฉลยเดิม)' : ''}
+            </div>
+            <div style="padding: 7px 10px; border-radius: 8px; font-size: 12px; ${q.correctAnswer === 4 ? 'background: #FEE2E2; border: 1px solid #FCA5A5; font-weight: 700; color: #991B1B;' : 'background: #F8FAFC; border: 1px solid #E2E8F0; color: #475569;'}">
+              ง. ${escapeHTML(q.choice4)} ${q.correctAnswer === 4 ? ' (เฉลยเดิม)' : ''}
+            </div>
+          </div>
+          <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 10px; font-size: 11.5px; color: #64748B;">
+            <strong>คำอธิบายเดิม:</strong> ${escapeHTML(q.explanation || 'ไม่มีคำอธิบายเดิม')}
+          </div>
         </div>
 
-        <!-- ตัวเลือก 1-4 -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px;">
-          <div style="padding: 8px 12px; border-radius: 10px; font-size: 12.5px; ${q.correctAnswer === 1 ? 'background: #F1F5F9; border: 1.5px solid #CBD5E1; font-weight: 700;' : 'background: #F8FAFC; border: 1px solid #E2E8F0;'} ${audit.suggestedCorrectAnswer === 1 ? 'border: 2px solid #059669; background: #ECFDF5; color: #059669; font-weight: 800;' : ''}">
-            ก. ${escapeHTML(q.choice1)} ${audit.suggestedCorrectAnswer === 1 ? '✨ (AI แนะนำ)' : ''}
+        <!-- ข้อสอบฉบับซ่อมแซมสมบูรณ์โดย AI -->
+        <div style="background: #F0FDF4; border: 2px solid #34D399; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; box-shadow: 0 4px 14px rgba(5,150,105,0.1);">
+          <div style="font-size: 12px; font-weight: 800; color: #059669; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+            <span>✨ ฉบับที่ AI ซ่อมแซมสมบูรณ์</span>
+            <span style="color: #059669; font-weight: 900; background: #D1FAE5; padding: 2px 8px; border-radius: 6px;">เฉลยใหม่: ข้อ ${repairedAnsChar} (${rp.repairedCorrectAnswer})</span>
           </div>
-          <div style="padding: 8px 12px; border-radius: 10px; font-size: 12.5px; ${q.correctAnswer === 2 ? 'background: #F1F5F9; border: 1.5px solid #CBD5E1; font-weight: 700;' : 'background: #F8FAFC; border: 1px solid #E2E8F0;'} ${audit.suggestedCorrectAnswer === 2 ? 'border: 2px solid #059669; background: #ECFDF5; color: #059669; font-weight: 800;' : ''}">
-            ข. ${escapeHTML(q.choice2)} ${audit.suggestedCorrectAnswer === 2 ? '✨ (AI แนะนำ)' : ''}
+          <div style="font-size: 13px; font-weight: 800; color: #064E3B; margin-bottom: 12px; min-height: 38px;">
+            โจทย์: ${escapeHTML(rp.repairedQuestionText)} ${isQuestionChanged ? '<span style="font-size: 10.5px; background: #FEF3C7; color: #92400E; padding: 1px 6px; border-radius: 4px; font-weight: 700;">(โจทย์ปรับปรุง)</span>' : ''}
           </div>
-          <div style="padding: 8px 12px; border-radius: 10px; font-size: 12.5px; ${q.correctAnswer === 3 ? 'background: #F1F5F9; border: 1.5px solid #CBD5E1; font-weight: 700;' : 'background: #F8FAFC; border: 1px solid #E2E8F0;'} ${audit.suggestedCorrectAnswer === 3 ? 'border: 2px solid #059669; background: #ECFDF5; color: #059669; font-weight: 800;' : ''}">
-            ค. ${escapeHTML(q.choice3)} ${audit.suggestedCorrectAnswer === 3 ? '✨ (AI แนะนำ)' : ''}
-          </div>
-          <div style="padding: 8px 12px; border-radius: 10px; font-size: 12.5px; ${q.correctAnswer === 4 ? 'background: #F1F5F9; border: 1.5px solid #CBD5E1; font-weight: 700;' : 'background: #F8FAFC; border: 1px solid #E2E8F0;'} ${audit.suggestedCorrectAnswer === 4 ? 'border: 2px solid #059669; background: #ECFDF5; color: #059669; font-weight: 800;' : ''}">
-            ง. ${escapeHTML(q.choice4)} ${audit.suggestedCorrectAnswer === 4 ? '✨ (AI แนะนำ)' : ''}
-          </div>
-        </div>
-
-        <!-- เปรียบเทียบคำตอบและคำอธิบายเฉลย -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-          <!-- เดิม -->
-          <div style="background: #F8FAFC; border: 1px solid #CBD5E1; border-radius: 12px; padding: 12px;">
-            <div style="font-size: 11.5px; font-weight: 800; color: #64748B; margin-bottom: 4px;">เฉลยเดิมในระบบ:</div>
-            <div style="font-size: 13.5px; font-weight: 800; color: #DC2626; margin-bottom: 6px;">
-              ข้อ ${currentAnsChar} (${q.correctAnswer})
+          <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; flex: 1;">
+            <div style="padding: 7px 10px; border-radius: 8px; font-size: 12px; ${rp.repairedCorrectAnswer === 1 ? 'border: 2px solid #059669; background: white; color: #059669; font-weight: 800;' : isChoice1Changed ? 'border: 1.5px solid #F59E0B; background: #FFFBEB; color: #92400E;' : 'background: white; border: 1px solid #D1FAE5; color: #064E3B;'}">
+              ก. ${escapeHTML(rp.repairedChoice1)} ${rp.repairedCorrectAnswer === 1 ? ' ✨ (ข้อที่ถูกต้อง)' : ''} ${isChoice1Changed ? ' <span style="font-size: 10px; background: #FEF3C7; color: #92400E; padding: 1px 4px; border-radius: 3px;">(ซ่อมแล้ว)</span>' : ''}
             </div>
-            <div style="font-size: 12px; color: #475569; line-height: 1.4;">
-              ${escapeHTML(q.explanation || 'ไม่มีคำอธิบายเดิม')}
+            <div style="padding: 7px 10px; border-radius: 8px; font-size: 12px; ${rp.repairedCorrectAnswer === 2 ? 'border: 2px solid #059669; background: white; color: #059669; font-weight: 800;' : isChoice2Changed ? 'border: 1.5px solid #F59E0B; background: #FFFBEB; color: #92400E;' : 'background: white; border: 1px solid #D1FAE5; color: #064E3B;'}">
+              ข. ${escapeHTML(rp.repairedChoice2)} ${rp.repairedCorrectAnswer === 2 ? ' ✨ (ข้อที่ถูกต้อง)' : ''} ${isChoice2Changed ? ' <span style="font-size: 10px; background: #FEF3C7; color: #92400E; padding: 1px 4px; border-radius: 3px;">(ซ่อมแล้ว)</span>' : ''}
+            </div>
+            <div style="padding: 7px 10px; border-radius: 8px; font-size: 12px; ${rp.repairedCorrectAnswer === 3 ? 'border: 2px solid #059669; background: white; color: #059669; font-weight: 800;' : isChoice3Changed ? 'border: 1.5px solid #F59E0B; background: #FFFBEB; color: #92400E;' : 'background: white; border: 1px solid #D1FAE5; color: #064E3B;'}">
+              ค. ${escapeHTML(rp.repairedChoice3)} ${rp.repairedCorrectAnswer === 3 ? ' ✨ (ข้อที่ถูกต้อง)' : ''} ${isChoice3Changed ? ' <span style="font-size: 10px; background: #FEF3C7; color: #92400E; padding: 1px 4px; border-radius: 3px;">(ซ่อมแล้ว)</span>' : ''}
+            </div>
+            <div style="padding: 7px 10px; border-radius: 8px; font-size: 12px; ${rp.repairedCorrectAnswer === 4 ? 'border: 2px solid #059669; background: white; color: #059669; font-weight: 800;' : isChoice4Changed ? 'border: 1.5px solid #F59E0B; background: #FFFBEB; color: #92400E;' : 'background: white; border: 1px solid #D1FAE5; color: #064E3B;'}">
+              ง. ${escapeHTML(rp.repairedChoice4)} ${rp.repairedCorrectAnswer === 4 ? ' ✨ (ข้อที่ถูกต้อง)' : ''} ${isChoice4Changed ? ' <span style="font-size: 10px; background: #FEF3C7; color: #92400E; padding: 1px 4px; border-radius: 3px;">(ซ่อมแล้ว)</span>' : ''}
             </div>
           </div>
-
-          <!-- AI แนะนำใหม่ -->
-          <div style="background: #ECFDF5; border: 1.5px solid #6EE7B7; border-radius: 12px; padding: 12px;">
-            <div style="font-size: 11.5px; font-weight: 800; color: #059669; margin-bottom: 4px;">เฉลยใหม่ที่ AI แนะนำ:</div>
-            <div style="font-size: 13.5px; font-weight: 900; color: #059669; margin-bottom: 6px;">
-              ข้อ ${suggestedAnsChar} (${audit.suggestedCorrectAnswer}) ✨
-            </div>
-            <div style="font-size: 12.5px; color: #065F46; line-height: 1.4; font-weight: 500;">
-              ${escapeHTML(audit.suggestedExplanation || q.explanation || '')}
-            </div>
+          <div style="background: white; border: 1.5px solid #A7F3D0; border-radius: 10px; padding: 10px; font-size: 12px; color: #065F46; font-weight: 500;">
+            <strong>คำอธิบายใหม่ที่ AI เตรียมให้:</strong> ${escapeHTML(rp.repairedExplanation || rp.explanation || '')}
           </div>
         </div>
       </div>
     `;
+
+    // Update the apply button label
+    const btnApply = document.getElementById('btnApplyReportAiFix');
+    if (btnApply) {
+      btnApply.innerHTML = `<span>✨ อนุมัติการซ่อมแซมของ AI & บันทึกทันที (1-Click)</span>`;
+    }
 
   } catch (err) {
     console.error('Open Report AI Audit error:', err);
@@ -3998,12 +4062,22 @@ window.applyReportAiFix = async function() {
   const btn = document.getElementById('btnApplyReportAiFix');
   if (btn) {
     btn.disabled = true;
-    btn.innerHTML = '<span>กำลังบันทึกและปรับปรุงเฉลย... ⏳</span>';
+    btn.innerHTML = '<span>กำลังบันทึกการซ่อมแซม... ⏳</span>';
   }
 
   try {
     const q = currentAuditReportData.question;
     const audit = currentAuditReportData.aiAudit || {};
+    const rp = audit.repairProposal || {};
+
+    const questionText = rp.repairedQuestionText || q.questionText;
+    const choice1 = rp.repairedChoice1 || q.choice1;
+    const choice2 = rp.repairedChoice2 || q.choice2;
+    const choice3 = rp.repairedChoice3 || q.choice3;
+    const choice4 = rp.repairedChoice4 || q.choice4;
+    const correctAnswer = rp.repairedCorrectAnswer || audit.suggestedCorrectAnswer || q.correctAnswer;
+    const explanation = rp.repairedExplanation || audit.suggestedExplanation || q.explanation;
+    const auditNote = rp.actionTitle || audit.verdictTitle || 'ซ่อมแซมและปรับปรุงข้อสอบโดย AI';
 
     const res = await fetch(`${API_BASE}/api/admin/reports/${currentAuditReportData.reportId}/ai-apply-fix`, {
       method: 'POST',
@@ -4013,14 +4087,14 @@ window.applyReportAiFix = async function() {
       },
       body: JSON.stringify({
         questionId: currentAuditReportData.questionId,
-        questionText: q.questionText,
-        choice1: q.choice1,
-        choice2: q.choice2,
-        choice3: q.choice3,
-        choice4: q.choice4,
-        correctAnswer: audit.suggestedCorrectAnswer || q.correctAnswer,
-        explanation: audit.suggestedExplanation || q.explanation,
-        auditNote: audit.verdictTitle || 'ปรับปรุงเฉลยตามที่ AI ตรวจสอบ'
+        questionText,
+        choice1,
+        choice2,
+        choice3,
+        choice4,
+        correctAnswer,
+        explanation,
+        auditNote
       })
     });
 
@@ -4029,7 +4103,7 @@ window.applyReportAiFix = async function() {
       throw new Error(err.error || res.statusText);
     }
 
-    alert('✅ ปรับปรุงเฉลยข้อสอบ อัปเดตประวัติ และปิดรายงานเรียบร้อยแล้ว!');
+    alert('✅ อนุมัติการซ่อมแซมสำเร็จ! ข้อสอบได้รับการแก้ไข บันทึกประวัติ และปิดรายงานเรียบร้อยแล้ว');
     closeReportAiAuditModal();
     loadAdminReports();
 
@@ -4039,7 +4113,7 @@ window.applyReportAiFix = async function() {
   } finally {
     if (btn) {
       btn.disabled = false;
-      btn.innerHTML = '<span>✨ ปรับปรุงเฉลยตามที่ AI แนะนำ & ปิดรายงาน</span>';
+      btn.innerHTML = '<span>✨ อนุมัติการซ่อมแซมของ AI & บันทึกทันที (1-Click)</span>';
     }
   }
 };
@@ -4049,6 +4123,7 @@ window.openManualEditFromAudit = function() {
   if (!currentAuditReportData) return;
   const q = currentAuditReportData.question;
   const audit = currentAuditReportData.aiAudit || {};
+  const rp = audit.repairProposal || {};
   const reportId = currentAuditReportData.reportId;
   const questionId = currentAuditReportData.questionId;
 
@@ -4056,18 +4131,18 @@ window.openManualEditFromAudit = function() {
 
   document.getElementById('editSingleQuestionId').value = questionId || '';
   document.getElementById('editSingleReportId').value = reportId || '';
-  document.getElementById('editSingleQuestionText').value = q.questionText || '';
-  document.getElementById('editSingleChoice1').value = q.choice1 || '';
-  document.getElementById('editSingleChoice2').value = q.choice2 || '';
-  document.getElementById('editSingleChoice3').value = q.choice3 || '';
-  document.getElementById('editSingleChoice4').value = q.choice4 || '';
-  document.getElementById('editSingleCorrectAnswer').value = String(audit.suggestedCorrectAnswer || q.correctAnswer || 1);
-  document.getElementById('editSingleExplanation').value = audit.suggestedExplanation || q.explanation || '';
+  document.getElementById('editSingleQuestionText').value = rp.repairedQuestionText || q.questionText || '';
+  document.getElementById('editSingleChoice1').value = rp.repairedChoice1 || q.choice1 || '';
+  document.getElementById('editSingleChoice2').value = rp.repairedChoice2 || q.choice2 || '';
+  document.getElementById('editSingleChoice3').value = rp.repairedChoice3 || q.choice3 || '';
+  document.getElementById('editSingleChoice4').value = rp.repairedChoice4 || q.choice4 || '';
+  document.getElementById('editSingleCorrectAnswer').value = String(rp.repairedCorrectAnswer || audit.suggestedCorrectAnswer || q.correctAnswer || 1);
+  document.getElementById('editSingleExplanation').value = rp.repairedExplanation || audit.suggestedExplanation || q.explanation || '';
 
   const titleEl = document.getElementById('singleQuestionModalTitle');
   const subEl = document.getElementById('singleQuestionModalSubtitle');
   if (titleEl) titleEl.textContent = `แก้ไขข้อสอบ (ID: ${questionId})`;
-  if (subEl) subEl.textContent = `วิชา: ${currentAuditReportData.subject || 'ทั่วไป'} (นำเข้าข้อมูลจากผล AI Audit แล้ว)`;
+  if (subEl) subEl.textContent = `วิชา: ${currentAuditReportData.subject || 'ทั่วไป'} (นำเข้าข้อมูลจากผล AI Audit/Repair แล้ว)`;
 
   document.getElementById('editSingleQuestionModal').style.display = 'flex';
 };
