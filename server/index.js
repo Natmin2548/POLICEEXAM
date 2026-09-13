@@ -7533,7 +7533,8 @@ app.get('/api/settings', async (req, res) => {
       settings_pass_score: '60',
       settings_maintenance: 'false',
       settings_exam_mode: 'dynamic',
-      settings_gemini_key: 'AIzaSyDDBylXqV9akHtd5hBVEFSuoAM795on7Rc'
+      settings_gemini_key: 'AIzaSyDDBylXqV9akHtd5hBVEFSuoAM795on7Rc',
+      settings_groq_key: ''
     };
 
     settings.forEach(s => {
@@ -9465,6 +9466,131 @@ async function callGeminiAiText(prompt, customApiKey = '') {
   throw lastErr || new Error('No response returned from Gemini models with available API keys');
 }
 
+// --- Helper: Resolve Groq API Key from Request, Environment or DB ---
+async function resolveGroqApiKey(customKey = '') {
+  const keys = [];
+  const addKey = (k) => {
+    if (!k || typeof k !== 'string') return;
+    const parts = k.split(/[\n,;]+/);
+    for (let p of parts) {
+      p = p.trim().replace(/^['"]|['"]$/g, '');
+      if (p && !keys.includes(p)) keys.push(p);
+    }
+  };
+
+  if (customKey) addKey(customKey);
+  if (process.env.GROQ_API_KEY) addKey(process.env.GROQ_API_KEY);
+  if (process.env.GROQ_API_KEYS) addKey(process.env.GROQ_API_KEYS);
+
+  try {
+    const dbSettings = await prisma.systemSetting.findMany({
+      where: { key: { in: ['settings_groq_key', 'groq_api_key', 'GROQ_API_KEY', 'groqKey'] } }
+    });
+    for (const s of dbSettings) {
+      if (s.value) addKey(s.value);
+    }
+  } catch (e) {
+    console.warn('Resolve Groq API key DB lookup error:', e.message);
+  }
+
+  return keys[0] || '';
+}
+
+// --- Helper: Call Groq Specialized AI Models (DeepSeek R1 / Llama 3.3) ---
+async function callGroqAiText(prompt, options = {}) {
+  const apiKey = options.groqApiKey || (await resolveGroqApiKey(options.groqApiKey));
+  if (!apiKey) {
+    throw new Error('GROQ_KEY_NOT_FOUND: ไม่พบ API Key ของ Groq');
+  }
+
+  const model = options.model || 'deepseek-r1-distill-llama-70b';
+  const temperature = options.temperature !== undefined ? options.temperature : 0.15;
+
+  const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey.trim()}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model,
+      messages: [
+        {
+          role: 'system',
+          content: 'You are an elite Thai Police Examination creator and quality auditor. Output ONLY valid JSON matching the exact requested structure without markdown codeblocks, conversational filler, or commentary.'
+        },
+        { role: 'user', content: prompt }
+      ],
+      temperature
+    })
+  });
+
+  if (!resp.ok) {
+    const errBody = await resp.json().catch(() => ({}));
+    throw new Error(errBody.error?.message || `Groq API HTTP ${resp.status}`);
+  }
+
+  const data = await resp.json();
+  let content = data.choices?.[0]?.message?.content || '';
+
+  // DeepSeek R1 reasoning models output <think>...</think> before final JSON
+  if (content.includes('</think>')) {
+    content = content.substring(content.indexOf('</think>') + 8).trim();
+  }
+
+  return content;
+}
+
+// --- Multi-Model Specialized Router: Routes questions to the AI that excels at that subject ---
+async function callSpecializedAiText({ prompt, subject = '', customApiKey = '', groqApiKey = '' }) {
+  const normSub = (subject || '').trim().toLowerCase();
+  const isMath = normSub.includes('คณิต') || normSub.includes('คำนวณ') || normSub.includes('อนุกรม') || normSub.includes('ความสามารถทั่วไป') || normSub.includes('ทั่วไป') || normSub.includes('ตรรก') || normSub.includes('ร้อยละ') || normSub.includes('สมการ') || normSub.includes('general');
+  const isEnglish = normSub.includes('อังกฤษ') || normSub.includes('english');
+
+  const resolvedGroqKey = await resolveGroqApiKey(groqApiKey);
+
+  // 1. Math / Calculations -> DeepSeek R1 via Groq (Math reasoning specialist)
+  if (isMath && resolvedGroqKey) {
+    try {
+      console.log('[Router] 🧠 Routing Math/Reasoning to Groq DeepSeek-R1...');
+      const txt = await callGroqAiText(prompt, {
+        model: 'deepseek-r1-distill-llama-70b',
+        temperature: 0.1,
+        groqApiKey: resolvedGroqKey
+      });
+      if (txt && txt.trim()) {
+        console.log('[Router OK] Groq DeepSeek-R1 generated successfully');
+        return { text: txt, engine: 'Groq (DeepSeek-R1)' };
+      }
+    } catch (gErr) {
+      console.warn('[Router] Groq DeepSeek failed, falling back to Gemini:', gErr.message);
+    }
+  }
+
+  // 2. English -> Llama 3.3 70B via Groq (English native specialist)
+  if (isEnglish && resolvedGroqKey) {
+    try {
+      console.log('[Router] 🇬🇧 Routing English to Groq Llama-3.3-70B...');
+      const txt = await callGroqAiText(prompt, {
+        model: 'llama-3.3-70b-versatile',
+        temperature: 0.15,
+        groqApiKey: resolvedGroqKey
+      });
+      if (txt && txt.trim()) {
+        console.log('[Router OK] Groq Llama-3.3 generated successfully');
+        return { text: txt, engine: 'Groq (Llama-3.3-70B)' };
+      }
+    } catch (gErr) {
+      console.warn('[Router] Groq Llama failed, falling back to Gemini:', gErr.message);
+    }
+  }
+
+  // 3. Law, Thai Language, Office Regulations, or Universal Fallback -> Google Gemini
+  console.log('[Router] 🏛️ Routing Law/Thai/Secretariat or Fallback to Google Gemini (48K Context specialist)...');
+  const txt = await callGeminiAiText(prompt, customApiKey);
+  return { text: txt, engine: 'Google Gemini (Pro/Flash)' };
+}
+
 // --- Shared Helper: Fast Conflict Detector between Explanation and Correct Answer ---
 function detectExplanationAnswerConflict(q) {
   const exp = (q.explanation || '').trim();
@@ -9709,26 +9835,50 @@ app.post('/api/admin/exams/preview-ai', authenticateToken, async (req, res) => {
     });
 
     let textResponse = '';
+    let engineUsed = 'Google Gemini';
     try {
-      textResponse = await callGeminiAiText(prompt, req.body.apiKey);
-    } catch (gemErr) {
-      if (gemErr.message.includes('KEY_NOT_FOUND')) {
-        return res.status(400).json({ error: '🔑 ไม่พบ API Key ของ Gemini กรุณาระบุ API Key ในช่องที่กำหนด หรือในเมนู Admin -> ตั้งค่าระบบ' });
+      const aiResult = await callSpecializedAiText({
+        prompt,
+        subject,
+        customApiKey: req.body.apiKey,
+        groqApiKey: req.body.groqApiKey
+      });
+      textResponse = aiResult.text;
+      engineUsed = aiResult.engine || 'Google Gemini';
+    } catch (aiErr) {
+      if (aiErr.message.includes('KEY_NOT_FOUND')) {
+        return res.status(400).json({ error: '🔑 ไม่พบ API Key (Gemini หรือ Groq) กรุณาระบุ API Key ในช่องที่กำหนด หรือในเมนู Admin -> ตั้งค่าระบบ' });
       }
-      if (gemErr.message.includes('401') || gemErr.message.includes('Unauthorized') || gemErr.message.includes('invalid authentication')) {
-        return res.status(401).json({ error: '🔑 Gemini API Key ไม่ถูกต้องหรือไม่มีสิทธิ์ใช้งาน (401 Unauthorized) กรุณาตรวจสอบ API Key ในเมนู Admin -> ตั้งค่าระบบ' });
+      if (aiErr.message.includes('401') || aiErr.message.includes('Unauthorized') || aiErr.message.includes('invalid authentication')) {
+        return res.status(401).json({ error: '🔑 API Key ไม่ถูกต้องหรือไม่มีสิทธิ์ใช้งาน (401 Unauthorized) กรุณาตรวจสอบ API Key ในเมนู Admin' });
       }
-      if (gemErr.message.includes('429') || gemErr.message.includes('quota') || gemErr.message.includes('RESOURCE_EXHAUSTED') || gemErr.message.includes('Rate limit')) {
-        return res.status(429).json({ error: '⚠️ Gemini API Rate Limit (429): ' + gemErr.message });
+      if (aiErr.message.includes('429') || aiErr.message.includes('quota') || aiErr.message.includes('RESOURCE_EXHAUSTED') || aiErr.message.includes('Rate limit')) {
+        return res.status(429).json({ error: '⚠️ AI API Rate Limit (429): ' + aiErr.message });
       }
-      return res.status(500).json({ error: 'ไม่สามารถเรียกใช้งาน Gemini AI ได้: ' + gemErr.message });
+      return res.status(500).json({ error: 'ไม่สามารถเรียกใช้งาน AI ได้: ' + aiErr.message });
     }
 
     let cleanJson = textResponse.trim();
-    if (cleanJson.startsWith('```json')) cleanJson = cleanJson.replace(/^```json/, '').replace(/```$/, '').trim();
-    else if (cleanJson.startsWith('```')) cleanJson = cleanJson.replace(/^```/, '').replace(/```$/, '').trim();
+    if (cleanJson.includes('</think>')) {
+      cleanJson = cleanJson.substring(cleanJson.indexOf('</think>') + 8).trim();
+    }
+    if (cleanJson.startsWith('```json')) cleanJson = cleanJson.replace(/^```json\s*/i, '').replace(/\s*```$/, '').trim();
+    else if (cleanJson.startsWith('```')) cleanJson = cleanJson.replace(/^```\s*/, '').replace(/\s*```$/, '').trim();
 
-    const rawQuestions = JSON.parse(cleanJson);
+    if (!cleanJson.startsWith('[') && !cleanJson.startsWith('{')) {
+      const firstBracket = cleanJson.indexOf('[');
+      const lastBracket = cleanJson.lastIndexOf(']');
+      const firstBrace = cleanJson.indexOf('{');
+      const lastBrace = cleanJson.lastIndexOf('}');
+      if (firstBracket !== -1 && (firstBrace === -1 || firstBracket < firstBrace)) {
+        cleanJson = cleanJson.substring(firstBracket, lastBracket + 1).trim();
+      } else if (firstBrace !== -1) {
+        cleanJson = cleanJson.substring(firstBrace, lastBrace + 1).trim();
+      }
+    }
+
+    const parsed = JSON.parse(cleanJson);
+    const rawQuestions = Array.isArray(parsed) ? parsed : (parsed.questions || parsed.data || parsed.items || []);
     const auditedQuestions = rawQuestions.map(q => {
       const conflict = detectExplanationAnswerConflict(q);
       if (conflict.hasConflict) {
@@ -9741,11 +9891,11 @@ app.post('/api/admin/exams/preview-ai', authenticateToken, async (req, res) => {
       }
       return q;
     });
-    res.json({ success: true, questions: auditedQuestions });
+    res.json({ success: true, engineUsed, questions: auditedQuestions });
 
   } catch (err) {
     console.error('Preview AI Exam error:', err);
-    res.status(500).json({ error: 'เกิดข้อผิดพลาดจาก Gemini: ' + err.message });
+    res.status(500).json({ error: 'เกิดข้อผิดพลาดในการประมวลผล AI: ' + err.message });
   }
 });
 
@@ -10122,18 +10272,41 @@ app.post('/api/admin/exams/:examSetId/append-ai', authenticateToken, async (req,
 
     let textResponse = '';
     try {
-      textResponse = await callGeminiAiText(prompt, req.body.apiKey);
-    } catch (gemErr) {
-      if (gemErr.message.includes('KEY_NOT_FOUND')) {
-        return res.status(400).json({ error: 'ไม่พบ API Key ของ Gemini ในระบบ' });
+      const aiResult = await callSpecializedAiText({
+        prompt,
+        subject: examSet.category,
+        customApiKey: req.body.apiKey,
+        groqApiKey: req.body.groqApiKey
+      });
+      textResponse = aiResult.text;
+    } catch (aiErr) {
+      if (aiErr.message.includes('KEY_NOT_FOUND')) {
+        return res.status(400).json({ error: 'ไม่พบ API Key (Gemini หรือ Groq) ในระบบ' });
       }
-      return res.status(500).json({ error: 'ไม่สามารถเรียกใช้งาน Gemini AI ได้: ' + gemErr.message });
+      return res.status(500).json({ error: 'ไม่สามารถเรียกใช้งาน AI ได้: ' + aiErr.message });
     }
-    let cleanJson = textResponse.trim();
-    if (cleanJson.startsWith('```json')) cleanJson = cleanJson.replace(/^```json/, '').replace(/```$/, '').trim();
-    else if (cleanJson.startsWith('```')) cleanJson = cleanJson.replace(/^```/, '').replace(/```$/, '').trim();
 
-    const newRawQuestions = JSON.parse(cleanJson);
+    let cleanJson = textResponse.trim();
+    if (cleanJson.includes('</think>')) {
+      cleanJson = cleanJson.substring(cleanJson.indexOf('</think>') + 8).trim();
+    }
+    if (cleanJson.startsWith('```json')) cleanJson = cleanJson.replace(/^```json\s*/i, '').replace(/\s*```$/, '').trim();
+    else if (cleanJson.startsWith('```')) cleanJson = cleanJson.replace(/^```\s*/, '').replace(/\s*```$/, '').trim();
+
+    if (!cleanJson.startsWith('[') && !cleanJson.startsWith('{')) {
+      const firstBracket = cleanJson.indexOf('[');
+      const lastBracket = cleanJson.lastIndexOf(']');
+      const firstBrace = cleanJson.indexOf('{');
+      const lastBrace = cleanJson.lastIndexOf('}');
+      if (firstBracket !== -1 && (firstBrace === -1 || firstBracket < firstBrace)) {
+        cleanJson = cleanJson.substring(firstBracket, lastBracket + 1).trim();
+      } else if (firstBrace !== -1) {
+        cleanJson = cleanJson.substring(firstBrace, lastBrace + 1).trim();
+      }
+    }
+
+    const parsedData = JSON.parse(cleanJson);
+    const newRawQuestions = Array.isArray(parsedData) ? parsedData : (parsedData.questions || parsedData.data || parsedData.items || []);
 
     const createdQuestions = [];
     for (let i = 0; i < newRawQuestions.length; i++) {

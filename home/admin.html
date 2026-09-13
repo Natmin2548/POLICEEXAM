@@ -487,21 +487,34 @@
 
         <!-- Advanced Options Collapsible -->
         <details style="margin-bottom: 18px; font-size: 12px; color: #64748B;">
-          <summary style="cursor: pointer; font-weight: 600; color: #475569; padding: 4px 0; outline: none;">
-            ⚙️ ตัวเลือกเพิ่มเติม (ใส่ Gemini API Key)
+          <summary style="cursor: pointer; font-weight: 600; color: #475569; padding: 4px 0; outline: none; user-select: none;">
+            ⚙️ ตัวเลือกขั้นสูง (ตั้งค่า Google Gemini / Groq Cloud API Key)
           </summary>
-          <div style="padding: 12px; background: #F8FAFC; border-radius: 12px; border: 1px solid #E2E8F0; margin-top: 8px; display: flex; flex-direction: column; gap: 10px;">
+          <div style="padding: 14px; background: #F8FAFC; border-radius: 12px; border: 1px solid #E2E8F0; margin-top: 8px; display: flex; flex-direction: column; gap: 12px;">
             <div>
-              <label style="font-size: 11px; font-weight: 600;">Gemini API Key (เฉพาะเครื่องนี้):</label>
-              <input type="text" id="adminGeminiApiKey" placeholder="วาง Gemini API Key..." onchange="localStorage.setItem('admin_gemini_key', this.value.trim())" style="width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 12px; box-sizing: border-box;">
+              <label style="font-size: 11px; font-weight: 700; color: #1E293B; display: flex; justify-content: space-between; align-items: center;">
+                <span>✨ Google Gemini API Key:</span>
+                <span style="font-size: 10px; color: #059669; font-weight: 600;">(เก่ง กฎหมาย / สารบรรณ / ภาษาไทย)</span>
+              </label>
+              <input type="text" id="adminGeminiApiKey" placeholder="วาง Google Gemini API Key (AIzaSy...)" onchange="localStorage.setItem('admin_gemini_key', this.value.trim())" style="width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 12px; box-sizing: border-box; margin-top: 3px;">
+            </div>
+            <div>
+              <label style="font-size: 11px; font-weight: 700; color: #1E293B; display: flex; justify-content: space-between; align-items: center;">
+                <span>⚡ Groq Cloud API Key (แนะนำ ฟรี 100%):</span>
+                <span style="font-size: 10px; color: #2563EB; font-weight: 600;">(เก่ง คณิต/คำนวณ DeepSeek-R1 & อังกฤษ Llama 3.3)</span>
+              </label>
+              <input type="text" id="adminGroqApiKey" placeholder="วาง Groq API Key (gsk_...)" onchange="localStorage.setItem('admin_groq_key', this.value.trim())" style="width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 12px; box-sizing: border-box; margin-top: 3px;">
+              <div style="font-size: 10.5px; color: #64748B; margin-top: 4px; line-height: 1.4;">
+                💡 <em>ระบบสลับ AI ตามวิชาอัจฉริยะ: คณิตคำนวณใช้ <strong>DeepSeek-R1</strong>, อังกฤษใช้ <strong>Llama-3.3-70B</strong>, กฎหมาย/สารบรรณใช้ <strong>Gemini</strong> (หากไม่มี Groq Key จะสลับไปใช้ Gemini ให้ทันที)</em>
+              </div>
             </div>
           </div>
         </details>
 
         <!-- AI Progress Info -->
         <div id="aiProgressInfo" style="display: none; background: #FFF1F2; border: 1px solid #FECACA; border-radius: 14px; padding: 12px; margin-bottom: 16px; font-size: 13px; color: #BD1B0B; text-align: center;">
-          <div style="font-weight: 700; margin-bottom: 2px;">⏳ Gemini AI กำลังอ่านเนื้อหาและสร้างข้อสอบ...</div>
-          <span style="font-size: 11px; opacity: 0.85;">อาจใช้เวลาประมาณ 5-15 วินาที</span>
+          <div style="font-weight: 700; margin-bottom: 2px;">⏳ AI กำลังวิเคราะห์เนื้อหาและสร้างข้อสอบคุณภาพสูง...</div>
+          <span style="font-size: 11px; opacity: 0.85;">กำลังตรวจสอบความถูกต้องของเฉลยและตัวเลือก (5-20 วินาที)</span>
         </div>
 
         <!-- Big Touch Friendly Action Buttons -->

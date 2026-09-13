@@ -1164,6 +1164,10 @@ async function showAddExamModal() {
   const keyInput = document.getElementById('adminGeminiApiKey');
   if (keyInput) keyInput.value = savedKey;
 
+  const savedGroqKey = localStorage.getItem('admin_groq_key') || '';
+  const groqKeyInput = document.getElementById('adminGroqApiKey');
+  if (groqKeyInput) groqKeyInput.value = savedGroqKey;
+
   document.getElementById('addExamModal').style.display = 'flex';
 }
 
@@ -1612,9 +1616,13 @@ async function generateAIExamPreview() {
   let title = document.getElementById('examTitle').value.trim();
   const numQuestions = document.getElementById('examNumQuestions').value;
   const apiKey = document.getElementById('adminGeminiApiKey')?.value.trim() || localStorage.getItem('admin_gemini_key') || '';
+  const groqApiKey = document.getElementById('adminGroqApiKey')?.value.trim() || localStorage.getItem('admin_groq_key') || '';
 
   if (apiKey) {
     localStorage.setItem('admin_gemini_key', apiKey);
+  }
+  if (groqApiKey) {
+    localStorage.setItem('admin_groq_key', groqApiKey);
   }
 
   if (!title) {
@@ -1644,7 +1652,8 @@ async function generateAIExamPreview() {
         title,
         subcategory,
         numQuestions: parseInt(numQuestions) || 10,
-        apiKey
+        apiKey,
+        groqApiKey
       })
     });
 
@@ -1655,6 +1664,7 @@ async function generateAIExamPreview() {
       return;
     }
 
+    window._lastEngineUsed = data.engineUsed || '';
     previewExamQuestions = data.questions || [];
     closeAddExamModal();
     renderExamPreviewModal(title, subject, knowledgeBase);
@@ -1670,7 +1680,9 @@ async function generateAIExamPreview() {
 }
 
 function renderExamPreviewModal(title, subject, knowledgeBase) {
-  document.getElementById('previewSummaryBadge').textContent = `รวม ${previewExamQuestions.length} ข้อ`;
+  const engineText = window._lastEngineUsed ? ` • ⚡ ${window._lastEngineUsed}` : '';
+  const badge = document.getElementById('previewSummaryBadge');
+  if (badge) badge.textContent = `รวม ${previewExamQuestions.length} ข้อ${engineText}`;
   const container = document.getElementById('previewQuestionsContainer');
   const banner = document.getElementById('previewAiRecheckBanner');
   const titleEl = document.getElementById('previewAiRecheckTitle');
@@ -3035,6 +3047,7 @@ window.startBatchAutoExamGeneration = async function() {
   const numQuestions = parseInt(document.getElementById('batchQuestionsPerChapter')?.value) || 10;
   const delayMs = parseInt(document.getElementById('batchDelayMs')?.value) || 3500;
   const apiKey = document.getElementById('adminGeminiApiKey')?.value.trim() || localStorage.getItem('admin_gemini_key') || '';
+  const groqApiKey = document.getElementById('adminGroqApiKey')?.value.trim() || localStorage.getItem('admin_groq_key') || '';
 
   // Initialize batch state
   batchState = {
@@ -3137,7 +3150,8 @@ window.startBatchAutoExamGeneration = async function() {
             title,
             subcategory: chapterName,
             numQuestions,
-            apiKey
+            apiKey,
+            groqApiKey
           })
         });
 
