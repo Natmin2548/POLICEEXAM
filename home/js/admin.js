@@ -1797,19 +1797,595 @@ async function saveVerifiedExamSet(status) {
   }
 }
 
+// ==========================================
+// CSV Utilities and Processing
+// ==========================================
+let parsedCsvQuestions = [];
+let appendParsedCsvQuestions = [];
+
+function parseCSV(text) {
+  if (!text) return [];
+  // Strip UTF-8 BOM if present
+  if (text.charCodeAt(0) === 0xFEFF) {
+    text = text.slice(1);
+  }
+  const lines = [];
+  let row = [''];
+  let inQuotes = false;
+  
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    const next = text[i + 1];
+    
+    if (ch === '"') {
+      if (inQuotes && next === '"') {
+        row[row.length - 1] += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (ch === ',' && !inQuotes) {
+      row.push('');
+    } else if ((ch === '\r' || ch === '\n') && !inQuotes) {
+      if (ch === '\r' && next === '\n') i++;
+      if (row.length > 1 || (row.length === 1 && row[0].trim() !== '')) {
+        lines.push(row.map(cell => cell.trim()));
+      }
+      row = [''];
+    } else {
+      row[row.length - 1] += ch;
+    }
+  }
+  if (row.length > 1 || (row.length === 1 && row[0].trim() !== '')) {
+    lines.push(row.map(cell => cell.trim()));
+  }
+  return lines;
+}
+
+function normalizeCorrectAnswer(val) {
+  if (val === undefined || val === null) return 1;
+  const clean = String(val).trim().toUpperCase();
+  if (clean === '2' || clean === 'B' || clean === 'ข' || clean.includes('2') || clean.includes('ข')) return 2;
+  if (clean === '3' || clean === 'C' || clean === 'ค' || clean.includes('3') || clean.includes('ค')) return 3;
+  if (clean === '4' || clean === 'D' || clean === 'ง' || clean.includes('4') || clean.includes('ง')) return 4;
+  return 1;
+}
+
+function processParsedCSVQuestions(rows) {
+  if (!rows || rows.length === 0) return [];
+  
+  let headerRowIndex = -1;
+  let qIdx = -1, c1Idx = -1, c2Idx = -1, c3Idx = -1, c4Idx = -1, ansIdx = -1, expIdx = -1;
+
+  // Check first few rows for header keywords
+  for (let r = 0; r < Math.min(3, rows.length); r++) {
+    const row = rows[r].map(c => (c || '').toLowerCase().trim());
+    let foundKeywords = 0;
+    
+    row.forEach((cell, idx) => {
+      if (cell.includes('โจทย์') || cell.includes('คำถาม') || cell.includes('question') || cell.includes('ข้อสอบ') || cell === 'ข้อ') {
+        qIdx = idx; foundKeywords++;
+      } else if (cell.includes('ตัวเลือก ก') || cell.includes('ตัวเลือก 1') || cell === 'ก' || cell === 'ข้อ1' || cell.includes('choice1') || cell.includes('optiona')) {
+        c1Idx = idx; foundKeywords++;
+      } else if (cell.includes('ตัวเลือก ข') || cell.includes('ตัวเลือก 2') || cell === 'ข' || cell === 'ข้อ2' || cell.includes('choice2') || cell.includes('optionb')) {
+        c2Idx = idx; foundKeywords++;
+      } else if (cell.includes('ตัวเลือก ค') || cell.includes('ตัวเลือก 3') || cell === 'ค' || cell === 'ข้อ3' || cell.includes('choice3') || cell.includes('optionc')) {
+        c3Idx = idx; foundKeywords++;
+      } else if (cell.includes('ตัวเลือก ง') || cell.includes('ตัวเลือก 4') || cell === 'ง' || cell === 'ข้อ4' || cell.includes('choice4') || cell.includes('optiond')) {
+        c4Idx = idx; foundKeywords++;
+      } else if (cell.includes('เฉลย') || cell.includes('คำตอบ') || cell.includes('answer') || cell.includes('correct')) {
+        ansIdx = idx; foundKeywords++;
+      } else if (cell.includes('คำอธิบาย') || cell.includes('เหตุผล') || cell.includes('explanation') || cell.includes('reason')) {
+        expIdx = idx; foundKeywords++;
+      }
+    });
+
+    if (foundKeywords >= 3) {
+      headerRowIndex = r;
+      break;
+    }
+  }
+
+  // Fallback to positional columns if headers not clearly identified
+  if (headerRowIndex === -1) {
+    qIdx = 0; c1Idx = 1; c2Idx = 2; c3Idx = 3; c4Idx = 4; ansIdx = 5; expIdx = 6;
+  }
+
+  const startRow = headerRowIndex !== -1 ? headerRowIndex + 1 : 0;
+  const questions = [];
+
+  for (let i = startRow; i < rows.length; i++) {
+    const row = rows[i];
+    if (!row || row.length === 0) continue;
+
+    const questionText = (qIdx !== -1 && row[qIdx]) ? row[qIdx].trim() : (row[0] || '').trim();
+    if (!questionText) continue;
+
+    const choice1 = (c1Idx !== -1 && row[c1Idx]) ? row[c1Idx].trim() : (row[1] || '').trim();
+    const choice2 = (c2Idx !== -1 && row[c2Idx]) ? row[c2Idx].trim() : (row[2] || '').trim();
+    const choice3 = (c3Idx !== -1 && row[c3Idx]) ? row[c3Idx].trim() : (row[3] || '').trim();
+    const choice4 = (c4Idx !== -1 && row[c4Idx]) ? row[c4Idx].trim() : (row[4] || '').trim();
+    const rawAnswer = (ansIdx !== -1 && row[ansIdx]) ? row[ansIdx].trim() : (row[5] || '1').trim();
+    const explanation = (expIdx !== -1 && row[expIdx]) ? row[expIdx].trim() : (row[6] || '').trim();
+
+    if (choice1 || choice2) {
+      questions.push({
+        questionText,
+        choice1: choice1 || 'ตัวเลือก ก',
+        choice2: choice2 || 'ตัวเลือก ข',
+        choice3: choice3 || 'ตัวเลือก ค',
+        choice4: choice4 || 'ตัวเลือก ง',
+        correctAnswer: normalizeCorrectAnswer(rawAnswer),
+        explanation: explanation || ''
+      });
+    }
+  }
+
+  return questions;
+}
+
+window.downloadSampleExamCsv = function() {
+  const sampleData = [
+    ['โจทย์', 'ตัวเลือก ก', 'ตัวเลือก ข', 'ตัวเลือก ค', 'ตัวเลือก ง', 'เฉลย', 'คำอธิบาย'],
+    [
+      'ข้อใดคือหนังสือราชการภายนอก?',
+      'หนังสือติดต่อระหว่างส่วนราชการด้วยกัน หรือส่วนราชการมีถึงหน่วยงานอื่น',
+      'หนังสือติดต่อภายในกระทรวง ทบวง กรม เดียวกัน',
+      'หนังสือที่หัวหน้าส่วนราชการสั่งการ',
+      'หนังสือที่เจ้าหน้าที่ทำขึ้นเป็นหลักฐาน',
+      '1',
+      'หนังสือภายนอก คือ หนังสือติดต่อราชการที่เป็นแบบพิธี โดยใช้กระดาษตราครุฑ เป็นหนังสือติดต่อระหว่างส่วนราชการ หรือส่วนราชการมีถึงบุคคลภายนอก'
+    ],
+    [
+      'ตราครุฑสำหรับแบบพิมพ์หนังสือราชการ ตามระเบียบสำนักนายกรัฐมนตรีฯ มีกี่ขนาด?',
+      '1 ขนาด',
+      '2 ขนาด (3 ซม. และ 1.5 ซม.)',
+      '3 ขนาด',
+      '4 ขนาด',
+      '2',
+      'ตามระเบียบสารบรรณ พ.ศ. ๒๕๒๖ ตราครุฑมี 2 ขนาด คือ ขนาดตัวครุฑสูง 3 เซนติเมตร และขนาดตัวครุฑสูง 1.5 เซนติเมตร'
+    ],
+    [
+      'บันทึกข้อความ ให้ใช้ตราครุฑขนาดเท่าใด และอยู่ที่ตำแหน่งใด?',
+      'ขนาดสูง 3 ซม. กลางหน้ากระดาษ',
+      'ขนาดสูง 1.5 ซม. ที่มุมบนด้านซ้าย',
+      'ขนาดสูง 1.5 ซม. ที่มุมบนด้านขวา',
+      'ไม่ต้องมีตราครุฑ',
+      '2',
+      'หนังสือภายใน (บันทึกข้อความ) ให้ใช้กระดาษบันทึกข้อความ มีตราครุฑขนาดสูง 1.5 เซนติเมตร ที่มุมบนด้านซ้าย'
+    ]
+  ];
+
+  const csvRows = sampleData.map(row => 
+    row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')
+  );
+  const csvContent = csvRows.join('\r\n');
+
+  const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.setAttribute('href', url);
+  link.setAttribute('download', 'police_exam_sample_template.csv');
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};
+
+// ==========================================
+// CSV Exam Set Import Modal Logic
+// ==========================================
+window.openCsvExamModal = function() {
+  parsedCsvQuestions = [];
+  const modal = document.getElementById('csvExamImportModal');
+  if (!modal) return;
+
+  const subSelect = document.getElementById('csvExamSubject');
+  if (subSelect) subSelect.value = 'งานสารบรรณ';
+  
+  onCsvSubjectChange();
+  clearCsvPreview();
+
+  modal.style.display = 'flex';
+};
+
+window.closeCsvExamModal = function() {
+  const modal = document.getElementById('csvExamImportModal');
+  if (modal) modal.style.display = 'none';
+};
+
+window.onCsvSubjectChange = function() {
+  const subSelect = document.getElementById('csvExamSubject');
+  const chSelect = document.getElementById('csvExamChapter');
+  if (!subSelect || !chSelect) return;
+
+  const subject = subSelect.value;
+  chSelect.innerHTML = '<option value="รวมทุกบท">📚 รวมทุกบท</option>';
+
+  const chapters = SUBJECT_CHAPTERS[subject] || [];
+  chapters.forEach(ch => {
+    if (ch.value !== 'ALL') {
+      chSelect.innerHTML += `<option value="${ch.value}">${ch.label}</option>`;
+    }
+  });
+
+  autoSuggestCsvExamTitle();
+};
+
+window.onCsvChapterChange = function() {
+  autoSuggestCsvExamTitle();
+};
+
+function autoSuggestCsvExamTitle() {
+  const titleInput = document.getElementById('csvExamTitle');
+  const subSelect = document.getElementById('csvExamSubject');
+  const chSelect = document.getElementById('csvExamChapter');
+  if (!titleInput || !subSelect) return;
+
+  const subject = subSelect.options[subSelect.selectedIndex]?.text || subSelect.value;
+  const chapter = chSelect ? chSelect.value : 'รวมทุกบท';
+  const cleanSubject = subject.replace(/^[^\wก-๙]+/, '').trim();
+
+  const existingSetsCount = allLoadedExams.filter(e => e.category === subSelect.value || (e.category && e.category.includes(subSelect.value))).length;
+  const setNum = existingSetsCount + 1;
+
+  titleInput.value = `แบบทดสอบ${cleanSubject}: ${chapter} (ชุดที่ ${setNum})`;
+}
+
+window.handleCsvFileSelected = function(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+  readFileForCsvExam(file);
+};
+
+window.handleCsvDragOver = function(event) {
+  event.preventDefault();
+  event.stopPropagation();
+  const zone = document.getElementById('csvDropZone');
+  if (zone) zone.style.borderColor = '#0284C7';
+};
+
+window.handleCsvDragLeave = function(event) {
+  event.preventDefault();
+  event.stopPropagation();
+  const zone = document.getElementById('csvDropZone');
+  if (zone) zone.style.borderColor = '#94A3B8';
+};
+
+window.handleCsvDrop = function(event) {
+  event.preventDefault();
+  event.stopPropagation();
+  const zone = document.getElementById('csvDropZone');
+  if (zone) zone.style.borderColor = '#94A3B8';
+
+  const file = event.dataTransfer.files && event.dataTransfer.files[0];
+  if (file) {
+    readFileForCsvExam(file);
+  }
+};
+
+function readFileForCsvExam(file) {
+  const statusMsg = document.getElementById('csvImportStatusMsg');
+  if (statusMsg) statusMsg.textContent = `กำลังอ่านไฟล์: ${file.name}...`;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const text = e.target.result;
+    const rows = parseCSV(text);
+    parsedCsvQuestions = processParsedCSVQuestions(rows);
+    renderCsvPreview();
+  };
+  reader.onerror = function() {
+    alert('ไม่สามารถอ่านไฟล์ได้ กรุณาลองใหม่อีกครั้ง');
+  };
+  reader.readAsText(file, 'utf-8');
+}
+
+function renderCsvPreview() {
+  const container = document.getElementById('csvQuestionsPreviewContainer');
+  const badge = document.getElementById('csvParsedCountBadge');
+  const list = document.getElementById('csvQuestionsList');
+  const saveBtn = document.getElementById('btnSaveCsvExamSet');
+  const statusMsg = document.getElementById('csvImportStatusMsg');
+
+  if (!container || !list) return;
+
+  if (parsedCsvQuestions.length === 0) {
+    container.style.display = 'none';
+    if (saveBtn) {
+      saveBtn.disabled = true;
+      saveBtn.style.cursor = 'not-allowed';
+      saveBtn.style.opacity = '0.6';
+      saveBtn.innerHTML = `<span>💾 บันทึกชุดข้อสอบ (0 ข้อ)</span>`;
+    }
+    if (statusMsg) statusMsg.textContent = 'ไม่พบข้อสอบในไฟล์ กรุณาตรวจสอบหัวตารางและเนื้อหาตามตัวอย่าง';
+    return;
+  }
+
+  container.style.display = 'block';
+  if (badge) badge.textContent = `${parsedCsvQuestions.length} ข้อ`;
+  if (statusMsg) statusMsg.textContent = `ตรวจพบ ${parsedCsvQuestions.length} ข้อ พร้อมบันทึกเข้าสู่ระบบ`;
+
+  if (saveBtn) {
+    saveBtn.disabled = false;
+    saveBtn.style.cursor = 'pointer';
+    saveBtn.style.opacity = '1';
+    saveBtn.innerHTML = `<span>💾 บันทึกชุดข้อสอบ (${parsedCsvQuestions.length} ข้อ)</span>`;
+  }
+
+  list.innerHTML = '';
+  parsedCsvQuestions.forEach((q, idx) => {
+    const card = document.createElement('div');
+    card.style.cssText = 'background: #F8FAFC; border: 1.5px solid #E2E8F0; border-radius: 14px; padding: 14px;';
+    
+    const choiceLabels = ['ก', 'ข', 'ค', 'ง'];
+    const choices = [q.choice1, q.choice2, q.choice3, q.choice4];
+
+    let choicesHtml = choices.map((c, cIdx) => {
+      const isCorrect = (q.correctAnswer === cIdx + 1);
+      const border = isCorrect ? 'border: 1.5px solid #10B981; background: #ECFDF5;' : 'border: 1px solid #E2E8F0; background: white;';
+      const mark = isCorrect ? '<span style="color: #059669; font-weight: 800; margin-left: auto;">✓ ข้อที่ถูก</span>' : '';
+      return `
+        <div style="display: flex; align-items: center; gap: 8px; padding: 7px 12px; border-radius: 8px; ${border} font-size: 12.5px;">
+          <b style="color: ${isCorrect ? '#059669' : '#475569'};">${choiceLabels[cIdx]}.</b>
+          <span style="color: #1E293B;">${escapeHtml(c)}</span>
+          ${mark}
+        </div>
+      `;
+    }).join('');
+
+    card.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+        <div style="font-size: 13.5px; font-weight: 800; color: #0F172A; display: flex; gap: 8px;">
+          <span style="color: #0284C7;">ข้อ ${idx + 1}.</span>
+          <span>${escapeHtml(q.questionText)}</span>
+        </div>
+        <button type="button" onclick="removeCsvQuestionRow(${idx})" style="background: none; border: none; color: #EF4444; font-size: 13px; cursor: pointer; padding: 2px 6px;">✕ ลบ</button>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 8px;">
+        ${choicesHtml}
+      </div>
+      ${q.explanation ? `
+        <div style="background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 8px; padding: 6px 10px; font-size: 12px; color: #92400E;">
+          💡 <b>คำอธิบายเฉลย:</b> ${escapeHtml(q.explanation)}
+        </div>
+      ` : ''}
+    `;
+    list.appendChild(card);
+  });
+}
+
+window.removeCsvQuestionRow = function(idx) {
+  parsedCsvQuestions.splice(idx, 1);
+  renderCsvPreview();
+};
+
+window.clearCsvPreview = function() {
+  parsedCsvQuestions = [];
+  const fileInput = document.getElementById('csvFileInput');
+  if (fileInput) fileInput.value = '';
+  renderCsvPreview();
+};
+
+window.saveCsvExamSet = async function() {
+  if (!parsedCsvQuestions || parsedCsvQuestions.length === 0) {
+    alert('กรุณาเลือกไฟล์ CSV ที่มีข้อสอบอย่างน้อย 1 ข้อ');
+    return;
+  }
+
+  const title = (document.getElementById('csvExamTitle')?.value || '').trim() || 'ชุดข้อสอบนำเข้าจาก CSV';
+  const category = document.getElementById('csvExamSubject')?.value || 'งานสารบรรณ';
+  const subcategory = document.getElementById('csvExamChapter')?.value || null;
+  const status = document.getElementById('csvExamStatus')?.value || 'PUBLISHED';
+  const saveBtn = document.getElementById('btnSaveCsvExamSet');
+
+  try {
+    if (saveBtn) {
+      saveBtn.disabled = true;
+      saveBtn.innerHTML = `<span>⏳ กำลังบันทึกข้อสอบ...</span>`;
+    }
+
+    const res = await fetch(`${API_BASE}/api/admin/exams/save-set`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`
+      },
+      body: JSON.stringify({
+        title,
+        category,
+        subcategory,
+        status,
+        questions: parsedCsvQuestions
+      })
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      alert('เกิดข้อผิดพลาดในการบันทึก: ' + (data.error || 'ไม่สามารถบันทึกได้'));
+      return;
+    }
+
+    alert(`🎉 ${data.message || 'บันทึกชุดข้อสอบสำเร็จเรียบร้อย!'}`);
+    closeCsvExamModal();
+    loadExams();
+
+  } catch (err) {
+    console.error('Save CSV Exam error:', err);
+    alert('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์: ' + err.message);
+  } finally {
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.innerHTML = `<span>💾 บันทึกชุดข้อสอบ (${parsedCsvQuestions.length} ข้อ)</span>`;
+    }
+  }
+};
+
+// ==========================================
+// Append Questions Modal (AI vs CSV)
+// ==========================================
+window.switchAppendTab = function(tab) {
+  const aiContent = document.getElementById('appendAiTabContent');
+  const csvContent = document.getElementById('appendCsvTabContent');
+  const btnAi = document.getElementById('btnTabAppendAi');
+  const btnCsv = document.getElementById('btnTabAppendCsv');
+
+  if (tab === 'csv') {
+    if (aiContent) aiContent.style.display = 'none';
+    if (csvContent) csvContent.style.display = 'block';
+    if (btnAi) {
+      btnAi.style.background = 'transparent';
+      btnAi.style.color = '#64748B';
+      btnAi.style.boxShadow = 'none';
+    }
+    if (btnCsv) {
+      btnCsv.style.background = 'white';
+      btnCsv.style.color = '#0F172A';
+      btnCsv.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+    }
+  } else {
+    if (aiContent) aiContent.style.display = 'block';
+    if (csvContent) csvContent.style.display = 'none';
+    if (btnAi) {
+      btnAi.style.background = 'white';
+      btnAi.style.color = '#0F172A';
+      btnAi.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+    }
+    if (btnCsv) {
+      btnCsv.style.background = 'transparent';
+      btnCsv.style.color = '#64748B';
+      btnCsv.style.boxShadow = 'none';
+    }
+  }
+};
+
 function openAppendModal(examId, title, currentCount) {
   appendTargetExamId = examId;
   appendTargetCurrentCount = currentCount;
-  document.getElementById('appendExamTitleLabel').textContent = `ชุดเดิมมีอยู่แล้ว ${currentCount} ข้อ (ข้อสอบใหม่จะเริ่มนับข้อที่ ${currentCount + 1})`;
-  document.getElementById('appendCount').value = '10';
-  document.getElementById('appendProgressInfo').style.display = 'none';
-  document.getElementById('btnSubmitAppend').disabled = false;
+  appendParsedCsvQuestions = [];
+
+  const labelEl = document.getElementById('appendExamTitleLabel');
+  if (labelEl) {
+    labelEl.textContent = `"${title}" (ชุดเดิมมีอยู่แล้ว ${currentCount} ข้อ)`;
+  }
+  
+  const countInput = document.getElementById('appendCount');
+  if (countInput) countInput.value = '10';
+
+  const pInfo = document.getElementById('appendProgressInfo');
+  if (pInfo) pInfo.style.display = 'none';
+
+  const btnAi = document.getElementById('btnSubmitAppend');
+  if (btnAi) btnAi.disabled = false;
+
+  const btnCsv = document.getElementById('btnSubmitAppendCsv');
+  if (btnCsv) {
+    btnCsv.disabled = true;
+    btnCsv.style.opacity = '0.6';
+    btnCsv.style.cursor = 'not-allowed';
+    btnCsv.textContent = '➕ นำเข้าเพิ่มเข้าไปในชุดเดิม';
+  }
+
+  const pBox = document.getElementById('appendCsvPreviewBox');
+  if (pBox) pBox.style.display = 'none';
+
+  const fileInput = document.getElementById('appendCsvFileInput');
+  if (fileInput) fileInput.value = '';
+
+  switchAppendTab('ai');
   document.getElementById('appendQuestionsModal').style.display = 'flex';
 }
 
 function closeAppendModal() {
-  document.getElementById('appendQuestionsModal').style.display = 'none';
+  const modal = document.getElementById('appendQuestionsModal');
+  if (modal) modal.style.display = 'none';
 }
+
+window.handleAppendCsvFileSelected = function(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const text = e.target.result;
+    const rows = parseCSV(text);
+    appendParsedCsvQuestions = processParsedCSVQuestions(rows);
+
+    const pBox = document.getElementById('appendCsvPreviewBox');
+    const summaryEl = document.getElementById('appendCsvPreviewSummary');
+    const rangeEl = document.getElementById('appendCsvOrderRangeText');
+    const btnSubmit = document.getElementById('btnSubmitAppendCsv');
+
+    if (appendParsedCsvQuestions.length === 0) {
+      if (pBox) pBox.style.display = 'none';
+      if (btnSubmit) {
+        btnSubmit.disabled = true;
+        btnSubmit.style.opacity = '0.6';
+        btnSubmit.style.cursor = 'not-allowed';
+      }
+      alert('ไม่พบข้อสอบในไฟล์ CSV กรุณาตรวจสอบหัวตารางและข้อมูล');
+      return;
+    }
+
+    if (pBox) pBox.style.display = 'block';
+    if (summaryEl) summaryEl.textContent = `ตรวจพบ ${appendParsedCsvQuestions.length} ข้อ พร้อมนำเข้า`;
+    if (rangeEl) {
+      const startNo = appendTargetCurrentCount + 1;
+      const endNo = appendTargetCurrentCount + appendParsedCsvQuestions.length;
+      rangeEl.textContent = `ข้อสอบใหม่จะถูกเพิ่มเป็นข้อที่ ${startNo} ถึงข้อที่ ${endNo} ของชุดนี้`;
+    }
+    if (btnSubmit) {
+      btnSubmit.disabled = false;
+      btnSubmit.style.opacity = '1';
+      btnSubmit.style.cursor = 'pointer';
+      btnSubmit.textContent = `➕ นำเข้าเพิ่ม ${appendParsedCsvQuestions.length} ข้อเข้าไปในชุดเดิม`;
+    }
+  };
+  reader.readAsText(file, 'utf-8');
+};
+
+window.submitAppendCsvQuestions = async function() {
+  if (!appendParsedCsvQuestions || appendParsedCsvQuestions.length === 0) {
+    alert('กรุณาเลือกไฟล์ CSV ที่มีข้อสอบ');
+    return;
+  }
+
+  const btn = document.getElementById('btnSubmitAppendCsv');
+  try {
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = '⏳ กำลังบันทึกข้อสอบ...';
+    }
+
+    const res = await fetch(`${API_BASE}/api/admin/exams/${appendTargetExamId}/append-questions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`
+      },
+      body: JSON.stringify({ questions: appendParsedCsvQuestions })
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      alert('เกิดข้อผิดพลาด: ' + (data.error || 'ไม่สามารถเพิ่มข้อสอบได้'));
+      return;
+    }
+
+    alert(`🎉 ${data.message || 'เพิ่มข้อสอบลงในชุดเดิมสำเร็จ!'}`);
+    closeAppendModal();
+    loadExams();
+
+  } catch (err) {
+    console.error('Append CSV error:', err);
+    alert('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์: ' + err.message);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = '➕ นำเข้าเพิ่มเข้าไปในชุดเดิม';
+    }
+  }
+};
 
 async function submitAppendQuestions() {
   const numQuestions = parseInt(document.getElementById('appendCount').value) || 10;

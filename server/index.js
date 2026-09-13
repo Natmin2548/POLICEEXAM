@@ -9578,7 +9578,7 @@ app.post('/api/admin/exams/preview-ai', authenticateToken, async (req, res) => {
   }
 });
 
-// --- Admin API: Save Verified Exam Set ---
+// --- Admin API: Save Verified Exam Set (Supports AI & CSV Import) ---
 app.post('/api/admin/exams/save-set', authenticateToken, async (req, res) => {
   try {
     if (req.user.role !== 'ADMIN' && req.user.role !== 'OWNER') {
@@ -9591,6 +9591,14 @@ app.post('/api/admin/exams/save-set', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'ไม่พบรายการข้อสอบที่ต้องการบันทึก' });
     }
 
+    const parseCorrectNum = (val) => {
+      const opt = String(val || '1').trim().toUpperCase();
+      if (opt === '2' || opt === 'B' || opt === 'ข' || opt.includes('2') || opt.includes('ข')) return 2;
+      if (opt === '3' || opt === 'C' || opt === 'ค' || opt.includes('3') || opt.includes('ค')) return 3;
+      if (opt === '4' || opt === 'D' || opt === 'ง' || opt.includes('4') || opt.includes('ง')) return 4;
+      return 1;
+    };
+
     const newExamSet = await prisma.examSet.create({
       data: {
         title: title || 'ชุดข้อสอบใหม่',
@@ -9602,18 +9610,14 @@ app.post('/api/admin/exams/save-set', authenticateToken, async (req, res) => {
         createdById: req.user.userId,
         questions: {
           create: questions.map((q, idx) => {
-            let correctNum = 1;
-            const opt = String(q.correctOption || 'A').toUpperCase();
-            if (opt === 'B' || opt === '2') correctNum = 2;
-            else if (opt === 'C' || opt === '3') correctNum = 3;
-            else if (opt === 'D' || opt === '4') correctNum = 4;
+            const correctNum = parseCorrectNum(q.correctAnswer !== undefined ? q.correctAnswer : q.correctOption);
 
             return {
-              questionText: q.questionText || `ข้อสอบที่ ${idx + 1}`,
-              choice1: q.optionA || 'ตัวเลือก ก',
-              choice2: q.optionB || 'ตัวเลือก ข',
-              choice3: q.optionC || 'ตัวเลือก ค',
-              choice4: q.optionD || 'ตัวเลือก ง',
+              questionText: q.questionText || q.question || `ข้อสอบที่ ${idx + 1}`,
+              choice1: q.choice1 || q.optionA || 'ตัวเลือก ก',
+              choice2: q.choice2 || q.optionB || 'ตัวเลือก ข',
+              choice3: q.choice3 || q.optionC || 'ตัวเลือก ค',
+              choice4: q.choice4 || q.optionD || 'ตัวเลือก ง',
               correctAnswer: correctNum,
               explanation: q.explanation || '',
               sortOrder: idx + 1
@@ -9631,6 +9635,77 @@ app.post('/api/admin/exams/save-set', authenticateToken, async (req, res) => {
   } catch (err) {
     console.error('Save exam set error:', err);
     res.status(500).json({ error: 'เกิดข้อผิดพลาดในการบันทึก: ' + err.message });
+  }
+});
+
+// --- Admin API: Append Questions Array (e.g. from CSV) to Existing Exam Set ---
+app.post('/api/admin/exams/:examSetId/append-questions', authenticateToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'ADMIN' && req.user.role !== 'OWNER') {
+      return res.status(403).json({ error: 'คุณไม่มีสิทธิ์ใช้งานคำสั่งนี้' });
+    }
+
+    const examSetId = parseInt(req.params.examSetId);
+    const { questions } = req.body;
+
+    if (!questions || !Array.isArray(questions) || questions.length === 0) {
+      return res.status(400).json({ error: 'ไม่พบรายการข้อสอบที่ต้องการเพิ่ม' });
+    }
+
+    const examSet = await prisma.examSet.findUnique({
+      where: { id: examSetId },
+      include: { questions: { select: { id: true } } }
+    });
+
+    if (!examSet) {
+      return res.status(404).json({ error: 'ไม่พบชุดข้อสอบนี้' });
+    }
+
+    const currentCount = examSet.questions.length;
+
+    const parseCorrectNum = (val) => {
+      const opt = String(val || '1').trim().toUpperCase();
+      if (opt === '2' || opt === 'B' || opt === 'ข' || opt.includes('2') || opt.includes('ข')) return 2;
+      if (opt === '3' || opt === 'C' || opt === 'ค' || opt.includes('3') || opt.includes('ค')) return 3;
+      if (opt === '4' || opt === 'D' || opt === 'ง' || opt.includes('4') || opt.includes('ง')) return 4;
+      return 1;
+    };
+
+    const createdQuestions = await prisma.$transaction(
+      questions.map((q, idx) => {
+        const correctNum = parseCorrectNum(q.correctAnswer !== undefined ? q.correctAnswer : q.correctOption);
+
+        return prisma.question.create({
+          data: {
+            examSetId: examSetId,
+            questionText: q.questionText || q.question || `ข้อสอบที่ ${currentCount + idx + 1}`,
+            choice1: q.choice1 || q.optionA || 'ตัวเลือก ก',
+            choice2: q.choice2 || q.optionB || 'ตัวเลือก ข',
+            choice3: q.choice3 || q.optionC || 'ตัวเลือก ค',
+            choice4: q.choice4 || q.optionD || 'ตัวเลือก ง',
+            correctAnswer: correctNum,
+            explanation: q.explanation || '',
+            sortOrder: currentCount + idx + 1
+          }
+        });
+      })
+    );
+
+    const updatedExamSet = await prisma.examSet.update({
+      where: { id: examSetId },
+      data: {
+        totalCount: currentCount + createdQuestions.length
+      }
+    });
+
+    res.json({
+      message: `เพิ่มข้อสอบสำเร็จ ${createdQuestions.length} ข้อ! (รวมในชุดเป็น ${updatedExamSet.totalCount} ข้อ)`,
+      addedCount: createdQuestions.length,
+      totalCount: updatedExamSet.totalCount
+    });
+  } catch (err) {
+    console.error('Append questions error:', err);
+    res.status(500).json({ error: 'เกิดข้อผิดพลาดในการเพิ่มข้อสอบ: ' + err.message });
   }
 });
 

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Dashboard - POLICEEXAM</title>
   <link rel="stylesheet" href="css/admin.css">
-  <script src="js/admin.js?v=37" defer></script>
+  <script src="js/admin.js?v=38" defer></script>
 </head>
 <body>
 
@@ -151,8 +151,11 @@
               <button class="btn btn-danger" onclick="clearAllExams()" style="background: #EF4444; border: none; padding: 10px 16px; border-radius: 12px; font-weight: 700; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(239,68,68,0.25);">
                 <span>🗑️ ลบข้อสอบทั้งหมด</span>
               </button>
+              <button class="btn" onclick="openCsvExamModal()" style="background: #0284C7; color: white; border: none; padding: 10px 16px; border-radius: 12px; font-weight: 700; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(2,132,199,0.25); cursor: pointer;">
+                <span>📁 นำเข้าข้อสอบจาก CSV</span>
+              </button>
               <button class="btn btn-primary" onclick="showAddExamModal()" style="background: #BD1B0B; border: none; padding: 10px 18px; border-radius: 12px; font-weight: 700; display: flex; align-items: center; gap: 6px;">
-                <span>+ เพิ่มชุดข้อสอบใหม่</span>
+                <span>+ เพิ่มชุดข้อสอบใหม่ (AI)</span>
               </button>
             </div>
           </div>
@@ -670,27 +673,209 @@
     </div>
   </div>
 
-  <!-- Append Questions Modal (ต่อเติมข้อสอบในชุดเดิม) -->
+  <!-- Append Questions Modal (ต่อเติมข้อสอบในชุดเดิม - รองรับทั้ง AI และ CSV) -->
   <div class="modal-overlay" id="appendQuestionsModal">
-    <div class="modal-content" style="max-width: 500px;">
-      <h3 class="modal-title" style="color: var(--primary-color);">➕ เพิ่มข้อสอบเข้าไปในชุดเดิม</h3>
-      <p id="appendExamTitleLabel" style="font-size: 14px; color: #64748B; margin-bottom: 16px;"></p>
+    <div class="modal-content" style="max-width: 560px; max-height: 90vh; display: flex; flex-direction: column;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+        <div>
+          <h3 class="modal-title" style="color: var(--primary-color); margin-bottom: 4px;">➕ เพิ่มข้อสอบเข้าไปในชุดเดิม</h3>
+          <p id="appendExamTitleLabel" style="font-size: 13px; color: #64748B; margin: 0;"></p>
+        </div>
+        <button type="button" onclick="closeAppendModal()" style="background: #E2E8F0; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-size: 13px; color: #475569;">✕</button>
+      </div>
 
-      <form id="appendForm" onsubmit="event.preventDefault(); submitAppendQuestions();">
-        <div class="form-group">
-          <label for="appendCount">จำนวนข้อที่ต้องการเพิ่ม (นับต่อจากข้อเดิม)</label>
-          <input type="number" id="appendCount" class="form-input" min="1" max="50" value="10" required>
+      <!-- Tab Switcher: AI vs CSV -->
+      <div style="display: flex; background: #F1F5F9; padding: 4px; border-radius: 12px; margin-bottom: 16px;">
+        <button type="button" id="btnTabAppendAi" onclick="switchAppendTab('ai')" style="flex: 1; padding: 9px; border-radius: 9px; border: none; background: white; font-weight: 700; font-size: 12.5px; color: #0F172A; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+          🤖 สั่ง AI สร้างข้อสอบเพิ่ม
+        </button>
+        <button type="button" id="btnTabAppendCsv" onclick="switchAppendTab('csv')" style="flex: 1; padding: 9px; border-radius: 9px; border: none; background: transparent; font-weight: 700; font-size: 12.5px; color: #64748B; cursor: pointer;">
+          📁 อัปโหลดเพิ่มจากไฟล์ CSV
+        </button>
+      </div>
+
+      <!-- Option 1: AI Generation Tab -->
+      <div id="appendAiTabContent">
+        <form id="appendForm" onsubmit="event.preventDefault(); submitAppendQuestions();">
+          <div class="form-group">
+            <label for="appendCount">จำนวนข้อที่ต้องการเพิ่ม (นับต่อจากข้อเดิม)</label>
+            <input type="number" id="appendCount" class="form-input" min="1" max="50" value="10" required>
+          </div>
+
+          <div id="appendProgressInfo" style="display: none; background: #FFF1F2; border: 1px solid #FECACA; border-radius: 8px; padding: 12px; margin-bottom: 16px; font-size: 13px; color: #BD1B0B; text-align: center;">
+            ⏳ <strong>Gemini กำลังสร้างข้อสอบเพิ่ม...</strong>
+          </div>
+
+          <div class="modal-actions" style="margin-top: 18px;">
+            <button type="button" class="btn btn-outline" onclick="closeAppendModal()">ยกเลิก</button>
+            <button type="submit" id="btnSubmitAppend" class="btn btn-primary">🤖 สั่ง Gemini สร้างข้อสอบเพิ่ม</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Option 2: CSV Upload Tab -->
+      <div id="appendCsvTabContent" style="display: none; flex: 1; overflow-y: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+          <span style="font-size: 12.5px; font-weight: 700; color: #334155;">เลือกไฟล์ CSV สำหรับเพิ่มข้อสอบ:</span>
+          <button type="button" onclick="downloadSampleExamCsv()" style="background: none; border: none; color: #0284C7; font-weight: 700; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+            📥 โหลดตัวอย่าง CSV
+          </button>
         </div>
 
-        <div id="appendProgressInfo" style="display: none; background: #FFF1F2; border: 1px solid #FECACA; border-radius: 8px; padding: 12px; margin-bottom: 16px; font-size: 13px; color: #BD1B0B; text-align: center;">
-          ⏳ <strong>Gemini กำลังสร้างข้อสอบเพิ่ม...</strong>
+        <div id="appendCsvDropZone" onclick="document.getElementById('appendCsvFileInput').click()" style="border: 2px dashed #CBD5E1; border-radius: 12px; padding: 20px; text-align: center; cursor: pointer; background: #F8FAFC;">
+          <input type="file" id="appendCsvFileInput" accept=".csv, .txt" onchange="handleAppendCsvFileSelected(event)" style="display: none;">
+          <div style="font-size: 28px; margin-bottom: 6px;">📄</div>
+          <div style="font-size: 13.5px; font-weight: 700; color: #1E293B;">คลิกเลือกไฟล์ CSV ที่ต้องการนำเข้า</div>
+          <div style="font-size: 11.5px; color: #64748B; margin-top: 2px;">(โจทย์, ก, ข, ค, ง, เฉลย, คำอธิบาย)</div>
         </div>
 
-        <div class="modal-actions">
+        <!-- Preview of parsed CSV for append -->
+        <div id="appendCsvPreviewBox" style="display: none; margin-top: 14px; background: #F0FDF4; border: 1.5px solid #BBF7D0; border-radius: 12px; padding: 12px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="font-size: 13px; font-weight: 800; color: #166534;" id="appendCsvPreviewSummary">
+              ตรวจพบ 0 ข้อ พร้อมนำเข้า
+            </div>
+            <span style="font-size: 11px; background: #DCFCE7; color: #15803D; font-weight: 700; padding: 2px 8px; border-radius: 999px;">พร้อมเพิ่ม</span>
+          </div>
+          <p style="font-size: 12px; color: #15803D; margin: 4px 0 0 0;" id="appendCsvOrderRangeText">
+            ข้อสอบใหม่จะถูกเพิ่มเป็นข้อที่ ...
+          </p>
+        </div>
+
+        <div class="modal-actions" style="margin-top: 18px;">
           <button type="button" class="btn btn-outline" onclick="closeAppendModal()">ยกเลิก</button>
-          <button type="submit" id="btnSubmitAppend" class="btn btn-primary">🤖 สั่ง Gemini สร้างข้อสอบเพิ่ม</button>
+          <button type="button" id="btnSubmitAppendCsv" onclick="submitAppendCsvQuestions()" disabled class="btn btn-primary" style="background: #0284C7; border: none; opacity: 0.6; cursor: not-allowed;">
+            ➕ นำเข้าเพิ่มเข้าไปในชุดเดิม
+          </button>
         </div>
-      </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- CSV Exam Import Modal (นำเข้าชุดข้อสอบใหม่จากไฟล์ CSV) -->
+  <div class="modal-overlay" id="csvExamImportModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(8px); z-index: 10015; align-items: center; justify-content: center; padding: 16px;">
+    <div class="modal-card" style="background: white; max-width: 860px; width: 100%; max-height: 94vh; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); display: flex; flex-direction: column; overflow: hidden;">
+      
+      <!-- Modal Header -->
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 18px 24px; border-bottom: 1.5px solid #E2E8F0; background: #F8FAFC;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="width: 42px; height: 42px; border-radius: 12px; background: #E0F2FE; color: #0284C7; display: flex; align-items: center; justify-content: center; font-size: 22px;">
+            📁
+          </div>
+          <div>
+            <h3 style="font-size: 18px; font-weight: 800; color: #0F172A; margin: 0;">นำเข้าชุดข้อสอบจากไฟล์ CSV</h3>
+            <p style="font-size: 12.5px; color: #64748B; margin: 2px 0 0 0;">อัปโหลดไฟล์ CSV ที่มีโจทย์ ตัวเลือก ก-ง เฉลย และคำอธิบาย เพื่อสร้างชุดข้อสอบทันที</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeCsvExamModal()" style="background: #E2E8F0; border: none; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 15px; cursor: pointer; color: #475569;">✕</button>
+      </div>
+
+      <!-- Modal Body (Scrollable) -->
+      <div style="padding: 22px 24px; overflow-y: auto; flex: 1; background: #FAFAFA;">
+        
+        <!-- Metadata Form -->
+        <div style="background: white; border: 1.5px solid #E2E8F0; border-radius: 16px; padding: 18px; margin-bottom: 18px;">
+          <div style="font-size: 13.5px; font-weight: 800; color: #0F172A; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+            <span>📋 1. กำหนดข้อมูลชุดข้อสอบ</span>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 12px;">
+            <div>
+              <label style="font-size: 12px; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">วิชาหลัก (Subject):</label>
+              <select id="csvExamSubject" onchange="onCsvSubjectChange()" style="width: 100%; padding: 9px 12px; border-radius: 10px; border: 1.5px solid #CBD5E1; font-size: 13px; font-weight: 600; background: white; outline: none;">
+                <option value="งานสารบรรณ">📜 ระเบียบสารบรรณ (๒๕๒๖)</option>
+                <option value="ลักษณะที่54">📑 สารบรรณตำรวจ (ลักษณะ ๕๔)</option>
+                <option value="ทั่วไป">🧠 ความสามารถทั่วไป (คณิตศาสตร์)</option>
+                <option value="ภาษาไทย">🇹🇭 ภาษาไทย</option>
+                <option value="ภาษาอังกฤษ">🇬🇧 ภาษาอังกฤษ</option>
+                <option value="สังคม">🏛️ สังคม วัฒนธรรม และอาเซียน</option>
+                <option value="กฏหมาย">⚖️ กฎหมายที่ควรรู้</option>
+                <option value="คอม">💻 เทคโนโลยีสารสนเทศ</option>
+              </select>
+            </div>
+
+            <div>
+              <label style="font-size: 12px; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">หมวดหมู่ / บทเรียน:</label>
+              <select id="csvExamChapter" onchange="onCsvChapterChange()" style="width: 100%; padding: 9px 12px; border-radius: 10px; border: 1.5px solid #CBD5E1; font-size: 13px; font-weight: 600; background: white; outline: none;">
+                <option value="รวมทุกบท">📚 รวมทุกบท</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px;">
+            <div>
+              <label style="font-size: 12px; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">ชื่อชุดข้อสอบ (Exam Title):</label>
+              <input type="text" id="csvExamTitle" placeholder="เช่น แบบทดสอบคอมพิวเตอร์: บทที่ 1 ความรู้พื้นฐาน (ชุดที่ 5)" style="width: 100%; box-sizing: border-box; padding: 9px 12px; border-radius: 10px; border: 1.5px solid #CBD5E1; font-size: 13px; font-family: inherit; outline: none;">
+            </div>
+
+            <div>
+              <label style="font-size: 12px; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">สถานะชุดข้อสอบ:</label>
+              <select id="csvExamStatus" style="width: 100%; padding: 9px 12px; border-radius: 10px; border: 1.5px solid #CBD5E1; font-size: 13px; font-weight: 600; background: white; outline: none;">
+                <option value="PUBLISHED">เปิดสอบทันที (Published)</option>
+                <option value="DRAFT">ฉบับร่าง (Draft)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- CSV Upload Box & Template Download -->
+        <div style="background: white; border: 1.5px solid #E2E8F0; border-radius: 16px; padding: 18px; margin-bottom: 18px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+            <div style="font-size: 13.5px; font-weight: 800; color: #0F172A; display: flex; align-items: center; gap: 6px;">
+              <span>📂 2. เลือกไฟล์ CSV หรือลากมาวาง</span>
+            </div>
+            <button type="button" class="btn btn-outline" onclick="downloadSampleExamCsv()" style="font-size: 12px; padding: 6px 12px; border-radius: 10px; border: 1.5px solid #0284C7; color: #0284C7; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; background: #F0F9FF;">
+              <span>📥 ดาวน์โหลดไฟล์ตัวอย่าง CSV</span>
+            </button>
+          </div>
+
+          <!-- Dropzone -->
+          <div id="csvDropZone" onclick="document.getElementById('csvFileInput').click()" ondragover="handleCsvDragOver(event)" ondragleave="handleCsvDragLeave(event)" ondrop="handleCsvDrop(event)" style="border: 2px dashed #94A3B8; border-radius: 14px; padding: 28px 20px; text-align: center; cursor: pointer; background: #F8FAFC; transition: all 0.2s ease;">
+            <input type="file" id="csvFileInput" accept=".csv, .txt" onchange="handleCsvFileSelected(event)" style="display: none;">
+            <div style="font-size: 36px; margin-bottom: 8px;">📄</div>
+            <div style="font-size: 14px; font-weight: 700; color: #1E293B;">คลิกเพื่อเลือกไฟล์ .CSV หรือลากไฟล์มาวางที่นี่</div>
+            <div style="font-size: 12px; color: #64748B; margin-top: 4px;">รองรับไฟล์ CSV (UTF-8) ที่มีคอลัมน์: โจทย์, ก, ข, ค, ง, เฉลย, คำอธิบาย</div>
+          </div>
+
+          <!-- Format Guide Pill -->
+          <div style="margin-top: 12px; background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 12px; padding: 10px 14px; font-size: 12px; color: #1E40AF; display: flex; align-items: flex-start; gap: 8px;">
+            <span style="font-size: 14px;">💡</span>
+            <div>
+              <b>หัวตารางที่รองรับ (Header):</b> <code>โจทย์</code>, <code>ตัวเลือก ก</code> (หรือ <code>ก</code>), <code>ตัวเลือก ข</code> (หรือ <code>ข</code>), <code>ตัวเลือก ค</code> (หรือ <code>ค</code>), <code>ตัวเลือก ง</code> (หรือ <code>ง</code>), <code>เฉลย</code> (ใส่ 1-4 หรือ ก-ง หรือ A-D), <code>คำอธิบาย</code>
+            </div>
+          </div>
+        </div>
+
+        <!-- Parsed Questions Preview Section -->
+        <div id="csvQuestionsPreviewContainer" style="display: none; background: white; border: 1.5px solid #E2E8F0; border-radius: 16px; overflow: hidden;">
+          <div style="padding: 16px 20px; border-bottom: 1.5px solid #E2E8F0; background: #F8FAFC; display: flex; justify-content: space-between; align-items: center;">
+            <div style="font-size: 14px; font-weight: 800; color: #0F172A; display: flex; align-items: center; gap: 8px;">
+              <span>🔍 ตรวจสอบข้อสอบที่ตรวจพบในไฟล์</span>
+              <span id="csvParsedCountBadge" style="background: #ECFDF5; color: #059669; border: 1px solid #A7F3D0; font-size: 12px; font-weight: 800; padding: 2px 10px; border-radius: 999px;">0 ข้อ</span>
+            </div>
+            <button type="button" class="btn btn-outline" onclick="clearCsvPreview()" style="font-size: 12px; padding: 5px 10px; border-radius: 8px; color: #EF4444; border-color: #FECACA;">ล้างข้อมูล</button>
+          </div>
+
+          <div id="csvQuestionsList" style="max-height: 380px; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px;">
+            <!-- Questions rendered via JS -->
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; border-top: 1.5px solid #E2E8F0; background: white;">
+        <div id="csvImportStatusMsg" style="font-size: 13px; font-weight: 600; color: #64748B;">
+          กรุณาเลือกไฟล์ CSV เพื่อเริ่มการตรวจสอบ
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <button type="button" class="btn btn-outline" onclick="closeCsvExamModal()" style="padding: 10px 18px; border-radius: 12px; font-weight: 700;">ยกเลิก</button>
+          <button type="button" class="btn btn-primary" id="btnSaveCsvExamSet" onclick="saveCsvExamSet()" disabled style="background: #0284C7; border: none; padding: 10px 24px; border-radius: 12px; font-weight: 800; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(2,132,199,0.25); cursor: not-allowed; opacity: 0.6;">
+            <span>💾 บันทึกชุดข้อสอบ (0 ข้อ)</span>
+          </button>
+        </div>
+      </div>
+
     </div>
   </div>
 
