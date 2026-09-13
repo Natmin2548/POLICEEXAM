@@ -2781,14 +2781,38 @@
           }
         } catch (e) { }
 
-        // Gather quiz attempts from user-scoped storage & db history
+        // Gather quiz attempts from account db history (primary) and local cache
         let historyList = [];
         try {
           const uid = user.id || (typeof userProfile !== 'undefined' && userProfile && userProfile.id) || 'guest';
+          const dbList = (typeof userDbQuizHistory !== 'undefined' && Array.isArray(userDbQuizHistory)) ? userDbQuizHistory : [];
           const uRaw = localStorage.getItem(`userQuizHistory_${uid}`);
           const uList = uRaw ? JSON.parse(uRaw) : [];
-          const dbList = (typeof userDbQuizHistory !== 'undefined' && Array.isArray(userDbQuizHistory)) ? userDbQuizHistory : [];
-          historyList = [...uList, ...dbList];
+          
+          const seen = new Set();
+          const all = [...dbList, ...uList];
+          for (const h of all) {
+            if (!h) continue;
+            let time = 0;
+            if (h.createdAt) time = new Date(h.createdAt).getTime();
+            if (!time || isNaN(time)) {
+              if (h.timestamp) time = Number(h.timestamp) || new Date(h.timestamp).getTime();
+            }
+            if (!time || isNaN(time)) {
+              if (h.date) time = new Date(h.date).getTime();
+            }
+            if (!time || isNaN(time)) time = 0;
+
+            const timeWindow = time > 0 ? Math.round(time / 45000) : '0';
+            const sub = (h.subject || '').trim();
+            const title = (h.setTitle || '').trim();
+            const score = (h.scorePct !== undefined && h.scorePct !== null) ? h.scorePct : (h.score || 0);
+            const key = `${sub}_${title}_${score}_${timeWindow}`;
+            if (!seen.has(key)) {
+              seen.add(key);
+              historyList.push({ ...h, time });
+            }
+          }
         } catch (e) { }
 
         const getSubjScore = (subKeywords, fallbackScore) => {

@@ -123,6 +123,85 @@ window.alert = function(msg) {
 let userProfile = null;
 let authToken = null;
 let userDbQuizHistory = [];
+let isQuizHistorySyncing = false;
+
+function queuePendingQuizAttempt(userId, record) {
+  try {
+    if (!userId || userId === 'guest') return;
+    const pKey = `pendingQuizSync_${userId}`;
+    const pRaw = localStorage.getItem(pKey);
+    const pList = pRaw ? JSON.parse(pRaw) : [];
+    pList.push(record);
+    localStorage.setItem(pKey, JSON.stringify(pList.slice(0, 50)));
+  } catch(e) {}
+}
+
+// Universal function to sync quiz history between local machine and server database
+async function syncUserQuizHistoryWithServer(force = false) {
+  const token = authToken || localStorage.getItem('authToken');
+  const user = userProfile || (localStorage.getItem('userProfile') ? JSON.parse(localStorage.getItem('userProfile')) : null);
+  if (!token || !user || !user.id || user.id === 'guest') return userDbQuizHistory;
+  if (isQuizHistorySyncing && !force) return userDbQuizHistory;
+
+  isQuizHistorySyncing = true;
+  try {
+    const uid = user.id;
+    const localRaw = localStorage.getItem(`userQuizHistory_${uid}`);
+    const localAttempts = localRaw ? JSON.parse(localRaw) : [];
+    const pendingRaw = localStorage.getItem(`pendingQuizSync_${uid}`);
+    const pendingAttempts = pendingRaw ? JSON.parse(pendingRaw) : [];
+    const combinedToSend = [...pendingAttempts, ...localAttempts];
+
+    const res = await fetch(`${API_BASE}/api/user/sync-quiz-history?_t=${Date.now()}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ attempts: combinedToSend })
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      if (data && Array.isArray(data.history)) {
+        userDbQuizHistory = data.history;
+        localStorage.setItem(`userQuizHistory_${uid}`, JSON.stringify(data.history));
+        localStorage.removeItem(`pendingQuizSync_${uid}`);
+        
+        if (data.user) {
+          userProfile = { ...userProfile, ...data.user };
+          localStorage.setItem('userProfile', JSON.stringify(userProfile));
+        }
+
+        if (typeof updateStatsTabDetails === 'function') {
+          updateStatsTabDetails();
+        }
+        if (typeof window.updateHomeDashboardCharts === 'function') {
+          window.updateHomeDashboardCharts(userProfile);
+        }
+      }
+    } else {
+      // Fallback: fetch directly via GET
+      const getRes = await fetch(`${API_BASE}/api/user/quiz-history?_t=${Date.now()}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (getRes.ok) {
+        const hist = await getRes.json();
+        if (Array.isArray(hist)) {
+          userDbQuizHistory = hist;
+          localStorage.setItem(`userQuizHistory_${uid}`, JSON.stringify(hist));
+          if (typeof updateStatsTabDetails === 'function') updateStatsTabDetails();
+          if (typeof window.updateHomeDashboardCharts === 'function') window.updateHomeDashboardCharts(userProfile);
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('Quiz history sync note:', err);
+  } finally {
+    isQuizHistorySyncing = false;
+  }
+  return userDbQuizHistory;
+}
 
 async function checkSession() {
   authToken = localStorage.getItem('authToken');
@@ -144,10 +223,25 @@ async function checkSession() {
     return;
   }
 
+  // Pre-load from cached account history if available for instant UI rendering
+  try {
+    const uid = userProfile.id;
+    if (uid) {
+      const cached = localStorage.getItem(`userQuizHistory_${uid}`);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed)) userDbQuizHistory = parsed;
+      }
+    }
+  } catch(e) {}
+
   if (typeof initializeDashboard === 'function') initializeDashboard();
   if (typeof updateStatsTabDetails === 'function') updateStatsTabDetails();
   if (typeof loadRealProfile === 'function') await loadRealProfile();
   if (typeof updateStatsTabDetails === 'function') updateStatsTabDetails();
+  
+  // Background live sync with server
+  setTimeout(() => syncUserQuizHistoryWithServer(), 100);
 }
 
 function initializeDashboard() {
@@ -217,26 +311,12 @@ async function loadRealProfile() {
         initializeDashboard();
         updateStatsFromProfile(data.user);
         
-        // Fetch real quiz history from DB for this user
+        // Fetch and sync real quiz history from DB for this user
         if (authToken) {
           try {
-            const histRes = await fetch(`${API_BASE}/api/user/quiz-history?_t=${Date.now()}`, {
-              headers: { 'Authorization': `Bearer ${authToken}` }
-            });
-            if (histRes.ok) {
-              const hist = await histRes.json();
-              if (Array.isArray(hist)) {
-                userDbQuizHistory = hist;
-                if (typeof window.updateHomeDashboardCharts === 'function') {
-                  window.updateHomeDashboardCharts(userProfile);
-                }
-                if (typeof updateStatsTabDetails === 'function') {
-                  updateStatsTabDetails();
-                }
-              }
-            }
+            await syncUserQuizHistoryWithServer(true);
           } catch (histErr) {
-            console.warn('Quiz history fetch note:', histErr);
+            console.warn('Quiz history sync error:', histErr);
           }
         }
         
@@ -1419,7 +1499,9 @@ async function finishQuiz() {
   saveQuizHistoryRecord({
     subject: currentQuizSubject,
     score: currentQuizScore,
+    correctCount: currentQuizScore,
     total: total,
+    totalQuestions: total,
     scorePct: percent,
     createdAt: finishIso,
     timestamp: Date.now(),
@@ -1539,6 +1621,7 @@ window.switchTabToHome = function(e) {
   if (typeof loadRealProfile === 'function') loadRealProfile();
   if (typeof loadRadarChart === 'function') loadRadarChart();
   if (typeof updateStatsTabDetails === 'function') updateStatsTabDetails();
+  if (typeof syncUserQuizHistoryWithServer === 'function') syncUserQuizHistoryWithServer();
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
 };
@@ -1581,6 +1664,7 @@ if (homeTabBtn) {
     loadRealProfile(); // Refresh profile values on navigate
     loadRadarChart();
     updateStatsTabDetails();
+    if (typeof syncUserQuizHistoryWithServer === 'function') syncUserQuizHistoryWithServer();
   });
 }
 
@@ -1650,6 +1734,7 @@ if (statsTabBtn) {
     if (questionBankView) questionBankView.classList.remove('active');
     
     updateStatsTabDetails();
+    if (typeof syncUserQuizHistoryWithServer === 'function') syncUserQuizHistoryWithServer();
   });
 }
 
@@ -2822,13 +2907,18 @@ function updateStatsTabDetails() {
     statsLastUpdateText.textContent = `อัปเดตล่าสุด: วันนี้ (${today.getDate()} ${months[today.getMonth()]})`;
   }
 
-  // 2. Fetch combined quiz history (localStorage + DB)
+  // 2. Fetch combined quiz history (Account DB is primary source of truth)
   let historyList = [];
   try {
-    const uid = userProfile.id || 'guest';
+    const uid = (userProfile && userProfile.id) ? userProfile.id : 'guest';
+    const dbList = (typeof userDbQuizHistory !== 'undefined' && Array.isArray(userDbQuizHistory)) ? userDbQuizHistory : [];
     const uRaw = localStorage.getItem(`userQuizHistory_${uid}`);
     const uList = uRaw ? JSON.parse(uRaw) : [];
-    const dbList = (typeof userDbQuizHistory !== 'undefined' && Array.isArray(userDbQuizHistory)) ? userDbQuizHistory : [];
+
+    // Trigger sync if dbList is empty and user is logged in
+    if (dbList.length === 0 && (authToken || localStorage.getItem('authToken')) && uid !== 'guest' && !isQuizHistorySyncing) {
+      setTimeout(() => syncUserQuizHistoryWithServer(), 50);
+    }
     
     // Combine and deduplicate seamlessly between DB and LocalStorage
     const seen = new Set();
@@ -2845,8 +2935,8 @@ function updateStatsTabDetails() {
       }
       if (!time || isNaN(time)) time = 0;
 
-      // Group attempts within 30-second window as identical attempt to prevent double count
-      const timeWindow = time > 0 ? Math.round(time / 30000) : '0';
+      // Group attempts within 45-second window as identical attempt to prevent double count
+      const timeWindow = time > 0 ? Math.round(time / 45000) : '0';
       const sub = (h.subject || '').trim();
       const title = (h.setTitle || '').trim();
       const score = (h.scorePct !== undefined && h.scorePct !== null) ? h.scorePct : (h.score || 0);
@@ -7385,20 +7475,43 @@ function renderQuizResults() {
   `;
 }
 
-function saveQuizHistoryRecord(record) {
+async function saveQuizHistoryRecord(record) {
   try {
     const userId = (typeof userProfile !== 'undefined' && userProfile && userProfile.id) ? userProfile.id : 'guest';
     const userKey = `userQuizHistory_${userId}`;
+    const token = authToken || localStorage.getItem('authToken');
+
+    const correct = (record.correctCount !== undefined) ? Number(record.correctCount) : (record.score !== undefined ? Number(record.score) : 0);
+    const total = (record.totalQuestions !== undefined) ? Number(record.totalQuestions) : (record.total !== undefined ? Number(record.total) : 10);
+    const pct = (record.scorePct !== undefined) ? Number(record.scorePct) : Math.round((correct / Math.max(1, total)) * 100);
+    const finishIso = record.createdAt || record.date || new Date().toISOString();
+
+    const normalized = {
+      ...record,
+      userId,
+      subject: (record.subject || 'ทั่วไป').trim(),
+      setId: record.setId ? String(record.setId).trim() : null,
+      setTitle: record.setTitle ? String(record.setTitle).trim() : null,
+      scorePct: pct,
+      correctCount: correct,
+      totalQuestions: total,
+      createdAt: finishIso,
+      timestamp: record.timestamp || Date.now(),
+      date: finishIso
+    };
+
+    // 1. Immediately update in-memory DB history
+    if (!userDbQuizHistory) userDbQuizHistory = [];
+    userDbQuizHistory.unshift(normalized);
+
+    // 2. Cache in local storage for this account
     const raw = localStorage.getItem(userKey);
     let list = raw ? JSON.parse(raw) : [];
     if (!Array.isArray(list)) list = [];
-    list.unshift(record);
+    list.unshift(normalized);
     localStorage.setItem(userKey, JSON.stringify(list.slice(0, 100)));
 
-    if (!userDbQuizHistory) userDbQuizHistory = [];
-    userDbQuizHistory.unshift(record);
-
-    // Immediately trigger real-time dashboard charts refresh
+    // 3. Immediately trigger real-time dashboard charts and stats refresh
     if (typeof window.updateHomeDashboardCharts === 'function') {
       window.updateHomeDashboardCharts(userProfile);
     }
@@ -7406,33 +7519,49 @@ function saveQuizHistoryRecord(record) {
       updateStatsTabDetails();
     }
 
-    // Send real stats to backend PostgreSQL if authenticated
-    if (authToken) {
-      fetch(`${API_BASE}/api/user/record-quiz`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`
-        },
-        body: JSON.stringify({
-          score: record.correctCount,
-          totalCount: record.totalQuestions,
-          scorePct: record.scorePct,
-          subject: record.subject || 'ทั่วไป',
-          setId: record.setId,
-          setTitle: record.setTitle
-        })
-      }).then(res => res.json()).then(data => {
-        if (data.user) {
-          localStorage.setItem('userProfile', JSON.stringify(data.user));
-          if (typeof userProfile !== 'undefined') {
-            userProfile = data.user;
+    // 4. Send real stats to backend PostgreSQL if authenticated
+    if (token && userId !== 'guest') {
+      try {
+        const res = await fetch(`${API_BASE}/api/user/record-quiz`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            score: correct,
+            correctCount: correct,
+            total: total,
+            totalCount: total,
+            totalQuestions: total,
+            scorePct: pct,
+            subject: normalized.subject,
+            setId: normalized.setId,
+            setTitle: normalized.setTitle,
+            createdAt: finishIso
+          })
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data.user) {
+            localStorage.setItem('userProfile', JSON.stringify(data.user));
+            if (typeof userProfile !== 'undefined') {
+              userProfile = { ...userProfile, ...data.user };
+            }
+            if (typeof window.updateHomeDashboardCharts === 'function') {
+              window.updateHomeDashboardCharts(userProfile);
+            }
           }
-          if (typeof window.updateHomeDashboardCharts === 'function') {
-            window.updateHomeDashboardCharts(data.user);
-          }
+          // Background sync to ensure exact server attempt IDs and order
+          setTimeout(() => syncUserQuizHistoryWithServer(true), 150);
+        } else {
+          queuePendingQuizAttempt(userId, normalized);
         }
-      }).catch(err => console.warn('Record quiz backend sync warning:', err));
+      } catch (postErr) {
+        console.warn('Record quiz backend sync warning:', postErr);
+        queuePendingQuizAttempt(userId, normalized);
+      }
     }
 
     // If this was a daily streak exam, increment streak!

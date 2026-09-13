@@ -10203,88 +10203,216 @@ app.get('/api/exams/amnuay', async (req, res) => {
   }
 });
 
+// Helper to compute real average score per subject for a user in database
+async function recalculateUserSubjectScores(userId) {
+  const allUserAttempts = await prisma.quizAttempt.findMany({
+    where: { userId },
+    select: { subject: true, setTitle: true, scorePct: true }
+  });
+
+  const computeSubjectAvg = (keywords, excludeKeywords = []) => {
+    const matched = allUserAttempts.filter(a => {
+      const str = `${a.subject || ''} ${a.setTitle || ''}`.replace(/[\s_]/g, '').replace('กฏ', 'กฎ');
+      const hasKeyword = keywords.some(k => str.includes(k));
+      const hasExcluded = excludeKeywords.some(e => str.includes(e));
+      return hasKeyword && !hasExcluded;
+    });
+    if (matched.length === 0) return 0;
+    return Math.round(matched.reduce((sum, item) => sum + (Number(item.scorePct) || 0), 0) / matched.length);
+  };
+
+  const avgGeneral = computeSubjectAvg(['ทั่วไป', 'คณิต', 'คำนวณ', 'เหตุผล']);
+  const avgThai = computeSubjectAvg(['ภาษาไทย', 'วิชาไทย', 'ไทย'], ['๕๔', '54', 'ลักษณะ', 'สารบรรณ']);
+  const avgEnglish = computeSubjectAvg(['อังกฤษ', 'ภาษาอังกฤษ', 'english']);
+  const avgComputer = computeSubjectAvg(['คอม', 'สารสนเทศ', 'ไอที', 'เทคโนโลยี']);
+  const avgSocial = computeSubjectAvg(['สังคม', 'จริยธรรม', 'อาเซียน']);
+  const avgSecretariat = computeSubjectAvg(['สารบรรณ', '๒๕๒๖', '๕๔', '54', 'ลักษณะที่๕๔']);
+  const avgLaw = computeSubjectAvg(['กฎหมาย', 'กม', 'วิ.อาญา', 'พ.ร.บ.ตำรวจ']);
+
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) return null;
+
+  const updateData = {
+    scoreGeneral: avgGeneral || user.scoreGeneral || 0,
+    scoreThai: avgThai || user.scoreThai || 0,
+    scoreEnglish: avgEnglish || user.scoreEnglish || 0,
+    scoreComputer: avgComputer || user.scoreComputer || 0,
+    scoreSocial: avgSocial || user.scoreSocial || 0,
+    scoreSecretariat: avgSecretariat || user.scoreSecretariat || 0,
+    scoreLaw: avgLaw || user.scoreLaw || 0
+  };
+
+  return prisma.user.update({
+    where: { id: userId },
+    data: updateData
+  });
+}
+
+function formatQuizAttempt(a) {
+  return {
+    id: a.id,
+    subject: a.subject,
+    setId: a.setId,
+    setTitle: a.setTitle,
+    scorePct: a.scorePct,
+    correctCount: a.correctCount,
+    totalQuestions: a.totalQuestions,
+    date: a.createdAt ? new Date(a.createdAt).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' }) : '',
+    createdAt: a.createdAt
+  };
+}
+
 // POST /api/user/record-quiz - Record quiz result to DB & award XP
 app.post('/api/user/record-quiz', authenticateToken, async (req, res) => {
   try {
-    const { score, totalCount, subject, setId, setTitle, scorePct } = req.body;
+    const { score, correctCount, total, totalCount, totalQuestions, subject, setId, setTitle, scorePct, createdAt } = req.body;
     const user = await prisma.user.findUnique({ where: { id: req.user.userId } });
     if (!user) return res.status(404).json({ error: 'ไม่พบผู้ใช้' });
 
-    const correct = parseInt(score) || 0;
-    const total = parseInt(totalCount) || 10;
-    const pct = parseInt(scorePct) !== undefined ? parseInt(scorePct) : Math.round((correct / total) * 100);
+    const correct = parseInt(correctCount !== undefined ? correctCount : score) || 0;
+    const totalQ = parseInt(totalQuestions !== undefined ? totalQuestions : (totalCount !== undefined ? totalCount : total)) || 10;
+    const pct = parseInt(scorePct) !== undefined && !isNaN(parseInt(scorePct)) ? parseInt(scorePct) : Math.round((correct / Math.max(1, totalQ)) * 100);
 
     const xpGained = correct * 10 + 20;
     const pointsGained = correct * 5;
     const newXp = (user.xp || 0) + xpGained;
     const newPoints = (user.points || 0) + pointsGained;
 
-    // 1. Save QuizAttempt record directly to Database first
-    const attempt = await prisma.quizAttempt.create({
-      data: {
+    const sub = (subject || 'ทั่วไป').trim();
+    const sId = setId ? String(setId).trim() : null;
+    const sTitle = setTitle ? String(setTitle).trim() : null;
+    const recordTime = createdAt ? new Date(createdAt) : new Date();
+
+    // Check duplicate attempt within 45 seconds to prevent double count
+    const recentDuplicate = await prisma.quizAttempt.findFirst({
+      where: {
         userId: req.user.userId,
-        subject: (subject || 'ทั่วไป').trim(),
-        setId: setId ? String(setId) : null,
-        setTitle: setTitle ? String(setTitle).trim() : null,
+        subject: sub,
         scorePct: pct,
-        correctCount: correct,
-        totalQuestions: total
+        createdAt: {
+          gte: new Date(Date.now() - 45000)
+        }
       }
     });
 
-    // 2. Fetch all user's quiz attempts to compute real average score per subject
-    const allUserAttempts = await prisma.quizAttempt.findMany({
-      where: { userId: req.user.userId },
-      select: { subject: true, setTitle: true, scorePct: true }
-    });
-
-    const computeSubjectAvg = (keywords, excludeKeywords = []) => {
-      const matched = allUserAttempts.filter(a => {
-        const str = `${a.subject || ''} ${a.setTitle || ''}`.replace(/[\s_]/g, '').replace('กฏ', 'กฎ');
-        const hasKeyword = keywords.some(k => str.includes(k));
-        const hasExcluded = excludeKeywords.some(e => str.includes(e));
-        return hasKeyword && !hasExcluded;
+    let attempt = recentDuplicate;
+    if (!attempt) {
+      attempt = await prisma.quizAttempt.create({
+        data: {
+          userId: req.user.userId,
+          subject: sub,
+          setId: sId,
+          setTitle: sTitle,
+          scorePct: pct,
+          correctCount: correct,
+          totalQuestions: totalQ,
+          createdAt: recordTime && !isNaN(recordTime.getTime()) ? recordTime : new Date()
+        }
       });
-      if (matched.length === 0) return 0;
-      return Math.round(matched.reduce((sum, item) => sum + (Number(item.scorePct) || 0), 0) / matched.length);
-    };
+    }
 
-    const avgGeneral = computeSubjectAvg(['ทั่วไป', 'คณิต', 'คำนวณ', 'เหตุผล']);
-    const avgThai = computeSubjectAvg(['ภาษาไทย', 'วิชาไทย', 'ไทย'], ['๕๔', '54', 'ลักษณะ', 'สารบรรณ']);
-    const avgEnglish = computeSubjectAvg(['อังกฤษ', 'ภาษาอังกฤษ', 'english']);
-    const avgComputer = computeSubjectAvg(['คอม', 'สารสนเทศ', 'ไอที', 'เทคโนโลยี']);
-    const avgSocial = computeSubjectAvg(['สังคม', 'จริยธรรม', 'อาเซียน']);
-    const avgSecretariat = computeSubjectAvg(['สารบรรณ', '๒๕๒๖', '๕๔', '54', 'ลักษณะที่๕๔']);
-    const avgLaw = computeSubjectAvg(['กฎหมาย', 'กม', 'วิ.อาญา', 'พ.ร.บ.ตำรวจ']);
-
-    const updateData = {
-      xp: newXp,
-      points: newPoints,
-      scoreGeneral: avgGeneral || user.scoreGeneral,
-      scoreThai: avgThai || user.scoreThai,
-      scoreEnglish: avgEnglish || user.scoreEnglish,
-      scoreComputer: avgComputer || user.scoreComputer,
-      scoreSocial: avgSocial || user.scoreSocial,
-      scoreSecretariat: avgSecretariat || user.scoreSecretariat,
-      scoreLaw: avgLaw || user.scoreLaw
-    };
-
-    // 3. Update user profile with real averages
-    const updated = await prisma.user.update({
+    // Recalculate user profile subject scores
+    const updatedUser = await recalculateUserSubjectScores(req.user.userId);
+    const finalUser = await prisma.user.update({
       where: { id: req.user.userId },
-      data: updateData
+      data: {
+        xp: newXp,
+        points: newPoints
+      }
     });
 
     res.json({
       message: 'บันทึกคะแนนสำเร็จ! คุณได้รับ +' + xpGained + ' XP และ +' + pointsGained + ' คะแนน',
       xpGained,
       pointsGained,
-      user: updated,
-      attempt
+      user: { ...(updatedUser || {}), xp: newXp, points: newPoints },
+      attempt: formatQuizAttempt(attempt)
     });
   } catch (err) {
     console.error('Record quiz error:', err);
     res.status(500).json({ error: 'เกิดข้อผิดพลาดในการบันทึกคะแนน: ' + err.message });
+  }
+});
+
+// POST /api/user/sync-quiz-history - Bidirectional sync between device local storage and database
+app.post('/api/user/sync-quiz-history', authenticateToken, async (req, res) => {
+  try {
+    const { attempts } = req.body;
+    const userId = req.user.userId;
+
+    const existingAttempts = await prisma.quizAttempt.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    let newInsertedCount = 0;
+
+    if (Array.isArray(attempts) && attempts.length > 0) {
+      for (const item of attempts) {
+        if (!item) continue;
+        const sub = (item.subject || 'ทั่วไป').trim();
+        const sId = item.setId ? String(item.setId).trim() : null;
+        const sTitle = item.setTitle ? String(item.setTitle).trim() : null;
+        const score = (item.correctCount !== undefined) ? parseInt(item.correctCount) : (item.score !== undefined ? parseInt(item.score) : 0);
+        const total = (item.totalQuestions !== undefined) ? parseInt(item.totalQuestions) : (item.total !== undefined ? parseInt(item.total) : 10);
+        const pct = (item.scorePct !== undefined) ? parseInt(item.scorePct) : Math.round((score / Math.max(1, total)) * 100);
+        
+        let itemTime = 0;
+        if (item.createdAt) itemTime = new Date(item.createdAt).getTime();
+        else if (item.timestamp) itemTime = Number(item.timestamp);
+        else if (item.date) itemTime = new Date(item.date).getTime();
+
+        // Check if this attempt already exists in DB
+        const isDuplicate = existingAttempts.some(ex => {
+          const exTime = ex.createdAt ? new Date(ex.createdAt).getTime() : 0;
+          const timeDiff = Math.abs(exTime - itemTime);
+          const sameSubject = ex.subject === sub || ex.subject.includes(sub) || sub.includes(ex.subject);
+          const sameScore = ex.scorePct === pct;
+          const sameSet = (!sId && !ex.setId) || (sId && ex.setId && sId === ex.setId) || (!sTitle && !ex.setTitle) || (sTitle && ex.setTitle && sTitle === ex.setTitle);
+
+          if (sameSubject && sameScore && (timeDiff < 300000 || sameSet)) {
+            return true;
+          }
+          return false;
+        });
+
+        if (!isDuplicate) {
+          const created = await prisma.quizAttempt.create({
+            data: {
+              userId,
+              subject: sub,
+              setId: sId,
+              setTitle: sTitle,
+              scorePct: pct,
+              correctCount: isNaN(score) ? 0 : score,
+              totalQuestions: isNaN(total) ? 10 : total,
+              createdAt: itemTime && !isNaN(itemTime) && itemTime > 0 ? new Date(itemTime) : new Date()
+            }
+          });
+          existingAttempts.unshift(created);
+          newInsertedCount++;
+        }
+      }
+    }
+
+    // Recalculate subject scores
+    const updatedUser = await recalculateUserSubjectScores(userId);
+
+    const freshAttempts = await prisma.quizAttempt.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+      take: 200
+    });
+
+    res.json({
+      success: true,
+      syncedCount: newInsertedCount,
+      history: freshAttempts.map(formatQuizAttempt),
+      user: updatedUser
+    });
+  } catch (err) {
+    console.error('Sync quiz history error:', err);
+    res.status(500).json({ error: 'ไม่สามารถซิงค์ประวัติการทำข้อสอบได้: ' + err.message });
   }
 });
 
@@ -10297,19 +10425,7 @@ app.get('/api/user/quiz-history', authenticateToken, async (req, res) => {
       take: 200
     });
 
-    const formatted = attempts.map(a => ({
-      id: a.id,
-      subject: a.subject,
-      setId: a.setId,
-      setTitle: a.setTitle,
-      scorePct: a.scorePct,
-      correctCount: a.correctCount,
-      totalQuestions: a.totalQuestions,
-      date: a.createdAt.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' }),
-      createdAt: a.createdAt
-    }));
-
-    res.json(formatted);
+    res.json(attempts.map(formatQuizAttempt));
   } catch (err) {
     console.error('Fetch quiz history error:', err);
     res.status(500).json({ error: 'เกิดข้อผิดพลาดในการโหลดประวัติการสอบ' });
