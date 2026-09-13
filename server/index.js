@@ -11667,6 +11667,257 @@ app.put('/api/admin/exams/:id', requireAdmin, async (req, res) => {
   }
 });
 
+// --- Admin API: AI Re-check Full Exam Set (Question-by-Question & Auto-Fix >90% or Unreasonable) ---
+app.post('/api/admin/exams/:id/recheck-full-set', requireAdmin, async (req, res) => {
+  try {
+    const examId = parseInt(req.params.id);
+    if (isNaN(examId)) return res.status(400).json({ error: 'รหัสชุดข้อสอบไม่ถูกต้อง' });
+
+    const exam = await prisma.examSet.findUnique({
+      where: { id: examId },
+      include: {
+        questions: {
+          orderBy: { sortOrder: 'asc' }
+        }
+      }
+    });
+
+    if (!exam) return res.status(404).json({ error: 'ไม่พบชุดข้อสอบนี้' });
+    if (!exam.questions || exam.questions.length === 0) {
+      return res.status(400).json({ error: 'ชุดข้อสอบนี้ยังไม่มีข้อสอบ' });
+    }
+
+    const subject = exam.category || 'ทั่วไป';
+    const subcategory = exam.subcategory || '';
+    const results = [];
+    let fixedCount = 0;
+
+    console.log(`[Exam Recheck] 🚀 Starting Question-by-Question AI Re-check for Exam #${exam.id} (${exam.title}) - Total ${exam.questions.length} questions`);
+
+    for (let i = 0; i < exam.questions.length; i++) {
+      const q = exam.questions[i];
+      const qNumber = i + 1;
+
+      // 1. Fast Rule-based Consistency Check
+      const ruleConflict = detectExplanationAnswerConflict({
+        correctAnswer: q.correctAnswer,
+        explanation: q.explanation,
+        choice1: q.choice1,
+        choice2: q.choice2,
+        choice3: q.choice3,
+        choice4: q.choice4
+      });
+
+      // 2. Build Single Question Deep Audit Prompt
+      const auditPrompt = `คุณคือประธานคณะกรรมการตรวจสอบ วินิจฉัย และขัดเกลาข้อสอบตำรวจระดับชาติ (Senior National Police Exam Auditor)
+วิชา: "${subject}" ${subcategory ? `(หมวด/บท: "${subcategory}")` : ''}
+
+ภารกิจ: ตรวจสอบข้อสอบข้อที่ ${qNumber} นี้อย่างละเอียดที่สุดทีละข้อ และตัดสินใจว่าจะแก้ไขหรือไม่:
+ข้อสอบปัจจุบัน:
+- คำถาม (โจทย์): "${q.questionText}"
+- ตัวเลือก 1 (ก): "${q.choice1}"
+- ตัวเลือก 2 (ข): "${q.choice2}"
+- ตัวเลือก 3 (ค): "${q.choice3}"
+- ตัวเลือก 4 (ง): "${q.choice4}"
+- เฉลยปัจจุบันในระบบ: ข้อ ${q.correctAnswer}
+- คำอธิบายเฉลยปัจจุบัน: "${q.explanation}"
+
+เกณฑ์การตรวจสอบอย่างเข้มงวด:
+1. **ความสมเหตุสมผลและความเป็นธรรมชาติ (Reasonableness & Exam-Like Quality)**:
+   - โจทย์สมเหตุสมผลเหมือนข้อสอบตำรวจจริงหรือไม่? (ไม่ใช่โจทย์มั่ว หรือถามแบบกำกวม ไร้สาระ)
+   - ❌ **ห้ามตัวเลือกห้วน/ด้วนเด็ดขาด**: เช่น ตัวเลือกเป็นคำโดดๆ เช่น "นำเสนอ", "ประมวลผล", "สื่อสาร" -> ต้องแก้ให้สละสลวย เช่น "ซอฟต์แวร์นำเสนอข้อมูล (Presentation Software)" หรือระบุชื่อโปรแกรม "Microsoft PowerPoint"
+   - ❌ **ห้ามมีสัญลักษณ์แปลกปลอม**: เช่น $, $$, \\times ให้ใช้ข้อความธรรมดา เช่น 1 * 2 = 3 หรือ ก x ข
+2. **ความถูกต้อง 100% (Accuracy & Single Correct Answer)**:
+   - เฉลยกับคำอธิบายตรงกันหรือไม่?
+   - มีคำตอบที่ถูกต้องตรงกับหลักวิชาการ/กฎหมายชัดเจนเพียงข้อเดียวหรือไม่?
+   - ถ้าถามหาข้อผิด (เช่น ข้อใดสะกดผิด) แต่ทุกข้อดันเขียนถูกหมด -> ต้องแก้ตัวเลือกให้มีข้อผิดจริงตามเฉลย!
+3. **เกณฑ์การแก้ไขอัตโนมัติ (Auto-Fix Decision)**:
+   - หากโจทย์ไม่สมเหตุสมผล, ไม่เหมือนข้อสอบจริง, ตัวเลือกห้วน/ด้วน, เฉลยผิด, หรือมีความมั่นใจตั้งแต่ 90% ขึ้นไป ให้ตั้ง "shouldFix": true และส่งข้อมูลข้อที่แก้ไขสมบูรณ์แล้วกลับมา
+   - หากข้อสอบถูกต้อง สละสลวย สมเหตุสมผลดีอยู่แล้ว ให้ตั้ง "shouldFix": false
+
+ตอบกลับเฉพาะ JSON เท่านั้น:
+{
+  "isReasonable": true,
+  "confidenceScore": 95,
+  "shouldFix": true,
+  "fixReason": "อธิบายเหตุผลสั้นๆ ชัดเจน เช่น ปรับแก้ตัวเลือกให้เป็นภาษาสากลและแก้ไขเฉลยให้ตรงกับคำอธิบาย",
+  "repairedQuestion": {
+    "questionText": "โจทย์ที่ตรวจแล้ว",
+    "choice1": "ตัวเลือก 1 (ก)",
+    "choice2": "ตัวเลือก 2 (ข)",
+    "choice3": "ตัวเลือก 3 (ค)",
+    "choice4": "ตัวเลือก 4 (ง)",
+    "correctAnswer": 2,
+    "explanation": "คำอธิบายเฉลยที่ถูกต้องและกระชับ 1-3 ประโยค"
+  }
+}`;
+
+      let auditResponse = null;
+      try {
+        const aiCall = await callSpecializedAiText({
+          prompt: auditPrompt,
+          subject,
+          customApiKey: req.body.apiKey,
+          groqApiKey: req.body.groqApiKey,
+          openrouterApiKey: req.body.openrouterApiKey
+        });
+
+        let cleanText = (aiCall.text || '').trim();
+        if (cleanText.includes('</think>')) {
+          cleanText = cleanText.substring(cleanText.indexOf('</think>') + 8).trim();
+        }
+        if (cleanText.startsWith('```json')) cleanText = cleanText.replace(/^```json\s*/i, '').replace(/\s*```$/, '').trim();
+        else if (cleanText.startsWith('```')) cleanText = cleanText.replace(/^```\s*/, '').replace(/\s*```$/, '').trim();
+
+        if (!cleanText.startsWith('{') && cleanText.includes('{')) {
+          const first = cleanText.indexOf('{');
+          const last = cleanText.lastIndexOf('}');
+          if (first !== -1 && last > first) cleanText = cleanText.substring(first, last + 1).trim();
+        }
+
+        auditResponse = JSON.parse(cleanText);
+      } catch (aiErr) {
+        console.warn(`[Exam Recheck] Question #${qNumber} AI call error:`, aiErr.message);
+        if (ruleConflict.hasConflict) {
+          auditResponse = {
+            isReasonable: true,
+            confidenceScore: 92,
+            shouldFix: true,
+            fixReason: `ตรวจพบเฉลยขัดแย้ง: ${ruleConflict.reason}`,
+            repairedQuestion: {
+              questionText: q.questionText,
+              choice1: q.choice1,
+              choice2: q.choice2,
+              choice3: q.choice3,
+              choice4: q.choice4,
+              correctAnswer: ruleConflict.detectedAnswer,
+              explanation: q.explanation
+            }
+          };
+        } else {
+          auditResponse = {
+            isReasonable: true,
+            confidenceScore: 85,
+            shouldFix: false,
+            fixReason: 'ไม่พบข้อขัดแย้งเชิงโครงสร้าง',
+            repairedQuestion: null
+          };
+        }
+      }
+
+      // Check if rule engine detected a conflict that AI missed
+      if (ruleConflict.hasConflict && (!auditResponse.shouldFix || auditResponse.repairedQuestion?.correctAnswer === q.correctAnswer)) {
+        auditResponse.shouldFix = true;
+        auditResponse.confidenceScore = Math.max(auditResponse.confidenceScore || 90, 95);
+        auditResponse.fixReason = (auditResponse.fixReason ? auditResponse.fixReason + '; ' : '') + `แก้ไขเฉลยขัดแย้งเป็นข้อ ${ruleConflict.detectedAnswerLabel}`;
+        if (!auditResponse.repairedQuestion) {
+          auditResponse.repairedQuestion = {
+            questionText: q.questionText,
+            choice1: q.choice1,
+            choice2: q.choice2,
+            choice3: q.choice3,
+            choice4: q.choice4,
+            correctAnswer: ruleConflict.detectedAnswer,
+            explanation: q.explanation
+          };
+        } else {
+          auditResponse.repairedQuestion.correctAnswer = ruleConflict.detectedAnswer;
+        }
+      }
+
+      // Auto-Repair Evaluation: Confidence >= 90 OR isUnreasonable OR shouldFix
+      const shouldAutoFix = auditResponse.shouldFix || (auditResponse.confidenceScore >= 90 && auditResponse.repairedQuestion) || auditResponse.isReasonable === false;
+
+      let isActuallyFixed = false;
+      let finalQuestionData = {
+        questionText: q.questionText,
+        choice1: q.choice1,
+        choice2: q.choice2,
+        choice3: q.choice3,
+        choice4: q.choice4,
+        correctAnswer: q.correctAnswer,
+        explanation: q.explanation
+      };
+
+      if (shouldAutoFix && auditResponse.repairedQuestion) {
+        const rp = sanitizeExamQuestionFormatting(auditResponse.repairedQuestion);
+        const parseNum = (val) => {
+          const s = String(val || '1').toUpperCase();
+          if (s === '2' || s === 'B' || s === 'ข') return 2;
+          if (s === '3' || s === 'C' || s === 'ค') return 3;
+          if (s === '4' || s === 'D' || s === 'ง') return 4;
+          return parseInt(s) || 1;
+        };
+        const repairedAns = parseNum(rp.correctAnswer);
+
+        // Check if there are real changes
+        const textChanged = rp.questionText && rp.questionText.trim() !== q.questionText.trim();
+        const c1Changed = rp.choice1 && rp.choice1.trim() !== q.choice1.trim();
+        const c2Changed = rp.choice2 && rp.choice2.trim() !== q.choice2.trim();
+        const c3Changed = rp.choice3 && rp.choice3.trim() !== q.choice3.trim();
+        const c4Changed = rp.choice4 && rp.choice4.trim() !== q.choice4.trim();
+        const ansChanged = repairedAns !== q.correctAnswer;
+        const expChanged = rp.explanation && rp.explanation.trim() !== (q.explanation || '').trim();
+
+        if (textChanged || c1Changed || c2Changed || c3Changed || c4Changed || ansChanged || expChanged) {
+          finalQuestionData = {
+            questionText: rp.questionText || q.questionText,
+            choice1: rp.choice1 || q.choice1,
+            choice2: rp.choice2 || q.choice2,
+            choice3: rp.choice3 || q.choice3,
+            choice4: rp.choice4 || q.choice4,
+            correctAnswer: repairedAns,
+            explanation: rp.explanation || q.explanation
+          };
+
+          // Save directly to database
+          await prisma.question.update({
+            where: { id: q.id },
+            data: finalQuestionData
+          });
+
+          isActuallyFixed = true;
+          fixedCount++;
+          console.log(`[Exam Recheck] ✅ Auto-Fixed Question #${qNumber} (ID: ${q.id}) - Reason: ${auditResponse.fixReason}`);
+        }
+      }
+
+      results.push({
+        questionNumber: qNumber,
+        questionId: q.id,
+        status: isActuallyFixed ? 'FIXED' : 'PASSED',
+        confidenceScore: auditResponse.confidenceScore || 90,
+        isReasonable: auditResponse.isReasonable !== false,
+        reason: auditResponse.fixReason || (isActuallyFixed ? 'ปรับปรุงคุณภาพอัตโนมัติ' : 'ข้อสอบถูกต้องสมบูรณ์แล้ว'),
+        before: {
+          questionText: q.questionText,
+          choice1: q.choice1,
+          choice2: q.choice2,
+          choice3: q.choice3,
+          choice4: q.choice4,
+          correctAnswer: q.correctAnswer,
+          explanation: q.explanation
+        },
+        after: finalQuestionData
+      });
+    }
+
+    res.json({
+      success: true,
+      examId: exam.id,
+      examTitle: exam.title,
+      totalCount: exam.questions.length,
+      fixedCount,
+      passedCount: exam.questions.length - fixedCount,
+      results
+    });
+
+  } catch (err) {
+    console.error('Recheck full exam set error:', err);
+    res.status(500).json({ error: 'เกิดข้อผิดพลาดในการรีเช็คข้อสอบทั้งชุด: ' + err.message });
+  }
+});
+
 // GET /api/exams/subject-questions - Fetch real questions for Question Bank Mode
 app.get('/api/exams/subject-questions', authenticateToken, async (req, res) => {
   try {

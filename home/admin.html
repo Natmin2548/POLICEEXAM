@@ -1008,6 +1008,9 @@
             <span id="editExamQuestionBadge" style="margin-left: 8px; font-size: 12px; font-weight: 700; background: #EEF2FF; color: #4F46E5; padding: 3px 10px; border-radius: 999px;">0 ข้อ</span>
           </div>
           <div style="display: flex; gap: 8px;">
+            <button type="button" onclick="if (currentEditExamId) openExamSetAiRecheckModal(currentEditExamId)" class="btn btn-outline" style="border: 1.5px solid #DDD6FE; color: #7C3AED; background: #FDF4FF; font-weight: 800; font-size: 12px; padding: 6px 12px; border-radius: 10px; display: flex; align-items: center; gap: 6px; cursor: pointer;" title="รีเช็คทีละข้อและแก้ลง DB ทันทีเมื่อมั่นใจ >90%">
+              <span>⚡ AI รีเช็คทั้งชุด & แก้ไขทันที</span>
+            </button>
             <button type="button" id="btnEditExamAiRecheck" onclick="runAi3PassRecheckOnEditModal()" class="btn btn-outline" style="border: 1.5px solid #93C5FD; color: #1D4ED8; background: #EFF6FF; font-weight: 800; font-size: 12px; padding: 6px 12px; border-radius: 10px; display: flex; align-items: center; gap: 6px; cursor: pointer;">
               <span>🤖 AI 3-Pass รีเช็คชุดนี้</span>
             </button>
@@ -1226,6 +1229,75 @@
         </div>
         <button type="button" class="btn btn-outline" onclick="closeUserStatsModal()" style="padding: 9px 22px; border-radius: 12px; font-weight: 700;">ปิดหน้าต่าง</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Exam Set AI Re-check & Auto-Repair Modal (รีเช็คข้อสอบทั้งชุดทีละข้อ พร้อมแก้ทันที) -->
+  <div class="modal-overlay" id="examSetAiRecheckModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(8px); z-index: 10025; align-items: center; justify-content: center; padding: 16px;">
+    <div class="modal-card" style="background: white; max-width: 840px; width: 100%; max-height: 92vh; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); display: flex; flex-direction: column; overflow: hidden;">
+      
+      <!-- Modal Header -->
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 18px 24px; border-bottom: 1.5px solid #E2E8F0; background: #F8FAFC;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="width: 44px; height: 44px; border-radius: 14px; background: linear-gradient(135deg, #7C3AED, #9333EA); color: white; display: flex; align-items: center; justify-content: center; font-size: 22px; box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);">
+            ⚡
+          </div>
+          <div>
+            <h3 style="font-size: 18px; font-weight: 800; color: #0F172A; margin: 0;">AI รีเช็คข้อสอบทั้งชุด & แก้ไขอัตโนมัติ</h3>
+            <p style="font-size: 12.5px; color: #64748B; margin: 2px 0 0 0;" id="examSetRecheckSubtitle">ตรวจสอบทีละข้ออย่างละเอียด พร้อมบันทึกการแก้ไขทันทีหากมั่นใจเกิน 90%</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeExamSetAiRecheckModal()" style="background: #E2E8F0; border: none; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 15px; cursor: pointer; color: #475569;">✕</button>
+      </div>
+
+      <!-- Modal Body (Scrollable) -->
+      <div id="examSetRecheckModalBody" style="padding: 22px 24px; overflow-y: auto; flex: 1; background: #FAFAFA;">
+        
+        <!-- Status Box & Live Progress Bar -->
+        <div id="examSetRecheckProgressCard" style="background: white; border: 1.5px solid #E2E8F0; border-radius: 16px; padding: 18px; margin-bottom: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <span style="font-size: 13.5px; font-weight: 800; color: #1E293B;" id="examSetRecheckProgressTitle">🤖 กำลังเตรียมการตรวจสอบข้อสอบทีละข้อ...</span>
+            <span style="font-size: 13px; font-weight: 800; color: #7C3AED;" id="examSetRecheckPercent">0%</span>
+          </div>
+          
+          <div style="height: 10px; background: #F1F5F9; border-radius: 999px; overflow: hidden; margin-bottom: 12px;">
+            <div id="examSetRecheckProgressBar" style="height: 100%; width: 0%; background: linear-gradient(90deg, #7C3AED, #A855F7); border-radius: 999px; transition: width 0.3s ease;"></div>
+          </div>
+
+          <!-- Counter Stats -->
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; text-align: center;">
+            <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 10px 8px;">
+              <div style="font-size: 11px; font-weight: 700; color: #64748B;">ข้อสอบทั้งหมด</div>
+              <div style="font-size: 18px; font-weight: 900; color: #0F172A; margin-top: 2px;" id="statTotalExamQuestions">0</div>
+            </div>
+            <div style="background: #FEF2F2; border: 1px solid #FECACA; border-radius: 12px; padding: 10px 8px;">
+              <div style="font-size: 11px; font-weight: 700; color: #BD1B0B;">แก้ไขออโต้แล้ว</div>
+              <div style="font-size: 18px; font-weight: 900; color: #DC2626; margin-top: 2px;" id="statFixedExamQuestions">0</div>
+            </div>
+            <div style="background: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 12px; padding: 10px 8px;">
+              <div style="font-size: 11px; font-weight: 700; color: #047857;">สมบูรณ์ถูกต้อง</div>
+              <div style="font-size: 18px; font-weight: 900; color: #059669; margin-top: 2px;" id="statPassedExamQuestions">0</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Result Details Container -->
+        <div id="examSetRecheckDetailsList" style="display: flex; flex-direction: column; gap: 14px;">
+          <!-- Dynamically populated review results -->
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; border-top: 1.5px solid #E2E8F0; background: white;">
+        <div style="font-size: 12.5px; color: #64748B;" id="examSetRecheckFooterTip">
+          💡 ข้อสอบที่มีความมั่นใจ ≥ 90% หรือไม่สมเหตุสมผล ระบบจะบันทึกทับลงฐานข้อมูลทันทีโดยอัตโนมัติ
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <button type="button" class="btn btn-outline" onclick="closeExamSetAiRecheckModal()" style="padding: 10px 20px; border-radius: 12px; font-weight: 700;">ปิดหน้าต่าง</button>
+        </div>
+      </div>
+
     </div>
   </div>
 

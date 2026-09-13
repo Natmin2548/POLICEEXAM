@@ -768,6 +768,7 @@ function renderExamsWithFilters() {
         </span>
       </td>
       <td class="action-buttons" style="text-align: right; white-space: nowrap;">
+        <button class="btn btn-outline" style="background: #FDF4FF; color: #7C3AED; border: 1.5px solid #DDD6FE; padding: 6px 10px; font-size: 11.5px; font-weight: 800;" onclick="openExamSetAiRecheckModal(${ex.id})" title="AI ตรวจสอบทีละข้อ พร้อมแก้ไขทันทีหากมั่นใจเกิน 90%">⚡ AI รีเช็คทั้งชุด</button>
         <button class="btn btn-outline" style="background: #FEF3C7; color: #B45309; border: 1px solid #FDE68A; padding: 6px 10px; font-size: 11.5px; font-weight: 700;" onclick="openEditExamModal(${ex.id})">✏️ แก้ไขเนื้อหา</button>
         <button class="btn btn-outline" style="background: #EEF2FF; color: #4F46E5; border: 1px solid #C7D2FE; padding: 6px 10px; font-size: 11.5px;" onclick="openAppendModal(${ex.id}, '${escapeHTML(ex.title)}', ${ex.totalCount})">➕ เพิ่มข้อสอบ</button>
         <button class="btn btn-danger" style="padding: 6px 10px; font-size: 11.5px;" onclick="confirmDelete('exam', ${ex.id})">🗑️ ลบ</button>
@@ -3861,6 +3862,179 @@ window.runAi3PassRecheckOnEditModal = async function() {
       btn.innerHTML = '<span>🤖 AI 3-Pass รีเช็คชุดนี้</span>';
     }
   }
+// =========================================================================
+// Full Exam Set AI Re-check & Auto-Repair Controller (Question-by-Question)
+// =========================================================================
+window.openExamSetAiRecheckModal = async function(examId) {
+  const modal = document.getElementById('examSetAiRecheckModal');
+  const body = document.getElementById('examSetRecheckDetailsList');
+  const subtitle = document.getElementById('examSetRecheckSubtitle');
+  const titleEl = document.getElementById('examSetRecheckProgressTitle');
+  const bar = document.getElementById('examSetRecheckProgressBar');
+  const percentEl = document.getElementById('examSetRecheckPercent');
+  const totalEl = document.getElementById('statTotalExamQuestions');
+  const fixedEl = document.getElementById('statFixedExamQuestions');
+  const passedEl = document.getElementById('statPassedExamQuestions');
+
+  if (!modal) return;
+  modal.style.display = 'flex';
+
+  // Reset UI State
+  if (subtitle) subtitle.textContent = `กำลังโหลดข้อมูลและเชื่อมต่อ AI สำหรับชุดข้อสอบ #${examId}...`;
+  if (titleEl) titleEl.textContent = '🤖 AI กำลังตรวจสอบทีละข้ออย่างละเอียด (Question-by-Question)...';
+  if (bar) bar.style.width = '20%';
+  if (percentEl) percentEl.textContent = 'ประมวลผล...';
+  if (totalEl) totalEl.textContent = '-';
+  if (fixedEl) fixedEl.textContent = '0';
+  if (passedEl) passedEl.textContent = '0';
+
+  if (body) {
+    body.innerHTML = `
+      <div style="text-align: center; padding: 48px 16px; color: #64748B;">
+        <div style="font-size: 36px; margin-bottom: 12px; animation: pulse 1.5s infinite;">⚡</div>
+        <div style="font-weight: 800; font-size: 15px; color: #1E293B; margin-bottom: 6px;">ระบบกำลังสแกนและรีเช็คข้อสอบทีละข้อด้วย AI ผู้เชี่ยวชาญ...</div>
+        <div style="font-size: 12.5px; color: #64748B;">หากความมั่นใจเกิน 90% หรือโจทย์ไม่สมเหตุสมผล ระบบจะปรับแก้และบันทึกลงฐานข้อมูลทันที</div>
+      </div>
+    `;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/exams/${examId}/recheck-full-set`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`
+      }
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || res.statusText || 'Server error');
+    }
+
+    const data = await res.json();
+
+    if (bar) bar.style.width = '100%';
+    if (percentEl) percentEl.textContent = '100%';
+    if (titleEl) titleEl.textContent = `🎉 ตรวจสอบเสร็จสมบูรณ์! (แก้ไขออโต้ไป ${data.fixedCount} ข้อ จากทั้งหมด ${data.totalCount} ข้อ)`;
+    if (subtitle) subtitle.textContent = `ชุดข้อสอบ #${data.examId}: ${data.examTitle || ''}`;
+    if (totalEl) totalEl.textContent = data.totalCount;
+    if (fixedEl) fixedEl.textContent = data.fixedCount;
+    if (passedEl) passedEl.textContent = data.passedCount;
+
+    // Render results
+    if (body) {
+      body.innerHTML = '';
+
+      if (!data.results || data.results.length === 0) {
+        body.innerHTML = `<div style="text-align: center; padding: 32px; color: #64748B;">ไม่พบรายการข้อสอบในชุดนี้</div>`;
+        return;
+      }
+
+      data.results.forEach((r) => {
+        const card = document.createElement('div');
+        const isFixed = r.status === 'FIXED';
+
+        card.style.cssText = isFixed
+          ? 'background: white; border: 1.5px solid #FBCFE8; border-radius: 16px; padding: 18px; box-shadow: 0 4px 12px rgba(219, 39, 119, 0.06);'
+          : 'background: white; border: 1.5px solid #E2E8F0; border-radius: 16px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);';
+
+        const statusBadge = isFixed
+          ? `<span style="background: #FDF2F8; color: #DB2777; border: 1px solid #FBCFE8; font-size: 11.5px; font-weight: 800; padding: 3px 10px; border-radius: 999px;">⚡ แก้ไขอัตโนมัติแล้ว (มั่นใจ ${r.confidenceScore}%)</span>`
+          : `<span style="background: #ECFDF5; color: #059669; border: 1px solid #A7F3D0; font-size: 11.5px; font-weight: 800; padding: 3px 10px; border-radius: 999px;">✅ ผ่านการตรวจ (สมบูรณ์แล้ว)</span>`;
+
+        let diffContent = '';
+        if (isFixed) {
+          diffContent = `
+            <div style="background: #FFF1F2; border: 1px solid #FECDD3; border-radius: 12px; padding: 10px 14px; margin: 12px 0; font-size: 12.5px; color: #9F1239;">
+              <span style="font-weight: 800;">🛠️ เหตุผลที่ AI ทำการแก้ไข:</span> ${escapeHTML(r.reason)}
+            </div>
+
+            <!-- Comparison Grid -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px;">
+              <!-- Before -->
+              <div style="background: #F8FAFC; border: 1.5px solid #E2E8F0; border-radius: 12px; padding: 12px; font-size: 12px;">
+                <div style="font-weight: 800; color: #64748B; margin-bottom: 6px; border-bottom: 1px solid #E2E8F0; padding-bottom: 4px;">❌ ข้อมูลก่อนแก้ไข:</div>
+                <div style="font-weight: 700; color: #1E293B; margin-bottom: 6px;">${escapeHTML(r.before.questionText)}</div>
+                <div style="color: #475569; line-height: 1.5;">
+                  <div>ก. ${escapeHTML(r.before.choice1)}</div>
+                  <div>ข. ${escapeHTML(r.before.choice2)}</div>
+                  <div>ค. ${escapeHTML(r.before.choice3)}</div>
+                  <div>ง. ${escapeHTML(r.before.choice4)}</div>
+                </div>
+                <div style="margin-top: 6px; font-weight: 800; color: #BD1B0B;">เฉลยเดิม: ข้อ ${r.before.correctAnswer}</div>
+                <div style="font-size: 11px; color: #64748B; margin-top: 2px;">คำอธิบาย: ${escapeHTML(r.before.explanation || '-')}</div>
+              </div>
+
+              <!-- After -->
+              <div style="background: #F0FDF4; border: 1.5px solid #86EFAC; border-radius: 12px; padding: 12px; font-size: 12px;">
+                <div style="font-weight: 800; color: #15803D; margin-bottom: 6px; border-bottom: 1px solid #BBF7D0; padding-bottom: 4px;">✨ ข้อมูลหลังซ่อมแซม (บันทึกลง DB แล้ว):</div>
+                <div style="font-weight: 800; color: #0F172A; margin-bottom: 6px;">${escapeHTML(r.after.questionText)}</div>
+                <div style="color: #166534; line-height: 1.5;">
+                  <div style="${r.after.correctAnswer === 1 ? 'font-weight: 800; color: #047857;' : ''}">ก. ${escapeHTML(r.after.choice1)}</div>
+                  <div style="${r.after.correctAnswer === 2 ? 'font-weight: 800; color: #047857;' : ''}">ข. ${escapeHTML(r.after.choice2)}</div>
+                  <div style="${r.after.correctAnswer === 3 ? 'font-weight: 800; color: #047857;' : ''}">ค. ${escapeHTML(r.after.choice3)}</div>
+                  <div style="${r.after.correctAnswer === 4 ? 'font-weight: 800; color: #047857;' : ''}">ง. ${escapeHTML(r.after.choice4)}</div>
+                </div>
+                <div style="margin-top: 6px; font-weight: 800; color: #059669;">เฉลยใหม่: ข้อ ${r.after.correctAnswer}</div>
+                <div style="font-size: 11px; color: #15803D; margin-top: 2px;">คำอธิบาย: ${escapeHTML(r.after.explanation || '-')}</div>
+              </div>
+            </div>
+          `;
+        } else {
+          diffContent = `
+            <div style="margin-top: 8px; font-size: 12.5px; color: #334155;">
+              <div style="font-weight: 700; margin-bottom: 4px;">${escapeHTML(r.after.questionText)}</div>
+              <div style="font-size: 11.5px; color: #64748B;">เฉลยข้อ ${r.after.correctAnswer} • คำอธิบาย: ${escapeHTML(r.after.explanation || '-')}</div>
+            </div>
+          `;
+        }
+
+        card.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #F1F5F9; padding-bottom: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: #F3E8FF; color: #7C3AED; font-weight: 800; font-size: 12.5px;">
+                ${r.questionNumber}
+              </span>
+              <span style="font-weight: 800; color: #1E293B; font-size: 13.5px;">ข้อที่ ${r.questionNumber}</span>
+              <span style="font-size: 11px; color: #94A3B8; font-family: monospace;">(ID: ${r.questionId})</span>
+            </div>
+            ${statusBadge}
+          </div>
+
+          ${diffContent}
+        `;
+
+        body.appendChild(card);
+      });
+    }
+
+    // Refresh exams table in background to update counts if any
+    loadExams();
+
+  } catch (err) {
+    console.error('Open exam set AI recheck error:', err);
+    if (bar) {
+      bar.style.background = '#EF4444';
+      bar.style.width = '100%';
+    }
+    if (titleEl) titleEl.textContent = '❌ เกิดข้อผิดพลาดในการตรวจสอบ';
+    if (body) {
+      body.innerHTML = `
+        <div style="text-align: center; padding: 36px 16px; background: #FEF2F2; border: 1.5px solid #FECACA; border-radius: 16px; color: #991B1B;">
+          <div style="font-size: 32px; margin-bottom: 8px;">⚠️</div>
+          <div style="font-weight: 800; font-size: 14px; margin-bottom: 4px;">ไม่สามารถรีเช็คข้อสอบทั้งชุดได้</div>
+          <div style="font-size: 12.5px;">${escapeHTML(err.message)}</div>
+          <button class="btn btn-outline" style="margin-top: 14px; font-size: 12px; color: #991B1B; border-color: #FECACA;" onclick="openExamSetAiRecheckModal(${examId})">🔄 ลองใหม่อีกครั้ง</button>
+        </div>
+      `;
+    }
+  }
+};
+
+window.closeExamSetAiRecheckModal = function() {
+  const modal = document.getElementById('examSetAiRecheckModal');
+  if (modal) modal.style.display = 'none';
 };
 
 // 4. Open AI Report Auditor Modal
