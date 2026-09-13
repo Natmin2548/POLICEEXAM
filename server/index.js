@@ -4367,12 +4367,18 @@ app.get('/api/admin/questions', requireAdmin, async (req, res) => {
 // --- Admin Update Question ---
 app.put('/api/admin/questions/:id', requireAdmin, async (req, res) => {
   const { questionText, choice1, choice2, choice3, choice4, correctAnswer, explanation } = req.body;
+  const qId = parseInt(req.params.id);
   
   try {
     const updated = await prisma.question.update({
-      where: { id: parseInt(req.params.id) },
+      where: { id: qId },
       data: { questionText, choice1, choice2, choice3, choice4, correctAnswer, explanation }
     });
+
+    if (typeof markQuestionAsResolvedAndCleanReports === 'function') {
+      await markQuestionAsResolvedAndCleanReports(qId, questionText || updated.questionText, 'แก้ไขคำถามโดยแอดมิน');
+    }
+
     res.json({ message: 'แก้ไขคำถามสำเร็จ', question: updated });
   } catch (err) {
     console.error('Update Question Error:', err);
@@ -10253,10 +10259,69 @@ function resolveReportSubjectAndChapter({ rawSubject, rawChapter, questionText, 
   };
 }
 
-// --- Admin API: Get All Reported Questions ---
+// --- Helper: Track Question Fix Timestamp and Auto-Clean Duplicate Reports ---
+async function markQuestionAsResolvedAndCleanReports(questionId, questionText = '', note = '') {
+  try {
+    const now = new Date();
+    const qKey = String(questionId || '');
+    const numQId = parseInt(questionId);
+
+    // 1. Read existing fixed metadata
+    let fixedMeta = {};
+    try {
+      const setting = await prisma.systemSetting.findUnique({
+        where: { key: 'fixed_questions_meta' }
+      });
+      if (setting && setting.value) {
+        fixedMeta = JSON.parse(setting.value);
+      }
+    } catch (e) {
+      console.warn('Read fixed_questions_meta error:', e.message);
+    }
+
+    if (qKey && qKey !== 'NaN') {
+      fixedMeta[qKey] = {
+        fixedAt: now.toISOString(),
+        questionText: (questionText || '').substring(0, 80),
+        note: note || 'แก้ไข/จัดการข้อสอบแล้ว'
+      };
+    }
+
+    await prisma.systemSetting.upsert({
+      where: { key: 'fixed_questions_meta' },
+      create: { key: 'fixed_questions_meta', value: JSON.stringify(fixedMeta) },
+      update: { value: JSON.stringify(fixedMeta) }
+    }).catch(e => console.warn('Upsert fixed_questions_meta error:', e.message));
+
+    // 2. Delete all existing reports for this question created on or before this fix!
+    const orConditions = [];
+    if (qKey && qKey !== 'NaN') orConditions.push({ questionId: qKey });
+    if (!isNaN(numQId) && numQId > 0) orConditions.push({ questionId: String(numQId) });
+    const snippet = (questionText || '').trim().substring(0, 40);
+    if (snippet && snippet.length >= 8) orConditions.push({ questionText: { contains: snippet } });
+
+    let deletedCount = 0;
+    if (orConditions.length > 0) {
+      const del = await prisma.reportedQuestion.deleteMany({
+        where: {
+          OR: orConditions,
+          createdAt: { lte: now }
+        }
+      });
+      deletedCount = del.count;
+    }
+
+    return { success: true, deletedCount, fixedAt: now };
+  } catch (err) {
+    console.error('markQuestionAsResolvedAndCleanReports error:', err);
+    return { success: false, error: err.message };
+  }
+}
+
+// --- Admin API: Get All Reported Questions (Auto-cleans resolved & groups duplicates) ---
 app.get('/api/admin/reports', requireAdmin, async (req, res) => {
   try {
-    const reports = await prisma.reportedQuestion.findMany({
+    const rawReports = await prisma.reportedQuestion.findMany({
       orderBy: { createdAt: 'desc' },
       include: {
         user: {
@@ -10265,8 +10330,8 @@ app.get('/api/admin/reports', requireAdmin, async (req, res) => {
       }
     });
 
-    // Batch fetch related questions to accurately detect subject & chapter
-    const qIds = reports.map(r => parseInt(r.questionId)).filter(id => !isNaN(id) && id > 0);
+    // 1. Batch fetch related questions to detect subject, chapter, and past fixes
+    const qIds = rawReports.map(r => parseInt(r.questionId)).filter(id => !isNaN(id) && id > 0);
     const dbQuestions = await prisma.question.findMany({
       where: { id: { in: qIds } },
       include: { examSet: { select: { id: true, title: true, category: true, subcategory: true } } }
@@ -10274,7 +10339,100 @@ app.get('/api/admin/reports', requireAdmin, async (req, res) => {
     const qMap = new Map();
     dbQuestions.forEach(q => qMap.set(q.id, q));
 
-    const formatted = reports.map(r => {
+    // 2. Read fixed questions metadata
+    let fixedMeta = {};
+    try {
+      const setting = await prisma.systemSetting.findUnique({
+        where: { key: 'fixed_questions_meta' }
+      });
+      if (setting && setting.value) {
+        fixedMeta = JSON.parse(setting.value);
+      }
+    } catch (e) {
+      console.warn('Read fixed_questions_meta error:', e.message);
+    }
+
+    // Check dbQuestions for history tags (e.g. [📝 ...]) to sync fixedMeta
+    let metaChanged = false;
+    dbQuestions.forEach(q => {
+      const qKey = String(q.id);
+      if (q.explanation && (q.explanation.includes('[📝') || q.explanation.includes('ซ่อมแซม') || q.explanation.includes('ปรับปรุง'))) {
+        if (!fixedMeta[qKey]) {
+          fixedMeta[qKey] = {
+            fixedAt: new Date().toISOString(),
+            questionText: q.questionText.substring(0, 80),
+            note: 'ตรวจพบประวัติการซ่อมแซม/แก้ไขในคำอธิบาย'
+          };
+          metaChanged = true;
+        }
+      }
+    });
+
+    if (metaChanged) {
+      prisma.systemSetting.upsert({
+        where: { key: 'fixed_questions_meta' },
+        create: { key: 'fixed_questions_meta', value: JSON.stringify(fixedMeta) },
+        update: { value: JSON.stringify(fixedMeta) }
+      }).catch(e => console.warn('Sync fixed_questions_meta error:', e.message));
+    }
+
+    // 3. Filter out reports submitted BEFORE the question was fixed!
+    // BUT KEEP reports submitted AFTER the question was fixed (New reports after fix)
+    const staleReportIds = [];
+    const validReports = [];
+
+    rawReports.forEach(r => {
+      const qNum = parseInt(r.questionId);
+      const dbQ = !isNaN(qNum) ? qMap.get(qNum) : null;
+      const qKey = String(r.questionId);
+
+      const fixInfo = fixedMeta[qKey] || (dbQ ? fixedMeta[String(dbQ.id)] : null);
+      if (fixInfo && fixInfo.fixedAt) {
+        const fixTime = new Date(fixInfo.fixedAt).getTime();
+        const reportTime = new Date(r.createdAt).getTime();
+
+        if (reportTime <= fixTime) {
+          // Submitted BEFORE or AT the fix -> Already resolved, remove it!
+          staleReportIds.push(r.id);
+          return;
+        } else {
+          // Submitted AFTER the fix -> Keep it and flag as a NEW report after fix!
+          validReports.push({
+            report: r,
+            dbQ,
+            isNewReportAfterFix: true,
+            fixedAt: fixInfo.fixedAt
+          });
+          return;
+        }
+      }
+
+      // Not recorded as fixed yet -> Keep report
+      validReports.push({
+        report: r,
+        dbQ,
+        isNewReportAfterFix: false,
+        fixedAt: null
+      });
+    });
+
+    // Delete stale reports from DB asynchronously
+    if (staleReportIds.length > 0) {
+      prisma.reportedQuestion.deleteMany({
+        where: { id: { in: staleReportIds } }
+      }).catch(e => console.warn('Clean stale reports error:', e.message));
+    }
+
+    // 4. Calculate duplicate count for remaining questions
+    const questionReportCounts = {};
+    validReports.forEach(item => {
+      const key = item.report.questionId || (item.dbQ ? String(item.dbQ.id) : item.report.questionText.trim().substring(0, 30));
+      questionReportCounts[key] = (questionReportCounts[key] || 0) + 1;
+    });
+
+    const formatted = validReports.map(item => {
+      const r = item.report;
+      const dbQ = item.dbQ;
       let reasonData = {};
       try {
         reasonData = JSON.parse(r.reason);
@@ -10282,8 +10440,6 @@ app.get('/api/admin/reports', requireAdmin, async (req, res) => {
         reasonData = { reasonType: r.reason, details: '' };
       }
 
-      const qNum = parseInt(r.questionId);
-      const dbQ = !isNaN(qNum) ? qMap.get(qNum) : null;
       const { subject, chapter } = resolveReportSubjectAndChapter({
         rawSubject: reasonData.subject,
         rawChapter: reasonData.chapter,
@@ -10291,10 +10447,16 @@ app.get('/api/admin/reports', requireAdmin, async (req, res) => {
         dbQuestion: dbQ
       });
 
+      const groupKey = r.questionId || (dbQ ? String(dbQ.id) : r.questionText.trim().substring(0, 30));
+      const duplicateCount = questionReportCounts[groupKey] || 1;
+
       return {
         ...r,
         subject,
         chapter,
+        isNewReportAfterFix: item.isNewReportAfterFix,
+        fixedAt: item.fixedAt,
+        duplicateCount,
         user: r.user ? {
           ...r.user,
           name: r.user.fullName || r.user.username || r.user.email
@@ -10309,14 +10471,32 @@ app.get('/api/admin/reports', requireAdmin, async (req, res) => {
   }
 });
 
-// --- Admin API: Delete / Resolve Reported Question ---
+// --- Admin API: Delete / Resolve Reported Question (Cleans all duplicates of this question) ---
 app.delete('/api/admin/reports/:id', requireAdmin, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) return res.status(400).json({ error: 'รหัสรายงานไม่ถูกต้อง' });
-    await prisma.reportedQuestion.delete({
+
+    const rep = await prisma.reportedQuestion.findUnique({
       where: { id }
     });
+
+    if (rep) {
+      // Mark as resolved and clean all duplicate reports for this question submitted up to now
+      const cleanRes = await markQuestionAsResolvedAndCleanReports(
+        rep.questionId,
+        rep.questionText,
+        'แอดมินทำเครื่องหมายจัดการแล้ว'
+      );
+      await prisma.reportedQuestion.delete({ where: { id } }).catch(() => {});
+      return res.json({
+        success: true,
+        message: `จัดการเรียบร้อยแล้ว (ลบรายงานซ้ำที่ค้างอยู่ ${cleanRes.deletedCount || 1} รายการ)`,
+        deletedCount: cleanRes.deletedCount || 1
+      });
+    }
+
+    await prisma.reportedQuestion.delete({ where: { id } }).catch(() => {});
     res.json({ success: true, message: 'ลบรายงานข้อสอบเรียบร้อยแล้ว' });
   } catch (err) {
     console.error('Delete reported question error:', err);
@@ -10630,15 +10810,18 @@ app.post('/api/admin/reports/:id/ai-apply-fix', requireAdmin, async (req, res) =
       updatedDbQuestion = true;
     }
 
-    // Delete / resolve the report
-    await prisma.reportedQuestion.delete({
-      where: { id: reportId }
-    }).catch(e => console.warn('Delete resolved report error:', e.message));
+    // Automatically record fix and clean ALL reports for this question created on or before this fix!
+    const cleanRes = await markQuestionAsResolvedAndCleanReports(
+      targetQId || (report && report.questionId),
+      questionText || (report && report.questionText),
+      auditNote || 'ซ่อมแซมและปรับปรุงโดย AI'
+    );
+    await prisma.reportedQuestion.delete({ where: { id: reportId } }).catch(() => {});
 
     res.json({
       success: true,
       updatedDbQuestion,
-      message: 'ซ่อมแซมข้อสอบและบันทึกประวัติสำเร็จ พร้อมปิดรายงานเรียบร้อยแล้ว'
+      message: `ซ่อมแซมข้อสอบและบันทึกประวัติสำเร็จ พร้อมปิดรายงานที่เกี่ยวข้อง (${cleanRes.deletedCount || 1} รายการ)`
     });
 
   } catch (err) {

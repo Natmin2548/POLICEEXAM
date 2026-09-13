@@ -3356,6 +3356,16 @@ window.loadAdminReports = async function() {
             ${escapeHTML(rep.questionText || 'ไม่มีข้อความคำถาม')}
           </div>
           <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+            ${rep.isNewReportAfterFix ? `
+              <span class="badge" style="background: #FFF7ED; color: #C2410C; border: 1.5px solid #FDBA74; font-weight: 800; font-size: 11px; padding: 2px 8px; border-radius: 6px;">
+                ⚡ รายงานรอบใหม่ (หลังการแก้ไข)
+              </span>
+            ` : ''}
+            ${rep.duplicateCount > 1 ? `
+              <span class="badge" style="background: #F5F3FF; color: #7C3AED; border: 1px solid #DDD6FE; font-weight: 800; font-size: 11px; padding: 2px 8px; border-radius: 6px;">
+                👥 รายงานซ้ำ ${rep.duplicateCount} รายการ
+              </span>
+            ` : ''}
             <span class="badge" style="background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA; font-weight: 700; font-size: 11px;">
               ⚠️ ${escapeHTML(reasonType)}
             </span>
@@ -3529,7 +3539,7 @@ window.saveSingleQuestionEdit = async function() {
 };
 
 window.resolveReport = async function(reportId) {
-  if (!confirm('ต้องการทำเครื่องหมายว่าจัดการรายงานนี้เรียบร้อยแล้ว และลบออกจากรายการใช่หรือไม่?')) {
+  if (!confirm('ต้องการทำเครื่องหมายว่าจัดการข้อนี้แล้ว และล้างรายงานซ้ำที่เกี่ยวข้องทั้งหมดใช่หรือไม่?')) {
     return;
   }
 
@@ -3539,10 +3549,13 @@ window.resolveReport = async function(reportId) {
       headers: { 'Authorization': `Bearer ${authToken}` }
     });
 
+    const data = await res.json().catch(() => ({}));
     if (res.ok) {
+      if (data.deletedCount && data.deletedCount > 1) {
+        alert(`✅ จัดการเรียบร้อยแล้ว! ล้างรายงานซ้ำของข้อนี้ออกทั้งหมด (${data.deletedCount} รายการ)`);
+      }
       loadAdminReports();
     } else {
-      const data = await res.json().catch(() => ({}));
       alert('ไม่สามารถลบรายงานได้: ' + (data.error || 'เกิดข้อผิดพลาด'));
     }
   } catch (err) {
