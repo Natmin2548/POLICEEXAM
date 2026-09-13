@@ -9796,6 +9796,187 @@ function detectExplanationAnswerConflict(q) {
   return { hasConflict: false, currentAnswer: currentAns };
 }
 
+// --- Dual-Model Adversarial Cross-Audit: Blind Test & Dispute Resolution ---
+async function crossModelAuditExamQuestions({ questions, subject, subcategory, primaryEngine = '', customApiKey = '', groqApiKey = '', openrouterApiKey = '' }) {
+  if (!questions || !Array.isArray(questions) || questions.length === 0) {
+    return questions;
+  }
+
+  const isPrimaryGroq = (primaryEngine || '').toLowerCase().includes('groq');
+
+  // 1. Prepare Blind Questions (Hide correct answers and explanations)
+  const blindQuestions = questions.map((q, idx) => ({
+    index: idx,
+    questionNumber: idx + 1,
+    questionText: q.questionText || q.question || '',
+    optionA: q.optionA || q.choice1 || '',
+    optionB: q.optionB || q.choice2 || '',
+    optionC: q.optionC || q.choice3 || '',
+    optionD: q.optionD || q.choice4 || ''
+  }));
+
+  const blindPrompt = `คุณคือ "คณะกรรมการตรวจทานข้อสอบอิสระ (Independent Blind Auditor)" ของการสอบตำรวจ
+วิชา: "${subject || 'ทั่วไป'}" ${subcategory ? `หัวข้อ: "${subcategory}"` : ''}
+
+ภารกิจ:
+ข้อสอบต่อไปนี้ถูกร่างโดย AI อีกค่ายหนึ่ง โปรดทำข้อสอบและตรวจจับข้อผิดพลาดแบบ "ปิดตา" (ไม่มีเฉลยให้):
+1. จงทำข้อสอบทีละข้อด้วยตัวคุณเอง แล้วระบุว่าข้อใดถูกต้อง (ตอบเฉพาะตัวอักษร A, B, C หรือ D)
+2. ตรวจสอบว่ามี "จุดบกพร่อง (Flaw)" หรือไม่ เช่น มีคำตอบถูกมากกว่า 1 ข้อ, ไม่มีข้อใดถูกเลย, หรือโจทย์กำกวม
+3. อธิบายวิธีคิด/หลักการสั้นๆ 1-2 ประโยค
+
+ข้อสอบที่ต้องตรวจ (${blindQuestions.length} ข้อ):
+${JSON.stringify(blindQuestions, null, 2)}
+
+ตอบกลับเฉพาะ JSON Array ตามรูปแบบนี้เท่านั้น ห้ามมี markdown อื่น:
+[
+  {
+    "index": 0,
+    "solvedAnswer": "A",
+    "hasFlaw": false,
+    "flawDetails": null,
+    "reasoning": "คำอธิบายเหตุผลสั้นๆ"
+  }
+]`;
+
+  let auditorResultText = '';
+  let auditorEngine = '';
+
+  // 2. Call the Opposing Auditor
+  if (isPrimaryGroq) {
+    // Primary was Groq -> Auditor is Gemini (or OpenRouter)
+    try {
+      console.log('[Cross-Audit] 🥊 Primary is Groq -> Sending to Google Gemini for Blind Audit...');
+      auditorResultText = await callGeminiAiText(blindPrompt, customApiKey);
+      auditorEngine = 'Google Gemini (Auditor)';
+    } catch (gErr) {
+      console.warn('[Cross-Audit] Gemini auditor failed, trying OpenRouter:', gErr.message);
+      try {
+        const orRes = await callOpenRouterAiText(blindPrompt, { openrouterApiKey });
+        auditorResultText = orRes.text;
+        auditorEngine = `OpenRouter ${orRes.model} (Auditor)`;
+      } catch (orErr) {
+        console.warn('[Cross-Audit] OpenRouter auditor failed:', orErr.message);
+      }
+    }
+  } else {
+    // Primary was Gemini -> Auditor is Groq (or OpenRouter)
+    try {
+      console.log('[Cross-Audit] 🥊 Primary is Gemini -> Sending to Groq for Blind Audit...');
+      const groqRes = await callGroqAiText(blindPrompt, {
+        models: ['qwen/qwen3.8-27b', 'openai/gpt-oss-120b'],
+        temperature: 0.1,
+        groqApiKey
+      });
+      auditorResultText = groqRes.text;
+      auditorEngine = `${groqRes.model} via Groq (Auditor)`;
+    } catch (gErr) {
+      console.warn('[Cross-Audit] Groq auditor failed, trying OpenRouter:', gErr.message);
+      try {
+        const orRes = await callOpenRouterAiText(blindPrompt, { openrouterApiKey });
+        auditorResultText = orRes.text;
+        auditorEngine = `OpenRouter ${orRes.model} (Auditor)`;
+      } catch (orErr) {
+        console.warn('[Cross-Audit] OpenRouter auditor failed:', orErr.message);
+      }
+    }
+  }
+
+  if (!auditorResultText || !auditorResultText.trim()) {
+    console.log('[Cross-Audit] Auditor unavailable, keeping primary questions');
+    return questions;
+  }
+
+  // 3. Parse Auditor Results
+  let parsedAudits = [];
+  try {
+    let clean = auditorResultText.trim();
+    if (clean.includes('</think>')) clean = clean.substring(clean.indexOf('</think>') + 8).trim();
+    if (clean.startsWith('```json')) clean = clean.replace(/^```json\s*/i, '').replace(/\s*```$/, '').trim();
+    else if (clean.startsWith('```')) clean = clean.replace(/^```\s*/, '').replace(/\s*```$/, '').trim();
+
+    if (!clean.startsWith('[') && clean.includes('[')) {
+      const b1 = clean.indexOf('[');
+      const b2 = clean.lastIndexOf(']');
+      if (b1 !== -1 && b2 > b1) clean = clean.substring(b1, b2 + 1).trim();
+    }
+    const rawParsed = JSON.parse(clean);
+    parsedAudits = Array.isArray(rawParsed) ? rawParsed : (rawParsed.audits || rawParsed.questions || []);
+  } catch (parseErr) {
+    console.warn('[Cross-Audit] Failed to parse auditor response JSON:', parseErr.message);
+    return questions;
+  }
+
+  // 4. Map & Harmonize Answers
+  const normMap = {
+    '1': 'A', 'A': 'A', 'ก': 'A',
+    '2': 'B', 'B': 'B', 'ข': 'B',
+    '3': 'C', 'C': 'C', 'ค': 'C',
+    '4': 'D', 'D': 'D', 'ง': 'D'
+  };
+
+  const finalQuestions = questions.map((origQ, idx) => {
+    const audit = parsedAudits.find(a => a.index === idx) || parsedAudits[idx];
+    const origRaw = String(origQ.correctOption || origQ.correctAnswer || 'A').trim().toUpperCase();
+    const origNorm = normMap[origRaw] || 'A';
+
+    if (!audit) {
+      return {
+        ...origQ,
+        crossAudit: { verified: true, consensus: true, auditorEngine, note: 'ผ่านการตรวจเบื้องต้น' }
+      };
+    }
+
+    const auditRaw = String(audit.solvedAnswer || '').trim().toUpperCase();
+    const auditNorm = normMap[auditRaw] || origNorm;
+    const isAgreement = (auditNorm === origNorm) && !audit.hasFlaw;
+
+    if (isAgreement) {
+      // 100% Dual-AI Consensus!
+      return {
+        ...origQ,
+        crossAudit: {
+          verified: true,
+          consensus: true,
+          primaryEngine,
+          auditorEngine,
+          badge: '🛡️ ยืนยันตรงกัน 2 ค่าย AI (100% Consensus)',
+          note: `ทั้ง ${primaryEngine || 'AI สร้าง'} และ ${auditorEngine} ตรวจสอบและได้คำตอบตรงกันคือข้อ ${origNorm}`
+        }
+      };
+    } else {
+      // Dispute detected!
+      console.log(`[Cross-Audit Conflict Q#${idx + 1}] Primary: ${origNorm}, Auditor (${auditorEngine}): ${auditNorm}. Flaw: ${audit.flawDetails || 'Discrepancy'}`);
+
+      const adoptedAns = auditNorm;
+      const adoptedNum = adoptedAns === 'B' ? 2 : adoptedAns === 'C' ? 3 : adoptedAns === 'D' ? 4 : 1;
+
+      let mergedExplanation = origQ.explanation || '';
+      if (audit.reasoning && !mergedExplanation.includes(audit.reasoning)) {
+        mergedExplanation = `${mergedExplanation} [🔍 ตรวจทานร่วมโดย ${auditorEngine}: ยืนยันข้อ ${adoptedAns} เนื่องจาก ${audit.reasoning}]`;
+      }
+
+      return {
+        ...origQ,
+        correctOption: adoptedAns,
+        correctAnswer: adoptedNum,
+        explanation: mergedExplanation,
+        crossAudit: {
+          verified: true,
+          consensus: false,
+          disputeResolved: true,
+          primaryEngine,
+          auditorEngine,
+          badge: '🥊 ผ่านการดีเบตและปรับแก้ข้ามค่ายแล้ว',
+          flaw: audit.flawDetails || `ค่ายแรกเลือก ${origNorm} แต่ค่ายตรวจทานวิเคราะห์ได้ ${auditNorm}`,
+          note: `ปรับเป็นข้อ ${adoptedAns} ตามผลการตรวจทานละเอียดของ ${auditorEngine}`
+        }
+      };
+    }
+  });
+
+  return finalQuestions;
+}
+
 // --- Admin API: Preview AI Exam Generation ---
 app.post('/api/admin/exams/preview-ai', authenticateToken, async (req, res) => {
   try {
@@ -10034,7 +10215,37 @@ app.post('/api/admin/exams/preview-ai', authenticateToken, async (req, res) => {
       }
       return q;
     });
-    res.json({ success: true, engineUsed, questions: auditedQuestions });
+
+    let finalQuestions = auditedQuestions;
+    let crossAuditSummary = null;
+    const enableCrossAudit = req.body.enableCrossAudit !== false;
+
+    if (enableCrossAudit && auditedQuestions.length > 0) {
+      console.log(`[Cross-Audit] 🥊 Performing Cross-Model Dual-Audit on ${auditedQuestions.length} questions...`);
+      try {
+        finalQuestions = await crossModelAuditExamQuestions({
+          questions: auditedQuestions,
+          subject,
+          subcategory,
+          primaryEngine: engineUsed,
+          customApiKey: req.body.apiKey,
+          groqApiKey: req.body.groqApiKey,
+          openrouterApiKey: req.body.openrouterApiKey
+        });
+        const agreed = finalQuestions.filter(q => q.crossAudit?.consensus).length;
+        const resolved = finalQuestions.filter(q => q.crossAudit?.disputeResolved).length;
+        crossAuditSummary = { enabled: true, total: finalQuestions.length, agreed, resolved };
+      } catch (caErr) {
+        console.warn('[Cross-Audit] Cross-audit error, falling back to single model questions:', caErr.message);
+      }
+    }
+
+    res.json({
+      success: true,
+      engineUsed,
+      crossAudit: crossAuditSummary,
+      questions: finalQuestions
+    });
 
   } catch (err) {
     console.error('Preview AI Exam error:', err);

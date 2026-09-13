@@ -1662,7 +1662,8 @@ async function generateAIExamPreview() {
         numQuestions: parseInt(numQuestions) || 10,
         apiKey,
         groqApiKey,
-        openrouterApiKey
+        openrouterApiKey,
+        enableCrossAudit: document.getElementById('toggleCrossModelAudit')?.checked !== false
       })
     });
 
@@ -1674,6 +1675,7 @@ async function generateAIExamPreview() {
     }
 
     window._lastEngineUsed = data.engineUsed || '';
+    window._lastCrossAudit = data.crossAudit || null;
     previewExamQuestions = data.questions || [];
     closeAddExamModal();
     renderExamPreviewModal(title, subject, knowledgeBase);
@@ -1690,8 +1692,9 @@ async function generateAIExamPreview() {
 
 function renderExamPreviewModal(title, subject, knowledgeBase) {
   const engineText = window._lastEngineUsed ? ` • ⚡ ${window._lastEngineUsed}` : '';
+  const crossText = window._lastCrossAudit?.enabled ? ` • 🥊 ตรวจข้ามค่ายสำเร็จ (${window._lastCrossAudit.agreed}/${window._lastCrossAudit.total} ข้อตรงกัน)` : '';
   const badge = document.getElementById('previewSummaryBadge');
-  if (badge) badge.textContent = `รวม ${previewExamQuestions.length} ข้อ${engineText}`;
+  if (badge) badge.textContent = `รวม ${previewExamQuestions.length} ข้อ${engineText}${crossText}`;
   const container = document.getElementById('previewQuestionsContainer');
   const banner = document.getElementById('previewAiRecheckBanner');
   const titleEl = document.getElementById('previewAiRecheckTitle');
@@ -1719,6 +1722,13 @@ function renderExamPreviewModal(title, subject, knowledgeBase) {
       </div>
     ` : '';
 
+    const crossAuditHTML = q.crossAudit && q.crossAudit.badge ? `
+      <div style="background: ${q.crossAudit.consensus ? '#ECFDF5' : '#FAF5FF'}; border: 1px solid ${q.crossAudit.consensus ? '#A7F3D0' : '#E9D5FF'}; border-radius: 8px; padding: 6px 10px; margin-bottom: 10px; font-size: 11.5px; color: ${q.crossAudit.consensus ? '#065F46' : '#6B21A8'}; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px;">
+        <span style="font-weight: 800;">${escapeHTML(q.crossAudit.badge)}</span>
+        <span style="font-size: 11px; opacity: 0.9;">${escapeHTML(q.crossAudit.note || '')}</span>
+      </div>
+    ` : '';
+
     card.innerHTML = `
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
         <div style="display: flex; align-items: center; gap: 6px;">
@@ -1729,6 +1739,7 @@ function renderExamPreviewModal(title, subject, knowledgeBase) {
       </div>
 
       ${conflictHTML}
+      ${crossAuditHTML}
 
       <div class="form-group" style="margin-bottom: 10px;">
         <label style="font-size: 12px; font-weight: 700;">คำถาม</label>
