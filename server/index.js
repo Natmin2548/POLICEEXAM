@@ -9304,60 +9304,96 @@ function buildSubjectSpecificExamPrompt({ subject, subcategory, title, count, co
   return buildThaiPrompt({ count, subcategory, title, contextText });
 }
 
-// --- Shared Helper: Resolve Gemini API Key ---
-async function resolveGeminiApiKey(customKey = '') {
-  let apiKey = (customKey || process.env.GEMINI_API_KEY || '').trim().replace(/^['"]|['"]$/g, '');
-  if (!apiKey) {
-    try {
-      const dbSettings = await prisma.systemSetting.findMany({
-        where: { key: { in: ['settings_gemini_key', 'gemini_api_key', 'GEMINI_API_KEY', 'geminiKey', 'apiKey'] } }
-      });
-      for (const s of dbSettings) {
-        if (s.value && s.value.trim()) {
-          apiKey = s.value.trim().replace(/^['"]|['"]$/g, '');
-          break;
-        }
+// --- Shared Helper: Resolve All Gemini API Keys ---
+async function resolveGeminiApiKeys(customKey = '') {
+  const discovered = [];
+
+  const addKeys = (raw) => {
+    if (!raw) return;
+    const parts = String(raw).split(/[\n,;]+/);
+    for (let p of parts) {
+      p = p.trim().replace(/^['"]|['"]$/g, '');
+      if (p && !discovered.includes(p)) {
+        discovered.push(p);
       }
-    } catch (e) {
-      console.warn('Resolve Gemini API key DB lookup error:', e.message);
     }
+  };
+
+  // 1. Custom key from request body
+  if (customKey) {
+    addKeys(customKey);
   }
-  return apiKey;
+
+  // 2. Environment variables
+  if (process.env.GEMINI_API_KEY) {
+    addKeys(process.env.GEMINI_API_KEY);
+  }
+  if (process.env.GEMINI_API_KEYS) {
+    addKeys(process.env.GEMINI_API_KEYS);
+  }
+
+  // 3. Database SystemSetting
+  try {
+    const dbSettings = await prisma.systemSetting.findMany({
+      where: { key: { in: ['settings_gemini_key', 'gemini_api_key', 'GEMINI_API_KEY', 'geminiKey', 'apiKey'] } }
+    });
+    for (const s of dbSettings) {
+      if (s.value) {
+        addKeys(s.value);
+      }
+    }
+  } catch (e) {
+    console.warn('Resolve Gemini API key DB lookup error:', e.message);
+  }
+
+  return discovered;
 }
 
-// --- Shared Helper: Robust Universal Gemini AI Caller ---
+// Backward-compatible alias
+async function resolveGeminiApiKey(customKey = '') {
+  const keys = await resolveGeminiApiKeys(customKey);
+  return keys[0] || '';
+}
+
+// --- Shared Helper: Robust Universal Gemini AI Caller with Multi-Key Rotation & Failover ---
 async function callGeminiAiText(prompt, customApiKey = '') {
-  const apiKey = await resolveGeminiApiKey(customApiKey);
-  if (!apiKey) {
+  const keys = await resolveGeminiApiKeys(customApiKey);
+  if (!keys || keys.length === 0) {
     throw new Error('KEY_NOT_FOUND: ไม่พบ API Key ของ Gemini กรุณาระบุ API Key ในเมนู Admin -> ตั้งค่าระบบ');
   }
 
   const modelsToTry = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.5-flash-lite', 'gemini-1.5-flash-latest', 'gemini-2.5-pro'];
-  let textResponse = '';
   let lastErr = null;
 
-  // 1. Try SDK first
-  try {
-    const client = new GoogleGenerativeAI(apiKey);
-    for (const modelName of modelsToTry) {
-      try {
-        const model = client.getGenerativeModel({ model: modelName });
-        const result = await model.generateContent(prompt);
-        textResponse = result.response.text();
-        if (textResponse) break;
-      } catch (mErr) {
-        lastErr = mErr;
-      }
-    }
-  } catch (sdkErr) {
-    lastErr = sdkErr;
-  }
+  for (let ki = 0; ki < keys.length; ki++) {
+    const apiKey = keys[ki];
+    const keyPreview = apiKey.slice(0, 8) + '...';
 
-  // 2. Direct HTTP Fetch fallback with x-goog-api-key
-  if (!textResponse) {
+    // 1. Try SDK first
+    try {
+      const client = new GoogleGenerativeAI(apiKey);
+      for (const modelName of modelsToTry) {
+        try {
+          const model = client.getGenerativeModel({ model: modelName });
+          const result = await model.generateContent(prompt);
+          const txt = result.response.text();
+          if (txt && txt.trim()) {
+            return txt;
+          }
+        } catch (mErr) {
+          lastErr = mErr;
+          console.warn(`[Gemini SDK Key #${ki + 1} (${keyPreview}) ${modelName} failed]:`, mErr.message);
+        }
+      }
+    } catch (sdkErr) {
+      lastErr = sdkErr;
+      console.warn(`[Gemini SDK Client Key #${ki + 1} (${keyPreview}) failed]:`, sdkErr.message);
+    }
+
+    // 2. Direct HTTP Fetch fallback with both URL parameter and x-goog-api-key header
     for (const m of modelsToTry) {
       try {
-        const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent`, {
+        const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${encodeURIComponent(apiKey)}`, {
           method: 'POST',
           headers: {
             'x-goog-api-key': apiKey,
@@ -9369,22 +9405,22 @@ async function callGeminiAiText(prompt, customApiKey = '') {
         });
         const data = await resp.json();
         if (data && data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) {
-          textResponse = data.candidates[0].content.parts.map(p => p.text).join('\n');
-          if (textResponse) break;
+          const txt = data.candidates[0].content.parts.map(p => p.text).join('\n');
+          if (txt && txt.trim()) {
+            return txt;
+          }
         } else if (data.error) {
           lastErr = new Error(data.error.message);
+          console.warn(`[Gemini HTTP Key #${ki + 1} (${keyPreview}) ${m} error]:`, data.error.message);
         }
       } catch (hErr) {
         lastErr = hErr;
+        console.warn(`[Gemini HTTP Key #${ki + 1} (${keyPreview}) ${m} failed]:`, hErr.message);
       }
     }
   }
 
-  if (!textResponse) {
-    throw lastErr || new Error('No response returned from Gemini models');
-  }
-
-  return textResponse;
+  throw lastErr || new Error('No response returned from Gemini models with available API keys');
 }
 
 // --- Shared Helper: Fast Conflict Detector between Explanation and Correct Answer ---
@@ -9621,27 +9657,6 @@ app.post('/api/admin/exams/preview-ai', authenticateToken, async (req, res) => {
       }
     }
 
-    let apiKey = (req.body.apiKey || process.env.GEMINI_API_KEY || '').trim().replace(/^['"]|['"]$/g, '');
-    if (!apiKey) {
-      const dbSettings = await prisma.systemSetting.findMany({
-        where: { key: { in: ['settings_gemini_key', 'gemini_api_key', 'GEMINI_API_KEY', 'geminiKey', 'apiKey'] } }
-      });
-      for (const s of dbSettings) {
-        if (s.value && s.value.trim()) {
-          apiKey = s.value.trim().replace(/^['"]|['"]$/g, '');
-          break;
-        }
-      }
-    }
-
-    if (!apiKey) {
-      return res.status(400).json({
-        error: '🔑 ไม่พบ API Key ของ Gemini กรุณาระบุ API Key ในช่องที่กำหนด หรือในเมนู Admin -> ตั้งค่าระบบ'
-      });
-    }
-
-    const modelsToTry = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.5-flash-lite', 'gemini-1.5-flash-latest', 'gemini-2.5-pro'];
-
     // Build specialized prompt for the requested subject
     const prompt = buildSubjectSpecificExamPrompt({
       subject,
@@ -9652,63 +9667,19 @@ app.post('/api/admin/exams/preview-ai', authenticateToken, async (req, res) => {
     });
 
     let textResponse = '';
-    let lastErr = null;
-
-    // 1. Try SDK first
     try {
-      const genAI = new GoogleGenerativeAI(apiKey);
-      for (const modelName of modelsToTry) {
-        try {
-          const model = genAI.getGenerativeModel({ model: modelName });
-          const result = await model.generateContent(prompt);
-          textResponse = result.response.text();
-          if (textResponse) break;
-        } catch (mErr) {
-          console.warn(`[SDK Gemini ${modelName} failed]:`, mErr.message);
-          lastErr = mErr;
-        }
+      textResponse = await callGeminiAiText(prompt, req.body.apiKey);
+    } catch (gemErr) {
+      if (gemErr.message.includes('KEY_NOT_FOUND')) {
+        return res.status(400).json({ error: '🔑 ไม่พบ API Key ของ Gemini กรุณาระบุ API Key ในช่องที่กำหนด หรือในเมนู Admin -> ตั้งค่าระบบ' });
       }
-    } catch (sdkErr) {
-      lastErr = sdkErr;
-    }
-
-    // 2. Fallback to Direct REST API with x-goog-api-key header if SDK failed
-    if (!textResponse) {
-      for (const m of modelsToTry) {
-        try {
-          const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent`, {
-            method: 'POST',
-            headers: {
-              'x-goog-api-key': apiKey,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: prompt }] }]
-            })
-          });
-          const data = await resp.json();
-          if (data && data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) {
-            textResponse = data.candidates[0].content.parts.map(p => p.text).join('\n');
-            if (textResponse) break;
-          } else if (data.error) {
-            console.warn(`[HTTP Fetch ${m} error]:`, data.error.message);
-            lastErr = new Error(data.error.message);
-          }
-        } catch (hErr) {
-          console.warn(`[HTTP Fetch ${m} failed]:`, hErr.message);
-          lastErr = hErr;
-        }
-      }
-    }
-
-    if (!textResponse) {
-      if (lastErr && (lastErr.message.includes('401') || lastErr.message.includes('Unauthorized') || lastErr.message.includes('invalid authentication'))) {
+      if (gemErr.message.includes('401') || gemErr.message.includes('Unauthorized') || gemErr.message.includes('invalid authentication')) {
         return res.status(401).json({ error: '🔑 Gemini API Key ไม่ถูกต้องหรือไม่มีสิทธิ์ใช้งาน (401 Unauthorized) กรุณาตรวจสอบ API Key ในเมนู Admin -> ตั้งค่าระบบ' });
       }
-      if (lastErr && (lastErr.message.includes('429') || lastErr.message.includes('quota') || lastErr.message.includes('RESOURCE_EXHAUSTED') || lastErr.message.includes('Rate limit'))) {
-        return res.status(429).json({ error: '⚠️ Gemini API Rate Limit (429): ' + lastErr.message });
+      if (gemErr.message.includes('429') || gemErr.message.includes('quota') || gemErr.message.includes('RESOURCE_EXHAUSTED') || gemErr.message.includes('Rate limit')) {
+        return res.status(429).json({ error: '⚠️ Gemini API Rate Limit (429): ' + gemErr.message });
       }
-      return res.status(500).json({ error: 'ไม่สามารถเรียกใช้งาน Gemini AI ได้: ' + (lastErr ? lastErr.message : 'Unknown error') });
+      return res.status(500).json({ error: 'ไม่สามารถเรียกใช้งาน Gemini AI ได้: ' + gemErr.message });
     }
 
     let cleanJson = textResponse.trim();
@@ -10099,25 +10070,6 @@ app.post('/api/admin/exams/:examSetId/append-ai', authenticateToken, async (req,
       }
     }
 
-    let apiKey = (req.body.apiKey || process.env.GEMINI_API_KEY || '').trim().replace(/^['"]|['"]$/g, '');
-    if (!apiKey) {
-      const dbSettings = await prisma.systemSetting.findMany({
-        where: { key: { in: ['settings_gemini_key', 'gemini_api_key', 'GEMINI_API_KEY', 'geminiKey', 'apiKey'] } }
-      });
-      for (const s of dbSettings) {
-        if (s.value && s.value.trim()) {
-          apiKey = s.value.trim().replace(/^['"]|['"]$/g, '');
-          break;
-        }
-      }
-    }
-
-    if (!apiKey) {
-      return res.status(400).json({ error: 'ไม่พบ API Key ของ Gemini ในระบบ' });
-    }
-
-    const modelsToTry = ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.0-flash', 'gemini-1.5-flash'];
-
     const prompt = buildSubjectSpecificExamPrompt({
       subject: examSet.category,
       subcategory: examSet.subcategory,
@@ -10127,57 +10079,13 @@ app.post('/api/admin/exams/:examSetId/append-ai', authenticateToken, async (req,
     });
 
     let textResponse = '';
-    let lastErr = null;
-
-    // 1. Try SDK first
     try {
-      const genAI = new GoogleGenerativeAI(apiKey);
-      for (const modelName of modelsToTry) {
-        try {
-          const model = genAI.getGenerativeModel({ model: modelName });
-          const result = await model.generateContent(prompt);
-          textResponse = result.response.text();
-          if (textResponse) break;
-        } catch (mErr) {
-          console.warn(`[SDK Append Gemini ${modelName} failed]:`, mErr.message);
-          lastErr = mErr;
-        }
+      textResponse = await callGeminiAiText(prompt, req.body.apiKey);
+    } catch (gemErr) {
+      if (gemErr.message.includes('KEY_NOT_FOUND')) {
+        return res.status(400).json({ error: 'ไม่พบ API Key ของ Gemini ในระบบ' });
       }
-    } catch (sdkErr) {
-      lastErr = sdkErr;
-    }
-
-    // 2. Fallback to Direct REST API with x-goog-api-key header if SDK failed
-    if (!textResponse) {
-      for (const m of modelsToTry) {
-        try {
-          const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent`, {
-            method: 'POST',
-            headers: {
-              'x-goog-api-key': apiKey,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: prompt }] }]
-            })
-          });
-          const data = await resp.json();
-          if (data && data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) {
-            textResponse = data.candidates[0].content.parts.map(p => p.text).join('\n');
-            if (textResponse) break;
-          } else if (data.error) {
-            console.warn(`[HTTP Append Fetch ${m} error]:`, data.error.message);
-            lastErr = new Error(data.error.message);
-          }
-        } catch (hErr) {
-          console.warn(`[HTTP Append Fetch ${m} failed]:`, hErr.message);
-          lastErr = hErr;
-        }
-      }
-    }
-
-    if (!textResponse) {
-      return res.status(500).json({ error: 'ไม่สามารถเรียกใช้งาน Gemini AI ได้: ' + (lastErr ? lastErr.message : 'Unknown error') });
+      return res.status(500).json({ error: 'ไม่สามารถเรียกใช้งาน Gemini AI ได้: ' + gemErr.message });
     }
     let cleanJson = textResponse.trim();
     if (cleanJson.startsWith('```json')) cleanJson = cleanJson.replace(/^```json/, '').replace(/```$/, '').trim();
