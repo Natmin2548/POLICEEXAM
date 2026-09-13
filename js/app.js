@@ -427,10 +427,12 @@ async function loadPublicStats() {
         return Number(num).toLocaleString() + '+';
       };
       if (data.users !== undefined && data.users !== null) {
-        elUsers.textContent = formatNum(data.users);
+        elUsers.textContent = Number(data.users).toLocaleString() + '+';
       }
       if (data.exams !== undefined && data.exams !== null) {
-        elExams.textContent = formatNum(data.exams);
+        const num = Number(data.exams);
+        const rounded = Math.floor(num / 100) * 100;
+        elExams.textContent = (rounded > 0 ? rounded : num).toLocaleString() + '+';
       }
       if (data.passRate !== undefined && data.passRate !== null) {
         elPass.textContent = data.passRate + '%';
