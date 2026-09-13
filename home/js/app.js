@@ -329,6 +329,20 @@ async function loadRealProfile() {
       if (data.user) {
         userProfile = data.user;
         localStorage.setItem('userProfile', JSON.stringify(userProfile));
+
+        // Check for global stats reset from server
+        if (data.globalStatsResetAt) {
+          const lastCleared = Number(localStorage.getItem('clientLastStatsResetAt') || 0);
+          if (data.globalStatsResetAt > lastCleared) {
+            console.log('[System] Global stats reset detected from server. Purging local device cache...');
+            localStorage.removeItem(`userQuizHistory_${userProfile.id}`);
+            localStorage.removeItem(`pendingQuizSync_${userProfile.id}`);
+            localStorage.removeItem('userQuizHistory');
+            localStorage.setItem('clientLastStatsResetAt', String(data.globalStatsResetAt));
+            userDbQuizHistory = [];
+          }
+        }
+
         initializeDashboard();
         updateStatsFromProfile(data.user);
         

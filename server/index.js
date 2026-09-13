@@ -637,6 +637,7 @@ app.post('/api/auth/login', async (req, res) => {
 
     const redirectTo = (user.role === 'ADMIN' || user.role === 'OWNER') ? '/admin-dashboard/' : '/home/';
 
+    user = (await recalculateUserSubjectScores(user.id)) || user;
     user = await updateDailyVisitStreak(user);
 
     res.json({
@@ -1628,6 +1629,9 @@ app.get(['/api/user', '/api/user/profile'], authenticateToken, async (req, res) 
       return res.status(404).json({ error: 'ไม่พบข้อมูลผู้ใช้งาน' });
     }
 
+    // Automatically recalculate and sync subject scores accurately
+    user = (await recalculateUserSubjectScores(user.id)) || user;
+
     // Automatically count daily visit streak on website visit/profile load
     user = await updateDailyVisitStreak(user);
 
@@ -1647,12 +1651,18 @@ app.get(['/api/user', '/api/user/profile'], authenticateToken, async (req, res) 
       answeredQuestionsCount = matchingExamSets.reduce((sum, es) => sum + es.totalCount, 0);
     }
 
+    const resetSetting = await prisma.systemSetting.findUnique({
+      where: { key: 'GLOBAL_STATS_RESET_AT' }
+    });
+    const globalStatsResetAt = resetSetting ? Number(resetSetting.value) : 0;
+
     const { password, ...safeUser } = user;
     res.json({
       user: {
         ...safeUser,
         answeredQuestionsCount
-      }
+      },
+      globalStatsResetAt
     });
   } catch (err) {
     console.error('Fetch Profile Error:', err);
@@ -10761,18 +10771,80 @@ app.post('/api/admin/exams/:examSetId/append-ai', authenticateToken, async (req,
   }
 });
 
-// --- Admin API: Delete ALL Exam Sets & Questions ---
+// --- Admin API: Delete ALL Exam Sets & Questions & Reset All User Stats ---
 app.delete('/api/admin/exams/all', requireAdmin, async (req, res) => {
   try {
+    const deletedReports = await prisma.reportedQuestion.deleteMany({}).catch(() => ({ count: 0 }));
+    const deletedBookmarks = await prisma.bookmark.deleteMany({}).catch(() => ({ count: 0 }));
+    const deletedWrongs = await prisma.wrongCategory.deleteMany({}).catch(() => ({ count: 0 }));
+    const deletedIncorrect = await prisma.incorrectQuestion.deleteMany({}).catch(() => ({ count: 0 }));
+    const deletedAttempts = await prisma.quizAttempt.deleteMany({}).catch(() => ({ count: 0 }));
     const deletedQuestions = await prisma.question.deleteMany({});
     const deletedSets = await prisma.examSet.deleteMany({});
+
+    // Reset user scores
+    await prisma.user.updateMany({
+      data: {
+        scoreGeneral: 0,
+        scoreThai: 0,
+        scoreEnglish: 0,
+        scoreComputer: 0,
+        scoreSocial: 0,
+        scoreSecretariat: 0,
+        scoreLaw: 0
+      }
+    });
+
     res.json({
       success: true,
-      message: `ลบข้อสอบทั้งหมดในระบบเรียบร้อยแล้ว (${deletedSets.count} ชุด, ${deletedQuestions.count} ข้อ)`
+      message: `ลบข้อสอบทั้งหมดในระบบและรีเซ็ตสถิติเรียบร้อยแล้ว (${deletedSets.count} ชุด, ${deletedQuestions.count} ข้อ, ${deletedAttempts.count} ประวัติการสอบ)`
     });
   } catch (err) {
     console.error('Delete all exams error:', err);
     res.status(500).json({ error: 'เกิดข้อผิดพลาดในการลบข้อสอบทั้งหมด: ' + err.message });
+  }
+});
+
+// --- Admin API: Reset ALL Quiz Attempts & User Stats (Purge device local sync as well) ---
+app.post('/api/admin/system/reset-all-stats', requireAdmin, async (req, res) => {
+  try {
+    await prisma.quizAttempt.deleteMany({});
+    await prisma.incorrectQuestion.deleteMany({}).catch(() => {});
+    await prisma.wrongCategory.deleteMany({}).catch(() => {});
+    await prisma.reportedQuestion.deleteMany({}).catch(() => {});
+    await prisma.bookmark.deleteMany({}).catch(() => {});
+
+    await prisma.user.updateMany({
+      data: {
+        scoreGeneral: 0,
+        scoreThai: 0,
+        scoreEnglish: 0,
+        scoreComputer: 0,
+        scoreSocial: 0,
+        scoreSecretariat: 0,
+        scoreLaw: 0,
+        points: 0,
+        xp: 0,
+        level: 1,
+        battleWins: 0,
+        streak: 1
+      }
+    });
+
+    // Save timestamp marker so client devices discard old localStorage history on next load
+    await prisma.systemSetting.upsert({
+      where: { key: 'GLOBAL_STATS_RESET_AT' },
+      update: { value: String(Date.now()) },
+      create: { key: 'GLOBAL_STATS_RESET_AT', value: String(Date.now()) }
+    });
+
+    res.json({
+      success: true,
+      message: 'รีเซ็ตสถิติและการทำข้อสอบของผู้ใช้งานทุกคนเรียบร้อยแล้ว 100%'
+    });
+  } catch (err) {
+    console.error('Reset all stats error:', err);
+    res.status(500).json({ error: 'ไม่สามารถรีเซ็ตสถิติได้: ' + err.message });
   }
 });
 
@@ -12272,13 +12344,13 @@ async function recalculateUserSubjectScores(userId) {
   if (!user) return null;
 
   const updateData = {
-    scoreGeneral: avgGeneral || user.scoreGeneral || 0,
-    scoreThai: avgThai || user.scoreThai || 0,
-    scoreEnglish: avgEnglish || user.scoreEnglish || 0,
-    scoreComputer: avgComputer || user.scoreComputer || 0,
-    scoreSocial: avgSocial || user.scoreSocial || 0,
-    scoreSecretariat: avgSecretariat || user.scoreSecretariat || 0,
-    scoreLaw: avgLaw || user.scoreLaw || 0
+    scoreGeneral: avgGeneral,
+    scoreThai: avgThai,
+    scoreEnglish: avgEnglish,
+    scoreComputer: avgComputer,
+    scoreSocial: avgSocial,
+    scoreSecretariat: avgSecretariat,
+    scoreLaw: avgLaw
   };
 
   return prisma.user.update({
@@ -12384,22 +12456,33 @@ app.post('/api/user/sync-quiz-history', authenticateToken, async (req, res) => {
       orderBy: { createdAt: 'desc' }
     });
 
+    const resetSetting = await prisma.systemSetting.findUnique({
+      where: { key: 'GLOBAL_STATS_RESET_AT' }
+    });
+    const resetTimestamp = resetSetting ? Number(resetSetting.value) : 0;
+
     let newInsertedCount = 0;
 
     if (Array.isArray(attempts) && attempts.length > 0) {
       for (const item of attempts) {
         if (!item) continue;
+        
+        let itemTime = 0;
+        if (item.createdAt) itemTime = new Date(item.createdAt).getTime();
+        else if (item.timestamp) itemTime = Number(item.timestamp);
+        else if (item.date) itemTime = new Date(item.date).getTime();
+
+        // Discard any attempt from device created before the global reset
+        if (resetTimestamp > 0 && itemTime > 0 && itemTime < resetTimestamp) {
+          continue;
+        }
+
         const sub = (item.subject || 'ทั่วไป').trim();
         const sId = item.setId ? String(item.setId).trim() : null;
         const sTitle = item.setTitle ? String(item.setTitle).trim() : null;
         const score = (item.correctCount !== undefined) ? parseInt(item.correctCount) : (item.score !== undefined ? parseInt(item.score) : 0);
         const total = (item.totalQuestions !== undefined) ? parseInt(item.totalQuestions) : (item.total !== undefined ? parseInt(item.total) : 10);
         const pct = (item.scorePct !== undefined) ? parseInt(item.scorePct) : Math.round((score / Math.max(1, total)) * 100);
-        
-        let itemTime = 0;
-        if (item.createdAt) itemTime = new Date(item.createdAt).getTime();
-        else if (item.timestamp) itemTime = Number(item.timestamp);
-        else if (item.date) itemTime = new Date(item.date).getTime();
 
         // Check if this attempt already exists in DB
         const isDuplicate = existingAttempts.some(ex => {
