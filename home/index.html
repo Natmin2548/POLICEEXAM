@@ -361,77 +361,46 @@
           </button>
         </section>
 
-        <!-- Section Title: ผลการเรียนรู้ & จุดอ่อน -->
+        <!-- Section Title: สถิติการทำข้อสอบ (20 ครั้งล่าสุด) -->
         <div
-          style="display: flex; justify-content: space-between; align-items: center; margin-top: 24px; margin-bottom: 12px;">
-          <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #0F172A;">ผลการเรียนรู้ & จุดอ่อน</h3>
+          style="display: flex; justify-content: space-between; align-items: center; margin-top: 24px; margin-bottom: 14px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #0F172A;">สถิติการทำข้อสอบ</h3>
+            <span style="background: #FDF2F1; border: 1px solid #FECDD3; color: #BD1B0B; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px;">20 ครั้งล่าสุด</span>
+          </div>
           <span style="font-size: 11.5px; color: #94A3B8;" id="statsLastUpdateText">อัปเดตล่าสุด: วันนี้</span>
         </div>
 
-        <!-- 2 Column Analytics Grid (Responsive 1-col on Mobile, 2-col on Tablet/PC) -->
-        <div class="analytics-grid-2col">
-          <!-- Card 1: ความเชี่ยวชาญรายวิชา (Radar) -->
-          <div class="stat-card-box"
-            style="background: white; border-radius: 20px; padding: 18px; box-shadow: 0 1px 4px rgba(0,0,0,0.02); border: 1px solid #F1F5F9;">
-            <h4 style="margin: 0; font-size: 14px; font-weight: 700; color: #0F172A;">ความเชี่ยวชาญรายวิชา</h4>
-            <span style="font-size: 11px; color: #94A3B8; display: block; margin-bottom: 10px;">Subject Mastery</span>
-            <div style="position: relative; height: 210px;">
-              <canvas id="statsRadarChartCanvas"></canvas>
+        <!-- 3 KPI Cards Grid (ชุดทำแล้ว / ค่าเฉลี่ย / สูงสุด) -->
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px;">
+          <!-- Card 1: ชุดทำแล้ว -->
+          <div style="background: #FFFFFF; border: 1.5px solid #F1F5F9; border-radius: 18px; padding: 14px 10px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
+            <div style="font-size: 22px; font-weight: 900; color: #0F172A; line-height: 1.1;">
+              <span id="kpiRecentSetsCount">0</span><span style="font-size: 12px; font-weight: 700; color: #64748B; margin-left: 2px;">ชุด</span>
             </div>
+            <div style="font-size: 11px; font-weight: 600; color: #94A3B8; margin-top: 4px;">ทำแล้ว</div>
           </div>
-
-          <!-- Card 2: คะแนนรายวิชา (Bar) -->
-          <div class="stat-card-box"
-            style="background: white; border-radius: 20px; padding: 18px; box-shadow: 0 1px 4px rgba(0,0,0,0.02); border: 1px solid #F1F5F9; display: flex; flex-direction: column; justify-content: space-between;">
-            <div>
-              <h4 style="margin: 0; font-size: 14px; font-weight: 700; color: #0F172A;">คะแนนรายวิชา</h4>
-              <span style="font-size: 11px; color: #94A3B8; display: block; margin-bottom: 10px;">Score by
-                Subject</span>
-              <div style="position: relative; height: 165px;">
-                <canvas id="statsBarChartCanvas"></canvas>
-              </div>
+          <!-- Card 2: ค่าเฉลี่ย -->
+          <div style="background: #FFFFFF; border: 1.5px solid #F1F5F9; border-radius: 18px; padding: 14px 10px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
+            <div style="font-size: 22px; font-weight: 900; color: #BD1B0B; line-height: 1.1;">
+              <span id="kpiRecentAvgScore">0</span><span style="font-size: 13px; font-weight: 800; color: #BD1B0B;">%</span>
             </div>
-            <div
-              style="display: flex; justify-content: center; gap: 5px; flex-wrap: wrap; margin-top: 8px; font-size: 9.5px; font-weight: 600; color: #64748B;">
-              <span
-                style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: 999px; background: #F8FAFC;"><span
-                  style="width: 5px; height: 5px; border-radius: 50%; background: #BD1B0B;"></span>สารบรรณ</span>
-              <span
-                style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: 999px; background: #F8FAFC;"><span
-                  style="width: 5px; height: 5px; border-radius: 50%; background: #BD1B0B;"></span>คำนวณ</span>
-              <span
-                style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: 999px; background: #F8FAFC;"><span
-                  style="width: 5px; height: 5px; border-radius: 50%; background: #BD1B0B;"></span>สังคม</span>
-              <span
-                style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: 999px; background: #F8FAFC;"><span
-                  style="width: 5px; height: 5px; border-radius: 50%; background: #BD1B0B;"></span>กฎหมาย</span>
-              <span
-                style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: 999px; background: #F8FAFC;"><span
-                  style="width: 5px; height: 5px; border-radius: 50%; background: #BD1B0B;"></span>ไอที/คอม</span>
-              <span
-                style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: 999px; background: #F8FAFC;"><span
-                  style="width: 5px; height: 5px; border-radius: 50%; background: #BD1B0B;"></span>ลักษณะ๕๔</span>
+            <div style="font-size: 11px; font-weight: 600; color: #94A3B8; margin-top: 4px;">เฉลี่ย</div>
+          </div>
+          <!-- Card 3: สูงสุด -->
+          <div style="background: #FFFFFF; border: 1.5px solid #F1F5F9; border-radius: 18px; padding: 14px 10px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
+            <div style="font-size: 22px; font-weight: 900; color: #BD1B0B; line-height: 1.1;">
+              <span id="kpiRecentMaxScore">0</span><span style="font-size: 13px; font-weight: 800; color: #BD1B0B;">%</span>
             </div>
+            <div style="font-size: 11px; font-weight: 600; color: #94A3B8; margin-top: 4px;">สูงสุด</div>
           </div>
         </div>
 
-        <!-- Full Width Card: พัฒนาการ 8 สัปดาห์ (Line) -->
-        <div
-          style="background: white; border-radius: 20px; padding: 18px; box-shadow: 0 1px 4px rgba(0,0,0,0.02); border: 1px solid #F1F5F9; margin-bottom: 20px;">
-          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
-            <div>
-              <h4 style="margin: 0; font-size: 14px; font-weight: 700; color: #0F172A;">พัฒนาการ 8 สัปดาห์</h4>
-              <span style="font-size: 11px; color: #94A3B8;">8-Week Score Progression</span>
-            </div>
-            <div style="text-align: right;">
-              <span style="font-size: 18px; font-weight: 800; color: #BD1B0B; display: block; line-height: 1;"
-                id="statOverallPercent">0%</span>
-              <span style="font-size: 10.5px; font-weight: 700; color: #16A34A;" id="statOverallProgression">▲ +0%
-                พัฒนาการ</span>
-            </div>
-          </div>
-          <div style="position: relative; height: 145px;">
-            <canvas id="statsLineChartCanvas"></canvas>
+        <!-- รายวิชา Section Box -->
+        <div style="background: #FFFFFF; border: 1.5px solid #F1F5F9; border-radius: 20px; padding: 16px 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.02); margin-bottom: 20px;">
+          <div style="font-size: 13px; font-weight: 800; color: #64748B; margin-bottom: 12px; letter-spacing: 0.02em;">รายวิชา</div>
+          <div id="homeRecentSubjectStatsList" style="display: flex; flex-direction: column; gap: 12px;">
+            <!-- Dynamically populated via updateStatsTabDetails() -->
           </div>
         </div>
 

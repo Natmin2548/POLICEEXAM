@@ -2796,120 +2796,31 @@ function updateStatsTabDetails() {
     statsLastUpdateText.textContent = `อัปเดตล่าสุด: วันนี้ (${today.getDate()} ${months[today.getMonth()]})`;
   }
 
-  // 2. Exact 8 Subjects Matching Database & Actual Quiz History
+  // 2. Fetch combined quiz history (localStorage + DB)
   let historyList = [];
   try {
     const uid = userProfile.id || 'guest';
     const uRaw = localStorage.getItem(`userQuizHistory_${uid}`);
     const uList = uRaw ? JSON.parse(uRaw) : [];
     const dbList = (typeof userDbQuizHistory !== 'undefined' && Array.isArray(userDbQuizHistory)) ? userDbQuizHistory : [];
-    historyList = [...uList, ...dbList];
-  } catch (e) { }
-
-  const getSubjScore = (subKeywords, fallbackScore) => {
-    const matched = historyList.filter(h => {
-      if (!h) return false;
-      const str = `${h.subject || ''} ${h.setTitle || ''}`.replace(/[\s_]/g, '').replace('กฏ', 'กฎ');
-      return subKeywords.some(k => str.includes(k));
-    });
-    if (matched.length > 0) {
-      const latest = matched[matched.length - 1];
-      return Math.round(Number(latest.scorePct) || 0);
+    
+    // Combine and deduplicate by attempt ID if present, or time/title
+    const seen = new Set();
+    const all = [...dbList, ...uList];
+    for (const h of all) {
+      if (!h) continue;
+      const key = h.id || `${h.createdAt || h.timestamp || h.date}_${h.subject || ''}_${h.setTitle || ''}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        historyList.push(h);
+      }
     }
-    return fallbackScore !== undefined && fallbackScore !== null ? Number(fallbackScore) || 0 : 0;
-  };
-
-  const scoreSecretariat = getSubjScore(['ระเบียบสารบรรณ', 'สารบรรณ๒๕๒๖', '๒๕๒๖'], userProfile.scoreSecretariat);
-  const scoreSaraban54 = getSubjScore(['ลักษณะที่๕๔', 'ลักษณะ๕๔', 'สารบรรณตำรวจ', '๕๔', '54'], userProfile.scoreThai);
-  const scoreGeneral = getSubjScore(['ทั่วไป', 'คณิต', 'คำนวณ', 'อนุกรม'], userProfile.scoreGeneral);
-  const scoreThai = getSubjScore(['ภาษาไทย', 'วิชาไทย'], userProfile.scoreThai);
-  const scoreEnglish = getSubjScore(['อังกฤษ', 'ภาษาอังกฤษ', 'english'], userProfile.scoreEnglish);
-  const scoreSocial = getSubjScore(['สังคม', 'จริยธรรม', 'อาเซียน'], userProfile.scoreSocial);
-  const scoreLaw = getSubjScore(['กฎหมาย', 'กม', 'วิ.อาญา', 'พ.ร.บ.ตำรวจ'], userProfile.scoreLaw);
-  const scoreComputer = getSubjScore(['คอม', 'สารสนเทศ', 'ไอที', 'เทคโนโลยี'], userProfile.scoreComputer);
-
-  const labels = ['สารบรรณ', 'ลักษณะ๕๔', 'คำนวณ', 'ภาษาไทย', 'อังกฤษ', 'สังคม', 'กฎหมาย', 'ไอที/คอม'];
-  const scores = [scoreSecretariat, scoreSaraban54, scoreGeneral, scoreThai, scoreEnglish, scoreSocial, scoreLaw, scoreComputer];
-
-  const nonZeroScores = scores.filter(s => s > 0);
-  const avg = nonZeroScores.length > 0
-    ? Math.round(nonZeroScores.reduce((a, b) => a + b, 0) / nonZeroScores.length)
-    : 0;
-
-  // 3. Render Radar Chart
-  const radarCanvas = document.getElementById('statsRadarChartCanvas');
-  if (radarCanvas && typeof Chart !== 'undefined') {
-    const radarCtx = radarCanvas.getContext('2d');
-    if (statsRadarChartInstance) statsRadarChartInstance.destroy();
-    statsRadarChartInstance = new Chart(radarCtx, {
-      type: 'radar',
-      data: {
-        labels: labels,
-        datasets: [{
-          data: scores,
-          backgroundColor: 'rgba(189, 27, 11, 0.10)',
-          borderColor: '#BD1B0B',
-          borderWidth: 2,
-          pointBackgroundColor: '#BD1B0B',
-          pointBorderColor: '#FFFFFF',
-          pointBorderWidth: 2,
-          pointRadius: 4
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: {
-          r: {
-            angleLines: { color: '#F1F5F9' },
-            grid: { color: '#F1F5F9' },
-            pointLabels: {
-              font: { family: 'Kanit', size: 10, weight: '600' },
-              color: '#64748B'
-            },
-            ticks: { display: false },
-            suggestedMin: 0,
-            suggestedMax: 100
-          }
-        }
-      }
-    });
+  } catch (e) {
+    console.error('Error fetching quiz history:', e);
   }
 
-  // 4. Render Bar Chart
-  const barCanvas = document.getElementById('statsBarChartCanvas');
-  if (barCanvas && typeof Chart !== 'undefined') {
-    const barCtx = barCanvas.getContext('2d');
-    if (statsBarChartInstance) statsBarChartInstance.destroy();
-    statsBarChartInstance = new Chart(barCtx, {
-      type: 'bar',
-      data: {
-        labels: labels,
-        datasets: [{
-          data: scores,
-          backgroundColor: '#BD1B0B',
-          borderRadius: 4,
-          barThickness: 10
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: {
-          x: {
-            grid: { display: false },
-            ticks: { font: { family: 'Kanit', size: 10.5 }, color: '#64748B' }
-          },
-          y: { display: false, min: 0, suggestedMax: 100 }
-        }
-      }
-    });
-  }
-
-  // 5. Render Line Chart (8-Week Progress - คำนวณจากประวัติการทำข้อสอบจริง 100%)
-  const validHistory = combinedHistory
+  // Sort history chronologically descending (newest first)
+  const validHistory = historyList
     .filter(h => h && (h.scorePct !== undefined || h.score !== undefined || h.correctCount !== undefined))
     .map(h => {
       let time = 0;
@@ -2918,107 +2829,101 @@ function updateStatsTabDetails() {
       else if (h.date) time = new Date(h.date).getTime();
       if (!time || isNaN(time)) time = 0;
 
-      const scorePct = Number(h.scorePct) !== undefined && !isNaN(Number(h.scorePct))
-        ? Math.round(Number(h.scorePct))
-        : (h.totalQuestions ? Math.round((Number(h.correctCount || h.score || 0) / Number(h.totalQuestions)) * 100) : 0);
-      return { time, scorePct };
-    })
-    .sort((a, b) => a.time - b.time);
-
-  let lineData = [0, 0, 0, 0, 0, 0, 0, 0];
-  let currentProgressionScore = avg;
-  let progressionDelta = 0;
-
-  const totalAttempts = validHistory.length;
-  if (totalAttempts === 0) {
-    lineData = [0, 0, 0, 0, 0, 0, 0, 0];
-    currentProgressionScore = avg;
-    progressionDelta = 0;
-  } else if (totalAttempts === 1) {
-    const s = validHistory[0].scorePct;
-    lineData = [s, s, s, s, s, s, s, s];
-    currentProgressionScore = s;
-    progressionDelta = 0;
-  } else if (totalAttempts <= 8) {
-    // Smooth continuous progression across 8 points from actual attempts
-    const scoresArr = validHistory.map(h => h.scorePct);
-    for (let i = 0; i < 8; i++) {
-      const relIndex = (i / 7) * (scoresArr.length - 1);
-      const low = Math.floor(relIndex);
-      const high = Math.ceil(relIndex);
-      const weight = relIndex - low;
-      lineData[i] = Math.round(scoresArr[low] * (1 - weight) + scoresArr[high] * weight);
-    }
-    currentProgressionScore = scoresArr[scoresArr.length - 1];
-    progressionDelta = currentProgressionScore - scoresArr[0];
-  } else {
-    // Group attempts evenly into 8 chronological intervals
-    const chunkSize = totalAttempts / 8;
-    for (let i = 0; i < 8; i++) {
-      const start = Math.floor(i * chunkSize);
-      const end = Math.floor((i + 1) * chunkSize);
-      const chunk = validHistory.slice(start, end);
-      lineData[i] = chunk.length > 0
-        ? Math.round(chunk.reduce((a, b) => a + b.scorePct, 0) / chunk.length)
-        : 0;
-    }
-    currentProgressionScore = lineData[7];
-    progressionDelta = lineData[7] - lineData[0];
-  }
-
-  const overallProgEl = document.getElementById('statOverallPercent');
-  if (overallProgEl) overallProgEl.textContent = `${currentProgressionScore}%`;
-
-  const progEl = document.getElementById('statOverallProgression');
-  if (progEl) {
-    if (progressionDelta > 0) {
-      progEl.innerHTML = `<span style="color: #16A34A; font-weight: 700;">▲ +${progressionDelta}% พัฒนาการ</span>`;
-    } else if (progressionDelta < 0) {
-      progEl.innerHTML = `<span style="color: #DC2626; font-weight: 700;">▼ ${progressionDelta}% พัฒนาการ</span>`;
-    } else {
-      progEl.innerHTML = `<span style="color: #94A3B8; font-weight: 600;">+0% พัฒนาการ</span>`;
-    }
-  }
-
-  const lineCanvas = document.getElementById('statsLineChartCanvas');
-  if (lineCanvas && typeof Chart !== 'undefined') {
-    const lineCtx = lineCanvas.getContext('2d');
-
-    if (statsLineChartInstance) statsLineChartInstance.destroy();
-    statsLineChartInstance = new Chart(lineCtx, {
-      type: 'line',
-      data: {
-        labels: ['W1', 'W2', 'W3', 'W4', 'W5', 'W6', 'W7', 'W8'],
-        datasets: [{
-          data: lineData,
-          borderColor: '#BD1B0B',
-          borderWidth: 2.5,
-          pointBackgroundColor: '#FFFFFF',
-          pointBorderColor: '#BD1B0B',
-          pointBorderWidth: 2,
-          pointRadius: 4.5,
-          tension: 0.35,
-          fill: false
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: {
-          x: {
-            grid: { display: false },
-            ticks: { font: { family: 'Kanit', size: 11 }, color: '#94A3B8' }
-          },
-          y: {
-            grid: { color: '#F8FAFC' },
-            ticks: { font: { family: 'Kanit', size: 10 }, color: '#94A3B8' },
-            min: 0,
-            max: 100
-          }
-        }
+      let scorePct = 0;
+      if (h.scorePct !== undefined && h.scorePct !== null && !isNaN(Number(h.scorePct))) {
+        scorePct = Math.round(Number(h.scorePct));
+      } else if (h.totalQuestions) {
+        scorePct = Math.round((Number(h.correctCount || h.score || 0) / Number(h.totalQuestions)) * 100);
       }
+      return { ...h, time, scorePct };
+    })
+    .sort((a, b) => b.time - a.time); // Newest first
+
+  // Take the last 20 attempts
+  const recent20 = validHistory.slice(0, 20);
+
+  // 3. Compute Top 3 KPI Cards
+  const totalSets = recent20.length;
+  const avgScore = totalSets > 0 ? Math.round(recent20.reduce((sum, h) => sum + h.scorePct, 0) / totalSets) : 0;
+  const maxScore = totalSets > 0 ? Math.max(...recent20.map(h => h.scorePct)) : 0;
+
+  const setsCountEl = document.getElementById('kpiRecentSetsCount');
+  if (setsCountEl) setsCountEl.textContent = totalSets;
+
+  const avgScoreEl = document.getElementById('kpiRecentAvgScore');
+  if (avgScoreEl) avgScoreEl.textContent = avgScore;
+
+  const maxScoreEl = document.getElementById('kpiRecentMaxScore');
+  if (maxScoreEl) maxScoreEl.textContent = maxScore;
+
+  // 4. Compute Subject Breakdown for the 20 attempts
+  const subjectConfigs = [
+    { key: 'thai', name: 'ภาษาไทย', icon: 'TH', isBadgeText: true, keywords: ['ภาษาไทย', 'วิชาไทย', 'ไทย'] },
+    { key: 'general', name: 'ความสามารถทั่วไป', icon: '🧠', keywords: ['ทั่วไป', 'คณิต', 'คำนวณ', 'อนุกรม', 'ความสามารถทั่วไป', 'เหตุผล'] },
+    { key: 'computer', name: 'คอมพิวเตอร์', icon: '💻', keywords: ['คอม', 'สารสนเทศ', 'ไอที', 'เทคโนโลยี', 'คอมพิวเตอร์'] },
+    { key: 'law', name: 'กฎหมาย', icon: '⚖️', keywords: ['กฎหมาย', 'กม', 'วิ.อาญา', 'พ.ร.บ.ตำรวจ'] },
+    { key: 'social', name: 'สังคม', icon: '🌏', keywords: ['สังคม', 'จริยธรรม', 'อาเซียน'] },
+    { key: 'secretariat', name: 'งานสารบรรณ', icon: '📄', keywords: ['ระเบียบสารบรรณ', 'สารบรรณ๒๕๒๖', '๒๕๒๖', 'งานสารบรรณ', 'สารบรรณ'] },
+    { key: 'saraban54', name: 'ลักษณะที่ ๕๔', icon: '📋', keywords: ['ลักษณะที่๕๔', 'ลักษณะ๕๔', 'สารบรรณตำรวจ', '๕๔', '54'] },
+    { key: 'english', name: 'ภาษาอังกฤษ', icon: 'EN', isBadgeText: true, keywords: ['อังกฤษ', 'ภาษาอังกฤษ', 'english'] }
+  ];
+
+  const subjectStats = subjectConfigs.map(cfg => {
+    const matched = recent20.filter(h => {
+      const str = `${h.subject || ''} ${h.setTitle || ''} ${h.category || ''}`.replace(/[\s_]/g, '').replace('กฏ', 'กฎ');
+      return cfg.keywords.some(k => str.includes(k));
     });
+    const count = matched.length;
+    const avg = count > 0 ? Math.round(matched.reduce((acc, cur) => acc + cur.scorePct, 0) / count) : 0;
+    return { ...cfg, count, avg };
+  }).filter(s => s.count > 0); // Show only subjects with attempts in recent 20
+
+  const listContainer = document.getElementById('homeRecentSubjectStatsList');
+  if (listContainer) {
+    if (subjectStats.length === 0) {
+      listContainer.innerHTML = `
+        <div style="text-align: center; padding: 22px 14px; background: #F8FAFC; border-radius: 14px; border: 1px dashed #CBD5E1;">
+          <div style="font-size: 26px; margin-bottom: 4px;">📝</div>
+          <div style="font-size: 13px; font-weight: 700; color: #475569;">ยังไม่มีประวัติการทำข้อสอบใน 20 ครั้งล่าสุด</div>
+          <div style="font-size: 11.5px; color: #94A3B8; margin-top: 2px;">เริ่มฝึกทำข้อสอบเพื่อเริ่มสะสมและบันทึกสถิติ</div>
+        </div>
+      `;
+    } else {
+      listContainer.innerHTML = subjectStats.map(item => {
+        const isPassed = item.avg >= 60;
+        const color = isPassed ? '#16A34A' : '#BD1B0B';
+        const iconHtml = item.isBadgeText
+          ? `<span style="font-size: 11.5px; font-weight: 900; color: #BD1B0B; letter-spacing: -0.5px;">${item.icon}</span>`
+          : `<span style="font-size: 15px;">${item.icon}</span>`;
+
+        return `
+          <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #F1F5F9;">
+            <!-- Left Info -->
+            <div style="display: flex; align-items: center; gap: 10px; min-width: 120px; max-width: 140px; flex-shrink: 0;">
+              <div style="width: 32px; height: 32px; border-radius: 10px; background: #F8FAFC; border: 1.5px solid #E2E8F0; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                ${iconHtml}
+              </div>
+              <div style="min-width: 0;">
+                <div style="font-size: 13px; font-weight: 700; color: #0F172A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.name}</div>
+                <div style="font-size: 11px; font-weight: 600; color: #94A3B8;">${item.count} ครั้ง</div>
+              </div>
+            </div>
+
+            <!-- Middle Bar -->
+            <div style="flex: 1; margin: 0 14px;">
+              <div style="height: 6px; background: #F1F5F9; border-radius: 999px; overflow: hidden; position: relative;">
+                <div style="height: 100%; width: ${Math.min(item.avg, 100)}%; background: ${color}; border-radius: 999px; transition: width 0.4s ease;"></div>
+              </div>
+            </div>
+
+            <!-- Right Score -->
+            <div style="text-align: right; width: 44px; flex-shrink: 0;">
+              <span style="font-size: 13.5px; font-weight: 800; color: ${color};">${item.avg}%</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
   }
 
   // 6. Generate AI Recommendations (Pick 3 subjects with lowest scores)
