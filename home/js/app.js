@@ -974,23 +974,27 @@ window.renderExamBankList = function() {
   const container = document.getElementById('questionBankSubjectsList');
   if (!container) return;
 
-  container.style.maxWidth = '680px';
+  if (document.getElementById('questionBankView')?.classList.contains('active')) {
+    document.body.classList.add('in-bank-view');
+  }
+
+  container.style.maxWidth = '480px';
   container.style.margin = '0 auto';
-  container.style.padding = '4px 6px';
+  container.style.padding = '6px 4px';
   container.innerHTML = `
     <!-- Top Nav Bar: Arrow Back + Title (100% matching Image 1) -->
-    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 22px; padding: 4px 0;">
-      <button type="button" onclick="switchTabToHome(event)" style="background: none; border: none; cursor: pointer; padding: 4px 6px 4px 0; color: #475569; display: flex; align-items: center; justify-content: center; line-height: 1; transition: transform 0.15s ease;" title="กลับหน้าแรก">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+    <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 22px; padding: 4px 0;">
+      <button type="button" onclick="switchTabToHome(event)" style="background: none; border: none; cursor: pointer; padding: 4px 6px 4px 0; color: #64748B; display: flex; align-items: center; justify-content: center; line-height: 1; transition: transform 0.15s ease;" title="กลับหน้าแรก">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
           <line x1="19" y1="12" x2="5" y2="12"></line>
           <polyline points="12 19 5 12 12 5"></polyline>
         </svg>
       </button>
-      <h2 style="margin: 0; font-size: 21px; font-weight: 800; color: #0F172A; letter-spacing: -0.3px;">คลังข้อสอบรายบท</h2>
+      <h2 style="margin: 0; font-size: 20px; font-weight: 700; color: #0F172A; letter-spacing: -0.3px;">คลังข้อสอบรายบท</h2>
     </div>
 
     <!-- Section Label -->
-    <div style="font-size: 13.5px; font-weight: 600; color: #94A3B8; margin-bottom: 8px; padding-left: 2px;">
+    <div style="font-size: 13.5px; font-weight: 500; color: #94A3B8; margin-top: 14px; margin-bottom: 12px; padding-left: 2px;">
       เลือกวิชา
     </div>
 
@@ -1612,8 +1616,10 @@ window.switchTabToHome = function(e) {
   if (e && typeof e.preventDefault === 'function') e.preventDefault();
   if (typeof stopCommunityPolling === 'function') stopCommunityPolling();
   
+  document.body.classList.remove('in-bank-view');
+
   const navTabs = document.querySelectorAll('.bottom-nav .nav-tab');
-  const homeTabBtn = navTabs[0];
+  const homeTabBtn = document.getElementById('btnTabHome') || navTabs[0];
   const homeView = document.getElementById('homeView');
   const communityView = document.getElementById('communityView');
   const battleView = document.getElementById('battleView');
@@ -1649,6 +1655,9 @@ if (bankTabBtn) {
   bankTabBtn.addEventListener('click', (e) => {
     if (e) e.preventDefault();
     if (typeof stopCommunityPolling === 'function') stopCommunityPolling();
+    
+    document.body.classList.add('in-bank-view');
+
     navTabs.forEach(t => t.classList.remove('active'));
     bankTabBtn.classList.add('active');
     
@@ -1665,6 +1674,7 @@ if (bankTabBtn) {
     if (typeof updateBankSubjectCounts === 'function') {
       updateBankSubjectCounts();
     }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   });
 }
 
@@ -1672,6 +1682,9 @@ if (homeTabBtn) {
   homeTabBtn.addEventListener('click', (e) => {
     e.preventDefault();
     if (typeof stopCommunityPolling === 'function') stopCommunityPolling();
+    
+    document.body.classList.remove('in-bank-view');
+
     navTabs.forEach(t => t.classList.remove('active'));
     homeTabBtn.classList.add('active');
     
@@ -1691,6 +1704,8 @@ if (homeTabBtn) {
 if (communityTabBtn) {
   communityTabBtn.addEventListener('click', (e) => {
     e.preventDefault();
+    document.body.classList.remove('in-bank-view');
+
     navTabs.forEach(t => t.classList.remove('active'));
     communityTabBtn.classList.add('active');
     
@@ -1743,6 +1758,8 @@ if (statsTabBtn) {
   statsTabBtn.addEventListener('click', (e) => {
     e.preventDefault();
     if (typeof stopCommunityPolling === 'function') stopCommunityPolling();
+    document.body.classList.remove('in-bank-view');
+
     navTabs.forEach(t => t.classList.remove('active'));
     statsTabBtn.classList.add('active');
     
@@ -1762,6 +1779,8 @@ if (profileTabBtn) {
   profileTabBtn.addEventListener('click', (e) => {
     e.preventDefault();
     if (typeof stopCommunityPolling === 'function') stopCommunityPolling();
+    document.body.classList.remove('in-bank-view');
+
     navTabs.forEach(t => t.classList.remove('active'));
     profileTabBtn.classList.add('active');
     

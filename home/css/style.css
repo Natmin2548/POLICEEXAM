@@ -81,6 +81,31 @@ button {
   padding: 0 16px;
 }
 
+  /* ==========================================
+     Question Bank Full Screen Mode (Matching Image 1)
+     Hide Website Logo/Header and Bottom Nav
+     ========================================== */
+  body:has(#questionBankView.active) .navbar,
+  body:has(#questionBankView.active) .bottom-nav,
+  body.in-bank-view .navbar,
+  body.in-bank-view .bottom-nav {
+    display: none !important;
+  }
+
+  body:has(#questionBankView.active) .dashboard-main,
+  body.in-bank-view .dashboard-main {
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+  }
+
+  #questionBankView.active {
+    display: block;
+    padding-top: 24px;
+    padding-bottom: 48px;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+
 @media (min-width: 640px) {
   .container {
     max-width: 680px;
