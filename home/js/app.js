@@ -6144,8 +6144,13 @@ function extractChapterNumber(str) {
   if (!str) return 999;
   if (str.includes('รวมทุกบท') || str.includes('รวมข้อสอบ') || str.includes('ALL')) return 0;
   const norm = thaiDigitsToArab(str);
-  const match = norm.match(/บทที่\s*(\d+)/i) || norm.match(/(\d+)/);
-  return match ? parseInt(match[1], 10) : 999;
+  // Match specifically "บทที่ X"
+  const matchChapter = norm.match(/บทที่\s*(\d+)/i);
+  if (matchChapter) return parseInt(matchChapter[1], 10);
+  // Match "ชุดที่ X"
+  const matchSet = norm.match(/ชุดที่\s*(\d+)/i);
+  if (matchSet) return parseInt(matchSet[1], 10);
+  return 999;
 }
 
 // Step 1 -> Step 2: Open Chapters List (100% matching Image 2)
@@ -6398,11 +6403,22 @@ function renderFilteredExamSetsForChapter(subjectKey, chapterName) {
 
   let sets = allSets.filter(s => {
     if (isMaster) return true;
+    if (s.subcategory && (s.subcategory === chapterName || s.subcategory.trim() === chapterName.trim())) return true;
     const sNum = extractChapterNumber(s.subcategory || s.title);
     if (sNum === chNum && chNum !== 999) return true;
-    const cleanChapter = chapterName.replace(/บทที่\s*\d+\s*/, '').trim();
-    if (s.title && cleanChapter && s.title.includes(cleanChapter)) return true;
-    if (s.subcategory && cleanChapter && s.subcategory.includes(cleanChapter)) return true;
+
+    const cleanChapter = chapterName
+      .replace(/บทที่\s*[๐-๙\d]+[:\-\s]*/g, '')
+      .replace(/ลักษณะที่\s*[๐-๙\d]+/g, '')
+      .replace(/งานสารบรรณ/g, '')
+      .replace(/ตำรวจ/g, '')
+      .replace(/ระเบียบ/g, '')
+      .trim();
+
+    if (cleanChapter.length >= 3) {
+      if (s.subcategory && s.subcategory.includes(cleanChapter)) return true;
+      if (s.title && s.title.includes(cleanChapter)) return true;
+    }
     return false;
   });
 
