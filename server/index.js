@@ -9297,31 +9297,76 @@ ${exampleJson}`;
 }
 
 function buildSubjectSpecificExamPrompt({ subject, subcategory, title, count, contextText }) {
-  const combined = `${subject || ''} ${subcategory || ''} ${title || ''}`.toLowerCase();
+  const normSub = String(subject || '').toLowerCase().trim();
+  const normSubcat = String(subcategory || '').toLowerCase().trim();
+  const normTitle = String(title || '').toLowerCase().trim();
 
-  if (combined.includes('๕๔') || combined.includes('54') || combined.includes('ลักษณะที่') || combined.includes('สารบรรณตำรวจ') || subject === 'สารบรรณตำรวจ_๕๔' || subject === 'ลักษณะที่54' || subject === 'ลักษณะที่ ๕๔') {
-    return buildPoliceSaraban54Prompt({ count, subcategory, title, contextText });
-  }
-  if (combined.includes('ภาษาไทย') || combined.includes('ไทย') || combined.includes('thai') || subject === 'thai') {
-    return buildThaiPrompt({ count, subcategory, title, contextText });
-  }
-  if (combined.includes('อังกฤษ') || combined.includes('english') || subject === 'english') {
-    return buildEnglishPrompt({ count, subcategory, title, contextText });
-  }
-  if (combined.includes('คำนวณ') || combined.includes('คณิต') || combined.includes('ทั่วไป') || combined.includes('อนุกรม') || combined.includes('โอเปเรชั่น') || combined.includes('เหตุผล') || combined.includes('ตรรก') || combined.includes('general') || subject === 'general') {
-    return buildGeneralMathPrompt({ count, subcategory, title, contextText });
-  }
-  if (combined.includes('คอม') || combined.includes('สารสนเทศ') || combined.includes('computer') || subject === 'computer') {
-    return buildComputerPrompt({ count, subcategory, title, contextText });
-  }
-  if (combined.includes('กฏหมาย') || combined.includes('กฎหมาย') || combined.includes('law') || subject === 'law') {
+  // 1. HIGHEST PRIORITY: Explicit Subject selection
+  // Law / กฎหมายที่ควรรู้
+  if (normSub === 'law' || normSub === 'กฏหมาย' || normSub === 'กฎหมาย' || normSub.includes('กฎหมาย') || normSub.includes('กฏหมาย')) {
     return buildLawPrompt({ count, subcategory, title, contextText });
   }
-  if (combined.includes('สารบรรณ') || combined.includes('secretariat') || subject === 'secretariat') {
+
+  // Police Saraban 54 / สารบรรณตำรวจ ลักษณะ ๕๔
+  if (normSub === 'สารบรรณตำรวจ_๕๔' || normSub === 'ลักษณะที่54' || normSub === 'ลักษณะที่ ๕๔' || normSub.includes('๕๔') || normSub.includes('54') || normSub.includes('สารบรรณตำรวจ')) {
+    return buildPoliceSaraban54Prompt({ count, subcategory, title, contextText });
+  }
+
+  // Secretariat 2526 / ระเบียบสำนักนายกฯ งานสารบรรณ ๒๕๒๖
+  if (normSub === 'งานสารบรรณ_๒๕๒๖' || normSub === 'secretariat' || normSub === 'งานสารบรรณ' || normSub.includes('สารบรรณ') || normSub.includes('๒๕๒๖')) {
     return buildSecretariatPrompt({ count, subcategory, title, contextText });
   }
-  if (combined.includes('สังคม') || combined.includes('จริยธรรม') || combined.includes('อาเซียน') || combined.includes('social') || subject === 'social') {
+
+  // Computer / IT / สารสนเทศ
+  if (normSub === 'computer' || normSub === 'คอม' || normSub === 'คอมพิวเตอร์' || normSub.includes('คอม') || normSub.includes('สารสนเทศ')) {
+    return buildComputerPrompt({ count, subcategory, title, contextText });
+  }
+
+  // Social / Ethics / ASEAN / สังคมและวัฒนธรรม
+  if (normSub === 'social' || normSub === 'สังคม' || normSub.includes('สังคม') || normSub.includes('จริยธรรม') || normSub.includes('อาเซียน')) {
     return buildSocialPrompt({ count, subcategory, title, contextText });
+  }
+
+  // Thai Language / ภาษาไทย
+  if (normSub === 'thai' || normSub === 'ภาษาไทย' || normSub === 'ไทย' || normSub.includes('ภาษาไทย')) {
+    return buildThaiPrompt({ count, subcategory, title, contextText });
+  }
+
+  // English / ภาษาอังกฤษ
+  if (normSub === 'english' || normSub === 'อังกฤษ' || normSub === 'ภาษาอังกฤษ' || normSub.includes('english') || normSub.includes('อังกฤษ')) {
+    return buildEnglishPrompt({ count, subcategory, title, contextText });
+  }
+
+  // General Ability / Math (ONLY when subject explicitly is General Math)
+  if (normSub === 'general' || normSub === 'ทั่วไป' || normSub === 'ความสามารถทั่วไป' || normSub.includes('ความสามารถทั่วไป') || normSub.includes('คณิต') || normSub.includes('คำนวณ')) {
+    return buildGeneralMathPrompt({ count, subcategory, title, contextText });
+  }
+
+  // 2. FALLBACK: Subject was empty or unrecognized -> Infer from Title & Subcategory
+  // Notice: We NEVER match bare 'ทั่วไป' because chapters in law, computer, social contain 'ความรู้ทั่วไป'
+  if (normTitle.includes('กฎหมาย') || normTitle.includes('กฏหมาย') || normSubcat.includes('กฎหมาย') || normSubcat.includes('กฏหมาย')) {
+    return buildLawPrompt({ count, subcategory, title, contextText });
+  }
+  if (normTitle.includes('๕๔') || normTitle.includes('54') || normTitle.includes('สารบรรณตำรวจ') || normSubcat.includes('๕๔') || normSubcat.includes('54')) {
+    return buildPoliceSaraban54Prompt({ count, subcategory, title, contextText });
+  }
+  if (normTitle.includes('สารบรรณ') || normTitle.includes('๒๕๒๖') || normSubcat.includes('สารบรรณ')) {
+    return buildSecretariatPrompt({ count, subcategory, title, contextText });
+  }
+  if (normTitle.includes('คอม') || normTitle.includes('สารสนเทศ') || normTitle.includes('ไอที') || normSubcat.includes('คอม')) {
+    return buildComputerPrompt({ count, subcategory, title, contextText });
+  }
+  if (normTitle.includes('สังคม') || normTitle.includes('จริยธรรม') || normTitle.includes('อาเซียน') || normSubcat.includes('สังคม')) {
+    return buildSocialPrompt({ count, subcategory, title, contextText });
+  }
+  if (normTitle.includes('อังกฤษ') || normTitle.includes('english') || normSubcat.includes('อังกฤษ') || normSubcat.includes('english')) {
+    return buildEnglishPrompt({ count, subcategory, title, contextText });
+  }
+  if (normTitle.includes('ภาษาไทย') || normSubcat.includes('ภาษาไทย') || normTitle.includes('ภาษา ไทย')) {
+    return buildThaiPrompt({ count, subcategory, title, contextText });
+  }
+  if (normTitle.includes('คณิต') || normTitle.includes('คำนวณ') || normTitle.includes('อนุกรม') || normTitle.includes('โอเปเรชั่น') || normTitle.includes('ความสามารถทั่วไป') || normSubcat.includes('อนุกรม') || normSubcat.includes('โอเปเรชั่น') || normSubcat.includes('ความสามารถทั่วไป') || normSubcat.includes('คณิต')) {
+    return buildGeneralMathPrompt({ count, subcategory, title, contextText });
   }
 
   return buildThaiPrompt({ count, subcategory, title, contextText });
@@ -9669,7 +9714,7 @@ async function callOpenRouterAiText(prompt, options = {}) {
 // --- Multi-Model Specialized Router: Routes questions to the AI that excels at that subject ---
 async function callSpecializedAiText({ prompt, subject = '', customApiKey = '', groqApiKey = '', openrouterApiKey = '' }) {
   const normSub = (subject || '').trim().toLowerCase();
-  const isMath = normSub.includes('คณิต') || normSub.includes('คำนวณ') || normSub.includes('อนุกรม') || normSub.includes('ความสามารถทั่วไป') || normSub.includes('ทั่วไป') || normSub.includes('ตรรก') || normSub.includes('ร้อยละ') || normSub.includes('สมการ') || normSub.includes('general');
+  const isMath = normSub === 'general' || normSub === 'ทั่วไป' || normSub === 'ความสามารถทั่วไป' || normSub.includes('ความสามารถทั่วไป') || normSub.includes('คณิต') || normSub.includes('คำนวณ') || normSub.includes('อนุกรม') || normSub.includes('โอเปเรชั่น');
   const isEnglish = normSub.includes('อังกฤษ') || normSub.includes('english');
 
   const resolvedGroqKey = await resolveGroqApiKey(groqApiKey);
@@ -10034,10 +10079,17 @@ app.post('/api/admin/exams/preview-ai', authenticateToken, async (req, res) => {
     const { subject, knowledgeBase, docId, numQuestions, title, subcategory } = req.body;
     const count = Math.min(Math.max(parseInt(numQuestions) || 10, 1), 50);
 
-    const isThaiSubject = subject === 'thai' || subject === 'ภาษาไทย' || (title && (title.includes('ไทย') || title.includes('ภาษาไทย')));
-    const isSocialSubject = subject === 'social' || subject === 'สังคม' || subject === 'จริยธรรม' || subject === 'สังคมและวัฒนธรรม' || (title && (title.includes('สังคม') || title.includes('จริยธรรม') || title.includes('อาเซียน')));
-    const isMathSubject = subject === 'general' || subject === 'ทั่วไป' || subject === 'คำนวณ' || subject === 'คณิต' || subject === 'คณิตศาสตร์' || (title && (title.includes('คำนวณ') || title.includes('คณิต') || title.includes('ทั่วไป') || title.includes('อนุกรม')));
-    const isSarabanSubject = subject === 'secretariat' || subject === 'งานสารบรรณ' || subject === 'สารบรรณ' || subject === 'งานสารบรรณ_๒๕๒๖' || subject === 'สารบรรณตำรวจ_๕๔' || subject === 'ลักษณะที่54' || subject === 'ลักษณะที่ ๕๔' || (knowledgeBase && knowledgeBase.includes('สารบรรณ'));
+    const normSub = String(subject || '').toLowerCase().trim();
+    const normTitle = String(title || '').toLowerCase().trim();
+
+    const isLawSubject = normSub === 'law' || normSub === 'กฏหมาย' || normSub === 'กฎหมาย' || normSub.includes('กฎหมาย') || normSub.includes('กฏหมาย') || (!normSub && (normTitle.includes('กฎหมาย') || normTitle.includes('กฏหมาย')));
+    const isSaraban54Subject = normSub === 'สารบรรณตำรวจ_๕๔' || normSub === 'ลักษณะที่54' || normSub === 'ลักษณะที่ ๕๔' || normSub.includes('๕๔') || normSub.includes('54') || normSub.includes('สารบรรณตำรวจ') || (!normSub && (normTitle.includes('๕๔') || normTitle.includes('ลักษณะที่') || normTitle.includes('สารบรรณตำรวจ')));
+    const isSarabanSubject = !isSaraban54Subject && (normSub === 'secretariat' || normSub === 'งานสารบรรณ' || normSub === 'สารบรรณ' || normSub === 'งานสารบรรณ_๒๕๒๖' || normSub.includes('สารบรรณ') || (knowledgeBase && knowledgeBase.includes('สารบรรณ')) || (!normSub && normTitle.includes('สารบรรณ')));
+    const isCompSubject = normSub === 'computer' || normSub === 'คอม' || normSub === 'คอมพิวเตอร์' || normSub.includes('คอม') || normSub.includes('สารสนเทศ') || (!normSub && (normTitle.includes('คอมพิวเตอร์') || normTitle.includes('สารสนเทศ')));
+    const isThaiSubject = normSub === 'thai' || normSub === 'ภาษาไทย' || normSub === 'ไทย' || (!normSub && (normTitle.includes('ไทย') || normTitle.includes('ภาษาไทย')));
+    const isSocialSubject = normSub === 'social' || normSub === 'สังคม' || normSub.includes('สังคม') || normSub.includes('จริยธรรม') || normSub.includes('อาเซียน') || (!normSub && (normTitle.includes('สังคม') || normTitle.includes('จริยธรรม') || normTitle.includes('อาเซียน')));
+    const isEnglishSubject = normSub === 'english' || normSub === 'อังกฤษ' || normSub === 'ภาษาอังกฤษ' || normSub.includes('english') || (!normSub && (normTitle.includes('อังกฤษ') || normTitle.includes('english')));
+    const isMathSubject = !isLawSubject && !isSarabanSubject && !isSaraban54Subject && !isCompSubject && !isThaiSubject && !isSocialSubject && !isEnglishSubject && (normSub === 'general' || normSub === 'ทั่วไป' || normSub === 'ความสามารถทั่วไป' || normSub.includes('ความสามารถทั่วไป') || normSub.includes('คณิต') || normSub.includes('คำนวณ') || normTitle.includes('คำนวณ') || normTitle.includes('คณิต') || normTitle.includes('อนุกรม') || normTitle.includes('โอเปเรชั่น') || normTitle.includes('ความสามารถทั่วไป'));
 
     let contextText = '';
     if (docId && docId !== 'ALL' && docId !== 'ALL_2526' && docId !== 'ALL_54') {
@@ -10068,7 +10120,7 @@ app.post('/api/admin/exams/preview-ai', authenticateToken, async (req, res) => {
       }
     }
     
-    if (!contextText && (knowledgeBase === 'สารบรรณ_๒๕๒๖' || docId === 'ALL_2526' || subject === 'งานสารบรรณ_๒๕๒๖')) {
+    if (!contextText && (isSarabanSubject || knowledgeBase === 'สารบรรณ_๒๕๒๖' || docId === 'ALL_2526')) {
       try {
         const docs = await prisma.knowledgeDocument.findMany({ where: { category: { contains: 'ระเบียบสำนักนายก' } } });
         if (docs && docs.length > 0) {
@@ -10083,7 +10135,7 @@ app.post('/api/admin/exams/preview-ai', authenticateToken, async (req, res) => {
       } catch (e) {
         console.error('Fetch 2526 error:', e);
       }
-    } else if (!contextText && (knowledgeBase === 'สารบรรณ_๕๔' || docId === 'ALL_54' || subject === 'สารบรรณตำรวจ_๕๔' || subject === 'ลักษณะที่54' || subject === 'ลักษณะที่ ๕๔' || (subject && (subject.includes('๕๔') || subject.includes('54') || subject.includes('สารบรรณตำรวจ'))))) {
+    } else if (!contextText && (isSaraban54Subject || knowledgeBase === 'สารบรรณ_๕๔' || docId === 'ALL_54')) {
       try {
         const docs = await prisma.knowledgeDocument.findMany({ where: { category: { contains: 'ลักษณะที่ ๕๔' } } });
         if (docs && docs.length > 0) {
@@ -10098,7 +10150,7 @@ app.post('/api/admin/exams/preview-ai', authenticateToken, async (req, res) => {
       } catch (e) {
         console.error('Fetch 54 error:', e);
       }
-    } else if (!contextText && (subject === 'คอม' || subject === 'คอมพิวเตอร์' || subject === 'เทคโนโลยีสารสนเทศ')) {
+    } else if (!contextText && isCompSubject) {
       try {
         const docs = await prisma.knowledgeDocument.findMany({ where: { category: { contains: 'คอมพิวเตอร์' } } });
         if (docs && docs.length > 0) {
@@ -10107,13 +10159,23 @@ app.post('/api/admin/exams/preview-ai', authenticateToken, async (req, res) => {
           const p = path.join(__dirname, 'data', 'computer_full.json');
           if (fs.existsSync(p)) {
             const raw = JSON.parse(fs.readFileSync(p, 'utf8'));
-            contextText = raw.map(d => `[${d.title}]\n${d.content}`).join('\n\n');
+            if (subcategory && subcategory !== 'ALL') {
+              const cleanSub = subcategory.replace(/บทที่\s*\d+\s*/, '').trim().toLowerCase();
+              const matched = raw.filter(d => d.title.toLowerCase().includes(cleanSub) || (cleanSub && d.content.toLowerCase().includes(cleanSub)));
+              if (matched.length > 0) {
+                contextText = matched.map(d => `[${d.title}]\n${d.content}`).join('\n\n');
+              } else {
+                contextText = raw.map(d => `[${d.title}]\n${d.content}`).join('\n\n');
+              }
+            } else {
+              contextText = raw.map(d => `[${d.title}]\n${d.content}`).join('\n\n');
+            }
           }
         }
       } catch (e) {
         console.error('Fetch computer error:', e);
       }
-    } else if (!contextText && (subject === 'กฏหมาย' || subject === 'กฎหมาย' || subject === 'กฎหมายที่ประชาชนควรรู้')) {
+    } else if (!contextText && isLawSubject) {
       try {
         const docs = await prisma.knowledgeDocument.findMany({ where: { category: { contains: 'กฎหมาย' } } });
         if (docs && docs.length > 0) {
@@ -10122,7 +10184,17 @@ app.post('/api/admin/exams/preview-ai', authenticateToken, async (req, res) => {
           const p = path.join(__dirname, 'data', 'law_full.json');
           if (fs.existsSync(p)) {
             const raw = JSON.parse(fs.readFileSync(p, 'utf8'));
-            contextText = raw.map(d => `[${d.title}]\n${d.content}`).join('\n\n');
+            if (subcategory && subcategory !== 'ALL') {
+              const cleanSub = subcategory.replace(/บทที่\s*\d+\s*/, '').trim().toLowerCase();
+              const matched = raw.filter(d => d.title.toLowerCase().includes(cleanSub) || (cleanSub && d.content.toLowerCase().includes(cleanSub)));
+              if (matched.length > 0) {
+                contextText = matched.map(d => `[${d.title}]\n${d.content}`).join('\n\n');
+              } else {
+                contextText = raw.map(d => `[${d.title}]\n${d.content}`).join('\n\n');
+              }
+            } else {
+              contextText = raw.map(d => `[${d.title}]\n${d.content}`).join('\n\n');
+            }
           }
         }
       } catch (e) {
@@ -10662,7 +10734,9 @@ app.post('/api/admin/exams/:examSetId/append-ai', authenticateToken, async (req,
       const p = path.join(__dirname, 'data', 'law_full.json');
       if (fs.existsSync(p)) {
         const raw = JSON.parse(fs.readFileSync(p, 'utf8'));
-        contextText = raw.map(d => `[${d.title}]\n${d.content}`).join('\n\n');
+        const cleanSub = (examSet.subcategory || '').replace(/บทที่\s*\d+\s*/, '').trim().toLowerCase();
+        const matched = raw.filter(d => cleanSub && (d.title.toLowerCase().includes(cleanSub) || d.content.toLowerCase().includes(cleanSub)));
+        contextText = (matched.length > 0 ? matched : raw).map(d => `[${d.title}]\n${d.content}`).join('\n\n');
       }
     } else if (cat.includes('สังคม') || cat.includes('จริยธรรม') || cat.includes('social') || cat.includes('อาเซียน')) {
       const p = path.join(__dirname, 'data', 'social_full.json');
@@ -10672,7 +10746,7 @@ app.post('/api/admin/exams/:examSetId/append-ai', authenticateToken, async (req,
         const matched = raw.filter(d => cleanSub && (d.title.toLowerCase().includes(cleanSub) || d.content.toLowerCase().includes(cleanSub)));
         contextText = (matched.length > 0 ? matched : raw).map(d => `[${d.title}]\n${d.content}`).join('\n\n');
       }
-    } else if (cat.includes('คำนวณ') || cat.includes('คณิต') || cat.includes('ทั่วไป') || cat.includes('general') || cat.includes('อนุกรม')) {
+    } else if (cat === 'ทั่วไป' || cat === 'ความสามารถทั่วไป' || cat.includes('ความสามารถทั่วไป') || cat.includes('คำนวณ') || cat.includes('คณิต') || cat.includes('general') || cat.includes('อนุกรม')) {
       const p = path.join(__dirname, 'data', 'math_full.json');
       if (fs.existsSync(p)) {
         const raw = JSON.parse(fs.readFileSync(p, 'utf8'));
