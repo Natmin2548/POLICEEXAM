@@ -1,3 +1,12 @@
+// API Configuration
+function getApiBase() {
+  const host = window.location.hostname;
+  if (host === 'localhost' || host === '127.0.0.1') return '';
+  if (host.includes('onrender.com')) return 'https://policeexam.onrender.com';
+  return '';
+}
+const API_BASE = getApiBase();
+
 // Session Helper (If user is logged in, immediately redirect into Dashboard)
 (function checkExistingSession() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -426,20 +435,18 @@ async function loadPublicStats() {
         if (num >= 1000) return (num / 1000).toFixed(1).replace('.0', '') + 'K+';
         return Number(num).toLocaleString() + '+';
       };
-      elUsers.textContent = formatNum(data.users);
-      elExams.textContent = formatNum(data.exams);
-      elPass.textContent = (data.passRate || 92) + '%';
-    } else {
-      // Real database snapshot fallbacks
-      elUsers.textContent = '840+';
-      elExams.textContent = '3.8K+';
-      elPass.textContent = '92%';
+      if (data.users !== undefined && data.users !== null) {
+        elUsers.textContent = formatNum(data.users);
+      }
+      if (data.exams !== undefined && data.exams !== null) {
+        elExams.textContent = formatNum(data.exams);
+      }
+      if (data.passRate !== undefined && data.passRate !== null) {
+        elPass.textContent = data.passRate + '%';
+      }
     }
   } catch (err) {
-    // Real database snapshot fallbacks on network error
-    elUsers.textContent = '840+';
-    elExams.textContent = '3.8K+';
-    elPass.textContent = '92%';
+    console.warn('Failed to load public stats:', err);
   }
 }
 

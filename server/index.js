@@ -3437,22 +3437,88 @@ app.get('/api/public/stats', async (req, res) => {
     const totalQuestions = await prisma.question.count();
     const totalExams = await prisma.examSet.count();
     
-    // Calculate real pass rate (score >= 60%) from all recorded attempts
-    let passRate = 92;
+    // Calculate real pass rate: count ONLY users who have taken at least 1 quiz set
+    // Users who have not taken any quiz are completely excluded from the denominator
+    let passRate = 0;
+    let totalTestUsersCount = 0;
+    let passedUsersCount = 0;
+
     try {
+      // 1. Fetch all quiz attempts with userId and scorePct
       const attempts = await prisma.quizAttempt.findMany({
-        select: { scorePct: true }
+        select: { userId: true, scorePct: true }
       });
-      if (attempts.length >= 5) {
-        const passed = attempts.filter(a => (a.scorePct || 0) >= 60).length;
-        passRate = Math.round((passed / attempts.length) * 100);
+
+      const userAttemptsMap = new Map();
+      for (const a of attempts) {
+        if (!a.userId) continue;
+        if (!userAttemptsMap.has(a.userId)) {
+          userAttemptsMap.set(a.userId, []);
+        }
+        userAttemptsMap.get(a.userId).push(Number(a.scorePct) || 0);
       }
-    } catch (e) {}
+
+      // 2. Also check users with recorded scores directly on User table (legacy & direct records)
+      const usersWithScores = await prisma.user.findMany({
+        where: {
+          OR: [
+            { scoreGeneral: { gt: 0 } },
+            { scoreThai: { gt: 0 } },
+            { scoreEnglish: { gt: 0 } },
+            { scoreComputer: { gt: 0 } },
+            { scoreSocial: { gt: 0 } },
+            { scoreSecretariat: { gt: 0 } },
+            { scoreLaw: { gt: 0 } }
+          ]
+        },
+        select: {
+          id: true,
+          scoreGeneral: true,
+          scoreThai: true,
+          scoreEnglish: true,
+          scoreComputer: true,
+          scoreSocial: true,
+          scoreSecretariat: true,
+          scoreLaw: true
+        }
+      });
+
+      for (const u of usersWithScores) {
+        if (!userAttemptsMap.has(u.id)) {
+          userAttemptsMap.set(u.id, []);
+        }
+        const userScores = [
+          u.scoreGeneral, u.scoreThai, u.scoreEnglish,
+          u.scoreComputer, u.scoreSocial, u.scoreSecretariat, u.scoreLaw
+        ].filter(s => s > 0);
+        userAttemptsMap.get(u.id).push(...userScores);
+      }
+
+      // Filter to users who took at least 1 exam set
+      const activeTestUsers = Array.from(userAttemptsMap.keys());
+      totalTestUsersCount = activeTestUsers.length;
+
+      if (totalTestUsersCount > 0) {
+        for (const userId of activeTestUsers) {
+          const scores = userAttemptsMap.get(userId);
+          const maxScore = Math.max(...scores);
+          // Pass criterion: scored >= 60% on at least 1 exam set
+          if (maxScore >= 60) {
+            passedUsersCount++;
+          }
+        }
+        passRate = Math.round((passedUsersCount / totalTestUsersCount) * 100);
+      }
+    } catch (e) {
+      console.warn('Error calculating real pass rate:', e);
+    }
 
     res.json({
       users: totalUsers,
       exams: totalQuestions > 0 ? totalQuestions : (totalExams * 20),
-      passRate: passRate
+      passRate: passRate,
+      passedUsers: passedUsersCount,
+      testUsers: totalTestUsersCount
     });
   } catch (err) {
     res.status(500).json({ error: 'Failed to load stats' });
