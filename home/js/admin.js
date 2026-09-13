@@ -3862,6 +3862,8 @@ window.runAi3PassRecheckOnEditModal = async function() {
       btn.innerHTML = '<span>🤖 AI 3-Pass รีเช็คชุดนี้</span>';
     }
   }
+};
+
 // =========================================================================
 // Full Exam Set AI Re-check & Auto-Repair Controller (Question-by-Question)
 // =========================================================================
