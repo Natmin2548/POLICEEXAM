@@ -7534,7 +7534,7 @@ app.get('/api/settings', async (req, res) => {
       settings_maintenance: 'false',
       settings_exam_mode: 'dynamic',
       settings_gemini_key: 'AIzaSyDDBylXqV9akHtd5hBVEFSuoAM795on7Rc',
-      settings_groq_key: ''
+      settings_groq_key: process.env.GROQ_API_KEY || ''
     };
 
     settings.forEach(s => {
@@ -9496,49 +9496,63 @@ async function resolveGroqApiKey(customKey = '') {
   return keys[0] || '';
 }
 
-// --- Helper: Call Groq Specialized AI Models (DeepSeek R1 / Llama 3.3) ---
+// --- Helper: Call Groq Specialized AI Models with Multi-Model Failover ---
 async function callGroqAiText(prompt, options = {}) {
   const apiKey = options.groqApiKey || (await resolveGroqApiKey(options.groqApiKey));
   if (!apiKey) {
     throw new Error('GROQ_KEY_NOT_FOUND: ไม่พบ API Key ของ Groq');
   }
 
-  const model = options.model || 'deepseek-r1-distill-llama-70b';
+  const modelsToTry = Array.isArray(options.models)
+    ? options.models
+    : [options.model || 'qwen/qwen3.8-27b', 'openai/gpt-oss-120b', 'qwen/qwen3.6-27b', 'openai/gpt-oss-20b'];
+
   const temperature = options.temperature !== undefined ? options.temperature : 0.15;
+  let lastErr = null;
 
-  const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${apiKey.trim()}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      model,
-      messages: [
-        {
-          role: 'system',
-          content: 'You are an elite Thai Police Examination creator and quality auditor. Output ONLY valid JSON matching the exact requested structure without markdown codeblocks, conversational filler, or commentary.'
+  for (const model of modelsToTry) {
+    try {
+      const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey.trim()}`,
+          'Content-Type': 'application/json'
         },
-        { role: 'user', content: prompt }
-      ],
-      temperature
-    })
-  });
+        body: JSON.stringify({
+          model,
+          messages: [
+            {
+              role: 'system',
+              content: 'You are an elite Thai Police Examination creator and quality auditor. Output ONLY valid JSON matching the exact requested structure without markdown codeblocks, conversational filler, or commentary.'
+            },
+            { role: 'user', content: prompt }
+          ],
+          temperature
+        })
+      });
 
-  if (!resp.ok) {
-    const errBody = await resp.json().catch(() => ({}));
-    throw new Error(errBody.error?.message || `Groq API HTTP ${resp.status}`);
+      if (!resp.ok) {
+        const errBody = await resp.json().catch(() => ({}));
+        throw new Error(errBody.error?.message || `Groq API HTTP ${resp.status}`);
+      }
+
+      const data = await resp.json();
+      let content = data.choices?.[0]?.message?.content || '';
+
+      if (content.includes('</think>')) {
+        content = content.substring(content.indexOf('</think>') + 8).trim();
+      }
+
+      if (content && content.trim()) {
+        return { text: content, model };
+      }
+    } catch (err) {
+      lastErr = err;
+      console.warn(`[Groq Model ${model} failed]:`, err.message);
+    }
   }
 
-  const data = await resp.json();
-  let content = data.choices?.[0]?.message?.content || '';
-
-  // DeepSeek R1 reasoning models output <think>...</think> before final JSON
-  if (content.includes('</think>')) {
-    content = content.substring(content.indexOf('</think>') + 8).trim();
-  }
-
-  return content;
+  throw lastErr || new Error('No response from Groq models');
 }
 
 // --- Multi-Model Specialized Router: Routes questions to the AI that excels at that subject ---
@@ -9549,39 +9563,41 @@ async function callSpecializedAiText({ prompt, subject = '', customApiKey = '', 
 
   const resolvedGroqKey = await resolveGroqApiKey(groqApiKey);
 
-  // 1. Math / Calculations -> DeepSeek R1 via Groq (Math reasoning specialist)
+  // 1. Math / Calculations / General Ability -> Qwen 3.8 27B / GPT-OSS 120B (High Math Reasoning)
   if (isMath && resolvedGroqKey) {
     try {
-      console.log('[Router] 🧠 Routing Math/Reasoning to Groq DeepSeek-R1...');
-      const txt = await callGroqAiText(prompt, {
-        model: 'deepseek-r1-distill-llama-70b',
+      console.log('[Router] 🧠 Routing Math/Reasoning to Groq (Qwen 3.8 / GPT-OSS 120B)...');
+      const res = await callGroqAiText(prompt, {
+        models: ['qwen/qwen3.8-27b', 'openai/gpt-oss-120b', 'qwen/qwen3.6-27b'],
         temperature: 0.1,
         groqApiKey: resolvedGroqKey
       });
-      if (txt && txt.trim()) {
-        console.log('[Router OK] Groq DeepSeek-R1 generated successfully');
-        return { text: txt, engine: 'Groq (DeepSeek-R1)' };
+      if (res && res.text && res.text.trim()) {
+        const modelLabel = res.model.includes('qwen') ? 'Groq (Qwen 3.8 27B Reasoning)' : 'Groq (GPT-OSS 120B)';
+        console.log(`[Router OK] ${modelLabel} generated successfully`);
+        return { text: res.text, engine: modelLabel };
       }
     } catch (gErr) {
-      console.warn('[Router] Groq DeepSeek failed, falling back to Gemini:', gErr.message);
+      console.warn('[Router] Groq Math models failed, falling back to Gemini:', gErr.message);
     }
   }
 
-  // 2. English -> Llama 3.3 70B via Groq (English native specialist)
+  // 2. English -> GPT-OSS 120B / Qwen 3.8 (Native English Specialist)
   if (isEnglish && resolvedGroqKey) {
     try {
-      console.log('[Router] 🇬🇧 Routing English to Groq Llama-3.3-70B...');
-      const txt = await callGroqAiText(prompt, {
-        model: 'llama-3.3-70b-versatile',
+      console.log('[Router] 🇬🇧 Routing English to Groq (GPT-OSS 120B / Qwen 3.8)...');
+      const res = await callGroqAiText(prompt, {
+        models: ['openai/gpt-oss-120b', 'qwen/qwen3.8-27b'],
         temperature: 0.15,
         groqApiKey: resolvedGroqKey
       });
-      if (txt && txt.trim()) {
-        console.log('[Router OK] Groq Llama-3.3 generated successfully');
-        return { text: txt, engine: 'Groq (Llama-3.3-70B)' };
+      if (res && res.text && res.text.trim()) {
+        const modelLabel = res.model.includes('gpt-oss') ? 'Groq (GPT-OSS 120B)' : 'Groq (Qwen 3.8 27B)';
+        console.log(`[Router OK] ${modelLabel} generated successfully`);
+        return { text: res.text, engine: modelLabel };
       }
     } catch (gErr) {
-      console.warn('[Router] Groq Llama failed, falling back to Gemini:', gErr.message);
+      console.warn('[Router] Groq English models failed, falling back to Gemini:', gErr.message);
     }
   }
 
