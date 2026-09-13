@@ -8792,7 +8792,11 @@ ${contextText ? `คลังเนื้อหาอ้างอิง:\n${cont
    - พ.ร.บ.ว่าด้วยการกระทำความผิดเกี่ยวกับคอมพิวเตอร์ พ.ศ. ๒๕๕๐ และที่แก้ไขเพิ่มเติม พ.ศ. ๒๕๖๐ (ฐานความผิดและโทษ)
    - พ.ร.บ.คุ้มครองข้อมูลส่วนบุคคล พ.ศ. ๒๕๖๒ (PDPA)
 5. **เทคโนโลยีสมัยใหม่**: Cloud Computing (IaaS, PaaS, SaaS), AI, Big Data, IoT
-6. 💡 **คำอธิบายเฉลย (Deep Explanation)**: อธิบายการทำงานของระบบ ชี้ให้เห็นว่าทำไมคำตอบนี้ถูกต้อง และอธิบายจุดผิดของตัวเลือกอื่น
+6. ⛔️ **กฎเหล็กด้านชื่อโปรแกรมและตัวเลือก (Strict Software Naming & Choice Phrasing):**
+   - ❌ **ห้ามสร้างตัวเลือกห้วนๆ หรือตัดคำจนงง** เช่น คำว่า "นำเสนอ", "คำนวณ", "ประมวลผล" โดดๆ
+   - หากโจทย์ถามหาชื่อโปรแกรม/ซอฟต์แวร์ ตัวเลือกต้องเป็นชื่อโปรแกรมที่เป็นสากล เช่น "Microsoft PowerPoint", "Microsoft Word", "Microsoft Excel", "Adobe Photoshop"
+   - หากโจทย์ถามประเภทของซอฟต์แวร์ ตัวเลือกต้องระบุชื่อเต็มและมีภาษาอังกฤษกำกับ เช่น "ซอฟต์แวร์นำเสนอข้อมูล (Presentation Software)", "ซอฟต์แวร์ประมวลผลคำ (Word Processing Software)"
+7. 💡 **คำอธิบายเฉลย (Deep Explanation)**: อธิบายการทำงานของระบบ ชี้ให้เห็นว่าทำไมคำตอบนี้ถูกต้อง และอธิบายจุดผิดของตัวเลือกอื่น
 
 รูปแบบผลลัพธ์: ตอบกลับเฉพาะโครงสร้าง JSON Array:
 [
@@ -11200,6 +11204,11 @@ app.post('/api/admin/reports/:id/ai-audit', requireAdmin, async (req, res) => {
 - หากข้อสอบถูกต้องสมบูรณ์อยู่แล้ว (FALSE_ALARM):
   -> ตั้ง "action": "KEEP_ORIGINAL"
 
+⛔️ กฎสำคัญด้านความสละสลวยและความเป็นธรรมชาติของตัวเลือก (Natural Professional Phrasing):
+1. ❌ **ห้ามสร้างตัวเลือกห้วนๆ ด้วนๆ หรือคำโดดๆ** เช่น คำว่า "นำเสนอ", "คำนวณ", "ประมวลผล" เด็ดขาด เพราะทำให้ผู้สอบสับสน
+2. **หากโจทย์ถามหาชื่อโปรแกรม/ซอฟต์แวร์**: ตัวเลือกต้องเป็นชื่อโปรแกรมที่เป็นสากล เช่น "Microsoft PowerPoint", "Microsoft Excel", "Microsoft Word", "Adobe Photoshop"
+3. **หากถามประเภทของซอฟต์แวร์**: ตัวเลือกต้องระบุชื่อเต็มและมีภาษาอังกฤษกำกับให้ชัดเจน เช่น "ซอฟต์แวร์นำเสนอข้อมูล (Presentation Software)", "ซอฟต์แวร์ประมวลผลคำ (Word Processing Software)"
+
 ตอบกลับเฉพาะ JSON เท่านั้น:
 {
   "verdict": "VALID_REPORT",
@@ -11225,10 +11234,15 @@ app.post('/api/admin/reports/:id/ai-audit', requireAdmin, async (req, res) => {
 
     let aiAudit = null;
     try {
-      const aiText = await callGeminiAiText(auditPrompt, req.body.apiKey);
-      let clean = aiText.trim();
-      if (clean.startsWith('```json')) clean = clean.replace(/^```json/, '').replace(/```$/, '').trim();
-      else if (clean.startsWith('```')) clean = clean.replace(/^```/, '').replace(/```$/, '').trim();
+      const auditResult = await callSpecializedAiText({
+        prompt: auditPrompt,
+        subject,
+        customApiKey: req.body.apiKey
+      });
+      let clean = (auditResult.text || '').trim();
+      if (clean.includes('</think>')) clean = clean.substring(clean.indexOf('</think>') + 8).trim();
+      if (clean.startsWith('```json')) clean = clean.replace(/^```json\s*/i, '').replace(/\s*```$/, '').trim();
+      else if (clean.startsWith('```')) clean = clean.replace(/^```\s*/, '').replace(/\s*```$/, '').trim();
       aiAudit = JSON.parse(clean);
     } catch (aiErr) {
       console.warn('AI Audit LLM error, using fallback verdict:', aiErr.message);
