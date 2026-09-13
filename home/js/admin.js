@@ -12,7 +12,7 @@ function escapeHTML(str) {
 function getApiBase() {
   const host = window.location.hostname;
   if (host === 'localhost' || host === '127.0.0.1') return '';
-  if (host.includes('onrender.com')) return 'https://policeexam.onrender.com';
+  if (host.includes('onrender.com')) return 'https://police-exam-backend.onrender.com';
   return '';
 }
 const API_BASE = getApiBase();
