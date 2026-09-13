@@ -118,6 +118,7 @@ window.alert = function(msg) {
 // ==========================================
 let userProfile = null;
 let authToken = null;
+let userDbQuizHistory = [];
 
 async function checkSession() {
   authToken = localStorage.getItem('authToken');
@@ -140,7 +141,8 @@ async function checkSession() {
   }
 
   if (typeof initializeDashboard === 'function') initializeDashboard();
-  if (typeof loadRealProfile === 'function') loadRealProfile();
+  if (typeof updateStatsTabDetails === 'function') updateStatsTabDetails();
+  if (typeof loadRealProfile === 'function') await loadRealProfile();
   if (typeof updateStatsTabDetails === 'function') updateStatsTabDetails();
 }
 
@@ -213,16 +215,25 @@ async function loadRealProfile() {
         
         // Fetch real quiz history from DB for this user
         if (authToken) {
-          fetch(`${API_BASE}/api/user/quiz-history?_t=${Date.now()}`, {
-            headers: { 'Authorization': `Bearer ${authToken}` }
-          }).then(r => r.ok ? r.json() : []).then(hist => {
-            if (Array.isArray(hist)) {
-              userDbQuizHistory = hist;
-              if (typeof window.updateHomeDashboardCharts === 'function') {
-                window.updateHomeDashboardCharts(userProfile);
+          try {
+            const histRes = await fetch(`${API_BASE}/api/user/quiz-history?_t=${Date.now()}`, {
+              headers: { 'Authorization': `Bearer ${authToken}` }
+            });
+            if (histRes.ok) {
+              const hist = await histRes.json();
+              if (Array.isArray(hist)) {
+                userDbQuizHistory = hist;
+                if (typeof window.updateHomeDashboardCharts === 'function') {
+                  window.updateHomeDashboardCharts(userProfile);
+                }
+                if (typeof updateStatsTabDetails === 'function') {
+                  updateStatsTabDetails();
+                }
               }
             }
-          }).catch(() => {});
+          } catch (histErr) {
+            console.warn('Quiz history fetch note:', histErr);
+          }
         }
         
         // Admin Panel Check
@@ -5513,7 +5524,7 @@ function handleChatImageUpload(e, apiEndpoint) {
   reader.readAsDataURL(file);
 }
 
-let userDbQuizHistory = [];
+// userDbQuizHistory declared at top of file
 
 // Step 1 -> Step 2: Open Subject Chapters Directory
 window.startBankSubject = async function(subjectKey) {
@@ -7361,6 +7372,9 @@ function saveQuizHistoryRecord(record) {
     // Immediately trigger real-time dashboard charts refresh
     if (typeof window.updateHomeDashboardCharts === 'function') {
       window.updateHomeDashboardCharts(userProfile);
+    }
+    if (typeof updateStatsTabDetails === 'function') {
+      updateStatsTabDetails();
     }
 
     // Send real stats to backend PostgreSQL if authenticated
