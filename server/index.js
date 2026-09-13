@@ -8737,8 +8737,9 @@ ${contextText ? `คลังเนื้อหาอ้างอิง:\n${cont
 
 ⛔️ กฎเหล็กความถูกต้องทางคณิตศาสตร์ (Strict Accuracy):
 1. **ตัวเลขและคำตอบต้องถูกต้องตามหลักคณิตศาสตร์ 100%** (คำนวณซ้ำสองรอบให้แน่ใจว่าตัวเลขและคำตอบถูกต้อง)
-2. ❌ **ห้ามออกข้อสอบข้ามหมวดบทเรียนที่ระบุ** ต้องออกเฉพาะหัวข้อ ${chapterTitle} เท่านั้น 100%
-3. 💡 **คำอธิบายเฉลย (Step-by-Step Math Calculation):** ต้องแสดงวิธีคิด สูตร และขั้นตอนการคำนวณอย่างละเอียดครบถ้วนทุกข้อ
+2. ❌ **ห้ามใช้สัญลักษณ์ LaTeX หรือเครื่องหมาย $ หรือ $$ หรือ \\( \\) หรือ \\[ \\] โดยเด็ดขาด!** ต้องพิมพ์เป็นข้อความธรรมดา (Plain Text) เหมือนในกระดาษข้อสอบจริง เช่น "ถ้า 2 * 3 = 13 และ 3 * 4 = 25 แล้ว 4 * 5 = ?" หรือ "วิธีคิด: a² + b² = 16 + 25 = 41" ห้ามมีเครื่องหมาย $ ปนมาเด็ดขาด
+3. ❌ **ห้ามออกข้อสอบข้ามหมวดบทเรียนที่ระบุ** ต้องออกเฉพาะหัวข้อ ${chapterTitle} เท่านั้น 100%
+4. 💡 **คำอธิบายเฉลย (Step-by-Step Math Calculation):** ต้องแสดงวิธีคิด สูตร และขั้นตอนการคำนวณอย่างละเอียดครบถ้วนทุกข้อ
 
 ${chapterSpecificRules}
 
@@ -9796,6 +9797,38 @@ function detectExplanationAnswerConflict(q) {
   return { hasConflict: false, currentAnswer: currentAns };
 }
 
+// --- Helper: Clean LaTeX math delimiters ($$, $, \( \), \[ \]) into clean, natural Plain Text ---
+function sanitizeExamQuestionFormatting(q) {
+  if (!q || typeof q !== 'object') return q;
+  const cleanStr = (s) => {
+    if (!s || typeof s !== 'string') return s;
+    return s
+      .replace(/\$\$([\s\S]*?)\$\$/g, '$1')
+      .replace(/\$([^\$]+?)\$/g, '$1')
+      .replace(/\\\[([\s\S]*?)\\\]/g, '$1')
+      .replace(/\\\(([\s\S]*?)\\\)/g, '$1')
+      .replace(/\\times/g, '×')
+      .replace(/\\div/g, '÷')
+      .replace(/\\le/g, '≤')
+      .replace(/\\ge/g, '≥')
+      .replace(/\\neq/g, '≠')
+      .replace(/\^2/g, '²')
+      .replace(/\^3/g, '³')
+      .replace(/\\cdot/g, '·')
+      .trim();
+  };
+
+  return {
+    ...q,
+    questionText: cleanStr(q.questionText || q.question || ''),
+    optionA: cleanStr(q.optionA || q.choice1 || ''),
+    optionB: cleanStr(q.optionB || q.choice2 || ''),
+    optionC: cleanStr(q.optionC || q.choice3 || ''),
+    optionD: cleanStr(q.optionD || q.choice4 || ''),
+    explanation: cleanStr(q.explanation || '')
+  };
+}
+
 // --- Dual-Model Adversarial Cross-Audit: Blind Test & Dispute Resolution ---
 async function crossModelAuditExamQuestions({ questions, subject, subcategory, primaryEngine = '', customApiKey = '', groqApiKey = '', openrouterApiKey = '' }) {
   if (!questions || !Array.isArray(questions) || questions.length === 0) {
@@ -9974,7 +10007,7 @@ ${JSON.stringify(blindQuestions, null, 2)}
     }
   });
 
-  return finalQuestions;
+  return finalQuestions.map(sanitizeExamQuestionFormatting);
 }
 
 // --- Admin API: Preview AI Exam Generation ---
@@ -10203,7 +10236,8 @@ app.post('/api/admin/exams/preview-ai', authenticateToken, async (req, res) => {
 
     const parsed = JSON.parse(cleanJson);
     const rawQuestions = Array.isArray(parsed) ? parsed : (parsed.questions || parsed.data || parsed.items || []);
-    const auditedQuestions = rawQuestions.map(q => {
+    const auditedQuestions = rawQuestions.map(rawQ => {
+      const q = sanitizeExamQuestionFormatting(rawQ);
       const conflict = detectExplanationAnswerConflict(q);
       if (conflict.hasConflict) {
         return {
