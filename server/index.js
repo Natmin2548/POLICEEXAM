@@ -12406,7 +12406,7 @@ async function recalculateUserSubjectScores(userId) {
     return Math.round(matched.reduce((sum, item) => sum + (Number(item.scorePct) || 0), 0) / matched.length);
   };
 
-  const avgGeneral = computeSubjectAvg(['ทั่วไป', 'คณิต', 'คำนวณ', 'เหตุผล']);
+  const avgGeneral = computeSubjectAvg(['ทั่วไป', 'คณิต', 'คำนวณ', 'เหตุผล'], ['กฎหมาย', 'สารบรรณ', 'คอม', 'สังคม', 'ไทย', 'อังกฤษ']);
   const avgThai = computeSubjectAvg(['ภาษาไทย', 'วิชาไทย', 'ไทย'], ['๕๔', '54', 'ลักษณะ', 'สารบรรณ']);
   const avgEnglish = computeSubjectAvg(['อังกฤษ', 'ภาษาอังกฤษ', 'english']);
   const avgComputer = computeSubjectAvg(['คอม', 'สารสนเทศ', 'ไอที', 'เทคโนโลยี']);
