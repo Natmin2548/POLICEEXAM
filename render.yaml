@@ -27,3 +27,7 @@ services:
     runtime: static
     buildCommand: "" # No build command required for pure static HTML/CSS/JS files
     publishPath: "." # Publish the root directory containing /landing and /home
+    routes:
+      - type: rewrite
+        source: /api/*
+        destination: https://police-exam-backend.onrender.com/api/*

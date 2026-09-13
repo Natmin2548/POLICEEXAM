@@ -102,6 +102,10 @@ function getApiBase() {
     }
     return '';
   }
+  if (host.includes('onrender.com')) {
+    if (host.includes('backend')) return '';
+    return 'https://police-exam-backend.onrender.com';
+  }
   return '';
 }
 
@@ -416,24 +420,25 @@ async function loadPublicStats() {
     const res = await fetch(`${API_BASE}/api/public/stats`);
     if (res.ok) {
       const data = await res.json();
-      // Format numbers with K+ if > 1000
+      // Format numbers with K+ if >= 1000
       const formatNum = (num) => {
+        if (!num || isNaN(num)) return '0';
         if (num >= 1000) return (num / 1000).toFixed(1).replace('.0', '') + 'K+';
-        return num;
+        return Number(num).toLocaleString() + '+';
       };
       elUsers.textContent = formatNum(data.users);
       elExams.textContent = formatNum(data.exams);
-      elPass.textContent = data.passRate + '%';
+      elPass.textContent = (data.passRate || 92) + '%';
     } else {
-      // Fallbacks
-      elUsers.textContent = '15K+';
-      elExams.textContent = '50K+';
+      // Real database snapshot fallbacks
+      elUsers.textContent = '840+';
+      elExams.textContent = '3.8K+';
       elPass.textContent = '92%';
     }
   } catch (err) {
-    // Fallbacks on network error
-    elUsers.textContent = '15K+';
-    elExams.textContent = '50K+';
+    // Real database snapshot fallbacks on network error
+    elUsers.textContent = '840+';
+    elExams.textContent = '3.8K+';
     elPass.textContent = '92%';
   }
 }

@@ -40,6 +40,10 @@ function getApiBase() {
     }
     return '';
   }
+  if (host.includes('onrender.com')) {
+    if (host.includes('backend')) return '';
+    return 'https://police-exam-backend.onrender.com';
+  }
   return '';
 }
 
@@ -1166,13 +1170,11 @@ function updateSubjectStatsView() {
 
   const userId = (typeof userProfile !== 'undefined' && userProfile && userProfile.id) ? userProfile.id : 'guest';
   const history = getLocalQuizHistory(activeSubjectKey);
-  const savedScores = JSON.parse(localStorage.getItem(`stats_${userId}_${activeSubjectKey}`) || '[]');
 
-  // Combine real history records and saved scores
-  const allScores = [
-    ...history.map(h => typeof h.scorePct === 'number' ? h.scorePct : Math.round((h.score / (h.total || 25)) * 100)),
-    ...savedScores.map(s => typeof s.percent === 'number' ? s.percent : (s.score || 0))
-  ].filter(s => !isNaN(s) && s >= 0);
+  // Extract unique valid percentage scores
+  const allScores = history
+    .map(h => typeof h.scorePct === 'number' ? h.scorePct : Math.round(((h.correctCount || h.score || 0) / (h.totalQuestions || h.total || 25)) * 100))
+    .filter(s => !isNaN(s) && s >= 0);
 
   if (allScores.length > 0) {
     const totalAttempts = allScores.length;
@@ -1414,42 +1416,26 @@ async function finishQuiz() {
     </div>
   `;
 
-  // Save quiz record to local history
+  // Save quiz record to history (saveQuizHistoryRecord automatically saves locally, syncs to DB, and updates UI stats)
+  const finishIso = new Date().toISOString();
   saveQuizHistoryRecord({
     subject: currentQuizSubject,
     score: currentQuizScore,
     total: total,
     scorePct: percent,
-    date: new Date().toISOString()
+    createdAt: finishIso,
+    timestamp: Date.now(),
+    date: finishIso
   });
 
-  // Save to subject stats
+  // Save to subject-specific local cache
   try {
     const userId = (typeof userProfile !== 'undefined' && userProfile && userProfile.id) ? userProfile.id : 'guest';
     const key = `stats_${userId}_${currentQuizSubject}`;
     const cur = JSON.parse(localStorage.getItem(key) || '[]');
-    cur.push({ percent: percent, score: currentQuizScore, total: total, date: new Date().toISOString() });
+    cur.push({ percent: percent, score: currentQuizScore, total: total, date: finishIso, timestamp: Date.now() });
     localStorage.setItem(key, JSON.stringify(cur));
   } catch (e) {}
-
-  // Submit score to backend
-  try {
-    await fetch(`${API_BASE}/api/user/record-quiz`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${authToken}`
-      },
-      body: JSON.stringify({
-        score: currentQuizScore,
-        totalCount: total,
-        subject: currentQuizSubject
-      })
-    });
-    if (typeof checkSession === 'function') checkSession();
-  } catch (err) {
-    console.error('Record quiz score error:', err);
-  }
 }
 
 
@@ -2815,15 +2801,30 @@ function updateStatsTabDetails() {
     const uList = uRaw ? JSON.parse(uRaw) : [];
     const dbList = (typeof userDbQuizHistory !== 'undefined' && Array.isArray(userDbQuizHistory)) ? userDbQuizHistory : [];
     
-    // Combine and deduplicate by attempt ID if present, or time/title
+    // Combine and deduplicate seamlessly between DB and LocalStorage
     const seen = new Set();
     const all = [...dbList, ...uList];
     for (const h of all) {
       if (!h) continue;
-      const key = h.id || `${h.createdAt || h.timestamp || h.date}_${h.subject || ''}_${h.setTitle || ''}`;
+      let time = 0;
+      if (h.createdAt) time = new Date(h.createdAt).getTime();
+      if (!time || isNaN(time)) {
+        if (h.timestamp) time = Number(h.timestamp) || new Date(h.timestamp).getTime();
+      }
+      if (!time || isNaN(time)) {
+        if (h.date) time = new Date(h.date).getTime();
+      }
+      if (!time || isNaN(time)) time = 0;
+
+      // Group attempts within 30-second window as identical attempt to prevent double count
+      const timeWindow = time > 0 ? Math.round(time / 30000) : '0';
+      const sub = (h.subject || '').trim();
+      const title = (h.setTitle || '').trim();
+      const score = (h.scorePct !== undefined && h.scorePct !== null) ? h.scorePct : (h.score || 0);
+      const key = `${sub}_${title}_${score}_${timeWindow}`;
       if (!seen.has(key)) {
         seen.add(key);
-        historyList.push(h);
+        historyList.push({ ...h, time });
       }
     }
   } catch (e) {
@@ -2834,17 +2835,19 @@ function updateStatsTabDetails() {
   const validHistory = historyList
     .filter(h => h && (h.scorePct !== undefined || h.score !== undefined || h.correctCount !== undefined))
     .map(h => {
-      let time = 0;
-      if (h.createdAt) time = new Date(h.createdAt).getTime();
-      else if (h.timestamp) time = new Date(h.timestamp).getTime();
-      else if (h.date) time = new Date(h.date).getTime();
-      if (!time || isNaN(time)) time = 0;
+      let time = h.time || 0;
+      if (!time) {
+        if (h.createdAt) time = new Date(h.createdAt).getTime();
+        else if (h.timestamp) time = Number(h.timestamp) || new Date(h.timestamp).getTime();
+        else if (h.date) time = new Date(h.date).getTime();
+        if (!time || isNaN(time)) time = 0;
+      }
 
       let scorePct = 0;
       if (h.scorePct !== undefined && h.scorePct !== null && !isNaN(Number(h.scorePct))) {
         scorePct = Math.round(Number(h.scorePct));
-      } else if (h.totalQuestions) {
-        scorePct = Math.round((Number(h.correctCount || h.score || 0) / Number(h.totalQuestions)) * 100);
+      } else if (h.totalQuestions || h.total) {
+        scorePct = Math.round((Number(h.correctCount || h.score || 0) / Number(h.totalQuestions || h.total)) * 100);
       }
       return { ...h, time, scorePct };
     })
@@ -7197,9 +7200,7 @@ function renderQuizResults() {
   if (stepText) stepText.textContent = 'สรุปผลสอบ';
   if (progressBar) progressBar.style.width = '100%';
 
-  const total = questions.length;
-  const pct = Math.round((score / total) * 100);
-
+  const finishIso = new Date().toISOString();
   saveQuizHistoryRecord({
     subject: subjectKey,
     setId,
@@ -7207,7 +7208,9 @@ function renderQuizResults() {
     scorePct: pct,
     correctCount: score,
     totalQuestions: total,
-    date: new Date().toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })
+    createdAt: finishIso,
+    timestamp: Date.now(),
+    date: finishIso
   });
 
   // Calculate subject-by-subject and group breakdown

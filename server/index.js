@@ -3434,12 +3434,25 @@ app.post('/api/user/reports', authenticateToken, async (req, res) => {
 app.get('/api/public/stats', async (req, res) => {
   try {
     const totalUsers = await prisma.user.count();
+    const totalQuestions = await prisma.question.count();
     const totalExams = await prisma.examSet.count();
-    // Use a fixed high pass rate for marketing, or calculate real one
+    
+    // Calculate real pass rate (score >= 60%) from all recorded attempts
+    let passRate = 92;
+    try {
+      const attempts = await prisma.quizAttempt.findMany({
+        select: { scorePct: true }
+      });
+      if (attempts.length >= 5) {
+        const passed = attempts.filter(a => (a.scorePct || 0) >= 60).length;
+        passRate = Math.round((passed / attempts.length) * 100);
+      }
+    } catch (e) {}
+
     res.json({
       users: totalUsers,
-      exams: totalExams,
-      passRate: 92 // Static for now, since we don't track global pass/fail strictly
+      exams: totalQuestions > 0 ? totalQuestions : (totalExams * 20),
+      passRate: passRate
     });
   } catch (err) {
     res.status(500).json({ error: 'Failed to load stats' });
@@ -10140,35 +10153,7 @@ app.post('/api/user/record-quiz', authenticateToken, async (req, res) => {
     const newXp = (user.xp || 0) + xpGained;
     const newPoints = (user.points || 0) + pointsGained;
 
-    const sNorm = `${subject || ''} ${setTitle || ''}`.replace(/[\s_]/g, '').replace('กฏ', 'กฎ');
-    const updateData = {
-      xp: newXp,
-      points: newPoints
-    };
-
-    if (sNorm.includes('กฎหมาย') || sNorm.includes('กม')) {
-      updateData.scoreLaw = pct;
-    } else if (sNorm.includes('คอม') || sNorm.includes('สารสนเทศ') || sNorm.includes('ไอที')) {
-      updateData.scoreComputer = pct;
-    } else if (sNorm.includes('สารบรรณ')) {
-      updateData.scoreSecretariat = pct;
-    } else if (sNorm.includes('ทั่วไป') || sNorm.includes('คณิต') || sNorm.includes('คำนวณ')) {
-      updateData.scoreGeneral = pct;
-    } else if (sNorm.includes('สังคม') || sNorm.includes('จริยธรรม')) {
-      updateData.scoreSocial = pct;
-    } else if (sNorm.includes('ไทย') || sNorm.includes('๕๔') || sNorm.includes('54')) {
-      updateData.scoreThai = pct;
-    } else if (sNorm.includes('อังกฤษ') || sNorm.includes('english')) {
-      updateData.scoreEnglish = pct;
-    }
-
-    // 1. Update user XP, points & subject scores
-    const updated = await prisma.user.update({
-      where: { id: req.user.userId },
-      data: updateData
-    });
-
-    // 2. Save QuizAttempt record directly to Database
+    // 1. Save QuizAttempt record directly to Database first
     const attempt = await prisma.quizAttempt.create({
       data: {
         userId: req.user.userId,
@@ -10179,6 +10164,49 @@ app.post('/api/user/record-quiz', authenticateToken, async (req, res) => {
         correctCount: correct,
         totalQuestions: total
       }
+    });
+
+    // 2. Fetch all user's quiz attempts to compute real average score per subject
+    const allUserAttempts = await prisma.quizAttempt.findMany({
+      where: { userId: req.user.userId },
+      select: { subject: true, setTitle: true, scorePct: true }
+    });
+
+    const computeSubjectAvg = (keywords, excludeKeywords = []) => {
+      const matched = allUserAttempts.filter(a => {
+        const str = `${a.subject || ''} ${a.setTitle || ''}`.replace(/[\s_]/g, '').replace('กฏ', 'กฎ');
+        const hasKeyword = keywords.some(k => str.includes(k));
+        const hasExcluded = excludeKeywords.some(e => str.includes(e));
+        return hasKeyword && !hasExcluded;
+      });
+      if (matched.length === 0) return 0;
+      return Math.round(matched.reduce((sum, item) => sum + (Number(item.scorePct) || 0), 0) / matched.length);
+    };
+
+    const avgGeneral = computeSubjectAvg(['ทั่วไป', 'คณิต', 'คำนวณ', 'เหตุผล']);
+    const avgThai = computeSubjectAvg(['ภาษาไทย', 'วิชาไทย', 'ไทย'], ['๕๔', '54', 'ลักษณะ', 'สารบรรณ']);
+    const avgEnglish = computeSubjectAvg(['อังกฤษ', 'ภาษาอังกฤษ', 'english']);
+    const avgComputer = computeSubjectAvg(['คอม', 'สารสนเทศ', 'ไอที', 'เทคโนโลยี']);
+    const avgSocial = computeSubjectAvg(['สังคม', 'จริยธรรม', 'อาเซียน']);
+    const avgSecretariat = computeSubjectAvg(['สารบรรณ', '๒๕๒๖', '๕๔', '54', 'ลักษณะที่๕๔']);
+    const avgLaw = computeSubjectAvg(['กฎหมาย', 'กม', 'วิ.อาญา', 'พ.ร.บ.ตำรวจ']);
+
+    const updateData = {
+      xp: newXp,
+      points: newPoints,
+      scoreGeneral: avgGeneral || user.scoreGeneral,
+      scoreThai: avgThai || user.scoreThai,
+      scoreEnglish: avgEnglish || user.scoreEnglish,
+      scoreComputer: avgComputer || user.scoreComputer,
+      scoreSocial: avgSocial || user.scoreSocial,
+      scoreSecretariat: avgSecretariat || user.scoreSecretariat,
+      scoreLaw: avgLaw || user.scoreLaw
+    };
+
+    // 3. Update user profile with real averages
+    const updated = await prisma.user.update({
+      where: { id: req.user.userId },
+      data: updateData
     });
 
     res.json({
