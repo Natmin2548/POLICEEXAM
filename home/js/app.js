@@ -6304,6 +6304,14 @@ function extractChapterNumber(str) {
   return 999;
 }
 
+function extractSetNumber(str) {
+  if (!str) return 0;
+  const norm = thaiDigitsToArab(str);
+  const matchSet = norm.match(/ชุดที่\s*(\d+)/i);
+  if (matchSet) return parseInt(matchSet[1], 10);
+  return 0;
+}
+
 // Step 1 -> Step 2: Open Chapters List (100% matching Image 2)
 window.startBankSubject = async function(subjectKey) {
   activeSubjectKey = subjectKey;
@@ -6573,8 +6581,27 @@ function renderFilteredExamSetsForChapter(subjectKey, chapterName) {
     return false;
   });
 
-  // Sort sets strictly by chapter number / set number
-  sets.sort((a, b) => extractChapterNumber(a.subcategory || a.title) - extractChapterNumber(b.subcategory || b.title));
+  // Sort sets strictly by:
+  // 1) Chapter number ascending
+  // 2) Set number (ชุดที่ 1, 2, 3, 4...) ascending
+  // 3) ID / Creation date ascending
+  sets.sort((a, b) => {
+    const chA = extractChapterNumber(a.subcategory || a.title);
+    const chB = extractChapterNumber(b.subcategory || b.title);
+    if (chA !== chB) return chA - chB;
+
+    const setA = extractSetNumber(a.title || a.subcategory);
+    const setB = extractSetNumber(b.title || b.subcategory);
+    if (setA > 0 && setB > 0 && setA !== setB) return setA - setB;
+    if (setA > 0 && setB === 0) return -1;
+    if (setA === 0 && setB > 0) return 1;
+
+    const idA = typeof a.dbId !== 'undefined' ? a.dbId : (parseInt(String(a.id).replace(/\D/g, '')) || 0);
+    const idB = typeof b.dbId !== 'undefined' ? b.dbId : (parseInt(String(b.id).replace(/\D/g, '')) || 0);
+    if (idA && idB && idA !== idB) return idA - idB;
+
+    return (new Date(a.createdAt || 0).getTime()) - (new Date(b.createdAt || 0).getTime());
+  });
 
   if (sets.length === 0) {
     if (questionsCountEl) questionsCountEl.textContent = '📄 0 ข้อทั้งหมด';
@@ -6598,7 +6625,8 @@ function renderFilteredExamSetsForChapter(subjectKey, chapterName) {
   let userCompletedSetsCount = 0;
 
   const setsHTML = sets.map((s, idx) => {
-    const setNum = idx + 1;
+    const extractedNum = extractSetNumber(s.title || s.subcategory);
+    const setNum = extractedNum > 0 ? extractedNum : (idx + 1);
     const questionsCount = s.questionsCount || s.count || 25;
     const timeText = s.timeMinutes ? `${s.timeMinutes} นาที` : (s.time || '30 นาที');
 

@@ -1066,6 +1066,35 @@ window.selectQuestionCount = function(count) {
   });
 };
 
+function isSameSubjectCategory(cat1, cat2) {
+  if (!cat1 || !cat2) return false;
+  const c1 = String(cat1).toLowerCase().replace(/[\s_]/g, '').replace('กฏ', 'กฎ');
+  const c2 = String(cat2).toLowerCase().replace(/[\s_]/g, '').replace('กฏ', 'กฎ');
+  if (c1 === c2) return true;
+
+  if ((c1.includes('๕๔') || c1.includes('54')) && (c2.includes('๕๔') || c2.includes('54'))) return true;
+  if ((c1.includes('๒๕๒๖') || c1.includes('2526')) && (c2.includes('๒๕๒๖') || c2.includes('2526'))) return true;
+  if (c1.includes('สารบรรณ') && c2.includes('สารบรรณ') && !c1.includes('๕๔') && !c2.includes('๕๔') && !c1.includes('54') && !c2.includes('54')) return true;
+
+  if (c1.includes('คอม') && c2.includes('คอม')) return true;
+  if (c1.includes('สารสนเทศ') && c2.includes('สารสนเทศ')) return true;
+  if (c1.includes('กฎหมาย') && c2.includes('กฎหมาย')) return true;
+  if (c1.includes('ไทย') && c2.includes('ไทย') && !c1.includes('๕๔') && !c2.includes('๕๔')) return true;
+  if ((c1.includes('อังกฤษ') || c1.includes('english')) && (c2.includes('อังกฤษ') || c2.includes('english'))) return true;
+  if (c1.includes('สังคม') && c2.includes('สังคม')) return true;
+  if ((c1.includes('ทั่วไป') || c1.includes('คำนวณ')) && (c2.includes('ทั่วไป') || c2.includes('คำนวณ'))) return true;
+
+  return false;
+}
+
+function extractSetNumberFromTitle(title) {
+  if (!title) return 0;
+  const thaiNumerals = ['๐','๑','๒','๓','๔','๕','๖','๗','๘','๙'];
+  let s = String(title).replace(/[๐-๙]/g, d => thaiNumerals.indexOf(d));
+  const m = s.match(/ชุดที่\s*(\d+)/i);
+  return m ? parseInt(m[1], 10) : 0;
+}
+
 function onSarabanChapterChange() {
   const subjectSelect = document.getElementById('examSubject');
   const subject = subjectSelect ? subjectSelect.value : 'งานสารบรรณ_๒๕๒๖';
@@ -1079,23 +1108,24 @@ function onSarabanChapterChange() {
 
   // Calculate automatic set number (ชุดที่ 1, ชุดที่ 2...) for the same subject & category/chapter
   const matchingExistingSets = allLoadedExams.filter(ex => {
-    const isSameSubject = ex.category === subject || 
-      (subject.includes('สารบรรณ') && ex.category && ex.category.includes('สารบรรณ')) ||
-      (subject === 'งานสารบรรณ_๒๕๒๖' && ex.category && (ex.category.includes('๒๕๒๖') || ex.category === 'งานสารบรรณ')) ||
-      (subject === 'สารบรรณตำรวจ_๕๔' && ex.category && (ex.category.includes('๕๔') || ex.category === 'ลักษณะที่54'));
-    if (!isSameSubject) return false;
+    if (!isSameSubjectCategory(ex.category, subject)) return false;
 
     if (val === 'ALL') {
       return !ex.subcategory || ex.subcategory.includes('รวมทุก') || ex.title.includes('รวมทุก');
     }
 
-    const cleanVal = val.replace(/บทที่\s*\d+\s*/, '').trim();
+    const cleanVal = val.replace(/บทที่\s*[๐-๙\d]+[:\-\s]*/g, '').trim();
     if (ex.subcategory && (ex.subcategory === val || ex.subcategory.includes(cleanVal))) return true;
     if (ex.title && cleanVal && ex.title.includes(cleanVal)) return true;
     return false;
   });
 
-  const nextSetNum = matchingExistingSets.length + 1;
+  let maxSetNum = 0;
+  matchingExistingSets.forEach(ex => {
+    const num = extractSetNumberFromTitle(ex.title);
+    if (num > maxSetNum) maxSetNum = num;
+  });
+  const nextSetNum = Math.max(matchingExistingSets.length + 1, maxSetNum + 1);
 
   if (val === 'ALL') {
     if (subcatInput) subcatInput.value = `รวมทุกหมวด ${displayName}`;
@@ -2017,21 +2047,20 @@ window.startBatchAutoExamGeneration = async function() {
       try {
         // Calculate automatic set number (ชุดที่ 1, ชุดที่ 2...) for this specific chapter
         const existingSetsForChapter = allLoadedExams.filter(ex => {
-          const isSameSubject = ex.category === subject || 
-            (subject.includes('สารบรรณ') && ex.category && ex.category.includes('สารบรรณ')) ||
-            (subject === 'กฏหมาย' && ex.category && (ex.category.includes('กฎหมาย') || ex.category.includes('กฏหมาย'))) ||
-            (subject === 'คอม' && ex.category && (ex.category.includes('คอม') || ex.category.includes('สารสนเทศ'))) ||
-            (subject.includes('ไทย') && ex.category && ex.category.includes('ไทย')) ||
-            (subject.includes('อังกฤษ') && ex.category && (ex.category.includes('อังกฤษ') || ex.category.toLowerCase().includes('english')));
-          if (!isSameSubject) return false;
+          if (!isSameSubjectCategory(ex.category, subject)) return false;
 
-          const cleanCh = chapterName.replace(/บทที่\s*\d+\s*/, '').trim();
+          const cleanCh = chapterName.replace(/บทที่\s*[๐-๙\d]+[:\-\s]*/g, '').trim();
           if (ex.subcategory && (ex.subcategory === chapterName || ex.subcategory.includes(cleanCh))) return true;
           if (ex.title && cleanCh && ex.title.includes(cleanCh)) return true;
           return false;
         });
 
-        const nextSetNum = existingSetsForChapter.length + 1;
+        let maxBatchSetNum = 0;
+        existingSetsForChapter.forEach(ex => {
+          const num = extractSetNumberFromTitle(ex.title);
+          if (num > maxBatchSetNum) maxBatchSetNum = num;
+        });
+        const nextSetNum = Math.max(existingSetsForChapter.length + 1, maxBatchSetNum + 1);
         const title = `แบบทดสอบ${displayName}: ${chapterName} (ชุดที่ ${nextSetNum})`;
         
         // 1. Generate via Preview-AI

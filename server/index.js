@@ -787,7 +787,7 @@ app.get('/api/exams/sets', async (req, res) => {
           select: { questions: true }
         }
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { id: 'asc' }
     });
 
     let result = sets.map(s => ({
