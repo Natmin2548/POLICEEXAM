@@ -179,6 +179,9 @@ async function syncUserQuizHistoryWithServer(force = false) {
         if (typeof window.updateHomeDashboardCharts === 'function') {
           window.updateHomeDashboardCharts(userProfile);
         }
+        if (typeof updateDailyStreakDisplay === 'function') {
+          updateDailyStreakDisplay();
+        }
       }
     } else {
       // Fallback: fetch directly via GET
@@ -192,6 +195,7 @@ async function syncUserQuizHistoryWithServer(force = false) {
           localStorage.setItem(`userQuizHistory_${uid}`, JSON.stringify(hist));
           if (typeof updateStatsTabDetails === 'function') updateStatsTabDetails();
           if (typeof window.updateHomeDashboardCharts === 'function') window.updateHomeDashboardCharts(userProfile);
+          if (typeof updateDailyStreakDisplay === 'function') updateDailyStreakDisplay();
         }
       }
     }
@@ -244,20 +248,37 @@ async function checkSession() {
   setTimeout(() => syncUserQuizHistoryWithServer(), 100);
 }
 
-function initializeDashboard() {
-  
+window.updateDailyStreakDisplay = function() {
   const greetingStreakTitle = document.getElementById('greetingStreakTitle');
   const greetingStreakSubtitle = document.getElementById('greetingStreakSubtitle');
-  
-  if (userProfile) {
-    const streakCount = Math.max(1, userProfile.streak || 1);
-    if (greetingStreakTitle) {
-      greetingStreakTitle.innerHTML = `${streakCount} วันติดต่อกัน! 🔥`;
-    }
-    if (greetingStreakSubtitle) {
-      greetingStreakSubtitle.textContent = `เข้าใช้งานต่อเนื่อง ${streakCount} วันแล้ว! กลับมาเข้าเว็บทุกวันเพื่อสะสม Streak ต่อเนื่อง`;
+  if (!greetingStreakTitle) return;
+
+  const streakCount = Math.max(1, (userProfile && userProfile.streak) || 1);
+  greetingStreakTitle.innerHTML = `${streakCount} วันติดต่อกัน! 🔥`;
+
+  // Check if user did any quiz today
+  const todayDateStr = new Date().toDateString();
+  const history = (typeof userDbQuizHistory !== 'undefined' && Array.isArray(userDbQuizHistory)) ? userDbQuizHistory : [];
+  const didQuizToday = history.some(h => {
+    if (!h) return false;
+    let d = null;
+    if (h.createdAt) d = new Date(h.createdAt);
+    else if (h.date) d = new Date(h.date);
+    else if (h.timestamp) d = new Date(h.timestamp);
+    return d && !isNaN(d.getTime()) && d.toDateString() === todayDateStr;
+  });
+
+  if (greetingStreakSubtitle) {
+    if (didQuizToday) {
+      greetingStreakSubtitle.innerHTML = `<span style="color: #86EFAC; font-weight: 700;">✅ ทำข้อสอบวันนี้สำเร็จแล้ว!</span> รักษา Streak วันที่ ${streakCount} เรียบร้อย (พรุ่งนี้กลับมาทำต่อเพื่อสะสมเป็นวันที่ ${streakCount + 1})`;
+    } else {
+      greetingStreakSubtitle.textContent = `เข้าใช้งานต่อเนื่อง ${streakCount} วันแล้ว! ทำข้อสอบอย่างน้อย 1 ชุดวันนี้เพื่อรักษา Streak ต่อเนื่อง`;
     }
   }
+};
+
+function initializeDashboard() {
+  updateDailyStreakDisplay();
   
   const greetingName = document.getElementById('greetingName');
   const dropdownUserName = document.getElementById('dropdownUserName');
@@ -7564,19 +7585,9 @@ async function saveQuizHistoryRecord(record) {
       }
     }
 
-    // If this was a daily streak exam, increment streak!
-    if (record.setId && String(record.setId).startsWith('streak_')) {
-      if (typeof userProfile !== 'undefined' && userProfile) {
-        userProfile.streak = (userProfile.streak || 0) + 1;
-        const greetingStreakTitle = document.getElementById('greetingStreakTitle');
-        const greetingStreakSubtitle = document.getElementById('greetingStreakSubtitle');
-        if (greetingStreakTitle) {
-          greetingStreakTitle.innerHTML = `${userProfile.streak} วันติดต่อกัน! 🔥`;
-        }
-        if (greetingStreakSubtitle) {
-          greetingStreakSubtitle.textContent = 'ยอดเยี่ยม! คุณทำข้อสอบรักษา streak สำเร็จแล้ว 🎉';
-        }
-      }
+    // Update daily streak and challenge banner status immediately
+    if (typeof updateDailyStreakDisplay === 'function') {
+      updateDailyStreakDisplay();
     }
   } catch (e) {
     console.error('Save quiz record error:', e);
