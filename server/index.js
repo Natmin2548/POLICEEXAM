@@ -10163,6 +10163,60 @@ app.delete('/api/admin/exams/:id', requireAdmin, async (req, res) => {
   }
 });
 
+// --- Helper: Resolve Report Subject and Chapter accurately ---
+function resolveReportSubjectAndChapter({ rawSubject, rawChapter, questionText, dbQuestion }) {
+  const cleanCategoryName = (c) => {
+    if (!c) return '';
+    let str = String(c).replace(/_/g, ' ').trim();
+    if (str.includes('สารบรรณ')) return 'งานสารบรรณ';
+    if (str.includes('ไทย')) return 'ภาษาไทย';
+    if (str.includes('คอม') || str.includes('สารสนเทศ')) return 'เทคโนโลยีสารสนเทศ';
+    if (str.includes('กฎหมาย') || str.includes('กฏหมาย')) return 'กฎหมายที่ประชาชนควรรู้';
+    if (str.includes('อังกฤษ') || str.toLowerCase().includes('english')) return 'ภาษาอังกฤษ';
+    if (str.includes('สังคม') || str.includes('จริยธรรม') || str.includes('อาเซียน')) return 'สังคม วัฒนธรรมและจริยธรรม';
+    if (str.includes('ทั่วไป') || str.includes('คำนวณ') || str.includes('คณิต')) return 'ความสามารถทั่วไป (คณิต/คำนวณ)';
+    return str;
+  };
+
+  let resolvedChapter = rawChapter && rawChapter !== '-' ? rawChapter.trim() : '';
+  let resolvedSubject = '';
+
+  if (dbQuestion && dbQuestion.examSet) {
+    resolvedSubject = cleanCategoryName(dbQuestion.examSet.category);
+    if (!resolvedChapter) {
+      resolvedChapter = (dbQuestion.examSet.subcategory || dbQuestion.examSet.title || '').trim();
+    }
+  }
+
+  if (!resolvedSubject || resolvedSubject === 'ทั่วไป' || resolvedSubject === 'ความสามารถทั่วไป (คณิต/คำนวณ)') {
+    const textToCheck = ((resolvedChapter || '') + ' ' + (questionText || '')).toLowerCase();
+    if (textToCheck.includes('สะกดคำ') || textToCheck.includes('คำทับศัพท์') || textToCheck.includes('ราชาศัพท์') || textToCheck.includes('ภาษาไทย') || textToCheck.includes('สำนวน') || textToCheck.includes('ประโยค') || textToCheck.includes('คำไวพจน์') || textToCheck.includes('คำเชื่อม')) {
+      resolvedSubject = 'ภาษาไทย';
+    } else if (textToCheck.includes('คอมพิวเตอร์') || textToCheck.includes('เครือข่าย') || textToCheck.includes('สารสนเทศ') || textToCheck.includes('ซอฟต์แวร์') || textToCheck.includes('ฮาร์ดแวร์') || textToCheck.includes('อินเทอร์เน็ต')) {
+      resolvedSubject = 'เทคโนโลยีสารสนเทศ';
+    } else if (textToCheck.includes('สารบรรณ') || textToCheck.includes('ระเบียบ') || textToCheck.includes('๕๔') || textToCheck.includes('54')) {
+      resolvedSubject = 'งานสารบรรณ';
+    } else if (textToCheck.includes('กฎหมาย') || textToCheck.includes('วิ.อาญา') || textToCheck.includes('อาญา') || textToCheck.includes('พ.ร.บ.') || textToCheck.includes('วินัย')) {
+      resolvedSubject = 'กฎหมายที่ประชาชนควรรู้';
+    } else if (textToCheck.includes('อังกฤษ') || textToCheck.includes('english') || textToCheck.includes('grammar') || textToCheck.includes('vocab')) {
+      resolvedSubject = 'ภาษาอังกฤษ';
+    } else if (textToCheck.includes('สังคม') || textToCheck.includes('จริยธรรม') || textToCheck.includes('อาเซียน')) {
+      resolvedSubject = 'สังคม วัฒนธรรมและจริยธรรม';
+    } else if (textToCheck.includes('อัตราส่วน') || textToCheck.includes('ร้อยละ') || textToCheck.includes('อนุกรม') || textToCheck.includes('สมการ') || textToCheck.includes('คณิต') || textToCheck.includes('ตรรกศาสตร์') || textToCheck.includes('ความน่าจะเป็น')) {
+      resolvedSubject = 'ความสามารถทั่วไป (คณิต/คำนวณ)';
+    } else if (rawSubject && rawSubject !== 'ทั่วไป') {
+      resolvedSubject = cleanCategoryName(rawSubject);
+    } else {
+      resolvedSubject = 'ความสามารถทั่วไป (คณิต/คำนวณ)';
+    }
+  }
+
+  return {
+    subject: resolvedSubject,
+    chapter: resolvedChapter || '-'
+  };
+}
+
 // --- Admin API: Get All Reported Questions ---
 app.get('/api/admin/reports', requireAdmin, async (req, res) => {
   try {
@@ -10175,13 +10229,42 @@ app.get('/api/admin/reports', requireAdmin, async (req, res) => {
       }
     });
 
-    const formatted = reports.map(r => ({
-      ...r,
-      user: r.user ? {
-        ...r.user,
-        name: r.user.fullName || r.user.username || r.user.email
-      } : null
-    }));
+    // Batch fetch related questions to accurately detect subject & chapter
+    const qIds = reports.map(r => parseInt(r.questionId)).filter(id => !isNaN(id) && id > 0);
+    const dbQuestions = await prisma.question.findMany({
+      where: { id: { in: qIds } },
+      include: { examSet: { select: { id: true, title: true, category: true, subcategory: true } } }
+    });
+    const qMap = new Map();
+    dbQuestions.forEach(q => qMap.set(q.id, q));
+
+    const formatted = reports.map(r => {
+      let reasonData = {};
+      try {
+        reasonData = JSON.parse(r.reason);
+      } catch (e) {
+        reasonData = { reasonType: r.reason, details: '' };
+      }
+
+      const qNum = parseInt(r.questionId);
+      const dbQ = !isNaN(qNum) ? qMap.get(qNum) : null;
+      const { subject, chapter } = resolveReportSubjectAndChapter({
+        rawSubject: reasonData.subject,
+        rawChapter: reasonData.chapter,
+        questionText: r.questionText,
+        dbQuestion: dbQ
+      });
+
+      return {
+        ...r,
+        subject,
+        chapter,
+        user: r.user ? {
+          ...r.user,
+          name: r.user.fullName || r.user.username || r.user.email
+        } : null
+      };
+    });
 
     res.json(formatted);
   } catch (err) {
@@ -10245,7 +10328,7 @@ app.post('/api/admin/reports/:id/ai-audit', requireAdmin, async (req, res) => {
       });
     }
 
-    // Resolve question fields
+    // Resolve question fields & accurate subject
     const questionText = (dbQuestion && dbQuestion.questionText) || report.questionText || '';
     const choice1 = (dbQuestion && dbQuestion.choice1) || (reasonData.choices && reasonData.choices[0]) || 'ตัวเลือก ก';
     const choice2 = (dbQuestion && dbQuestion.choice2) || (reasonData.choices && reasonData.choices[1]) || 'ตัวเลือก ข';
@@ -10253,8 +10336,12 @@ app.post('/api/admin/reports/:id/ai-audit', requireAdmin, async (req, res) => {
     const choice4 = (dbQuestion && dbQuestion.choice4) || (reasonData.choices && reasonData.choices[3]) || 'ตัวเลือก ง';
     const currentAnswer = (dbQuestion && dbQuestion.correctAnswer) || reasonData.correctAnswer || 1;
     const explanation = (dbQuestion && dbQuestion.explanation) || reasonData.explanation || '';
-    const subject = (dbQuestion && dbQuestion.examSet && dbQuestion.examSet.category) || reasonData.subject || 'ทั่วไป';
-    const chapter = (dbQuestion && dbQuestion.examSet && dbQuestion.examSet.subcategory) || reasonData.chapter || '-';
+    const { subject, chapter } = resolveReportSubjectAndChapter({
+      rawSubject: reasonData.subject,
+      rawChapter: reasonData.chapter,
+      questionText,
+      dbQuestion
+    });
 
     const questionObj = {
       id: dbQuestion ? dbQuestion.id : report.questionId,

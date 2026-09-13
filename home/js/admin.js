@@ -3310,8 +3310,29 @@ window.loadAdminReports = async function() {
         reasonData = { reasonType: rep.reason, details: '' };
       }
 
-      const subject = reasonData.subject || 'ทั่วไป';
-      const chapter = reasonData.chapter || '-';
+      // Resolve subject intelligently from server-calculated rep.subject or heuristic
+      let subject = rep.subject || reasonData.subject || '';
+      let chapter = rep.chapter || reasonData.chapter || '-';
+
+      if (!subject || subject === 'ทั่วไป' || subject === 'ความสามารถทั่วไป') {
+        const txt = ((chapter !== '-' ? chapter : '') + ' ' + (rep.questionText || '')).toLowerCase();
+        if (txt.includes('สะกดคำ') || txt.includes('คำทับศัพท์') || txt.includes('ราชาศัพท์') || txt.includes('ภาษาไทย') || txt.includes('สำนวน') || txt.includes('ประโยค')) {
+          subject = 'ภาษาไทย';
+        } else if (txt.includes('คอมพิวเตอร์') || txt.includes('เครือข่าย') || txt.includes('สารสนเทศ') || txt.includes('ซอฟต์แวร์') || txt.includes('ฮาร์ดแวร์')) {
+          subject = 'เทคโนโลยีสารสนเทศ';
+        } else if (txt.includes('สารบรรณ') || txt.includes('ระเบียบ') || txt.includes('๕๔') || txt.includes('54')) {
+          subject = 'งานสารบรรณ';
+        } else if (txt.includes('กฎหมาย') || txt.includes('วิ.อาญา') || txt.includes('อาญา') || txt.includes('พ.ร.บ.')) {
+          subject = 'กฎหมายที่ประชาชนควรรู้';
+        } else if (txt.includes('อังกฤษ') || txt.includes('english')) {
+          subject = 'ภาษาอังกฤษ';
+        } else if (txt.includes('อัตราส่วน') || txt.includes('ร้อยละ') || txt.includes('อนุกรม') || txt.includes('ความน่าจะเป็น') || txt.includes('คณิต')) {
+          subject = 'ความสามารถทั่วไป (คณิต/คำนวณ)';
+        } else {
+          subject = 'ความสามารถทั่วไป';
+        }
+      }
+
       const qNum = reasonData.questionNumber ? `ข้อที่ ${reasonData.questionNumber}` : 'ข้อสอบ';
       const reasonType = reasonData.reasonType || 'เฉลยคำตอบผิด';
       const details = reasonData.details || '';

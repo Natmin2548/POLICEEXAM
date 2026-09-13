@@ -7637,14 +7637,40 @@ window.openReportCurrentQuestionModal = function() {
     alert('ไม่พบข้อสอบในขณะนี้');
     return;
   }
+  if (typeof window.reportQuestion === 'function') {
+    window.reportQuestion();
+  }
+};
+
+function getQuestionAccurateSubject(q, state) {
+  if (!q) return 'ความสามารถทั่วไป';
+  if (q.shortSubjectName) return q.shortSubjectName;
+  if (q.subjectName) return q.subjectName;
+  if (q.subject && q.subject !== 'ทั่วไป') return q.subject;
+  if (q.category && q.category !== 'ทั่วไป') return q.category;
+
+  const ch = (q.chapter || q.subcategory || (state && state.chapter) || '').toLowerCase();
+  if (ch.includes('สะกดคำ') || ch.includes('คำทับศัพท์') || ch.includes('ราชาศัพท์') || ch.includes('ภาษาไทย') || ch.includes('สำนวน') || ch.includes('ประโยค')) return 'ภาษาไทย';
+  if (ch.includes('คอมพิวเตอร์') || ch.includes('เครือข่าย') || ch.includes('สารสนเทศ') || ch.includes('ซอฟต์แวร์') || ch.includes('ฮาร์ดแวร์')) return 'เทคโนโลยีสารสนเทศ';
+  if (ch.includes('สารบรรณ') || ch.includes('ระเบียบ') || ch.includes('๕๔') || ch.includes('54')) return 'งานสารบรรณ';
+  if (ch.includes('กฎหมาย') || ch.includes('วิ.อาญา') || ch.includes('อาญา') || ch.includes('พ.ร.บ.')) return 'กฎหมายที่ประชาชนควรรู้';
+  if (ch.includes('อังกฤษ') || ch.includes('english')) return 'ภาษาอังกฤษ';
+  if (ch.includes('สังคม') || ch.includes('จริยธรรม') || ch.includes('อาเซียน')) return 'สังคม วัฒนธรรมและจริยธรรม';
+  if (ch.includes('อัตราส่วน') || ch.includes('ร้อยละ') || ch.includes('อนุกรม') || ch.includes('ความน่าจะเป็น') || ch.includes('คณิต')) return 'ความสามารถทั่วไป (คณิต/คำนวณ)';
+
+  return (state && (state.subject || state.subjectKey)) || 'ความสามารถทั่วไป';
+}
+
+window.reportQuestion = function() {
+  if (!currentQuizState || !currentQuizState.questions) return;
   const q = currentQuizState.questions[currentQuizState.currentIndex];
   if (!q) {
     alert('ไม่พบข้อมูลข้อสอบข้อนี้');
     return;
   }
 
-  const subject = currentQuizState.subject || q.subject || q.category || 'ข้อสอบทั่วไป';
-  const chapter = currentQuizState.chapter || q.chapter || q.subcategory || 'หมวดหมู่ทั่วไป';
+  const subject = getQuestionAccurateSubject(q, currentQuizState);
+  const chapter = q.chapter || q.subcategory || currentQuizState.chapter || 'หมวดทั่วไป';
   const qNum = currentQuizState.currentIndex + 1;
   const total = currentQuizState.questions.length;
 
@@ -7683,8 +7709,8 @@ window.submitReportCurrentQuestion = async function() {
   const detailsEl = document.getElementById('reportQuestionDetailsText');
   const details = detailsEl ? detailsEl.value.trim() : '';
 
-  const subject = currentQuizState.subject || q.subject || q.category || 'ทั่วไป';
-  const chapter = currentQuizState.chapter || q.chapter || q.subcategory || '-';
+  const subject = getQuestionAccurateSubject(q, currentQuizState);
+  const chapter = q.chapter || q.subcategory || currentQuizState.chapter || '-';
   const qNum = currentQuizState.currentIndex + 1;
 
   const payloadReason = {
