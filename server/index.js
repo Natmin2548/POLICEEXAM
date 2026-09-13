@@ -10122,10 +10122,28 @@ ${JSON.stringify(formattedQuestions, null, 2)}
 
     let aiResult = { issues: [], fixedQuestions: [] };
     try {
-      const aiText = await callGeminiAiText(auditPrompt, req.body.apiKey);
-      let clean = aiText.trim();
-      if (clean.startsWith('```json')) clean = clean.replace(/^```json/, '').replace(/```$/, '').trim();
-      else if (clean.startsWith('```')) clean = clean.replace(/^```/, '').replace(/```$/, '').trim();
+      const specializedResult = await callSpecializedAiText({
+        prompt: auditPrompt,
+        subject,
+        customApiKey: req.body.apiKey,
+        groqApiKey: req.body.groqApiKey,
+        openrouterApiKey: req.body.openrouterApiKey
+      });
+      let clean = (specializedResult.text || '').trim();
+      if (clean.includes('</think>')) {
+        clean = clean.substring(clean.indexOf('</think>') + 8).trim();
+      }
+      if (clean.startsWith('```json')) clean = clean.replace(/^```json\s*/i, '').replace(/\s*```$/, '').trim();
+      else if (clean.startsWith('```')) clean = clean.replace(/^```\s*/, '').replace(/\s*```$/, '').trim();
+
+      if (!clean.startsWith('{') && clean.includes('{')) {
+        const firstBrace = clean.indexOf('{');
+        const lastBrace = clean.lastIndexOf('}');
+        if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+          clean = clean.substring(firstBrace, lastBrace + 1).trim();
+        }
+      }
+
       aiResult = JSON.parse(clean);
     } catch (aiErr) {
       console.warn('AI 3-Pass Recheck LLM error, falling back to rule-based conflicts:', aiErr.message);
