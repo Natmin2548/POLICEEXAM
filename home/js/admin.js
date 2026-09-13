@@ -1168,6 +1168,10 @@ async function showAddExamModal() {
   const groqKeyInput = document.getElementById('adminGroqApiKey');
   if (groqKeyInput) groqKeyInput.value = savedGroqKey;
 
+  const savedOpenRouterKey = localStorage.getItem('admin_openrouter_key') || '';
+  const openRouterKeyInput = document.getElementById('adminOpenRouterApiKey');
+  if (openRouterKeyInput) openRouterKeyInput.value = savedOpenRouterKey;
+
   document.getElementById('addExamModal').style.display = 'flex';
 }
 
@@ -1617,12 +1621,16 @@ async function generateAIExamPreview() {
   const numQuestions = document.getElementById('examNumQuestions').value;
   const apiKey = document.getElementById('adminGeminiApiKey')?.value.trim() || localStorage.getItem('admin_gemini_key') || '';
   const groqApiKey = document.getElementById('adminGroqApiKey')?.value.trim() || localStorage.getItem('admin_groq_key') || '';
+  const openrouterApiKey = document.getElementById('adminOpenRouterApiKey')?.value.trim() || localStorage.getItem('admin_openrouter_key') || '';
 
   if (apiKey) {
     localStorage.setItem('admin_gemini_key', apiKey);
   }
   if (groqApiKey) {
     localStorage.setItem('admin_groq_key', groqApiKey);
+  }
+  if (openrouterApiKey) {
+    localStorage.setItem('admin_openrouter_key', openrouterApiKey);
   }
 
   if (!title) {
@@ -1653,7 +1661,8 @@ async function generateAIExamPreview() {
         subcategory,
         numQuestions: parseInt(numQuestions) || 10,
         apiKey,
-        groqApiKey
+        groqApiKey,
+        openrouterApiKey
       })
     });
 
@@ -3048,6 +3057,7 @@ window.startBatchAutoExamGeneration = async function() {
   const delayMs = parseInt(document.getElementById('batchDelayMs')?.value) || 3500;
   const apiKey = document.getElementById('adminGeminiApiKey')?.value.trim() || localStorage.getItem('admin_gemini_key') || '';
   const groqApiKey = document.getElementById('adminGroqApiKey')?.value.trim() || localStorage.getItem('admin_groq_key') || '';
+  const openrouterApiKey = document.getElementById('adminOpenRouterApiKey')?.value.trim() || localStorage.getItem('admin_openrouter_key') || '';
 
   // Initialize batch state
   batchState = {
@@ -3151,7 +3161,8 @@ window.startBatchAutoExamGeneration = async function() {
             subcategory: chapterName,
             numQuestions,
             apiKey,
-            groqApiKey
+            groqApiKey,
+            openrouterApiKey
           })
         });
 

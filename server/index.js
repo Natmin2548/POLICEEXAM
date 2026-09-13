@@ -7534,7 +7534,8 @@ app.get('/api/settings', async (req, res) => {
       settings_maintenance: 'false',
       settings_exam_mode: 'dynamic',
       settings_gemini_key: 'AIzaSyDDBylXqV9akHtd5hBVEFSuoAM795on7Rc',
-      settings_groq_key: process.env.GROQ_API_KEY || ''
+      settings_groq_key: process.env.GROQ_API_KEY || '',
+      settings_openrouter_key: process.env.OPENROUTER_API_KEY || ''
     };
 
     settings.forEach(s => {
@@ -9555,15 +9556,111 @@ async function callGroqAiText(prompt, options = {}) {
   throw lastErr || new Error('No response from Groq models');
 }
 
+// --- Helper: Resolve OpenRouter API Key ---
+async function resolveOpenRouterApiKey(customKey = '') {
+  const keys = [];
+  const addKey = (k) => {
+    if (!k || typeof k !== 'string') return;
+    const parts = k.split(/[\n,;]+/);
+    for (let p of parts) {
+      p = p.trim().replace(/^['"]|['"]$/g, '');
+      if (p && !keys.includes(p)) keys.push(p);
+    }
+  };
+
+  if (customKey) addKey(customKey);
+  if (process.env.OPENROUTER_API_KEY) addKey(process.env.OPENROUTER_API_KEY);
+
+  try {
+    const dbSettings = await prisma.systemSetting.findMany({
+      where: { key: { in: ['settings_openrouter_key', 'openrouter_api_key', 'OPENROUTER_API_KEY', 'openrouterKey'] } }
+    });
+    for (const s of dbSettings) {
+      if (s.value) addKey(s.value);
+    }
+  } catch (e) {
+    console.warn('Resolve OpenRouter key DB lookup error:', e.message);
+  }
+
+  return keys[0] || '';
+}
+
+// --- Helper: Call OpenRouter AI Models (Tier-3 Failover Safety Net) ---
+async function callOpenRouterAiText(prompt, options = {}) {
+  const apiKey = options.openrouterApiKey || (await resolveOpenRouterApiKey(options.openrouterApiKey));
+  if (!apiKey) {
+    throw new Error('OPENROUTER_KEY_NOT_FOUND: ไม่พบ API Key ของ OpenRouter');
+  }
+
+  const modelsToTry = Array.isArray(options.models)
+    ? options.models
+    : [
+        'google/gemma-4-26b-a4b-it:free',
+        'nvidia/nemotron-3-super-120b-a12b:free',
+        'deepseek/deepseek-r1',
+        'openai/gpt-4o-mini'
+      ];
+
+  const temperature = options.temperature !== undefined ? options.temperature : 0.15;
+  let lastErr = null;
+
+  for (const model of modelsToTry) {
+    try {
+      const resp = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey.trim()}`,
+          'HTTP-Referer': 'https://police-exam.local',
+          'X-Title': 'Police Exam System',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model,
+          messages: [
+            {
+              role: 'system',
+              content: 'You are an elite Thai Police Examination creator and quality auditor. Output ONLY valid JSON matching the exact requested structure without markdown codeblocks, conversational filler, or commentary.'
+            },
+            { role: 'user', content: prompt }
+          ],
+          temperature
+        })
+      });
+
+      if (!resp.ok) {
+        const errBody = await resp.json().catch(() => ({}));
+        throw new Error(errBody.error?.message || `OpenRouter API HTTP ${resp.status}`);
+      }
+
+      const data = await resp.json();
+      let content = data.choices?.[0]?.message?.content || '';
+
+      if (content.includes('</think>')) {
+        content = content.substring(content.indexOf('</think>') + 8).trim();
+      }
+
+      if (content && content.trim()) {
+        return { text: content, model };
+      }
+    } catch (err) {
+      lastErr = err;
+      console.warn(`[OpenRouter Model ${model} failed]:`, err.message);
+    }
+  }
+
+  throw lastErr || new Error('No response from OpenRouter models');
+}
+
 // --- Multi-Model Specialized Router: Routes questions to the AI that excels at that subject ---
-async function callSpecializedAiText({ prompt, subject = '', customApiKey = '', groqApiKey = '' }) {
+async function callSpecializedAiText({ prompt, subject = '', customApiKey = '', groqApiKey = '', openrouterApiKey = '' }) {
   const normSub = (subject || '').trim().toLowerCase();
   const isMath = normSub.includes('คณิต') || normSub.includes('คำนวณ') || normSub.includes('อนุกรม') || normSub.includes('ความสามารถทั่วไป') || normSub.includes('ทั่วไป') || normSub.includes('ตรรก') || normSub.includes('ร้อยละ') || normSub.includes('สมการ') || normSub.includes('general');
   const isEnglish = normSub.includes('อังกฤษ') || normSub.includes('english');
 
   const resolvedGroqKey = await resolveGroqApiKey(groqApiKey);
+  const resolvedOpenRouterKey = await resolveOpenRouterApiKey(openrouterApiKey);
 
-  // 1. Math / Calculations / General Ability -> Qwen 3.8 27B / GPT-OSS 120B (High Math Reasoning)
+  // 1. Math / Calculations / General Ability -> Groq -> Gemini -> OpenRouter
   if (isMath && resolvedGroqKey) {
     try {
       console.log('[Router] 🧠 Routing Math/Reasoning to Groq (Qwen 3.8 / GPT-OSS 120B)...');
@@ -9578,11 +9675,11 @@ async function callSpecializedAiText({ prompt, subject = '', customApiKey = '', 
         return { text: res.text, engine: modelLabel };
       }
     } catch (gErr) {
-      console.warn('[Router] Groq Math models failed, falling back to Gemini:', gErr.message);
+      console.warn('[Router] Groq Math models failed, falling back to Gemini/OpenRouter:', gErr.message);
     }
   }
 
-  // 2. English -> GPT-OSS 120B / Qwen 3.8 (Native English Specialist)
+  // 2. English -> Groq -> Gemini -> OpenRouter
   if (isEnglish && resolvedGroqKey) {
     try {
       console.log('[Router] 🇬🇧 Routing English to Groq (GPT-OSS 120B / Qwen 3.8)...');
@@ -9597,14 +9694,43 @@ async function callSpecializedAiText({ prompt, subject = '', customApiKey = '', 
         return { text: res.text, engine: modelLabel };
       }
     } catch (gErr) {
-      console.warn('[Router] Groq English models failed, falling back to Gemini:', gErr.message);
+      console.warn('[Router] Groq English models failed, falling back to Gemini/OpenRouter:', gErr.message);
     }
   }
 
-  // 3. Law, Thai Language, Office Regulations, or Universal Fallback -> Google Gemini
-  console.log('[Router] 🏛️ Routing Law/Thai/Secretariat or Fallback to Google Gemini (48K Context specialist)...');
-  const txt = await callGeminiAiText(prompt, customApiKey);
-  return { text: txt, engine: 'Google Gemini (Pro/Flash)' };
+  // 3. Law, Thai Language, Office Regulations, or Universal Gemini Fallback
+  try {
+    console.log('[Router] 🏛️ Routing to Google Gemini (Context specialist)...');
+    const txt = await callGeminiAiText(prompt, customApiKey);
+    if (txt && txt.trim()) {
+      return { text: txt, engine: 'Google Gemini (Pro/Flash)' };
+    }
+  } catch (gemErr) {
+    console.warn('[Router] Gemini failed, checking OpenRouter/Groq fallbacks:', gemErr.message);
+  }
+
+  // 4. Tier-3 Ultimate Safety Net -> OpenRouter
+  if (resolvedOpenRouterKey) {
+    try {
+      console.log('[Router] 🛡️ Tier-3 Fallback: Routing to OpenRouter...');
+      const orRes = await callOpenRouterAiText(prompt, { openrouterApiKey: resolvedOpenRouterKey });
+      if (orRes && orRes.text && orRes.text.trim()) {
+        console.log(`[Router OK] OpenRouter (${orRes.model}) generated successfully`);
+        return { text: orRes.text, engine: `OpenRouter (${orRes.model})` };
+      }
+    } catch (orErr) {
+      console.warn('[Router] OpenRouter fallback failed:', orErr.message);
+    }
+  }
+
+  // 5. Final fallback attempt with Groq if key exists
+  if (resolvedGroqKey) {
+    console.log('[Router] Final fallback attempt with Groq...');
+    const lastRes = await callGroqAiText(prompt, { groqApiKey: resolvedGroqKey });
+    return { text: lastRes.text, engine: `Groq (${lastRes.model})` };
+  }
+
+  throw new Error('KEY_NOT_FOUND: ทั้ง Gemini, Groq และ OpenRouter ไม่สามารถเชื่อมต่อได้ กรุณาตรวจสอบ API Key');
 }
 
 // --- Shared Helper: Fast Conflict Detector between Explanation and Correct Answer ---
@@ -9857,13 +9983,14 @@ app.post('/api/admin/exams/preview-ai', authenticateToken, async (req, res) => {
         prompt,
         subject,
         customApiKey: req.body.apiKey,
-        groqApiKey: req.body.groqApiKey
+        groqApiKey: req.body.groqApiKey,
+        openrouterApiKey: req.body.openrouterApiKey
       });
       textResponse = aiResult.text;
       engineUsed = aiResult.engine || 'Google Gemini';
     } catch (aiErr) {
       if (aiErr.message.includes('KEY_NOT_FOUND')) {
-        return res.status(400).json({ error: '🔑 ไม่พบ API Key (Gemini หรือ Groq) กรุณาระบุ API Key ในช่องที่กำหนด หรือในเมนู Admin -> ตั้งค่าระบบ' });
+        return res.status(400).json({ error: '🔑 ไม่พบ API Key (Gemini, Groq หรือ OpenRouter) กรุณาระบุ API Key ในช่องที่กำหนด หรือในเมนู Admin -> ตั้งค่าระบบ' });
       }
       if (aiErr.message.includes('401') || aiErr.message.includes('Unauthorized') || aiErr.message.includes('invalid authentication')) {
         return res.status(401).json({ error: '🔑 API Key ไม่ถูกต้องหรือไม่มีสิทธิ์ใช้งาน (401 Unauthorized) กรุณาตรวจสอบ API Key ในเมนู Admin' });
@@ -10292,12 +10419,13 @@ app.post('/api/admin/exams/:examSetId/append-ai', authenticateToken, async (req,
         prompt,
         subject: examSet.category,
         customApiKey: req.body.apiKey,
-        groqApiKey: req.body.groqApiKey
+        groqApiKey: req.body.groqApiKey,
+        openrouterApiKey: req.body.openrouterApiKey
       });
       textResponse = aiResult.text;
     } catch (aiErr) {
       if (aiErr.message.includes('KEY_NOT_FOUND')) {
-        return res.status(400).json({ error: 'ไม่พบ API Key (Gemini หรือ Groq) ในระบบ' });
+        return res.status(400).json({ error: 'ไม่พบ API Key (Gemini, Groq หรือ OpenRouter) ในระบบ' });
       }
       return res.status(500).json({ error: 'ไม่สามารถเรียกใช้งาน AI ได้: ' + aiErr.message });
     }

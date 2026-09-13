@@ -501,11 +501,18 @@
             <div>
               <label style="font-size: 11px; font-weight: 700; color: #1E293B; display: flex; justify-content: space-between; align-items: center;">
                 <span>⚡ Groq Cloud API Key (แนะนำ ฟรี 100%):</span>
-                <span style="font-size: 10px; color: #2563EB; font-weight: 600;">(เก่ง คณิต/คำนวณ DeepSeek-R1 & อังกฤษ Llama 3.3)</span>
+                <span style="font-size: 10px; color: #2563EB; font-weight: 600;">(เก่ง คณิต/คำนวณ Qwen/GPT-OSS & อังกฤษ)</span>
               </label>
               <input type="text" id="adminGroqApiKey" placeholder="วาง Groq API Key (gsk_...)" onchange="localStorage.setItem('admin_groq_key', this.value.trim())" style="width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 12px; box-sizing: border-box; margin-top: 3px;">
+            </div>
+            <div>
+              <label style="font-size: 11px; font-weight: 700; color: #1E293B; display: flex; justify-content: space-between; align-items: center;">
+                <span>🛡️ OpenRouter API Key (ตัวสำรองชั้นที่ 3):</span>
+                <span style="font-size: 10px; color: #7C3AED; font-weight: 600;">(ตาข่ายนิรภัยกู้วิกฤตเมื่อ AI อื่นติดโควตา)</span>
+              </label>
+              <input type="text" id="adminOpenRouterApiKey" placeholder="วาง OpenRouter API Key (sk-or-v1-...)" onchange="localStorage.setItem('admin_openrouter_key', this.value.trim())" style="width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 12px; box-sizing: border-box; margin-top: 3px;">
               <div style="font-size: 10.5px; color: #64748B; margin-top: 4px; line-height: 1.4;">
-                💡 <em>ระบบสลับ AI ตามวิชาอัจฉริยะ: คณิตคำนวณใช้ <strong>DeepSeek-R1</strong>, อังกฤษใช้ <strong>Llama-3.3-70B</strong>, กฎหมาย/สารบรรณใช้ <strong>Gemini</strong> (หากไม่มี Groq Key จะสลับไปใช้ Gemini ให้ทันที)</em>
+                💡 <em>ระบบ 3-Tier Failover: 1. Groq (เร็วสุด 1 วิ) ➡️ 2. Gemini (คลังจำ 48K) ➡️ 3. OpenRouter (สำรองฉุกเฉิน) ระบบไม่มีวันล่ม 100%</em>
               </div>
             </div>
           </div>
