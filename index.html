@@ -12,7 +12,7 @@
           
           // If user is already authenticated with a real session, instantly redirect to Dashboard
           if (token && profile && !token.startsWith('dev_') && !token.startsWith('test_')) {
-            window.location.replace('/home/index.html');
+            window.location.replace('/home/index.html?v=48');
           }
         } catch (e) {}
       }

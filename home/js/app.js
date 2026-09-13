@@ -970,15 +970,171 @@ let currentQuizAnswered = false;
 let activeChapterTitle = '';
 let activeSubjectDBSets = [];
 
-// Filter Subjects in Screen 1
-window.filterBankSubjects = function(query) {
-  const cards = document.querySelectorAll('#questionBankSubjectsList .subject-card-item');
-  const q = (query || '').toLowerCase().trim();
-  cards.forEach(c => {
-    const text = c.textContent.toLowerCase();
-    c.style.display = text.includes(q) ? 'flex' : 'none';
-  });
+window.renderExamBankList = function() {
+  const container = document.getElementById('questionBankSubjectsList');
+  if (!container) return;
+
+  container.style.maxWidth = '680px';
+  container.style.margin = '0 auto';
+  container.style.padding = '4px 6px';
+  container.innerHTML = `
+    <!-- Top Nav Bar: Arrow Back + Title (100% matching Image 1) -->
+    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 22px; padding: 4px 0;">
+      <button type="button" onclick="switchTabToHome(event)" style="background: none; border: none; cursor: pointer; padding: 4px 6px 4px 0; color: #475569; display: flex; align-items: center; justify-content: center; line-height: 1; transition: transform 0.15s ease;" title="กลับหน้าแรก">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="19" y1="12" x2="5" y2="12"></line>
+          <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+      </button>
+      <h2 style="margin: 0; font-size: 21px; font-weight: 800; color: #0F172A; letter-spacing: -0.3px;">คลังข้อสอบรายบท</h2>
+    </div>
+
+    <!-- Section Label -->
+    <div style="font-size: 13.5px; font-weight: 600; color: #94A3B8; margin-bottom: 8px; padding-left: 2px;">
+      เลือกวิชา
+    </div>
+
+    <!-- Subject List Items (100% matching Image 1) -->
+    <div class="bank-subjects-list" style="display: flex; flex-direction: column;">
+
+      <!-- 1. ภาษาไทย -->
+      <div class="subject-card-item" onclick="startBankSubject('ภาษาไทย')"
+        style="display: flex; align-items: center; justify-content: space-between; padding: 16px 6px; border-bottom: 1px solid #F1F5F9; cursor: pointer; transition: all 0.15s ease; border-radius: 12px;"
+        onmouseover="this.style.backgroundColor='#F8FAFC'" onmouseout="this.style.backgroundColor='transparent'">
+        <div style="display: flex; align-items: center; gap: 16px;">
+          <div style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px; color: #334155; flex-shrink: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+            TH
+          </div>
+          <div>
+            <div style="font-size: 15.5px; font-weight: 700; color: #0F172A; line-height: 1.35;">ภาษาไทย</div>
+            <div id="bankQCount_thai" style="font-size: 12px; color: #94A3B8; margin-top: 2px; font-weight: 500;">9 ข้อในคลัง</div>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span id="bankChapBadge_thai" style="background: #FFF1F2; color: #E11D48; font-weight: 700; font-size: 12px; padding: 4px 12px; border-radius: 999px;">
+            3 บท
+          </span>
+          <span style="color: #CBD5E1; font-size: 16px; font-weight: 600;">›</span>
+        </div>
+      </div>
+
+      <!-- 2. ความสามารถทั่วไป -->
+      <div class="subject-card-item" onclick="startBankSubject('ทั่วไป')"
+        style="display: flex; align-items: center; justify-content: space-between; padding: 16px 6px; border-bottom: 1px solid #F1F5F9; cursor: pointer; transition: all 0.15s ease; border-radius: 12px;"
+        onmouseover="this.style.backgroundColor='#F8FAFC'" onmouseout="this.style.backgroundColor='transparent'">
+        <div style="display: flex; align-items: center; gap: 16px;">
+          <div style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
+            🧠
+          </div>
+          <div>
+            <div style="font-size: 15.5px; font-weight: 700; color: #0F172A; line-height: 1.35;">ความสามารถทั่วไป</div>
+            <div id="bankQCount_general" style="font-size: 12px; color: #94A3B8; margin-top: 2px; font-weight: 500;">9 ข้อในคลัง</div>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span id="bankChapBadge_general" style="background: #F3E8FF; color: #9333EA; font-weight: 700; font-size: 12px; padding: 4px 12px; border-radius: 999px;">
+            3 บท
+          </span>
+          <span style="color: #CBD5E1; font-size: 16px; font-weight: 600;">›</span>
+        </div>
+      </div>
+
+      <!-- 3. คอมพิวเตอร์ -->
+      <div class="subject-card-item" onclick="startBankSubject('คอม')"
+        style="display: flex; align-items: center; justify-content: space-between; padding: 16px 6px; border-bottom: 1px solid #F1F5F9; cursor: pointer; transition: all 0.15s ease; border-radius: 12px;"
+        onmouseover="this.style.backgroundColor='#F8FAFC'" onmouseout="this.style.backgroundColor='transparent'">
+        <div style="display: flex; align-items: center; gap: 16px;">
+          <div style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
+            💻
+          </div>
+          <div>
+            <div style="font-size: 15.5px; font-weight: 700; color: #0F172A; line-height: 1.35;">คอมพิวเตอร์</div>
+            <div id="bankQCount_computer" style="font-size: 12px; color: #94A3B8; margin-top: 2px; font-weight: 500;">8 ข้อในคลัง</div>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span id="bankChapBadge_computer" style="background: #EFF6FF; color: #2563EB; font-weight: 700; font-size: 12px; padding: 4px 12px; border-radius: 999px;">
+            3 บท
+          </span>
+          <span style="color: #CBD5E1; font-size: 16px; font-weight: 600;">›</span>
+        </div>
+      </div>
+
+      <!-- 4. กฎหมาย -->
+      <div class="subject-card-item" onclick="startBankSubject('กฏหมาย')"
+        style="display: flex; align-items: center; justify-content: space-between; padding: 16px 6px; border-bottom: 1px solid #F1F5F9; cursor: pointer; transition: all 0.15s ease; border-radius: 12px;"
+        onmouseover="this.style.backgroundColor='#F8FAFC'" onmouseout="this.style.backgroundColor='transparent'">
+        <div style="display: flex; align-items: center; gap: 16px;">
+          <div style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
+            ⚖️
+          </div>
+          <div>
+            <div style="font-size: 15.5px; font-weight: 700; color: #0F172A; line-height: 1.35;">กฎหมาย</div>
+            <div id="bankQCount_law" style="font-size: 12px; color: #94A3B8; margin-top: 2px; font-weight: 500;">9 ข้อในคลัง</div>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span id="bankChapBadge_law" style="background: #FEF3C7; color: #D97706; font-weight: 700; font-size: 12px; padding: 4px 12px; border-radius: 999px;">
+            3 บท
+          </span>
+          <span style="color: #CBD5E1; font-size: 16px; font-weight: 600;">›</span>
+        </div>
+      </div>
+
+      <!-- 5. สังคม -->
+      <div class="subject-card-item" onclick="startBankSubject('สังคม')"
+        style="display: flex; align-items: center; justify-content: space-between; padding: 16px 6px; border-bottom: 1px solid #F1F5F9; cursor: pointer; transition: all 0.15s ease; border-radius: 12px;"
+        onmouseover="this.style.backgroundColor='#F8FAFC'" onmouseout="this.style.backgroundColor='transparent'">
+        <div style="display: flex; align-items: center; gap: 16px;">
+          <div style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
+            🌍
+          </div>
+          <div>
+            <div style="font-size: 15.5px; font-weight: 700; color: #0F172A; line-height: 1.35;">สังคม</div>
+            <div id="bankQCount_social" style="font-size: 12px; color: #94A3B8; margin-top: 2px; font-weight: 500;">8 ข้อในคลัง</div>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span id="bankChapBadge_social" style="background: #ECFDF5; color: #059669; font-weight: 700; font-size: 12px; padding: 4px 12px; border-radius: 999px;">
+            3 บท
+          </span>
+          <span style="color: #CBD5E1; font-size: 16px; font-weight: 600;">›</span>
+        </div>
+      </div>
+
+      <!-- 6. งานสารบรรณ -->
+      <div class="subject-card-item" onclick="startBankSubject('งานสารบรรณ')"
+        style="display: flex; align-items: center; justify-content: space-between; padding: 16px 6px; border-bottom: 1px solid #F1F5F9; cursor: pointer; transition: all 0.15s ease; border-radius: 12px;"
+        onmouseover="this.style.backgroundColor='#F8FAFC'" onmouseout="this.style.backgroundColor='transparent'">
+        <div style="display: flex; align-items: center; gap: 16px;">
+          <div style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
+            📄
+          </div>
+          <div>
+            <div style="font-size: 15.5px; font-weight: 700; color: #0F172A; line-height: 1.35;">งานสารบรรณ</div>
+            <div id="bankQCount_saraban" style="font-size: 12px; color: #94A3B8; margin-top: 2px; font-weight: 500;">7 ข้อในคลัง</div>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span id="bankChapBadge_saraban" style="background: #FFF7ED; color: #EA580C; font-weight: 700; font-size: 12px; padding: 4px 12px; border-radius: 999px;">
+            3 บท
+          </span>
+          <span style="color: #CBD5E1; font-size: 16px; font-weight: 600;">›</span>
+        </div>
+      </div>
+
+    </div>
+  `;
 };
+
+// Immediately execute on load to override any cached HTML
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    window.renderExamBankList();
+  });
+} else {
+  window.renderExamBankList();
+}
 
 window.updateBankSubjectCounts = async function() {
   try {
@@ -1503,6 +1659,9 @@ if (bankTabBtn) {
     if (statsView) statsView.classList.remove('active');
     if (profileView) profileView.classList.remove('active');
 
+    if (typeof window.renderExamBankList === 'function') {
+      window.renderExamBankList();
+    }
     if (typeof updateBankSubjectCounts === 'function') {
       updateBankSubjectCounts();
     }
