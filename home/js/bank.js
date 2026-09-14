@@ -814,7 +814,8 @@ function renderExamSetsList(chapterName) {
 }
 
 window.launchSelectedExamSet = function(subjectKey, setId, questionsCount, setTitle) {
-  startBankSubjectQuiz(subjectKey, setId, questionsCount, setTitle);
+  const url = `exam.html?subject=${encodeURIComponent(subjectKey)}&setId=${encodeURIComponent(setId)}&count=${questionsCount || 30}&chapter=${encodeURIComponent(activeChapterTitle || '')}&source=bank.html`;
+  window.location.href = url;
 };
 
 // ==========================================

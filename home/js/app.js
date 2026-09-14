@@ -661,82 +661,10 @@ window.closeSelectSubjectExamModal = function() {
   if (modal) modal.style.display = 'none';
 };
 
-window.startSubjectMixedQuiz = async function(subjectKey) {
+window.startSubjectMixedQuiz = function(subjectKey) {
   closeSelectSubjectExamModal();
-
-  const modal = document.getElementById('subjectQuizModal');
-  const badgeEl = document.getElementById('quizSubjectBadge');
-  const titleEl = document.getElementById('quizTitle');
-  const bodyContent = document.getElementById('quizBodyContent');
-  const stepText = document.getElementById('quizStepText');
-  const actionRow = document.getElementById('quizActionButtonsRow');
-  const navContainer = document.getElementById('quizNavContainer');
-  const progressBar = document.getElementById('quizProgressBar');
-
-  if (!modal || !bodyContent) return;
-
-  stopQuizCountdownTimer();
-  modal.style.display = 'flex';
-  if (badgeEl) badgeEl.textContent = `🎯 วิชา: ${subjectKey} (30 ข้อ)`;
-  if (titleEl) titleEl.textContent = `ข้อสอบรายวิชา: ${subjectKey} (สุ่มคละทุกบทเรียน)`;
-  if (stepText) stepText.textContent = 'กำลังสุ่มและจัดเรียงข้อสอบ 30 ข้อ...';
-  if (actionRow) actionRow.style.display = 'none';
-  if (navContainer) navContainer.style.display = 'none';
-  if (progressBar) progressBar.style.width = '5%';
-
-  bodyContent.innerHTML = `
-    <div style="text-align: center; color: #64748B; padding: 40px; font-size: 14px;">
-      <div style="font-size: 32px; margin-bottom: 12px;">⏳</div>
-      กำลังสุ่มข้อสอบ 30 ข้อจากทุกบทเรียนในวิชา "${escapeHTML(subjectKey)}"...<br>
-      <span style="font-size: 12px; color: #94A3B8; margin-top: 6px; display: block;">(สุ่มคละทุกบทเรียน • พร้อมจับเวลา 45 นาที)</span>
-    </div>
-  `;
-
-  try {
-    const res = await fetch(`${API_BASE}/api/exams/subject-mixed?subject=${encodeURIComponent(subjectKey)}&count=30`);
-    if (!res.ok) throw new Error('Failed to fetch subject mixed questions');
-    const data = await res.json();
-
-    if (!data.questions || data.questions.length === 0) {
-      throw new Error('ไม่พบข้อสอบในระบบ');
-    }
-
-    const questions = data.questions.map(q => ({
-      ...q,
-      choices: q.choices || [q.choice1, q.choice2, q.choice3, q.choice4]
-    }));
-
-    currentQuizState = {
-      subjectKey: subjectKey,
-      setId: 'mixed_30_' + subjectKey,
-      setTitle: `ข้อสอบรายวิชา: ${data.subjectTitle || subjectKey} (30 ข้อ คละทุกบท)`,
-      track: 'subject_mixed',
-      questions: questions,
-      currentIndex: 0,
-      userAnswers: {},
-      score: 0,
-      startTime: Date.now(),
-      isSubmitted: false,
-      isReviewMode: false
-    };
-
-    // 45 minutes countdown timer (45 * 60 = 2,700s)
-    startQuizCountdownTimer(45 * 60);
-
-    renderCurrentQuizQuestion();
-  } catch (err) {
-    console.error('Start subject mixed quiz error:', err);
-    bodyContent.innerHTML = `
-      <div style="text-align: center; padding: 30px 20px;">
-        <div style="font-size: 36px; margin-bottom: 10px;">⚠️</div>
-        <h4 style="font-size: 16px; font-weight: 800; color: #0F172A; margin-bottom: 6px;">ไม่สามารถโหลดข้อสอบได้</h4>
-        <p style="font-size: 13px; color: #64748B; margin-bottom: 16px;">${escapeHTML(err.message || 'เกิดข้อผิดพลาดในการเชื่อมต่อ')}</p>
-        <button onclick="closeSubjectQuiz()" style="padding: 10px 20px; border-radius: 12px; background: #BD1B0B; color: white; border: none; font-weight: 700; cursor: pointer; font-family: inherit;">
-          ปิดหน้าต่าง
-        </button>
-      </div>
-    `;
-  }
+  const url = `exam.html?subject=${encodeURIComponent(subjectKey)}&count=30&mode=mixed&source=index.html`;
+  window.location.href = url;
 };
 
 

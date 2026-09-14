@@ -285,73 +285,94 @@
 
       <div id="homeView" class="tab-view active">
         <!-- Pretest 150 Banner -->
-        <section onclick="openPoliceTrackModal()" style="background: #C62828; color: white; cursor: pointer; border-radius: 18px; padding: 20px 22px; margin-top: 18px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 6px 20px rgba(198, 40, 40, 0.3); transition: transform 0.15s ease;">
+        <section onclick="openPoliceTrackModal()"
+          style="background: #C62828; color: white; cursor: pointer; border-radius: 18px; padding: 20px 22px; margin-top: 18px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 6px 20px rgba(198, 40, 40, 0.3); transition: transform 0.15s ease;">
           <div>
-            <h2 style="margin: 0; font-size: 22px; font-weight: 800; color: white; letter-spacing: -0.01em;">Pretest 150 ข้อ</h2>
-            <p style="margin: 5px 0 0 0; font-size: 13px; color: rgba(255,255,255,0.85); font-weight: 500;">สายปราบปราม - สายอำนวยการ</p>
+            <h2 style="margin: 0; font-size: 22px; font-weight: 800; color: white; letter-spacing: -0.01em;">Pretest 150
+              ข้อ</h2>
+            <p style="margin: 5px 0 0 0; font-size: 13px; color: rgba(255,255,255,0.85); font-weight: 500;">สายปราบปราม
+              - สายอำนวยการ</p>
           </div>
-          <div style="width: 36px; height: 36px; background: rgba(255,255,255,0.18); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <div
+            style="width: 36px; height: 36px; background: rgba(255,255,255,0.18); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"
+              stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
           </div>
         </section>
 
         <!-- 2x2 Action Grid -->
-        <section class="action-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 24px;">
+        <section class="action-grid"
+          style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 24px;">
           <!-- 1 -->
-          <button onclick="openImageCompressorModal()" style="background: #FFFFFF; border: 1.5px solid #F1F5F9; border-radius: 16px; padding: 16px 14px; text-align: left; cursor: pointer; transition: transform 0.15s ease; font-family: inherit; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+          <button onclick="openImageCompressorModal()"
+            style="background: #FFFFFF; border: 1.5px solid #F1F5F9; border-radius: 16px; padding: 16px 14px; text-align: left; cursor: pointer; transition: transform 0.15s ease; font-family: inherit; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
             <h3 style="margin: 0; font-size: 15px; font-weight: 800; color: #0F172A;">บีบอัดรูป</h3>
             <p style="margin: 4px 0 0 0; font-size: 12px; color: #94A3B8; font-weight: 500;">ลดขนาดไฟล์</p>
           </button>
           <!-- 2 -->
-          <button onclick="window.location.href='bank.html'" style="background: #FFFFFF; border: 1.5px solid #F1F5F9; border-radius: 16px; padding: 16px 14px; text-align: left; cursor: pointer; transition: transform 0.15s ease; font-family: inherit; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+          <button onclick="window.location.href='bank.html'"
+            style="background: #FFFFFF; border: 1.5px solid #F1F5F9; border-radius: 16px; padding: 16px 14px; text-align: left; cursor: pointer; transition: transform 0.15s ease; font-family: inherit; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
             <h3 style="margin: 0; font-size: 15px; font-weight: 800; color: #0F172A;">คลังรายบท</h3>
             <p style="margin: 4px 0 0 0; font-size: 12px; color: #94A3B8; font-weight: 500;">เจาะทีละบท</p>
           </button>
           <!-- 3 -->
-          <button onclick="document.getElementById('btnTabCommunity').click()" style="background: #FFFFFF; border: 1.5px solid #F1F5F9; border-radius: 16px; padding: 16px 14px; text-align: left; cursor: pointer; transition: transform 0.15s ease; font-family: inherit; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+          <button onclick="document.getElementById('btnTabCommunity').click()"
+            style="background: #FFFFFF; border: 1.5px solid #F1F5F9; border-radius: 16px; padding: 16px 14px; text-align: left; cursor: pointer; transition: transform 0.15s ease; font-family: inherit; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
             <h3 style="margin: 0; font-size: 15px; font-weight: 800; color: #0F172A;">ชุมชน</h3>
             <p style="margin: 4px 0 0 0; font-size: 12px; color: #94A3B8; font-weight: 500;">ผลและประวัติ</p>
           </button>
           <!-- 4 -->
-          <button onclick="openVocabArena()" style="background: #FFFFFF; border: 1.5px solid #F1F5F9; border-radius: 16px; padding: 16px 14px; text-align: left; cursor: pointer; transition: transform 0.15s ease; font-family: inherit; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+          <button onclick="openVocabArena()"
+            style="background: #FFFFFF; border: 1.5px solid #F1F5F9; border-radius: 16px; padding: 16px 14px; text-align: left; cursor: pointer; transition: transform 0.15s ease; font-family: inherit; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
             <h3 style="margin: 0; font-size: 15px; font-weight: 800; color: #0F172A;">คลังคำศัพท์</h3>
             <p style="margin: 4px 0 0 0; font-size: 12px; color: #94A3B8; font-weight: 500;">เลือกด่วน !</p>
           </button>
         </section>
 
         <!-- Stats Section -->
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 24px; margin-bottom: 14px;">
+        <div
+          style="display: flex; justify-content: space-between; align-items: center; margin-top: 24px; margin-bottom: 14px;">
           <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #0F172A;">สถิติ</h3>
         </div>
 
         <!-- 3 KPI Cards Grid (ชุดทำแล้ว / ค่าเฉลี่ย / สูงสุด) -->
         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px;">
           <!-- Card 1: ชุดทำแล้ว -->
-          <div style="background: #FFFFFF; border: 1.5px solid #F1F5F9; border-radius: 18px; padding: 14px 10px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
+          <div
+            style="background: #FFFFFF; border: 1.5px solid #F1F5F9; border-radius: 18px; padding: 14px 10px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
             <div style="font-size: 22px; font-weight: 900; color: #0F172A; line-height: 1.1;">
-              <span id="kpiRecentSetsCount">0</span><span style="font-size: 12px; font-weight: 700; color: #64748B; margin-left: 2px;">ชุด</span>
+              <span id="kpiRecentSetsCount">0</span><span
+                style="font-size: 12px; font-weight: 700; color: #64748B; margin-left: 2px;">ชุด</span>
             </div>
             <div style="font-size: 11px; font-weight: 600; color: #94A3B8; margin-top: 4px;">ทำแล้ว</div>
           </div>
           <!-- Card 2: ค่าเฉลี่ย -->
-          <div style="background: #FFF1F2; border: 1.5px solid #FFE4E6; border-radius: 18px; padding: 14px 10px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
+          <div
+            style="background: #FFF1F2; border: 1.5px solid #FFE4E6; border-radius: 18px; padding: 14px 10px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
             <div style="font-size: 22px; font-weight: 900; color: #BD1B0B; line-height: 1.1;">
-              <span id="kpiRecentAvgScore">0</span><span style="font-size: 13px; font-weight: 800; color: #BD1B0B;">%</span>
+              <span id="kpiRecentAvgScore">0</span><span
+                style="font-size: 13px; font-weight: 800; color: #BD1B0B;">%</span>
             </div>
             <div style="font-size: 11px; font-weight: 600; color: #94A3B8; margin-top: 4px;">เฉลี่ย</div>
           </div>
           <!-- Card 3: สูงสุด -->
-          <div style="background: #FFFFFF; border: 1.5px solid #F1F5F9; border-radius: 18px; padding: 14px 10px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
+          <div
+            style="background: #FFFFFF; border: 1.5px solid #F1F5F9; border-radius: 18px; padding: 14px 10px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
             <div style="font-size: 22px; font-weight: 900; color: #BD1B0B; line-height: 1.1;">
-              <span id="kpiRecentMaxScore">0</span><span style="font-size: 13px; font-weight: 800; color: #BD1B0B;">%</span>
+              <span id="kpiRecentMaxScore">0</span><span
+                style="font-size: 13px; font-weight: 800; color: #BD1B0B;">%</span>
             </div>
             <div style="font-size: 11px; font-weight: 600; color: #94A3B8; margin-top: 4px;">สูงสุด</div>
           </div>
         </div>
 
         <!-- รายวิชา Section Box -->
-        <div style="background: #FFFFFF; border: 1.5px solid #F1F5F9; border-radius: 20px; padding: 16px 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.02); margin-bottom: 20px;">
-          <div style="font-size: 13px; font-weight: 800; color: #64748B; margin-bottom: 12px; letter-spacing: 0.02em;">รายวิชา</div>
+        <div
+          style="background: #FFFFFF; border: 1.5px solid #F1F5F9; border-radius: 20px; padding: 16px 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.02); margin-bottom: 20px;">
+          <div style="font-size: 13px; font-weight: 800; color: #64748B; margin-bottom: 12px; letter-spacing: 0.02em;">
+            รายวิชา</div>
           <div id="homeRecentSubjectStatsList" style="display: flex; flex-direction: column; gap: 12px;">
             <!-- Dynamically populated via updateStatsTabDetails() -->
           </div>
@@ -931,11 +952,13 @@
       <div id="questionBankSubjectsList" style="max-width: 480px; margin: 0 auto; padding: 6px 4px;">
         <!-- Top Nav Bar: Title -->
         <div style="margin-bottom: 22px; padding: 4px 0;">
-          <h2 style="margin: 0; font-size: 20px; font-weight: 700; color: #0F172A; letter-spacing: -0.3px;">คลังข้อสอบรายบท</h2>
+          <h2 style="margin: 0; font-size: 20px; font-weight: 700; color: #0F172A; letter-spacing: -0.3px;">
+            คลังข้อสอบรายบท</h2>
         </div>
 
         <!-- Section Label -->
-        <div style="font-size: 13.5px; font-weight: 500; color: #94A3B8; margin-top: 14px; margin-bottom: 12px; padding-left: 2px;">
+        <div
+          style="font-size: 13.5px; font-weight: 500; color: #94A3B8; margin-top: 14px; margin-bottom: 12px; padding-left: 2px;">
           เลือกวิชา
         </div>
 
@@ -947,16 +970,19 @@
             style="display: flex; align-items: center; justify-content: space-between; padding: 16px 6px; border-bottom: 1px solid #F1F5F9; cursor: pointer; transition: all 0.15s ease; border-radius: 12px;"
             onmouseover="this.style.backgroundColor='#F8FAFC'" onmouseout="this.style.backgroundColor='transparent'">
             <div style="display: flex; align-items: center; gap: 16px;">
-              <div style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px; color: #334155; flex-shrink: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+              <div
+                style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px; color: #334155; flex-shrink: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
                 TH
               </div>
               <div>
                 <div style="font-size: 15.5px; font-weight: 700; color: #0F172A; line-height: 1.35;">ภาษาไทย</div>
-                <div id="bankQCount_thai" style="font-size: 12px; color: #94A3B8; margin-top: 2px; font-weight: 500;">9 ข้อในคลัง</div>
+                <div id="bankQCount_thai" style="font-size: 12px; color: #94A3B8; margin-top: 2px; font-weight: 500;">9
+                  ข้อในคลัง</div>
               </div>
             </div>
             <div style="display: flex; align-items: center; gap: 8px;">
-              <span id="bankChapBadge_thai" style="background: #FFF1F2; color: #E11D48; font-weight: 700; font-size: 12px; padding: 4px 12px; border-radius: 999px;">
+              <span id="bankChapBadge_thai"
+                style="background: #FFF1F2; color: #E11D48; font-weight: 700; font-size: 12px; padding: 4px 12px; border-radius: 999px;">
                 3 บท
               </span>
               <span style="color: #CBD5E1; font-size: 16px; font-weight: 600;">›</span>
@@ -968,16 +994,20 @@
             style="display: flex; align-items: center; justify-content: space-between; padding: 16px 6px; border-bottom: 1px solid #F1F5F9; cursor: pointer; transition: all 0.15s ease; border-radius: 12px;"
             onmouseover="this.style.backgroundColor='#F8FAFC'" onmouseout="this.style.backgroundColor='transparent'">
             <div style="display: flex; align-items: center; gap: 16px;">
-              <div style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
+              <div
+                style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
                 🧠
               </div>
               <div>
-                <div style="font-size: 15.5px; font-weight: 700; color: #0F172A; line-height: 1.35;">ความสามารถทั่วไป</div>
-                <div id="bankQCount_general" style="font-size: 12px; color: #94A3B8; margin-top: 2px; font-weight: 500;">9 ข้อในคลัง</div>
+                <div style="font-size: 15.5px; font-weight: 700; color: #0F172A; line-height: 1.35;">ความสามารถทั่วไป
+                </div>
+                <div id="bankQCount_general"
+                  style="font-size: 12px; color: #94A3B8; margin-top: 2px; font-weight: 500;">9 ข้อในคลัง</div>
               </div>
             </div>
             <div style="display: flex; align-items: center; gap: 8px;">
-              <span id="bankChapBadge_general" style="background: #F3E8FF; color: #9333EA; font-weight: 700; font-size: 12px; padding: 4px 12px; border-radius: 999px;">
+              <span id="bankChapBadge_general"
+                style="background: #F3E8FF; color: #9333EA; font-weight: 700; font-size: 12px; padding: 4px 12px; border-radius: 999px;">
                 3 บท
               </span>
               <span style="color: #CBD5E1; font-size: 16px; font-weight: 600;">›</span>
@@ -989,16 +1019,19 @@
             style="display: flex; align-items: center; justify-content: space-between; padding: 16px 6px; border-bottom: 1px solid #F1F5F9; cursor: pointer; transition: all 0.15s ease; border-radius: 12px;"
             onmouseover="this.style.backgroundColor='#F8FAFC'" onmouseout="this.style.backgroundColor='transparent'">
             <div style="display: flex; align-items: center; gap: 16px;">
-              <div style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
+              <div
+                style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
                 💻
               </div>
               <div>
                 <div style="font-size: 15.5px; font-weight: 700; color: #0F172A; line-height: 1.35;">คอมพิวเตอร์</div>
-                <div id="bankQCount_computer" style="font-size: 12px; color: #94A3B8; margin-top: 2px; font-weight: 500;">8 ข้อในคลัง</div>
+                <div id="bankQCount_computer"
+                  style="font-size: 12px; color: #94A3B8; margin-top: 2px; font-weight: 500;">8 ข้อในคลัง</div>
               </div>
             </div>
             <div style="display: flex; align-items: center; gap: 8px;">
-              <span id="bankChapBadge_computer" style="background: #EFF6FF; color: #2563EB; font-weight: 700; font-size: 12px; padding: 4px 12px; border-radius: 999px;">
+              <span id="bankChapBadge_computer"
+                style="background: #EFF6FF; color: #2563EB; font-weight: 700; font-size: 12px; padding: 4px 12px; border-radius: 999px;">
                 3 บท
               </span>
               <span style="color: #CBD5E1; font-size: 16px; font-weight: 600;">›</span>
@@ -1010,16 +1043,19 @@
             style="display: flex; align-items: center; justify-content: space-between; padding: 16px 6px; border-bottom: 1px solid #F1F5F9; cursor: pointer; transition: all 0.15s ease; border-radius: 12px;"
             onmouseover="this.style.backgroundColor='#F8FAFC'" onmouseout="this.style.backgroundColor='transparent'">
             <div style="display: flex; align-items: center; gap: 16px;">
-              <div style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
+              <div
+                style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
                 ⚖️
               </div>
               <div>
                 <div style="font-size: 15.5px; font-weight: 700; color: #0F172A; line-height: 1.35;">กฎหมาย</div>
-                <div id="bankQCount_law" style="font-size: 12px; color: #94A3B8; margin-top: 2px; font-weight: 500;">9 ข้อในคลัง</div>
+                <div id="bankQCount_law" style="font-size: 12px; color: #94A3B8; margin-top: 2px; font-weight: 500;">9
+                  ข้อในคลัง</div>
               </div>
             </div>
             <div style="display: flex; align-items: center; gap: 8px;">
-              <span id="bankChapBadge_law" style="background: #FEF3C7; color: #D97706; font-weight: 700; font-size: 12px; padding: 4px 12px; border-radius: 999px;">
+              <span id="bankChapBadge_law"
+                style="background: #FEF3C7; color: #D97706; font-weight: 700; font-size: 12px; padding: 4px 12px; border-radius: 999px;">
                 3 บท
               </span>
               <span style="color: #CBD5E1; font-size: 16px; font-weight: 600;">›</span>
@@ -1031,16 +1067,19 @@
             style="display: flex; align-items: center; justify-content: space-between; padding: 16px 6px; border-bottom: 1px solid #F1F5F9; cursor: pointer; transition: all 0.15s ease; border-radius: 12px;"
             onmouseover="this.style.backgroundColor='#F8FAFC'" onmouseout="this.style.backgroundColor='transparent'">
             <div style="display: flex; align-items: center; gap: 16px;">
-              <div style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
+              <div
+                style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
                 🌍
               </div>
               <div>
                 <div style="font-size: 15.5px; font-weight: 700; color: #0F172A; line-height: 1.35;">สังคม</div>
-                <div id="bankQCount_social" style="font-size: 12px; color: #94A3B8; margin-top: 2px; font-weight: 500;">8 ข้อในคลัง</div>
+                <div id="bankQCount_social" style="font-size: 12px; color: #94A3B8; margin-top: 2px; font-weight: 500;">
+                  8 ข้อในคลัง</div>
               </div>
             </div>
             <div style="display: flex; align-items: center; gap: 8px;">
-              <span id="bankChapBadge_social" style="background: #ECFDF5; color: #059669; font-weight: 700; font-size: 12px; padding: 4px 12px; border-radius: 999px;">
+              <span id="bankChapBadge_social"
+                style="background: #ECFDF5; color: #059669; font-weight: 700; font-size: 12px; padding: 4px 12px; border-radius: 999px;">
                 3 บท
               </span>
               <span style="color: #CBD5E1; font-size: 16px; font-weight: 600;">›</span>
@@ -1052,16 +1091,19 @@
             style="display: flex; align-items: center; justify-content: space-between; padding: 16px 6px; border-bottom: 1px solid #F1F5F9; cursor: pointer; transition: all 0.15s ease; border-radius: 12px;"
             onmouseover="this.style.backgroundColor='#F8FAFC'" onmouseout="this.style.backgroundColor='transparent'">
             <div style="display: flex; align-items: center; gap: 16px;">
-              <div style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
+              <div
+                style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
                 📄
               </div>
               <div>
                 <div style="font-size: 15.5px; font-weight: 700; color: #0F172A; line-height: 1.35;">งานสารบรรณ</div>
-                <div id="bankQCount_saraban" style="font-size: 12px; color: #94A3B8; margin-top: 2px; font-weight: 500;">7 ข้อในคลัง</div>
+                <div id="bankQCount_saraban"
+                  style="font-size: 12px; color: #94A3B8; margin-top: 2px; font-weight: 500;">7 ข้อในคลัง</div>
               </div>
             </div>
             <div style="display: flex; align-items: center; gap: 8px;">
-              <span id="bankChapBadge_saraban" style="background: #FFF7ED; color: #EA580C; font-weight: 700; font-size: 12px; padding: 4px 12px; border-radius: 999px;">
+              <span id="bankChapBadge_saraban"
+                style="background: #FFF7ED; color: #EA580C; font-weight: 700; font-size: 12px; padding: 4px 12px; border-radius: 999px;">
                 3 บท
               </span>
               <span style="color: #CBD5E1; font-size: 16px; font-weight: 600;">›</span>
@@ -1073,16 +1115,19 @@
             style="display: flex; align-items: center; justify-content: space-between; padding: 16px 6px; border-bottom: 1px solid #F1F5F9; cursor: pointer; transition: all 0.15s ease; border-radius: 12px;"
             onmouseover="this.style.backgroundColor='#F8FAFC'" onmouseout="this.style.backgroundColor='transparent'">
             <div style="display: flex; align-items: center; gap: 16px;">
-              <div style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
+              <div
+                style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
                 📋
               </div>
               <div>
                 <div style="font-size: 15.5px; font-weight: 700; color: #0F172A; line-height: 1.35;">ลักษณะที่ 54</div>
-                <div id="bankQCount_law54" style="font-size: 12px; color: #94A3B8; margin-top: 2px; font-weight: 500;">8 ข้อในคลัง</div>
+                <div id="bankQCount_law54" style="font-size: 12px; color: #94A3B8; margin-top: 2px; font-weight: 500;">8
+                  ข้อในคลัง</div>
               </div>
             </div>
             <div style="display: flex; align-items: center; gap: 8px;">
-              <span id="bankChapBadge_law54" style="background: #FDF2F8; color: #BE185D; font-weight: 700; font-size: 12px; padding: 4px 12px; border-radius: 999px;">
+              <span id="bankChapBadge_law54"
+                style="background: #FDF2F8; color: #BE185D; font-weight: 700; font-size: 12px; padding: 4px 12px; border-radius: 999px;">
                 3 บท
               </span>
               <span style="color: #CBD5E1; font-size: 16px; font-weight: 600;">›</span>
@@ -1348,10 +1393,12 @@
       <!-- Header with Back Arrow and Title -->
       <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
         <button onclick="closePoliceTrackModal()"
-          style="background: none; border: none; font-size: 22px; cursor: pointer; color: #0F172A; line-height: 1; padding: 4px 6px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-family: inherit;" title="ย้อนกลับ">
+          style="background: none; border: none; font-size: 22px; cursor: pointer; color: #0F172A; line-height: 1; padding: 4px 6px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-family: inherit;"
+          title="ย้อนกลับ">
           ←
         </button>
-        <h2 style="margin: 0; font-size: 20px; font-weight: 800; color: #0F172A; letter-spacing: -0.01em;">Pretest 150 ข้อ</h2>
+        <h2 style="margin: 0; font-size: 20px; font-weight: 800; color: #0F172A; letter-spacing: -0.01em;">Pretest 150
+          ข้อ</h2>
       </div>
       <p style="margin: 0 0 20px 38px; font-size: 13.5px; color: #94A3B8; font-weight: 500;">เลือกสายที่ต้องการสอบ</p>
 
@@ -1362,8 +1409,10 @@
         <button onclick="startStreakChallenge('ปราบปราม')"
           style="width: 100%; background: #FFFFFF; border: 1.5px solid #F1F5F9; border-radius: 20px; padding: 20px 18px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.02); font-family: inherit;">
           <span style="font-size: 17px; font-weight: 800; color: #0F172A;">สายปราบปราม</span>
-          <div style="width: 38px; height: 38px; border-radius: 50%; background: #C62828; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 3px 8px rgba(198, 40, 40, 0.28);">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+          <div
+            style="width: 38px; height: 38px; border-radius: 50%; background: #C62828; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 3px 8px rgba(198, 40, 40, 0.28);">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"
+              stroke-linecap="round" stroke-linejoin="round">
               <polyline points="9 18 15 12 9 6"></polyline>
             </svg>
           </div>
@@ -1373,8 +1422,10 @@
         <button onclick="startStreakChallenge('อำนวยการ_พิสูจน์หลักฐาน')"
           style="width: 100%; background: #FFFFFF; border: 1.5px solid #F1F5F9; border-radius: 20px; padding: 20px 18px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.02); font-family: inherit;">
           <span style="font-size: 17px; font-weight: 800; color: #0F172A;">สายอำนวยการ</span>
-          <div style="width: 38px; height: 38px; border-radius: 50%; background: #C62828; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 3px 8px rgba(198, 40, 40, 0.28);">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+          <div
+            style="width: 38px; height: 38px; border-radius: 50%; background: #C62828; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 3px 8px rgba(198, 40, 40, 0.28);">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"
+              stroke-linecap="round" stroke-linejoin="round">
               <polyline points="9 18 15 12 9 6"></polyline>
             </svg>
           </div>
@@ -1383,9 +1434,11 @@
         <!-- Card 3: ทำข้อสอบรายวิชา -->
         <button onclick="closePoliceTrackModal(); openSelectSubjectExamModal();"
           style="width: 100%; background: #FFFFFF; border: 1.5px solid #F1F5F9; border-radius: 20px; padding: 20px 18px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.02); font-family: inherit;">
-          <span style="font-size: 17px; font-weight: 800; color: #0F172A;">ทำข้อสอบรายวิชา</span>
-          <div style="width: 38px; height: 38px; border-radius: 50%; background: #C62828; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 3px 8px rgba(198, 40, 40, 0.28);">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+          <span style="font-size: 17px; font-weight: 800; color: #0F172A;">ทำข้อสอบรายวิชา 30 ข้อ</span>
+          <div
+            style="width: 38px; height: 38px; border-radius: 50%; background: #C62828; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 3px 8px rgba(198, 40, 40, 0.28);">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"
+              stroke-linecap="round" stroke-linejoin="round">
               <polyline points="9 18 15 12 9 6"></polyline>
             </svg>
           </div>
@@ -1397,7 +1450,8 @@
   </div>
 
   <!-- Select Subject Exam Modal (ทำข้อสอบรายวิชา 30 ข้อ: เลือก 7 รายวิชา) -->
-  <div id="selectSubjectExamModal" class="modal-overlay" onclick="if(event.target === this) closeSelectSubjectExamModal();"
+  <div id="selectSubjectExamModal" class="modal-overlay"
+    onclick="if(event.target === this) closeSelectSubjectExamModal();"
     style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 10000; align-items: center; justify-content: center; padding: 16px;">
     <div
       style="background: white; border-radius: 28px; padding: 26px 22px; max-width: 440px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); border: 1.5px solid #F1F5F9; animation: scalePop 0.25s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column;">
@@ -1405,12 +1459,15 @@
       <!-- Header with Back Arrow and Title -->
       <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
         <button onclick="closeSelectSubjectExamModal(); openPoliceTrackModal();"
-          style="background: none; border: none; font-size: 22px; cursor: pointer; color: #0F172A; line-height: 1; padding: 4px 6px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-family: inherit;" title="ย้อนกลับ">
+          style="background: none; border: none; font-size: 22px; cursor: pointer; color: #0F172A; line-height: 1; padding: 4px 6px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-family: inherit;"
+          title="ย้อนกลับ">
           ←
         </button>
-        <h2 style="margin: 0; font-size: 20px; font-weight: 800; color: #0F172A; letter-spacing: -0.01em;">ทำข้อสอบรายวิชา</h2>
+        <h2 style="margin: 0; font-size: 20px; font-weight: 800; color: #0F172A; letter-spacing: -0.01em;">
+          ทำข้อสอบรายวิชา 30 ข้อ</h2>
       </div>
-      <p style="margin: 0 0 18px 38px; font-size: 13px; color: #94A3B8; font-weight: 500;">สุ่มคละทุกบทในวิชา รวม 30 ข้อ</p>
+      <p style="margin: 0 0 18px 38px; font-size: 13px; color: #94A3B8; font-weight: 500;">สุ่มคละทุกบทในวิชา รวม 30 ข้อ
+      </p>
 
       <!-- 7 Subject Cards -->
       <div style="display: flex; flex-direction: column; gap: 10px;">
@@ -1419,7 +1476,8 @@
         <button onclick="startSubjectMixedQuiz('ภาษาไทย')"
           style="width: 100%; background: #FFFFFF; border: 1.5px solid #F1F5F9; border-radius: 18px; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.15s ease; box-shadow: 0 2px 6px rgba(0,0,0,0.02); font-family: inherit;">
           <div style="display: flex; align-items: center; gap: 12px; text-align: left;">
-            <div style="width: 40px; height: 40px; border-radius: 12px; background: #FFF1F2; color: #E11D48; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">
+            <div
+              style="width: 40px; height: 40px; border-radius: 12px; background: #FFF1F2; color: #E11D48; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">
               📕
             </div>
             <div>
@@ -1427,8 +1485,12 @@
               <div style="font-size: 11.5px; color: #94A3B8; font-weight: 500;">สุ่มคละทุกบทเรียน (30 ข้อ)</div>
             </div>
           </div>
-          <div style="width: 32px; height: 32px; border-radius: 50%; background: #C62828; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 6px rgba(198, 40, 40, 0.25);">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          <div
+            style="width: 32px; height: 32px; border-radius: 50%; background: #C62828; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 6px rgba(198, 40, 40, 0.25);">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"
+              stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
           </div>
         </button>
 
@@ -1436,7 +1498,8 @@
         <button onclick="startSubjectMixedQuiz('ทั่วไป')"
           style="width: 100%; background: #FFFFFF; border: 1.5px solid #F1F5F9; border-radius: 18px; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.15s ease; box-shadow: 0 2px 6px rgba(0,0,0,0.02); font-family: inherit;">
           <div style="display: flex; align-items: center; gap: 12px; text-align: left;">
-            <div style="width: 40px; height: 40px; border-radius: 12px; background: #F3E8FF; color: #9333EA; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">
+            <div
+              style="width: 40px; height: 40px; border-radius: 12px; background: #F3E8FF; color: #9333EA; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">
               🧮
             </div>
             <div>
@@ -1444,8 +1507,12 @@
               <div style="font-size: 11.5px; color: #94A3B8; font-weight: 500;">สุ่มคละทุกบทเรียน (30 ข้อ)</div>
             </div>
           </div>
-          <div style="width: 32px; height: 32px; border-radius: 50%; background: #C62828; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 6px rgba(198, 40, 40, 0.25);">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          <div
+            style="width: 32px; height: 32px; border-radius: 50%; background: #C62828; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 6px rgba(198, 40, 40, 0.25);">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"
+              stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
           </div>
         </button>
 
@@ -1453,7 +1520,8 @@
         <button onclick="startSubjectMixedQuiz('คอม')"
           style="width: 100%; background: #FFFFFF; border: 1.5px solid #F1F5F9; border-radius: 18px; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.15s ease; box-shadow: 0 2px 6px rgba(0,0,0,0.02); font-family: inherit;">
           <div style="display: flex; align-items: center; gap: 12px; text-align: left;">
-            <div style="width: 40px; height: 40px; border-radius: 12px; background: #EFF6FF; color: #2563EB; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">
+            <div
+              style="width: 40px; height: 40px; border-radius: 12px; background: #EFF6FF; color: #2563EB; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">
               💻
             </div>
             <div>
@@ -1461,8 +1529,12 @@
               <div style="font-size: 11.5px; color: #94A3B8; font-weight: 500;">สุ่มคละทุกบทเรียน (30 ข้อ)</div>
             </div>
           </div>
-          <div style="width: 32px; height: 32px; border-radius: 50%; background: #C62828; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 6px rgba(198, 40, 40, 0.25);">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          <div
+            style="width: 32px; height: 32px; border-radius: 50%; background: #C62828; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 6px rgba(198, 40, 40, 0.25);">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"
+              stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
           </div>
         </button>
 
@@ -1470,7 +1542,8 @@
         <button onclick="startSubjectMixedQuiz('กฏหมาย')"
           style="width: 100%; background: #FFFFFF; border: 1.5px solid #F1F5F9; border-radius: 18px; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.15s ease; box-shadow: 0 2px 6px rgba(0,0,0,0.02); font-family: inherit;">
           <div style="display: flex; align-items: center; gap: 12px; text-align: left;">
-            <div style="width: 40px; height: 40px; border-radius: 12px; background: #F8FAFC; color: #475569; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">
+            <div
+              style="width: 40px; height: 40px; border-radius: 12px; background: #F8FAFC; color: #475569; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">
               ⚖️
             </div>
             <div>
@@ -1478,8 +1551,12 @@
               <div style="font-size: 11.5px; color: #94A3B8; font-weight: 500;">สุ่มคละทุกบทเรียน (30 ข้อ)</div>
             </div>
           </div>
-          <div style="width: 32px; height: 32px; border-radius: 50%; background: #C62828; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 6px rgba(198, 40, 40, 0.25);">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          <div
+            style="width: 32px; height: 32px; border-radius: 50%; background: #C62828; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 6px rgba(198, 40, 40, 0.25);">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"
+              stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
           </div>
         </button>
 
@@ -1487,7 +1564,8 @@
         <button onclick="startSubjectMixedQuiz('สังคม')"
           style="width: 100%; background: #FFFFFF; border: 1.5px solid #F1F5F9; border-radius: 18px; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.15s ease; box-shadow: 0 2px 6px rgba(0,0,0,0.02); font-family: inherit;">
           <div style="display: flex; align-items: center; gap: 12px; text-align: left;">
-            <div style="width: 40px; height: 40px; border-radius: 12px; background: #ECFDF5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">
+            <div
+              style="width: 40px; height: 40px; border-radius: 12px; background: #ECFDF5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">
               🌏
             </div>
             <div>
@@ -1495,8 +1573,12 @@
               <div style="font-size: 11.5px; color: #94A3B8; font-weight: 500;">สุ่มคละทุกบทเรียน (30 ข้อ)</div>
             </div>
           </div>
-          <div style="width: 32px; height: 32px; border-radius: 50%; background: #C62828; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 6px rgba(198, 40, 40, 0.25);">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          <div
+            style="width: 32px; height: 32px; border-radius: 50%; background: #C62828; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 6px rgba(198, 40, 40, 0.25);">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"
+              stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
           </div>
         </button>
 
@@ -1504,7 +1586,8 @@
         <button onclick="startSubjectMixedQuiz('งานสารบรรณ')"
           style="width: 100%; background: #FFFFFF; border: 1.5px solid #F1F5F9; border-radius: 18px; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.15s ease; box-shadow: 0 2px 6px rgba(0,0,0,0.02); font-family: inherit;">
           <div style="display: flex; align-items: center; gap: 12px; text-align: left;">
-            <div style="width: 40px; height: 40px; border-radius: 12px; background: #FFF7ED; color: #EA580C; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">
+            <div
+              style="width: 40px; height: 40px; border-radius: 12px; background: #FFF7ED; color: #EA580C; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">
               📄
             </div>
             <div>
@@ -1512,8 +1595,12 @@
               <div style="font-size: 11.5px; color: #94A3B8; font-weight: 500;">สุ่มคละทุกบทเรียน (30 ข้อ)</div>
             </div>
           </div>
-          <div style="width: 32px; height: 32px; border-radius: 50%; background: #C62828; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 6px rgba(198, 40, 40, 0.25);">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          <div
+            style="width: 32px; height: 32px; border-radius: 50%; background: #C62828; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 6px rgba(198, 40, 40, 0.25);">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"
+              stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
           </div>
         </button>
 
@@ -1521,7 +1608,8 @@
         <button onclick="startSubjectMixedQuiz('ลักษณะที่54')"
           style="width: 100%; background: #FFFFFF; border: 1.5px solid #F1F5F9; border-radius: 18px; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.15s ease; box-shadow: 0 2px 6px rgba(0,0,0,0.02); font-family: inherit;">
           <div style="display: flex; align-items: center; gap: 12px; text-align: left;">
-            <div style="width: 40px; height: 40px; border-radius: 12px; background: #FDF2F8; color: #BE185D; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">
+            <div
+              style="width: 40px; height: 40px; border-radius: 12px; background: #FDF2F8; color: #BE185D; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">
               📋
             </div>
             <div>
@@ -1529,8 +1617,12 @@
               <div style="font-size: 11.5px; color: #94A3B8; font-weight: 500;">สุ่มคละทุกบทเรียน (30 ข้อ)</div>
             </div>
           </div>
-          <div style="width: 32px; height: 32px; border-radius: 50%; background: #C62828; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 6px rgba(198, 40, 40, 0.25);">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          <div
+            style="width: 32px; height: 32px; border-radius: 50%; background: #C62828; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 6px rgba(198, 40, 40, 0.25);">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"
+              stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
           </div>
         </button>
 
@@ -1544,7 +1636,7 @@
     style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 10000; align-items: center; justify-content: center; padding: 14px;">
     <div
       style="background: white; border-radius: 28px; padding: 24px 20px; max-width: 440px; width: 100%; max-height: 94vh; overflow-y: auto; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); border: 1.5px solid #F1F5F9; animation: scalePop 0.25s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column;">
-      
+
       <!-- Top Bar: [← ออก]  [1 / 30]  [0 ถูก] -->
       <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px;">
         <button type="button" onclick="closeSubjectQuiz()"
@@ -1560,13 +1652,17 @@
       </div>
 
       <!-- Thin Progress Bar Line -->
-      <div style="width: 100%; height: 3.5px; background: #F1F5F9; margin-bottom: 18px; border-radius: 999px; overflow: hidden;">
-        <div id="quizProgressBar" style="width: 0%; height: 100%; background: #C62828; border-radius: 999px; transition: width 0.3s ease;"></div>
+      <div
+        style="width: 100%; height: 3.5px; background: #F1F5F9; margin-bottom: 18px; border-radius: 999px; overflow: hidden;">
+        <div id="quizProgressBar"
+          style="width: 0%; height: 100%; background: #C62828; border-radius: 999px; transition: width 0.3s ease;">
+        </div>
       </div>
 
       <!-- Subject Capsule Pill & Report Button -->
       <div style="margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center;">
-        <span id="quizSubjectBadge" style="background: #FEF2F2; color: #C62828; font-weight: 700; font-size: 12px; padding: 4px 12px; border-radius: 999px; display: inline-block;">
+        <span id="quizSubjectBadge"
+          style="background: #FEF2F2; color: #C62828; font-weight: 700; font-size: 12px; padding: 4px 12px; border-radius: 999px; display: inline-block;">
           TH ภาษาไทย
         </span>
         <button type="button" onclick="openReportCurrentQuestionModal()" title="แจ้งข้อสอบข้อนี้ผิดพลาด"
@@ -1592,15 +1688,18 @@
       <div id="quizNavContainer" style="padding-top: 8px; border-top: 1px solid #F1F5F9;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
           <span style="font-size: 11.5px; font-weight: 700; color: #64748B;">🔢 ข้ามไปทำข้ออื่น:</span>
-          <span id="quizAnsweredCountLabel" style="font-size: 11px; font-weight: 700; color: #C62828;">ทำแล้ว 0/30 ข้อ</span>
+          <span id="quizAnsweredCountLabel" style="font-size: 11px; font-weight: 700; color: #C62828;">ทำแล้ว 0/30
+            ข้อ</span>
         </div>
-        <div id="quizQuestionNavGrid" style="display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-start; max-height: 110px; overflow-y: auto; padding: 2px;"></div>
+        <div id="quizQuestionNavGrid"
+          style="display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-start; max-height: 110px; overflow-y: auto; padding: 2px;">
+        </div>
       </div>
 
     </div>
   </div>
 
-    </div>
+  </div>
   </div>
   <!-- Report Question Modal (ส่งข้อสอบข้อที่ผิดพลาดไปยังแดชบอร์ดแอดมิน) -->
   <div id="reportQuestionModal" class="modal-overlay"
@@ -1615,7 +1714,8 @@
           </div>
           <div>
             <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #0F172A;">แจ้งข้อสอบผิดพลาด</h3>
-            <span id="reportQuestionInfoLabel" style="font-size: 11.5px; color: #64748B; font-weight: 600;">ข้อที่ 1 | วิชาทั่วไป</span>
+            <span id="reportQuestionInfoLabel" style="font-size: 11.5px; color: #64748B; font-weight: 600;">ข้อที่ 1 |
+              วิชาทั่วไป</span>
           </div>
         </div>
         <button type="button" onclick="closeReportQuestionModal()"
@@ -1670,7 +1770,8 @@
         <label style="display: block; font-size: 12.5px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">
           2. รายละเอียดเพิ่มเติม (เช่น ข้อที่ควรตอบถูก หรือจุดที่ผิด):
         </label>
-        <textarea id="reportQuestionDetailsText" placeholder="เช่น เฉลยบอกตอบข้อ 2 แต่ที่ถูกต้องควรเป็นข้อ 3 เพราะคำนวณได้ 17..."
+        <textarea id="reportQuestionDetailsText"
+          placeholder="เช่น เฉลยบอกตอบข้อ 2 แต่ที่ถูกต้องควรเป็นข้อ 3 เพราะคำนวณได้ 17..."
           style="width: 100%; box-sizing: border-box; height: 72px; border: 1.5px solid #E2E8F0; border-radius: 12px; padding: 10px 12px; font-family: inherit; font-size: 13px; resize: none; outline: none;"></textarea>
       </div>
 
@@ -2777,7 +2878,7 @@
           const dbList = (typeof userDbQuizHistory !== 'undefined' && Array.isArray(userDbQuizHistory)) ? userDbQuizHistory : [];
           const uRaw = localStorage.getItem(`userQuizHistory_${uid}`);
           const uList = uRaw ? JSON.parse(uRaw) : [];
-          
+
           const seen = new Set();
           const all = [...dbList, ...uList];
           for (const h of all) {
