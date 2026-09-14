@@ -10193,10 +10193,11 @@ async function crossModelAuditExamQuestions({ questions, subject, subcategory, p
 วิชา: "${subject || 'ทั่วไป'}" ${subcategory ? `หัวข้อ: "${subcategory}"` : ''}
 
 ภารกิจ:
-ข้อสอบต่อไปนี้ถูกร่างโดย AI อีกค่ายหนึ่ง โปรดทำข้อสอบและตรวจจับข้อผิดพลาดแบบ "ปิดตา" (ไม่มีเฉลยให้):
-1. จงทำข้อสอบทีละข้อด้วยตัวคุณเอง แล้วระบุว่าข้อใดถูกต้อง (ตอบเฉพาะตัวอักษร A, B, C หรือ D)
-2. ตรวจสอบว่ามี "จุดบกพร่อง (Flaw)" หรือไม่ เช่น มีคำตอบถูกมากกว่า 1 ข้อ, ไม่มีข้อใดถูกเลย, หรือโจทย์กำกวม
-3. อธิบายวิธีคิด/หลักการสั้นๆ 1-2 ประโยค
+ข้อสอบต่อไปนี้ถูกร่างโดย AI โปรดทำข้อสอบและตรวจทานแบบ "ปิดตา" (ไม่มีเฉลยให้):
+1. จงทำข้อสอบทีละข้อด้วยตัวคุณเอง แล้วระบุว่าข้อใดถูกต้อง (ตอบเฉพาะตัวอักษร A, B, C หรือ D ที่ถูกต้องที่สุดตามหลักสูตร/กฎหมาย)
+2. กฎสำคัญด้านความถูกต้อง: ข้อสอบถูกออกแบบมาให้มีคำตอบที่ถูกต้องตรงตามหลักสูตร/ประวัติศาสตร์/ระเบียบจริงเสมอ (เช่น การได้รับเอกราชทางการศาลและสนธิสัญญาคืนสมบูรณ์คือปี พ.ศ. 2481) อย่าสับสนกับปีเริ่มต้นหรือสนธิสัญญาอื่น จงเลือกตัวเลือกที่ดีที่สุดและถูกต้อง
+3. ❌ ห้ามตอบว่า "ไม่อยู่ในตัวเลือก" หรือ "ไม่มีคำตอบ" หากไม่มีหลักฐานชัดแจ้ง 100%
+4. คำอธิบาย (reasoning): อธิบายว่าทำไมตัวเลือกที่ตอบจึงถูกต้องตามหลักวิชาการสั้นๆ 1-2 ประโยค (อธิบายเพื่อเป็นเฉลยแก่นักเรียน ห้ามบ่นเรื่องตัวเลือกเด็ดขาด)
 
 ข้อสอบที่ต้องตรวจ (${blindQuestions.length} ข้อ):
 ${JSON.stringify(blindQuestions, null, 2)}
@@ -10314,35 +10315,45 @@ ${JSON.stringify(blindQuestions, null, 2)}
       const cleanPrimaryExp = cleanAuditTags(origQ.explanation || '');
       const cleanAuditReasoning = cleanAuditTags(audit.reasoning || '');
 
+      const isAuditorReasoningInvalid = isInvalidExplanationText(cleanAuditReasoning);
+      const isPrimaryExpInvalid = isInvalidExplanationText(cleanPrimaryExp);
+
       // Detect which choice each explanation actually supports
       const primarySupports = detectExplanationSupportedChoice(origQ, cleanPrimaryExp);
       const auditSupports = detectExplanationSupportedChoice(origQ, cleanAuditReasoning);
 
       let adoptedAns = origNorm;
       let adoptedExplanation = cleanPrimaryExp;
+      let disputeNote = '';
 
-      if (primarySupports === auditNorm && origNorm !== auditNorm) {
-        // Case 1: Primary's OWN explanation actually proved auditNorm! (Typo in primary's choice key)
+      if (primarySupports === auditNorm && origNorm !== auditNorm && !isPrimaryExpInvalid) {
+        // Case 1: Primary's OWN explanation proved auditNorm! (Typo in primary's choice key, e.g. key said A but explanation proved B)
         adoptedAns = auditNorm;
         adoptedExplanation = cleanPrimaryExp;
-      } else if (primarySupports === origNorm) {
+        disputeNote = `ปรับแก้เฉลยเป็นข้อ ${adoptedAns} ตามที่คำอธิบายดั้งเดิมได้ระบุไว้`;
+      } else if (primarySupports === origNorm && !isPrimaryExpInvalid) {
         // Case 2: Primary wrote a self-consistent question where its explanation directly proves origNorm!
-        // In math / operation questions, Primary's formula is the author's intended rule.
-        // Keep Primary's intended answer & clean explanation.
+        // In this case, Primary is the author and its question & answer are self-consistent.
+        // DO NOT let the auditor's hallucination or mistaken flaw overturn it!
         adoptedAns = origNorm;
         adoptedExplanation = cleanPrimaryExp;
-      } else if (audit.hasFlaw && cleanAuditReasoning) {
-        // Case 3: Auditor detected an explicit flaw in primary and gave a clear correction
+        disputeNote = `ยืนยันคำตอบข้อ ${origNorm} ตามข้อเท็จจริงและคำอธิบายของค่ายหลัก`;
+      } else if (!isAuditorReasoningInvalid && auditSupports === auditNorm && isPrimaryExpInvalid) {
+        // Case 3: Auditor's reasoning cleanly proves auditNorm, while Primary's explanation was broken or empty
         adoptedAns = auditNorm;
         adoptedExplanation = cleanAuditReasoning;
-      } else if (auditSupports === auditNorm && cleanAuditReasoning) {
-        // Case 4: Auditor's reasoning cleanly proves auditNorm, while Primary's was incoherent
+        disputeNote = `ปรับแก้เป็นข้อ ${adoptedAns} ตามคำอธิบายที่สมบูรณ์ของค่ายตรวจทาน`;
+      } else if (!isAuditorReasoningInvalid && auditSupports === auditNorm && primarySupports !== origNorm) {
+        // Case 4: Auditor proves its choice with valid reasoning and Primary's reasoning was inconclusive
         adoptedAns = auditNorm;
         adoptedExplanation = cleanAuditReasoning;
+        disputeNote = `เลือกข้อ ${adoptedAns} เพื่อให้สอดคล้องกับคำอธิบายเฉลยที่ชัดเจนที่สุด`;
       } else {
-        // Fallback: keep Primary
+        // Fallback: ALWAYS keep Primary!
+        // NEVER adopt an auditor's meta-complaint like "ไม่อยู่ในตัวเลือก" as the student explanation!
         adoptedAns = origNorm;
-        adoptedExplanation = cleanPrimaryExp;
+        adoptedExplanation = !isPrimaryExpInvalid ? cleanPrimaryExp : (cleanAuditReasoning && !isAuditorReasoningInvalid ? cleanAuditReasoning : 'เฉลยข้อ ' + origNorm + ' ตามหลักสูตรที่ถูกต้อง');
+        disputeNote = `คงคำตอบข้อ ${origNorm} ของค่ายหลักไว้`;
       }
 
       // Ensure explanation is clean and strictly student-facing (NEVER leak [🔍 ตรวจทานร่วมโดย ...])
@@ -10361,15 +10372,35 @@ ${JSON.stringify(blindQuestions, null, 2)}
           disputeResolved: true,
           primaryEngine,
           auditorEngine,
-          badge: '🥊 ผ่านการดีเบตและปรับแก้ข้ามค่ายแล้ว',
+          badge: adoptedAns === origNorm ? '🛡️ ยืนยันคำตอบค่ายหลัก' : '🥊 ผ่านการดีเบตและปรับแก้ข้ามค่ายแล้ว',
           flaw: audit.flawDetails || `ค่ายแรกเลือก ${origNorm} แต่ค่ายตรวจทานวิเคราะห์ได้ ${auditNorm}`,
-          note: `เลือกข้อ ${adoptedAns} เพื่อให้สอดคล้องกับวิธีคิดและคำอธิบายเฉลยที่ถูกต้องชัดเจนที่สุด`
+          note: disputeNote
         }
       };
     }
   });
 
   return finalQuestions.map(sanitizeExamQuestionFormatting);
+}
+
+function isInvalidExplanationText(exp) {
+  if (!exp || typeof exp !== 'string') return true;
+  const t = exp.trim();
+  if (t.length < 5) return true;
+
+  const rejectionPatterns = [
+    /ไม่อยู่ในตัวเลือก/i,
+    /ไม่มีในตัวเลือก/i,
+    /ไม่มีข้อใดถูก/i,
+    /ไม่มีตัวเลือกใดถูก/i,
+    /ไม่มีคำตอบ(?:ที่ถูกต้อง)?/i,
+    /ไม่มีข้อที่ถูกต้อง/i,
+    /โจทย์(?:ผิด|มีปัญหา|กำกวม|บกพร่อง)/i,
+    /ตัวเลือก(?:ผิดหมด|ไม่ถูกต้องทั้งหมด)/i,
+    /ไม่ตรงกับตัวเลือก/i
+  ];
+
+  return rejectionPatterns.some(pat => pat.test(t));
 }
 
 function detectExplanationSupportedChoice(q, exp) {
@@ -10423,6 +10454,20 @@ function detectExplanationSupportedChoice(q, exp) {
     if (optB === v && optA !== v && optC !== v && optD !== v) return 'B';
     if (optC === v && optA !== v && optB !== v && optD !== v) return 'C';
     if (optD === v && optA !== v && optB !== v && optC !== v) return 'D';
+  }
+
+  // 5. Choice text unique matching:
+  // If the explanation uniquely mentions the exact text of one choice (and none of the others)
+  const candidateChoices = [
+    { opt: 'A', text: optA },
+    { opt: 'B', text: optB },
+    { opt: 'C', text: optC },
+    { opt: 'D', text: optD }
+  ].filter(c => c.text && c.text.length >= 3 && !['ถูกต้อง', 'ไม่ถูกต้อง', 'ถูกทุกข้อ', 'ผิดทุกข้อ'].includes(c.text));
+
+  const matched = candidateChoices.filter(c => text.includes(c.text));
+  if (matched.length === 1) {
+    return matched[0].opt;
   }
 
   return null;
