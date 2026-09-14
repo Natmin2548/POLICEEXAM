@@ -188,7 +188,9 @@ function normalizeAnswerToIndex(rawAns, choices) {
       choices: normChoices,
       correctAnswer: normCorrect,
       explanation: q.explanation || `คำอธิบายเฉลยวิชา ${subTitle}: วิเคราะห์ตามหลักการและเนื้อหามาตรฐาน`,
-      subjectBadge: subTitle
+      subjectBadge: subTitle,
+      subjectKey: q.subjectKey || examState.subjectKey,
+      subjectName: q.shortSubjectName || q.subjectName || subTitle
     };
   });
 
@@ -410,7 +412,7 @@ window.handleMainAction = function() {
   }
 };
 
-function submitExam() {
+async function submitExam() {
   const { questions, userAnswers } = examState;
   const total = questions.length;
   const answeredCount = Object.keys(userAnswers).length;
@@ -422,26 +424,46 @@ function submitExam() {
     }
   }
 
-  // Calculate score
+  // Calculate score and subject breakdown
   let correct = 0;
+  const subjectMap = {};
+
   questions.forEach((q, idx) => {
-    if (userAnswers[idx] === q.correctAnswer) {
-      correct++;
+    const isCorrect = userAnswers[idx] === q.correctAnswer;
+    if (isCorrect) correct++;
+
+    const sKey = q.subjectKey || examState.subjectKey || 'general';
+    const sName = q.subjectName || q.subjectBadge || sKey;
+
+    if (!subjectMap[sKey]) {
+      subjectMap[sKey] = {
+        key: sKey,
+        name: sName,
+        correct: 0,
+        total: 0
+      };
+    }
+    subjectMap[sKey].total++;
+    if (isCorrect) {
+      subjectMap[sKey].correct++;
     }
   });
+
+  const subjectStats = Object.values(subjectMap);
 
   examState.score = correct;
   examState.isSubmitted = true;
   examState.isReviewMode = false;
+  examState.subjectStats = subjectStats;
 
-  // Save history
-  saveExamResult(correct, total);
+  // Show score modal immediately
+  showResultsModal(subjectStats);
 
-  // Show score modal
-  showResultsModal();
+  // Save history & sync with server
+  saveExamResult(correct, total, subjectStats);
 }
 
-function showResultsModal() {
+function showResultsModal(subjectStats) {
   const total = examState.questions.length;
   const correct = examState.score;
   const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
@@ -453,6 +475,7 @@ function showResultsModal() {
   const sub = document.getElementById('resultSubtitle');
   const score = document.getElementById('resultScore');
   const pctEl = document.getElementById('resultPct');
+  const breakdownEl = document.getElementById('resultSubjectBreakdown');
 
   if (icon) icon.textContent = pass ? '🎉' : '💪';
   if (title) title.textContent = pass ? 'ยินดีด้วย! คุณผ่านเกณฑ์ทดสอบ' : 'พยายามอีกนิด ทบทวนและฝึกฝนใหม่';
@@ -464,6 +487,37 @@ function showResultsModal() {
   if (pctEl) {
     pctEl.textContent = `${pct}%`;
     pctEl.style.color = pass ? '#059669' : '#DC2626';
+  }
+
+  // Render per-subject breakdown if there are multiple subjects (e.g. Pretest)
+  const stats = subjectStats || examState.subjectStats || [];
+  if (breakdownEl) {
+    if (stats.length > 1) {
+      breakdownEl.style.display = 'block';
+      breakdownEl.innerHTML = `
+        <div style="font-size: 13px; font-weight: 800; color: #1E293B; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+          <span>📊</span>
+          <span>ผลคะแนนแยกตามรายวิชา</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          ${stats.map(s => {
+            const sPct = s.total > 0 ? Math.round((s.correct / s.total) * 100) : 0;
+            const sPass = sPct >= 60;
+            const sColor = sPass ? '#059669' : '#DC2626';
+            const sBadgeBg = sPass ? '#ECFDF5' : '#FEF2F2';
+            const sBadgeBorder = sPass ? '#A7F3D0' : '#FECACA';
+            return `
+              <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; background: white; padding: 7px 12px; border-radius: 10px; border: 1px solid #E2E8F0;">
+                <span style="font-weight: 600; color: #334155; max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${s.name}</span>
+                <span style="background: ${sBadgeBg}; border: 1px solid ${sBadgeBorder}; color: ${sColor}; font-weight: 800; padding: 2px 8px; border-radius: 6px;">${s.correct}/${s.total} (${sPct}%)</span>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+    } else {
+      breakdownEl.style.display = 'none';
+    }
   }
 
   if (modal) modal.style.display = 'flex';
@@ -492,31 +546,145 @@ window.handleExitExam = function() {
   window.location.href = examState.sourcePage || 'bank.html';
 };
 
-function saveExamResult(correct, total) {
+async function saveExamResult(correct, total, subjectStats) {
   try {
-    const raw = localStorage.getItem('userQuizHistory');
-    let history = raw ? JSON.parse(raw) : [];
-    if (!Array.isArray(history)) history = [];
+    let userProfile = null;
+    try {
+      const stored = localStorage.getItem('userProfile');
+      if (stored) userProfile = JSON.parse(stored);
+    } catch (e) {}
 
-    const examTitle = examState.track
+    const userId = userProfile?.id || 'guest';
+    const userKey = 'userQuizHistory_' + userId;
+    const token = localStorage.getItem('authToken');
+
+    const isPretest = !!examState.track;
+    const examTitle = isPretest
       ? (examState.track === 'prabpram' ? 'Pretest สายปราบปราม 150 ข้อ' : 'Pretest สายอำนวยการ 150 ข้อ')
       : examState.subjectTitle;
 
-    const record = {
-      subject: examState.subjectKey,
+    const mainSubject = isPretest
+      ? (examState.track === 'prabpram' ? 'Pretest สายปราบปราม' : 'Pretest สายอำนวยการ')
+      : (examState.subjectKey || 'ทั่วไป');
+
+    const scorePct = total > 0 ? Math.round((correct / total) * 100) : 0;
+    const nowIso = new Date().toISOString();
+    const formattedDate = new Date().toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
+
+    const mainRecord = {
+      id: 'pretest_' + Date.now(),
+      subject: mainSubject,
       title: examTitle,
+      setTitle: examTitle,
+      setId: isPretest ? `pretest_${examState.track}` : (examState.setId || null),
       correctCount: correct,
+      score: correct,
       totalQuestions: total,
-      scorePct: total > 0 ? Math.round((correct / total) * 100) : 0,
-      date: new Date().toISOString(),
-      timestamp: Date.now()
+      totalCount: total,
+      total: total,
+      scorePct: scorePct,
+      date: formattedDate,
+      createdAt: nowIso,
+      timestamp: Date.now(),
+      breakdown: subjectStats || []
     };
 
-    history.unshift(record);
-    if (history.length > 50) history = history.slice(0, 50);
-    localStorage.setItem('userQuizHistory', JSON.stringify(history));
+    // 1. Cache to local storage for user profile and global fallback
+    const saveList = (key) => {
+      try {
+        const raw = localStorage.getItem(key);
+        let list = raw ? JSON.parse(raw) : [];
+        if (!Array.isArray(list)) list = [];
+        list.unshift(mainRecord);
+        localStorage.setItem(key, JSON.stringify(list.slice(0, 100)));
+      } catch (err) {}
+    };
+
+    saveList(userKey);
+    saveList('userQuizHistory');
+
+    // 2. If authenticated, record to backend DB so stats and subject scores update!
+    if (token && userId !== 'guest') {
+      const apiEndpoint = `${API_BASE}/api/user/record-quiz`;
+
+      // If pretest with multiple subjects, record each subject's performance
+      // so recalculateUserSubjectScores() computes accurate averages for each subject
+      if (Array.isArray(subjectStats) && subjectStats.length > 1) {
+        for (const sub of subjectStats) {
+          try {
+            const subPct = sub.total > 0 ? Math.round((sub.correct / sub.total) * 100) : 0;
+            await fetch(apiEndpoint, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({
+                score: sub.correct,
+                correctCount: sub.correct,
+                total: sub.total,
+                totalCount: sub.total,
+                totalQuestions: sub.total,
+                scorePct: subPct,
+                subject: sub.name,
+                setId: `pretest_${examState.track}_${sub.key}`,
+                setTitle: `${examTitle} • ${sub.name}`,
+                createdAt: nowIso
+              })
+            });
+          } catch (subErr) {
+            console.warn('Record subject quiz error:', subErr);
+          }
+        }
+      }
+
+      // Record the main overall exam attempt
+      try {
+        const res = await fetch(apiEndpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            score: correct,
+            correctCount: correct,
+            total: total,
+            totalCount: total,
+            totalQuestions: total,
+            scorePct: scorePct,
+            subject: isPretest ? (examState.track === 'prabpram' ? 'ข้อสอบจำลอง สายปราบปราม' : 'ข้อสอบจำลอง สายอำนวยการ') : mainSubject,
+            setId: isPretest ? `pretest_${examState.track}` : (examState.setId || null),
+            setTitle: examTitle,
+            createdAt: nowIso
+          })
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.user) {
+            localStorage.setItem('userProfile', JSON.stringify(data.user));
+          }
+        }
+      } catch (mainErr) {
+        console.warn('Record main quiz error:', mainErr);
+      }
+
+      // Refresh full profile to ensure all updated subject averages & XP are synchronized
+      try {
+        const profRes = await fetch(`${API_BASE}/api/user/profile`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (profRes.ok) {
+          const profData = await profRes.json();
+          if (profData && profData.user) {
+            localStorage.setItem('userProfile', JSON.stringify(profData.user));
+          }
+        }
+      } catch (profErr) {}
+    }
   } catch (e) {
-    console.warn('Save history error:', e);
+    console.warn('Save exam result error:', e);
   }
 }
 
