@@ -2805,9 +2805,10 @@ function renderCurrentBattleQuestion() {
   if (container) {
     container.innerHTML = `
       <div>
-        <h3 style="font-size: 16px; font-weight: 800; color: #1E293B; line-height: 1.6; margin-top: 0; margin-bottom: 20px;">
-          ${currentIndex + 1}. ${escapeHTML(q.questionText)}
-        </h3>
+        <div class="question-title" style="font-size: 15.5px; font-weight: 500; color: #1E293B; line-height: 1.68; margin-top: 0; margin-bottom: 20px;">
+          <span style="font-weight: 700; color: #0F172A; margin-right: 4px;">${currentIndex + 1}.</span>
+          ${typeof formatQuestionTextHtml === 'function' ? formatQuestionTextHtml(q.questionText) : escapeHTML(q.questionText)}
+        </div>
         <div>
           ${q.choices.map((choiceText, idx) => `
             <button onclick="selectArenaAnswer(${idx + 1})" style="width: 100%; text-align: left; padding: 14px 18px; border-radius: 14px; font-size: 14px; font-family: inherit; margin-bottom: 10px; cursor: pointer; background: #F8FAFC; border: 1px solid #E2E8F0; color: #1E293B; display: flex; align-items: center; gap: 12px; transition: all 0.2s;">
@@ -7266,9 +7267,10 @@ function renderCurrentQuizQuestion() {
   bodyContent.innerHTML = `
     <div>
       ${subjectHeaderBadge}
-      <h3 style="font-size: 15.5px; font-weight: 800; color: #1E293B; line-height: 1.55; margin-top: 0; margin-bottom: 16px;">
-        ${currentIndex + 1}. ${escapeHTML(q.questionText)}
-      </h3>
+      <div class="question-title" style="font-size: 15.5px; font-weight: 500; color: #1E293B; line-height: 1.68; margin-top: 0; margin-bottom: 16px;">
+        <span style="font-weight: 700; color: #0F172A; margin-right: 4px;">${currentIndex + 1}.</span>
+        ${typeof formatQuestionTextHtml === 'function' ? formatQuestionTextHtml(q.questionText) : escapeHTML(q.questionText)}
+      </div>
       <div>
         ${choicesHtml}
       </div>

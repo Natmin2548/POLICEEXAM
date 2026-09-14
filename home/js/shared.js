@@ -52,6 +52,76 @@ function escapeHTML(str) {
     .replace(/'/g, '&#039;');
 }
 
+function formatInlineHighlights(str) {
+  let escaped = escapeHTML(str);
+  // Highlight markdown bold **word** -> strong
+  escaped = escaped.replace(/\*\*(.+?)\*\*/g, '<strong style="font-weight: 700; color: #0F172A;">$1</strong>');
+  // Highlight short quoted terms "..." or “...” (up to 40 chars)
+  escaped = escaped.replace(/(?:&quot;|“)([^"”\n]{1,40}?)(?:&quot;|”)/g, '<strong style="font-weight: 700; color: #0F172A;">“$1”</strong>');
+  return escaped;
+}
+
+function formatQuestionTextHtml(rawText) {
+  if (!rawText) return '';
+  let text = String(rawText).trim();
+
+  // Strip whole-text wrapping bold if someone wrapped the entire question in **...**
+  if (/^\*\*[\s\S]+\*\*$/.test(text) && (text.match(/\*\*/g) || []).length === 2) {
+    text = text.replace(/^\*\*/, '').replace(/\*\*$/, '').trim();
+  }
+
+  // Check for reading comprehension pattern with long quotes (>= 30 chars):
+  // Intro (optional) + "Long Passage" + Prompt (optional)
+  const longQuoteRegex = /^(.*?)["“]([\s\S]{30,}?)["”]\s*([\s\S]*)$/;
+  const match = text.match(longQuoteRegex);
+
+  if (match) {
+    const intro = (match[1] || '').trim();
+    const passage = match[2].trim();
+    const question = (match[3] || '').trim();
+
+    let html = '';
+    if (intro) {
+      html += `<div class="question-intro-lead" style="font-size: 13.5px; font-weight: 600; color: #64748B; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+        <span>📖</span><span>${escapeHTML(intro)}</span>
+      </div>`;
+    }
+    html += `<div class="question-passage-card" style="background: #F8FAFC; border: 1px solid #E2E8F0; border-left: 4px solid #3B82F6; border-radius: 10px; padding: 12px 16px; margin: 6px 0 14px 0; font-size: 14.5px; font-weight: 400; color: #334155; line-height: 1.75; letter-spacing: 0.01em;">
+      “${escapeHTML(passage)}”
+    </div>`;
+    if (question) {
+      html += `<div class="question-prompt-text" style="font-size: 15.5px; font-weight: 700; color: #0F172A; line-height: 1.55;">
+        ${formatInlineHighlights(question)}
+      </div>`;
+    }
+    return html;
+  }
+
+  // If not a quote passage, check if text has newlines with a passage-like block
+  const lines = text.split(/\n\s*\n/).map(l => l.trim()).filter(Boolean);
+  if (lines.length >= 2 && lines.some(l => l.length > 50)) {
+    return lines.map((block, idx) => {
+      // If it's a long middle block (passage)
+      if (block.length > 50 && idx < lines.length - 1) {
+        return `<div class="question-passage-card" style="background: #F8FAFC; border: 1px solid #E2E8F0; border-left: 4px solid #3B82F6; border-radius: 10px; padding: 12px 16px; margin: 8px 0 12px 0; font-size: 14.5px; font-weight: 400; color: #334155; line-height: 1.75;">${escapeHTML(block)}</div>`;
+      }
+      // If it's the final line (question prompt)
+      if (idx === lines.length - 1) {
+        return `<div class="question-prompt-text" style="font-size: 15.5px; font-weight: 700; color: #0F172A; line-height: 1.55; margin-top: 6px;">${formatInlineHighlights(block)}</div>`;
+      }
+      // Intro line
+      return `<div class="question-intro-lead" style="font-size: 13.5px; font-weight: 600; color: #64748B; margin-bottom: 6px;">${escapeHTML(block)}</div>`;
+    }).join('');
+  }
+
+  // Standard question: regular weight with emphasized keywords (quotes or markdown)
+  return `<span style="font-size: 15.5px; font-weight: 500; color: #1E293B; line-height: 1.65;">${formatInlineHighlights(text)}</span>`;
+}
+
+window.escapeHTML = escapeHTML;
+window.formatInlineHighlights = formatInlineHighlights;
+window.formatQuestionTextHtml = formatQuestionTextHtml;
+
 function handleLogout() {
   localStorage.removeItem('authToken');
   localStorage.removeItem('userProfile');

@@ -246,7 +246,11 @@ function renderExamQuestion() {
   // 5. Question Text
   const questionTitle = document.getElementById('questionText');
   if (questionTitle) {
-    questionTitle.textContent = currentQ.questionText;
+    if (typeof formatQuestionTextHtml === 'function') {
+      questionTitle.innerHTML = formatQuestionTextHtml(currentQ.questionText);
+    } else {
+      questionTitle.textContent = currentQ.questionText;
+    }
   }
 
   // 6. Choices List (ก, ข, ค, ง)

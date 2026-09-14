@@ -948,9 +948,9 @@ function renderCurrentQuizQuestion() {
 
   bodyContent.innerHTML = `
     <div>
-      <h3 style="font-size: 16px; font-weight: 800; color: #0F172A; line-height: 1.55; margin-top: 0; margin-bottom: 18px; letter-spacing: -0.01em;">
-        ${escapeHTML(q.questionText)}
-      </h3>
+      <div class="question-title" style="font-size: 15.5px; font-weight: 500; color: #1E293B; line-height: 1.68; margin-top: 0; margin-bottom: 18px;">
+        ${typeof formatQuestionTextHtml === 'function' ? formatQuestionTextHtml(q.questionText) : escapeHTML(q.questionText)}
+      </div>
       <div>${choicesHtml}</div>
       ${explanationHtml}
     </div>
