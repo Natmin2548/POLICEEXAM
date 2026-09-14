@@ -80,6 +80,207 @@ process.on('uncaughtException', (err) => {
   // Don't crash the process - just log it
 });
 
+// =======================================================
+// Active Online Users & Hourly Usage Analytics Engine
+// =======================================================
+const ONLINE_THRESHOLD_MS = 5 * 60 * 1000; // 5 minutes threshold for online
+const activeUsersMap = new Map(); // userId -> { id, username, fullName, role, lastActive: Date, lastPath: string, ip: string }
+const activeGuestsMap = new Map(); // ipKey -> { lastActive: Date, lastPath: string, ip: string }
+const hourlyActivityBuckets = new Map(); // key "YYYY-MM-DD-HH" -> { key, label, date: Date, users: Set<string>, actions: number, attempts: number }
+
+function getBangkokHourKey(date = new Date()) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Bangkok',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    hour12: false
+  }).formatToParts(date);
+  const y = parts.find(p => p.type === 'year')?.value;
+  const m = parts.find(p => p.type === 'month')?.value;
+  const d = parts.find(p => p.type === 'day')?.value;
+  let h = parts.find(p => p.type === 'hour')?.value || '00';
+  if (h === '24') h = '00';
+  return `${y}-${m}-${d}-${h}`;
+}
+
+function getBangkokHourLabel(date = new Date()) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Bangkok',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  }).formatToParts(date);
+  let h = parts.find(p => p.type === 'hour')?.value || '00';
+  if (h === '24') h = '00';
+  return `${h}:00`;
+}
+
+function getOrCreateHourlyBucket(date = new Date()) {
+  const key = getBangkokHourKey(date);
+  if (!hourlyActivityBuckets.has(key)) {
+    const label = getBangkokHourLabel(date);
+    hourlyActivityBuckets.set(key, {
+      key,
+      label,
+      date: new Date(date),
+      users: new Set(),
+      actions: 0,
+      attempts: 0
+    });
+  }
+  return hourlyActivityBuckets.get(key);
+}
+
+function trackUserActivity(userId, username, fullName, role, pathName, clientIp, isAttempt = false) {
+  if (!userId) return;
+  const now = new Date();
+  const existing = activeUsersMap.get(userId);
+  activeUsersMap.set(userId, {
+    id: userId,
+    username: username || existing?.username || `user_${userId}`,
+    fullName: fullName || existing?.fullName || username || `User #${userId}`,
+    role: role || existing?.role || 'USER',
+    lastActive: now,
+    lastPath: pathName || existing?.lastPath || '/',
+    ip: clientIp || existing?.ip || ''
+  });
+
+  const bucket = getOrCreateHourlyBucket(now);
+  bucket.users.add(`u_${userId}`);
+  bucket.actions += 1;
+  if (isAttempt) bucket.attempts += 1;
+}
+
+function trackGuestActivity(clientIp, pathName) {
+  const safeIp = clientIp || '127.0.0.1';
+  const now = new Date();
+  activeGuestsMap.set(safeIp, {
+    lastActive: now,
+    lastPath: pathName || '/',
+    ip: safeIp
+  });
+
+  const bucket = getOrCreateHourlyBucket(now);
+  bucket.users.add(`g_${safeIp}`);
+  bucket.actions += 1;
+}
+
+// Global Activity Tracking Middleware
+app.use((req, res, next) => {
+  try {
+    const rawPath = req.path || '';
+    // Skip static assets & system files
+    if (
+      rawPath.startsWith('/css/') ||
+      rawPath.startsWith('/js/') ||
+      rawPath.startsWith('/assets/') ||
+      rawPath.endsWith('.css') ||
+      rawPath.endsWith('.js') ||
+      rawPath.endsWith('.png') ||
+      rawPath.endsWith('.jpg') ||
+      rawPath.endsWith('.jpeg') ||
+      rawPath.endsWith('.ico') ||
+      rawPath.endsWith('.svg') ||
+      rawPath.endsWith('.map')
+    ) {
+      return next();
+    }
+
+    const clientIp = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress || '127.0.0.1';
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (token) {
+      try {
+        const decoded = jwt.decode(token);
+        if (decoded && decoded.userId) {
+          trackUserActivity(decoded.userId, decoded.username, null, null, rawPath, clientIp);
+          return next();
+        }
+      } catch (_) {}
+    }
+
+    // Guest request for web routes or API endpoints
+    if (rawPath.startsWith('/api') || rawPath === '/' || rawPath.startsWith('/home')) {
+      trackGuestActivity(clientIp, rawPath);
+    }
+  } catch (_) {}
+  next();
+});
+
+// Periodic memory pruning every 5 minutes
+setInterval(() => {
+  try {
+    const now = Date.now();
+    // Prune active user entries older than 24 hours
+    for (const [userId, record] of activeUsersMap.entries()) {
+      if (now - new Date(record.lastActive).getTime() > 24 * 60 * 60 * 1000) {
+        activeUsersMap.delete(userId);
+      }
+    }
+    // Prune guest entries older than 6 hours
+    for (const [ip, record] of activeGuestsMap.entries()) {
+      if (now - new Date(record.lastActive).getTime() > 6 * 60 * 60 * 1000) {
+        activeGuestsMap.delete(ip);
+      }
+    }
+    // Prune hourly buckets older than 48 hours
+    const cutoff48h = now - 48 * 60 * 60 * 1000;
+    for (const [key, bucket] of hourlyActivityBuckets.entries()) {
+      if (bucket.date.getTime() < cutoff48h) {
+        hourlyActivityBuckets.delete(key);
+      }
+    }
+  } catch (_) {}
+}, 5 * 60 * 1000);
+
+// --- User Heartbeat Endpoint ---
+app.all('/api/user/heartbeat', async (req, res) => {
+  try {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    const clientIp = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress || '127.0.0.1';
+    const currentPath = req.body?.currentPath || req.body?.pageTitle || req.query?.path || 'ระบบเตรียมสอบ';
+
+    if (token) {
+      jwt.verify(token, JWT_SECRET, async (err, decoded) => {
+        if (err || !decoded?.userId) {
+          trackGuestActivity(clientIp, currentPath);
+          return res.json({ ok: true, status: 'guest' });
+        }
+
+        let fullName = decoded.username;
+        let role = 'USER';
+        const existing = activeUsersMap.get(decoded.userId);
+        if (existing && existing.fullName) {
+          fullName = existing.fullName;
+          role = existing.role;
+        } else {
+          try {
+            const u = await prisma.user.findUnique({
+              where: { id: decoded.userId },
+              select: { id: true, username: true, fullName: true, role: true }
+            });
+            if (u) {
+              fullName = u.fullName || u.username;
+              role = u.role;
+            }
+          } catch (_) {}
+        }
+
+        trackUserActivity(decoded.userId, decoded.username, fullName, role, currentPath, clientIp);
+        return res.json({ ok: true, status: 'authenticated' });
+      });
+    } else {
+      trackGuestActivity(clientIp, currentPath);
+      res.json({ ok: true, status: 'guest' });
+    }
+  } catch (err) {
+    res.json({ ok: false });
+  }
+});
 
 // --- Email Transporter (Nodemailer) ---
 const isResend = process.env.EMAIL_USER === 'resend';
@@ -4007,6 +4208,108 @@ app.get('/api/admin/stats', requireAdmin, async (req, res) => {
       });
     }
 
+    // --- Live Online Users Stats ---
+    const nowMs = Date.now();
+    const onlineThreshold = nowMs - ONLINE_THRESHOLD_MS;
+
+    const activeMembers = [];
+    for (const u of activeUsersMap.values()) {
+      const activeMs = new Date(u.lastActive).getTime();
+      if (activeMs >= onlineThreshold) {
+        const diffMinutes = Math.floor((nowMs - activeMs) / 60000);
+        activeMembers.push({
+          id: u.id,
+          username: u.username,
+          fullName: u.fullName || u.username,
+          role: u.role || 'USER',
+          lastActive: u.lastActive,
+          lastPath: u.lastPath || '/',
+          timeAgo: diffMinutes === 0 ? 'เมื่อสักครู่' : `${diffMinutes} นาทีที่แล้ว`
+        });
+      }
+    }
+
+    let activeGuestsCount = 0;
+    for (const g of activeGuestsMap.values()) {
+      if (new Date(g.lastActive).getTime() >= onlineThreshold) {
+        activeGuestsCount++;
+      }
+    }
+
+    activeMembers.sort((a, b) => {
+      const roleWeight = (r) => (r === 'OWNER' ? 3 : r === 'ADMIN' ? 2 : 1);
+      const wDiff = roleWeight(b.role) - roleWeight(a.role);
+      if (wDiff !== 0) return wDiff;
+      return new Date(b.lastActive) - new Date(a.lastActive);
+    });
+
+    const totalOnlineCount = activeMembers.length + activeGuestsCount;
+
+    // --- 24-Hour Hourly Activity & Average Usage ---
+    const past24hDate = new Date(nowMs - (24 * 60 * 60 * 1000));
+    let recentDbAttempts = [];
+    try {
+      recentDbAttempts = await prisma.userStageProgress.findMany({
+        where: {
+          completed: true,
+          completedAt: { gte: past24hDate }
+        },
+        select: {
+          userId: true,
+          completedAt: true
+        }
+      });
+    } catch (dbErr) {
+      console.warn('Could not query recent 24h completions for stats:', dbErr.message);
+    }
+
+    const hourlyBreakdown = [];
+    let totalHourlyUsersSum = 0;
+    let totalHourlyActionsSum = 0;
+    let peakHourStr = '-';
+    let peakUsersCount = 0;
+
+    for (let i = 23; i >= 0; i--) {
+      const targetTime = new Date(nowMs - (i * 60 * 60 * 1000));
+      const key = getBangkokHourKey(targetTime);
+      const label = getBangkokHourLabel(targetTime);
+
+      const memBucket = hourlyActivityBuckets.get(key) || { users: new Set(), actions: 0, attempts: 0 };
+
+      const matchingDbAttempts = recentDbAttempts.filter(c => {
+        if (!c.completedAt) return false;
+        return getBangkokHourKey(new Date(c.completedAt)) === key;
+      });
+
+      const uniqueUserKeys = new Set(memBucket.users);
+      matchingDbAttempts.forEach(c => uniqueUserKeys.add(`u_${c.userId}`));
+
+      const usersCount = uniqueUserKeys.size;
+      const actionsCount = Math.max(memBucket.actions, matchingDbAttempts.length);
+      const attemptsCount = Math.max(memBucket.attempts, matchingDbAttempts.length);
+
+      totalHourlyUsersSum += usersCount;
+      totalHourlyActionsSum += actionsCount;
+
+      if (usersCount > peakUsersCount) {
+        peakUsersCount = usersCount;
+        const nextHour = (parseInt(label.split(':')[0], 10) + 1).toString().padStart(2, '0');
+        peakHourStr = `${label} - ${nextHour}:00 น.`;
+      }
+
+      hourlyBreakdown.push({
+        key,
+        hour: label,
+        users: usersCount,
+        actions: actionsCount,
+        attempts: attemptsCount,
+        isCurrent: i === 0
+      });
+    }
+
+    const avgUsersPerHour = parseFloat((totalHourlyUsersSum / 24).toFixed(1));
+    const avgActionsPerHour = parseFloat((totalHourlyActionsSum / 24).toFixed(1));
+
     res.json({
       totalUsers,
       totalExams,
@@ -4016,7 +4319,21 @@ app.get('/api/admin/stats', requireAdmin, async (req, res) => {
       recentActivity: topActivities,
       weeklyChart: weeklyData,
       pendingPremiumCount,
-      unreadFeedbackCount
+      unreadFeedbackCount,
+      online: {
+        totalOnline: totalOnlineCount,
+        membersCount: activeMembers.length,
+        guestsCount: activeGuestsCount,
+        users: activeMembers
+      },
+      hourlyUsage: {
+        avgUsersPerHour,
+        avgActionsPerHour,
+        peakHour: peakHourStr,
+        peakCount: peakUsersCount,
+        totalUsersIn24h: totalHourlyUsersSum,
+        hourlyBreakdown
+      }
     });
   } catch (err) {
     console.error('Admin Stats Error:', err);

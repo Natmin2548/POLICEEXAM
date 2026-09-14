@@ -67,24 +67,155 @@
       
       <!-- Dashboard View -->
       <div id="viewDashboard" class="tab-view active">
-        <div class="card-grid">
+        
+        <!-- Live Status & Quick Action Bar -->
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 10px; height: 10px; border-radius: 50%; background: #10B981; box-shadow: 0 0 10px #10B981; animation: pulseGlow 1.8s infinite ease-in-out;"></div>
+            <span style="font-size: 14px; font-weight: 700; color: #0F172A;">ระบบกำลังติดตามผู้ใช้งานแบบ Real-time</span>
+            <span id="dashboardLastUpdatedTime" style="font-size: 12px; color: #64748B; background: #F1F5F9; padding: 3px 9px; border-radius: 6px;">อัปเดตล่าสุด: กำลังโหลด...</span>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button type="button" onclick="loadDashboard(true)" class="btn-dashboard-refresh" id="btnDashboardRefresh" style="background: white; border: 1.5px solid #E2E8F0; padding: 7px 14px; border-radius: 10px; font-size: 13px; font-weight: 700; color: #334155; display: flex; align-items: center; gap: 6px; cursor: pointer; transition: all 0.2s ease;">
+              <span id="refreshIcon" style="display: inline-block; transition: transform 0.4s ease;">🔄</span> <span>รีเฟรชข้อมูล</span>
+            </button>
+            <button type="button" onclick="openOnlineUsersModal()" class="btn-dashboard-action" style="background: linear-gradient(135deg, #10B981, #059669); color: white; border: none; padding: 7px 16px; border-radius: 10px; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 6px; cursor: pointer; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25); transition: all 0.2s ease;">
+              <span>🟢 ดูรายชื่อคนออนไลน์</span>
+              <span id="topOnlineBadge" style="background: rgba(255,255,255,0.28); padding: 1px 7px; border-radius: 999px; font-size: 11.5px; font-weight: 800;">0</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Metric Stat Cards Grid -->
+        <div class="card-grid" style="grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; margin-bottom: 24px;">
+          
+          <!-- Card 1: Live Online Users -->
+          <div class="stat-card" style="position: relative; overflow: hidden; border: 1.5px solid #A7F3D0; background: linear-gradient(180deg, #FFFFFF 0%, #F0FDF4 100%); cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease;" onclick="openOnlineUsersModal()" title="คลิกเพื่อดูรายชื่อผู้ใช้ออนไลน์แบบละเอียด">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+              <div class="stat-label" style="color: #047857; display: flex; align-items: center; gap: 6px;">
+                <span class="live-dot-pulse"></span>
+                <span>ผู้ใช้ออนไลน์ขณะนี้</span>
+              </div>
+              <span style="font-size: 11px; font-weight: 700; color: #059669; background: #D1FAE5; padding: 2px 7px; border-radius: 6px;">Live (5 นาที)</span>
+            </div>
+            <div class="stat-value" id="statOnlineTotal" style="color: #047857; margin-top: 10px; font-size: 36px; font-weight: 900;">0 <span style="font-size: 16px; font-weight: 600; color: #059669;">คน</span></div>
+            <div style="margin-top: 8px; font-size: 12.5px; color: #475569; display: flex; align-items: center; justify-content: space-between;">
+              <span>สมาชิก: <strong id="statOnlineMembers" style="color: #059669;">0</strong> คน</span>
+              <span>•</span>
+              <span>ทั่วไป: <strong id="statOnlineGuests" style="color: #64748B;">0</strong> คน</span>
+            </div>
+            <div style="margin-top: 10px; font-size: 12px; font-weight: 700; color: #047857; text-align: right;">
+              คลิกดูรายชื่อสมาชิกออนไลน์ 👥 ↗
+            </div>
+          </div>
+
+          <!-- Card 2: Average Hourly Usage -->
+          <div class="stat-card" style="border: 1.5px solid #BFDBFE; background: linear-gradient(180deg, #FFFFFF 0%, #EFF6FF 100%);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+              <div class="stat-label" style="color: #1D4ED8; display: flex; align-items: center; gap: 6px;">
+                <span>⏱️</span>
+                <span>ยอดใช้งานเฉลี่ย / ชม.</span>
+              </div>
+              <span style="font-size: 11px; font-weight: 700; color: #2563EB; background: #DBEAFE; padding: 2px 7px; border-radius: 6px;">24 ชม. ล่าสุด</span>
+            </div>
+            <div class="stat-value" id="statAvgUsersPerHour" style="color: #1D4ED8; margin-top: 10px; font-size: 36px; font-weight: 900;">0.0 <span style="font-size: 16px; font-weight: 600; color: #2563EB;">คน/ชม.</span></div>
+            <div style="margin-top: 8px; font-size: 12.5px; color: #475569; display: flex; justify-content: space-between;">
+              <span>คำขอเฉลี่ย: <strong id="statAvgActionsPerHour" style="color: #1D4ED8;">0.0</strong> ครั้ง/ชม.</span>
+            </div>
+            <div style="margin-top: 8px; font-size: 11.5px; color: #92400E; background: #FEF3C7; padding: 4px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;">
+              <span>🔥 พีคสุด:</span>
+              <strong id="statPeakHour">-</strong>
+              <span id="statPeakBadge" style="margin-left: 2px;">(0 คน)</span>
+            </div>
+          </div>
+
+          <!-- Card 3: Total Users -->
           <div class="stat-card">
             <div class="stat-label">Total Users</div>
             <div class="stat-value" id="statUsers">0</div>
+            <div style="margin-top: 10px; font-size: 12px; color: #64748B;">บัญชีสมาชิกทั้งหมดในระบบ</div>
           </div>
+
+          <!-- Card 4: Exam Sets -->
           <div class="stat-card">
             <div class="stat-label">Exam Sets</div>
             <div class="stat-value" id="statExams">0</div>
+            <div style="margin-top: 10px; font-size: 12px; color: #64748B;">ชุดข้อสอบพร้อมใช้งาน</div>
           </div>
+
+          <!-- Card 5: Announcements -->
           <div class="stat-card">
             <div class="stat-label">Announcements</div>
             <div class="stat-value" id="statAnnouncements">0</div>
+            <div style="margin-top: 10px; font-size: 12px; color: #64748B;">ประกาศข่าวสารทั้งหมด</div>
           </div>
+
+          <!-- Card 6: Premium Requests -->
           <div class="stat-card">
             <div class="stat-label">Premium Requests</div>
-            <div class="stat-value" id="statPremium">0</div>
+            <div class="stat-value" id="statPremium" style="color: #D97706;">0</div>
+            <div style="margin-top: 10px; font-size: 12px; color: #64748B;">คำขอพรีเมียมรออนุมัติ</div>
           </div>
+
         </div>
+
+        <!-- Hourly Activity 24h Analytics Section -->
+        <div style="background: white; border: 1.5px solid #E2E8F0; border-radius: 20px; padding: 24px; margin-bottom: 30px; box-shadow: 0 4px 20px rgba(0,0,0,0.03);">
+          
+          <!-- Section Header -->
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px;">
+            <div>
+              <div style="font-size: 17px; font-weight: 800; color: #0F172A; display: flex; align-items: center; gap: 8px;">
+                <span>📈 สถิติการใช้งานรายชั่วโมง (24 ชั่วโมงล่าสุด)</span>
+                <span id="chartHourSpanBadge" style="font-size: 11.5px; font-weight: 700; background: #EEF2F6; color: #475569; padding: 2px 8px; border-radius: 999px;">24 ชม. ย้อนหลัง</span>
+              </div>
+              <p style="margin: 4px 0 0 0; font-size: 13px; color: #64748B;">วิเคราะห์ความหนาแน่นของผู้ใช้งานรายชั่วโมง (Peak Times) เพื่อดูช่วงเวลาที่มีการทำข้อสอบมากที่สุด</p>
+            </div>
+            
+            <!-- Quick Indicators -->
+            <div style="display: flex; align-items: center; gap: 14px; font-size: 12.5px; color: #475569;">
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <span style="width: 12px; height: 12px; border-radius: 3px; background: linear-gradient(180deg, #3B82F6, #1D4ED8);"></span>
+                <span>จำนวนผู้ใช้งาน (คน)</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <span style="width: 12px; height: 12px; border-radius: 3px; background: #10B981;"></span>
+                <span>ชั่วโมงปัจจุบัน</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <span style="width: 12px; height: 12px; border-radius: 3px; background: #F59E0B;"></span>
+                <span>ชั่วโมงพีคสุด</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 24-Hour Bar Chart Container -->
+          <div id="hourlyChartContainer" style="position: relative; height: 210px; display: flex; align-items: flex-end; gap: 6px; padding: 20px 8px 32px 8px; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 14px; overflow-x: auto;">
+            <div style="width: 100%; text-align: center; color: #94A3B8; font-size: 13px; margin: auto;">กำลังโหลดข้อมูลกราฟรายชั่วโมง...</div>
+          </div>
+
+          <!-- Chart Footer Summary Row -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-top: 16px;">
+            <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 10px 14px;">
+              <div style="font-size: 11.5px; color: #64748B; font-weight: 600;">ผู้ใช้งานรวมรอบ 24 ชม.</div>
+              <div style="font-size: 18px; font-weight: 800; color: #0F172A; margin-top: 2px;" id="statSummaryTotalUsers24h">0 คน</div>
+            </div>
+            <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 10px 14px;">
+              <div style="font-size: 11.5px; color: #64748B; font-weight: 600;">คำขอ/กิจกรรมรวม</div>
+              <div style="font-size: 18px; font-weight: 800; color: #0F172A; margin-top: 2px;" id="statSummaryTotalActions24h">0 ครั้ง</div>
+            </div>
+            <div style="background: #FEF3C7; border: 1px solid #FDE68A; border-radius: 12px; padding: 10px 14px;">
+              <div style="font-size: 11.5px; color: #92400E; font-weight: 600;">ช่วงเวลาพีคที่สุด (Peak Hour)</div>
+              <div style="font-size: 16px; font-weight: 800; color: #B45309; margin-top: 2px;" id="statSummaryPeakHour">-</div>
+            </div>
+            <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 12px; padding: 10px 14px;">
+              <div style="font-size: 11.5px; color: #166534; font-weight: 600;">เฉลี่ยผู้ใช้งานต่อชั่วโมง</div>
+              <div style="font-size: 18px; font-weight: 800; color: #15803D; margin-top: 2px;" id="statSummaryAvgPerHour">0.0 คน/ชม.</div>
+            </div>
+          </div>
+
+        </div>
+
       </div>
 
       <!-- Users View -->
@@ -1349,6 +1480,86 @@
         <div style="display: flex; gap: 10px;">
           <button type="button" class="btn btn-outline" onclick="closeExamSetAiRecheckModal()" style="padding: 10px 20px; border-radius: 12px; font-weight: 700;">ปิดหน้าต่าง</button>
         </div>
+      </div>
+
+  <!-- Online Users List Modal (ดูรายชื่อผู้ใช้ออนไลน์แบบเรียลไทม์) -->
+  <div class="modal-overlay" id="onlineUsersModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(8px); z-index: 10030; align-items: center; justify-content: center; padding: 16px;">
+    <div class="modal-card" style="background: white; max-width: 880px; width: 100%; max-height: 90vh; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); display: flex; flex-direction: column; overflow: hidden;">
+      
+      <!-- Modal Header -->
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 18px 24px; border-bottom: 1.5px solid #E2E8F0; background: #F8FAFC;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="width: 44px; height: 44px; border-radius: 14px; background: linear-gradient(135deg, #10B981, #059669); color: white; display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">
+            🟢
+          </div>
+          <div>
+            <h3 style="font-size: 18px; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 8px;">
+              <span>ผู้ใช้งานที่กำลังออนไลน์อยู่ในขณะนี้</span>
+              <span id="modalOnlineTotalBadge" style="font-size: 12px; font-weight: 700; background: #D1FAE5; color: #047857; padding: 2px 8px; border-radius: 999px;">0 คน</span>
+            </h3>
+            <p style="font-size: 12.5px; color: #64748B; margin: 2px 0 0 0;" id="modalOnlineSubtitle">แสดงสมาชิกและผู้เยี่ยมชมที่มีความเคลื่อนไหวภายใน 5 นาทีล่าสุด</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeOnlineUsersModal()" style="background: #E2E8F0; border: none; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 15px; cursor: pointer; color: #475569; transition: all 0.2s ease;">✕</button>
+      </div>
+
+      <!-- Controls & Search -->
+      <div style="padding: 12px 24px; background: white; border-bottom: 1.5px solid #F1F5F9; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
+        <div style="flex: 1; min-width: 200px;">
+          <input type="text" id="onlineUserSearchInput" oninput="filterOnlineUsersList()" placeholder="🔍 ค้นหาชื่อผู้ใช้, ชื่อจริง หรือ บทบาท..." style="width: 100%; box-sizing: border-box; padding: 9px 14px; border-radius: 10px; border: 1.5px solid #CBD5E1; font-size: 13px; font-family: inherit; outline: none;">
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button type="button" onclick="refreshOnlineUsersModal()" style="background: #F8FAFC; border: 1.5px solid #CBD5E1; padding: 8px 14px; border-radius: 10px; font-size: 12.5px; font-weight: 700; color: #334155; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+            <span>🔄</span> <span>รีเฟรช</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Modal Body (Scrollable) -->
+      <div style="padding: 18px 24px; overflow-y: auto; flex: 1; background: #FAFAFA;">
+        
+        <!-- Summary Stats Pills -->
+        <div style="display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;">
+          <div style="background: white; border: 1px solid #E2E8F0; border-radius: 10px; padding: 8px 14px; font-size: 12.5px; color: #334155;">
+            👥 สมาชิกที่ล็อกอิน: <strong id="modalOnlineMembersCount" style="color: #059669;">0</strong> คน
+          </div>
+          <div style="background: white; border: 1px solid #E2E8F0; border-radius: 10px; padding: 8px 14px; font-size: 12.5px; color: #334155;">
+            🌐 ผู้เยี่ยมชมทั่วไป (Guest): <strong id="modalOnlineGuestsCount" style="color: #64748B;">0</strong> คน
+          </div>
+        </div>
+
+        <!-- Users Table Container -->
+        <div id="onlineUsersTableWrapper" style="background: white; border: 1.5px solid #E2E8F0; border-radius: 14px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+          <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
+            <thead>
+              <tr style="background: #F8FAFC; border-bottom: 1.5px solid #E2E8F0; color: #475569; font-weight: 700;">
+                <th style="padding: 12px 16px;">ผู้ใช้งาน</th>
+                <th style="padding: 12px 16px;">สถานะสิทธิ์</th>
+                <th style="padding: 12px 16px;">ความเคลื่อนไหวล่าสุด</th>
+                <th style="padding: 12px 16px;">หน้า/กิจกรรม</th>
+              </tr>
+            </thead>
+            <tbody id="onlineUsersTableBody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Empty state when no members online -->
+        <div id="onlineUsersEmptyState" style="display: none; text-align: center; padding: 40px 16px; color: #64748B; background: white; border-radius: 14px; border: 1.5px dashed #CBD5E1;">
+          <div style="font-size: 32px; margin-bottom: 8px;">👥</div>
+          <div style="font-weight: 700; font-size: 15px; color: #334155;">ยังไม่มีสมาชิกเข้าสู่ระบบออนไลน์ในขณะนี้</div>
+          <div style="font-size: 13px; margin-top: 4px; color: #64748B;" id="onlineGuestsNotice">มีผู้เยี่ยมชมทั่วไป 0 คนกำลังเปิดใช้งานเว็บไซต์</div>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 24px; border-top: 1.5px solid #E2E8F0; background: white;">
+        <div style="font-size: 12px; color: #64748B;">
+          💡 ระบบถือว่าผู้ใช้ออนไลน์หากมีกิจกรรมส่งมายังเซิร์ฟเวอร์ภายใน 5 นาทีล่าสุด
+        </div>
+        <button type="button" onclick="closeOnlineUsersModal()" style="padding: 8px 20px; border-radius: 10px; border: 1.5px solid #CBD5E1; background: white; font-weight: 700; color: #334155; cursor: pointer;">ปิดหน้าต่าง</button>
       </div>
 
     </div>

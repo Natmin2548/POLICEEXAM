@@ -118,25 +118,105 @@ function setupTabs() {
 }
 
 // ==========================================
-// Dashboard View
+// Dashboard View & Real-time Analytics
 // ==========================================
-async function loadDashboard() {
+let currentDashboardStats = null;
+let currentOnlineUsers = [];
+let dashboardAutoRefreshTimer = null;
+
+async function loadDashboard(isManual = false) {
+  const refreshIcon = document.getElementById('refreshIcon');
+  if (isManual && refreshIcon) {
+    refreshIcon.style.transform = 'rotate(360deg)';
+    setTimeout(() => { refreshIcon.style.transform = 'rotate(0deg)'; }, 400);
+  }
+
   try {
     const res = await fetch(`${API_BASE}/api/admin/stats`, {
       headers: { 'Authorization': `Bearer ${authToken}` }
     });
     if (res.ok) {
       const stats = await res.json();
-      document.getElementById('statUsers').textContent = stats.totalUsers || 0;
-      document.getElementById('statExams').textContent = stats.totalExams || 0;
-      document.getElementById('statPremium').textContent = stats.pendingPremiumRequests || 0;
+      currentDashboardStats = stats;
+      currentOnlineUsers = (stats.online && stats.online.users) ? stats.online.users : [];
+
+      // Standard stats
+      const elUsers = document.getElementById('statUsers');
+      const elExams = document.getElementById('statExams');
+      const elPrem = document.getElementById('statPremium');
+      if (elUsers) elUsers.textContent = (stats.totalUsers || 0).toLocaleString();
+      if (elExams) elExams.textContent = (stats.totalExams || 0).toLocaleString();
+      if (elPrem) elPrem.textContent = (stats.pendingPremiumCount ?? stats.pendingPremiumRequests ?? 0).toLocaleString();
+
+      // Real-time Online Users Stats
+      const onlineInfo = stats.online || {};
+      const totalOnline = onlineInfo.totalOnline ?? 0;
+      const membersCount = onlineInfo.membersCount ?? 0;
+      const guestsCount = onlineInfo.guestsCount ?? 0;
+
+      const elOnlineTotal = document.getElementById('statOnlineTotal');
+      const elOnlineMembers = document.getElementById('statOnlineMembers');
+      const elOnlineGuests = document.getElementById('statOnlineGuests');
+      const elTopOnlineBadge = document.getElementById('topOnlineBadge');
+
+      if (elOnlineTotal) elOnlineTotal.innerHTML = `${totalOnline.toLocaleString()} <span style="font-size: 16px; font-weight: 600; color: #059669;">คน</span>`;
+      if (elOnlineMembers) elOnlineMembers.textContent = membersCount.toLocaleString();
+      if (elOnlineGuests) elOnlineGuests.textContent = guestsCount.toLocaleString();
+      if (elTopOnlineBadge) elTopOnlineBadge.textContent = totalOnline.toLocaleString();
+
+      // Hourly Usage & Average Stats
+      const hourlyInfo = stats.hourlyUsage || {};
+      const avgUsers = typeof hourlyInfo.avgUsersPerHour === 'number' ? hourlyInfo.avgUsersPerHour.toFixed(1) : (hourlyInfo.avgUsersPerHour || '0.0');
+      const avgActions = typeof hourlyInfo.avgActionsPerHour === 'number' ? hourlyInfo.avgActionsPerHour.toFixed(1) : (hourlyInfo.avgActionsPerHour || '0.0');
+      const peakHour = hourlyInfo.peakHour || '-';
+      const peakCount = hourlyInfo.peakCount ?? 0;
+
+      const elAvgUsers = document.getElementById('statAvgUsersPerHour');
+      const elAvgActions = document.getElementById('statAvgActionsPerHour');
+      const elPeakHour = document.getElementById('statPeakHour');
+      const elPeakBadge = document.getElementById('statPeakBadge');
+
+      if (elAvgUsers) elAvgUsers.innerHTML = `${avgUsers} <span style="font-size: 16px; font-weight: 600; color: #2563EB;">คน/ชม.</span>`;
+      if (elAvgActions) elAvgActions.textContent = avgActions;
+      if (elPeakHour) elPeakHour.textContent = peakHour;
+      if (elPeakBadge) elPeakBadge.textContent = peakCount > 0 ? `(${peakCount} คน)` : '(0 คน)';
+
+      // 24-Hour Summary Footer
+      const totalUsers24h = hourlyInfo.totalUsersIn24h ?? 0;
+      const breakdown = hourlyInfo.hourlyBreakdown || [];
+      const totalActions24h = breakdown.reduce((sum, h) => sum + (h.actions || 0), 0);
+
+      const elSumUsers = document.getElementById('statSummaryTotalUsers24h');
+      const elSumActions = document.getElementById('statSummaryTotalActions24h');
+      const elSumPeak = document.getElementById('statSummaryPeakHour');
+      const elSumAvg = document.getElementById('statSummaryAvgPerHour');
+      const elTime = document.getElementById('dashboardLastUpdatedTime');
+
+      if (elSumUsers) elSumUsers.textContent = `${totalUsers24h.toLocaleString()} คน`;
+      if (elSumActions) elSumActions.textContent = `${totalActions24h.toLocaleString()} ครั้ง`;
+      if (elSumPeak) elSumPeak.textContent = peakHour !== '-' ? `${peakHour} (${peakCount} คน)` : '-';
+      if (elSumAvg) elSumAvg.textContent = `${avgUsers} คน/ชม.`;
+      if (elTime) {
+        const nowStr = new Date().toLocaleTimeString('th-TH', { hour12: false });
+        elTime.textContent = `อัปเดตล่าสุด: ${nowStr} น.`;
+      }
+
+      // Render 24-hour visual bar chart
+      renderHourlyBarChart(breakdown);
+
+      // If modal is currently open, update it
+      const modal = document.getElementById('onlineUsersModal');
+      if (modal && modal.style.display === 'flex') {
+        renderOnlineUsersTable(currentOnlineUsers);
+      }
     }
     
-    // Announcements count doesn't come from stats, fetch manually
+    // Announcements count
     const resAnn = await fetch(`${API_BASE}/api/announcements`);
     if (resAnn.ok) {
       const announcements = await resAnn.json();
-      document.getElementById('statAnnouncements').textContent = announcements.length || 0;
+      const elAnn = document.getElementById('statAnnouncements');
+      if (elAnn) elAnn.textContent = (announcements.length || 0).toLocaleString();
     }
 
     // Update pending reports badge count
@@ -146,6 +226,224 @@ async function loadDashboard() {
   } catch (err) {
     console.error('Dashboard load error:', err);
   }
+
+  // Setup auto-refresh every 25 seconds when on Dashboard tab
+  if (!dashboardAutoRefreshTimer) {
+    dashboardAutoRefreshTimer = setInterval(() => {
+      const tab = document.getElementById('tabDashboard');
+      if (tab && tab.classList.contains('active')) {
+        loadDashboard();
+      }
+    }, 25000);
+  }
+}
+
+// Render 24-Hour Visual Activity Bar Chart
+function renderHourlyBarChart(breakdown = []) {
+  const container = document.getElementById('hourlyChartContainer');
+  if (!container) return;
+
+  if (!breakdown || breakdown.length === 0) {
+    container.innerHTML = `<div style="width: 100%; text-align: center; color: #94A3B8; font-size: 13px; margin: auto;">ยังไม่มีข้อมูลการใช้งานย้อนหลัง 24 ชั่วโมง</div>`;
+    return;
+  }
+
+  const maxUsers = Math.max(1, ...breakdown.map(b => b.users || 0));
+  const peakItem = breakdown.reduce((max, b) => ((b.users || 0) > (max.users || 0) ? b : max), breakdown[0] || {});
+
+  let chartHtml = '';
+  breakdown.forEach((item, idx) => {
+    const users = item.users || 0;
+    const actions = item.actions || 0;
+    const attempts = item.attempts || 0;
+    const hourLabel = item.hour || '00:00';
+    const hourNum = parseInt(hourLabel.split(':')[0], 10) || 0;
+    const nextHourStr = (hourNum + 1).toString().padStart(2, '0');
+
+    // Height percentage (max 88% so tooltips have room)
+    const pct = users === 0 ? 5 : Math.max(8, Math.round((users / maxUsers) * 88));
+
+    // Colors
+    let fillBg = '#E2E8F0';
+    if (item.isCurrent) {
+      fillBg = 'linear-gradient(180deg, #10B981 0%, #059669 100%)';
+    } else if (users > 0 && users === peakItem.users && peakItem.users > 0) {
+      fillBg = 'linear-gradient(180deg, #F59E0B 0%, #D97706 100%)';
+    } else if (users > 0) {
+      fillBg = 'linear-gradient(180deg, #3B82F6 0%, #1D4ED8 100%)';
+    }
+
+    // Tooltip Content
+    const statusTag = item.isCurrent 
+      ? '<span style="color: #34D399; font-weight: 700;">● ชั่วโมงปัจจุบัน</span><br>'
+      : (users > 0 && users === peakItem.users)
+      ? '<span style="color: #FBBF24; font-weight: 700;">★ ชั่วโมงพีคสุด (Peak)</span><br>'
+      : '';
+
+    const tooltip = `
+      <div class="hourly-bar-tooltip">
+        ${statusTag}
+        <strong>เวลา ${escapeHTML(hourLabel)} - ${nextHourStr}:00 น.</strong><br>
+        👥 ผู้ใช้งาน: <strong>${users.toLocaleString()}</strong> คน<br>
+        ⚡ คำขอ/การเข้าชม: <strong>${actions.toLocaleString()}</strong> ครั้ง<br>
+        📝 การทำข้อสอบ: <strong>${attempts.toLocaleString()}</strong> ชุด
+      </div>
+    `;
+
+    // Show label every 2-3 hours or for current hour
+    const showLabel = (idx % 2 === 0 || item.isCurrent);
+    const labelStyle = item.isCurrent ? 'color: #059669; font-weight: 800;' : '';
+
+    chartHtml += `
+      <div class="hourly-bar-col" title="${escapeHTML(hourLabel)}: ${users} คน">
+        ${tooltip}
+        <div class="hourly-bar-fill" style="height: ${pct}%; background: ${fillBg};"></div>
+        <div class="hourly-bar-label" style="${labelStyle}">
+          ${showLabel ? escapeHTML(hourLabel) : '•'}
+        </div>
+      </div>
+    `;
+  });
+
+  container.innerHTML = chartHtml;
+}
+
+// ==========================================
+// Online Users Modal Management
+// ==========================================
+function openOnlineUsersModal() {
+  const modal = document.getElementById('onlineUsersModal');
+  if (!modal) return;
+
+  const onlineInfo = currentDashboardStats?.online || {};
+  const total = onlineInfo.totalOnline ?? 0;
+  const members = onlineInfo.membersCount ?? 0;
+  const guests = onlineInfo.guestsCount ?? 0;
+
+  const elTotalBadge = document.getElementById('modalOnlineTotalBadge');
+  const elMembersCount = document.getElementById('modalOnlineMembersCount');
+  const elGuestsCount = document.getElementById('modalOnlineGuestsCount');
+
+  if (elTotalBadge) elTotalBadge.textContent = `${total.toLocaleString()} คน`;
+  if (elMembersCount) elMembersCount.textContent = members.toLocaleString();
+  if (elGuestsCount) elGuestsCount.textContent = guests.toLocaleString();
+
+  renderOnlineUsersTable(currentOnlineUsers);
+  modal.style.display = 'flex';
+}
+
+function closeOnlineUsersModal() {
+  const modal = document.getElementById('onlineUsersModal');
+  if (modal) modal.style.display = 'none';
+}
+
+async function refreshOnlineUsersModal() {
+  await loadDashboard(true);
+  openOnlineUsersModal();
+}
+
+function filterOnlineUsersList() {
+  const input = document.getElementById('onlineUserSearchInput');
+  const query = (input ? input.value : '').toLowerCase().trim();
+  if (!query) {
+    renderOnlineUsersTable(currentOnlineUsers);
+    return;
+  }
+
+  const filtered = currentOnlineUsers.filter(u => {
+    const uname = (u.username || '').toLowerCase();
+    const fname = (u.fullName || '').toLowerCase();
+    const role = (u.role || '').toLowerCase();
+    return uname.includes(query) || fname.includes(query) || role.includes(query);
+  });
+
+  renderOnlineUsersTable(filtered);
+}
+
+function renderOnlineUsersTable(usersList = []) {
+  const tbody = document.getElementById('onlineUsersTableBody');
+  const emptyState = document.getElementById('onlineUsersEmptyState');
+  const tableWrapper = document.getElementById('onlineUsersTableWrapper');
+  const guestsNotice = document.getElementById('onlineGuestsNotice');
+
+  if (!tbody) return;
+
+  const guestsCount = currentDashboardStats?.online?.guestsCount ?? 0;
+
+  if (!usersList || usersList.length === 0) {
+    if (tableWrapper) tableWrapper.style.display = 'none';
+    if (emptyState) {
+      emptyState.style.display = 'block';
+      if (guestsNotice) {
+        guestsNotice.textContent = `ขณะนี้มีผู้เยี่ยมชมทั่วไป (Guest) ${guestsCount.toLocaleString()} คน กำลังเปิดใช้งานเว็บไซต์`;
+      }
+    }
+    return;
+  }
+
+  if (tableWrapper) tableWrapper.style.display = 'block';
+  if (emptyState) emptyState.style.display = 'none';
+
+  let html = '';
+  usersList.forEach(u => {
+    // Role badge
+    let roleBadge = '<span style="background: #F1F5F9; color: #475569; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 11.5px;">👤 สมาชิก</span>';
+    if (u.role === 'OWNER') {
+      roleBadge = '<span style="background: linear-gradient(135deg, #F59E0B, #B45309); color: white; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 11.5px; box-shadow: 0 2px 6px rgba(180, 83, 9, 0.25);">👑 OWNER</span>';
+    } else if (u.role === 'ADMIN') {
+      roleBadge = '<span style="background: #7C3AED; color: white; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 11.5px;">🛡️ ADMIN</span>';
+    } else if (u.role === 'PREMIUM') {
+      roleBadge = '<span style="background: #FEF3C7; color: #B45309; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 11.5px; border: 1px solid #FDE68A;">⭐ PREMIUM</span>';
+    }
+
+    // Clean Path / Activity Label
+    let pathLabel = u.lastPath || '/';
+    if (pathLabel.includes('exam.html') || pathLabel.includes('/stages/')) {
+      pathLabel = '📝 กำลังทำข้อสอบ';
+    } else if (pathLabel.includes('bank.html')) {
+      pathLabel = '📚 กำลังดูคลังข้อสอบ';
+    } else if (pathLabel.includes('admin')) {
+      pathLabel = '⚙️ หน้าแอดมิน (Admin Panel)';
+    } else if (pathLabel.includes('profile')) {
+      pathLabel = '👤 กำลังดูโปรไฟล์';
+    } else if (pathLabel.includes('heartbeat') || pathLabel === '/' || pathLabel.includes('index')) {
+      pathLabel = '🏠 หน้าแรก / แดชบอร์ด';
+    }
+
+    const firstChar = (u.fullName || u.username || 'U').charAt(0).toUpperCase();
+
+    html += `
+      <tr style="border-bottom: 1px solid #F1F5F9; transition: background 0.15s ease;">
+        <td style="padding: 12px 16px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 36px; height: 36px; border-radius: 50%; background: #EEF2F6; color: #1E293B; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; border: 1.5px solid #CBD5E1;">
+              ${escapeHTML(firstChar)}
+            </div>
+            <div>
+              <div style="font-weight: 700; color: #0F172A; font-size: 13.5px;">${escapeHTML(u.fullName || u.username)}</div>
+              <div style="font-size: 12px; color: #64748B;">@${escapeHTML(u.username)}</div>
+            </div>
+          </div>
+        </td>
+        <td style="padding: 12px 16px;">
+          ${roleBadge}
+        </td>
+        <td style="padding: 12px 16px;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span class="live-dot-pulse"></span>
+            <span style="font-weight: 600; color: #0F172A;">${escapeHTML(u.timeAgo || 'เมื่อสักครู่')}</span>
+          </div>
+        </td>
+        <td style="padding: 12px 16px; color: #475569; font-size: 12.5px;">
+          <span style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 4px 10px; border-radius: 8px; font-weight: 500;">
+            ${escapeHTML(pathLabel)}
+          </span>
+        </td>
+      </tr>
+    `;
+  });
+
+  tbody.innerHTML = html;
 }
 
 // ==========================================

@@ -7947,3 +7947,50 @@ window.submitReportCurrentQuestion = async function() {
   }
 };
 
+// ==========================================
+// Client Activity & Online Status Heartbeat
+// ==========================================
+(function initClientHeartbeat() {
+  if (window.__POLICE_EXAM_HEARTBEAT_INITED) return;
+  window.__POLICE_EXAM_HEARTBEAT_INITED = true;
+
+  function sendHeartbeat() {
+    try {
+      const token = localStorage.getItem('authToken');
+      const api = window.API_BASE || (typeof getApiBase === 'function' ? getApiBase() : '');
+      const path = window.location.pathname.split('/').pop() || 'index.html';
+      const pageTitle = document.title || 'Police Exam';
+
+      fetch(`${api}/api/user/heartbeat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          currentPath: path,
+          pageTitle: pageTitle
+        })
+      }).catch(() => {});
+    } catch (_) {}
+  }
+
+  // Send first heartbeat when page loads
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', sendHeartbeat);
+  } else {
+    sendHeartbeat();
+  }
+
+  // Ping every 45 seconds to keep online status active
+  setInterval(sendHeartbeat, 45000);
+
+  // Instant heartbeat when tab becomes visible again
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      sendHeartbeat();
+    }
+  });
+})();
+
+
