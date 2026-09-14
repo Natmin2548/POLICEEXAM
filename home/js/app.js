@@ -3759,12 +3759,69 @@ function formatPostTime(date) {
 
 // Utility to escape HTML
 function escapeHTML(str) {
-  return str
+  if (!str) return '';
+  return String(str)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
+}
+
+function formatInlineHighlights(str) {
+  let escaped = escapeHTML(str);
+  escaped = escaped.replace(/\*\*(.+?)\*\*/g, '<strong style="font-weight: 700; color: #0F172A;">$1</strong>');
+  escaped = escaped.replace(/(?:&quot;|“)([^"”\n]{1,40}?)(?:&quot;|”)/g, '<strong style="font-weight: 700; color: #0F172A;">“$1”</strong>');
+  return escaped;
+}
+
+function formatQuestionTextHtml(rawText) {
+  if (!rawText) return '';
+  let text = String(rawText).trim();
+
+  if (/^\*\*[\s\S]+\*\*$/.test(text) && (text.match(/\*\*/g) || []).length === 2) {
+    text = text.replace(/^\*\*/, '').replace(/\*\*$/, '').trim();
+  }
+
+  const longQuoteRegex = /^(.*?)["“]([\s\S]{30,}?)["”]\s*([\s\S]*)$/;
+  const match = text.match(longQuoteRegex);
+
+  if (match) {
+    const intro = (match[1] || '').trim();
+    const passage = match[2].trim();
+    const question = (match[3] || '').trim();
+
+    let html = '';
+    if (intro) {
+      html += `<div class="question-intro-lead" style="font-size: 13.5px; font-weight: 600; color: #64748B; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+        <span>📖</span><span>${escapeHTML(intro)}</span>
+      </div>`;
+    }
+    html += `<div class="question-passage-card" style="background: #F8FAFC; border: 1px solid #E2E8F0; border-left: 4px solid #3B82F6; border-radius: 10px; padding: 12px 16px; margin: 6px 0 14px 0; font-size: 14.5px; font-weight: 400; color: #334155; line-height: 1.75; letter-spacing: 0.01em;">
+      “${escapeHTML(passage)}”
+    </div>`;
+    if (question) {
+      html += `<div class="question-prompt-text" style="font-size: 15.5px; font-weight: 700; color: #0F172A; line-height: 1.55;">
+        ${formatInlineHighlights(question)}
+      </div>`;
+    }
+    return html;
+  }
+
+  const lines = text.split(/\n\s*\n/).map(l => l.trim()).filter(Boolean);
+  if (lines.length >= 2 && lines.some(l => l.length > 50)) {
+    return lines.map((block, idx) => {
+      if (block.length > 50 && idx < lines.length - 1) {
+        return `<div class="question-passage-card" style="background: #F8FAFC; border: 1px solid #E2E8F0; border-left: 4px solid #3B82F6; border-radius: 10px; padding: 12px 16px; margin: 8px 0 12px 0; font-size: 14.5px; font-weight: 400; color: #334155; line-height: 1.75;">${escapeHTML(block)}</div>`;
+      }
+      if (idx === lines.length - 1) {
+        return `<div class="question-prompt-text" style="font-size: 15.5px; font-weight: 700; color: #0F172A; line-height: 1.55; margin-top: 6px;">${formatInlineHighlights(block)}</div>`;
+      }
+      return `<div class="question-intro-lead" style="font-size: 13.5px; font-weight: 600; color: #64748B; margin-bottom: 6px;">${escapeHTML(block)}</div>`;
+    }).join('');
+  }
+
+  return `<span style="font-size: 15.5px; font-weight: 500; color: #1E293B; line-height: 1.65;">${formatInlineHighlights(text)}</span>`;
 }
 
 // Expose functions globally for HTML inline event listeners

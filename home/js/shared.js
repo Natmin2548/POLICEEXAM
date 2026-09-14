@@ -39,8 +39,7 @@ function getApiBase() {
   return '';
 }
 
-var API_BASE = window.API_BASE || getApiBase();
-window.API_BASE = API_BASE;
+window.API_BASE = window.API_BASE || getApiBase();
 
 function escapeHTML(str) {
   if (!str) return '';
