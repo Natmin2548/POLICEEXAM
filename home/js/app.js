@@ -1717,28 +1717,7 @@ if (btnBackFromBank) {
 
 if (bankTabBtn) {
   bankTabBtn.addEventListener('click', (e) => {
-    if (e) e.preventDefault();
-    if (typeof stopCommunityPolling === 'function') stopCommunityPolling();
-    
-    document.body.classList.add('in-bank-view');
-
-    navTabs.forEach(t => t.classList.remove('active'));
-    bankTabBtn.classList.add('active');
-    
-    if (questionBankView) questionBankView.classList.add('active');
-    if (homeView) homeView.classList.remove('active');
-    if (communityView) communityView.classList.remove('active');
-    if (battleView) battleView.classList.remove('active');
-    if (statsView) statsView.classList.remove('active');
-    if (profileView) profileView.classList.remove('active');
-
-    if (typeof window.renderExamBankList === 'function') {
-      window.renderExamBankList();
-    }
-    if (typeof updateBankSubjectCounts === 'function') {
-      updateBankSubjectCounts();
-    }
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.location.href = 'bank.html';
   });
 }
 
@@ -1859,6 +1838,16 @@ if (profileTabBtn) {
     updateProfileTabDetails();
   });
 }
+
+// Support hash navigation (e.g. index.html#community or index.html#profile)
+window.addEventListener('DOMContentLoaded', () => {
+  const hash = window.location.hash;
+  if (hash === '#community' && communityTabBtn) {
+    setTimeout(() => communityTabBtn.click(), 100);
+  } else if (hash === '#profile' && profileTabBtn) {
+    setTimeout(() => profileTabBtn.click(), 100);
+  }
+});
 
 function updateAllMyAvatars(faceImage, fullName) {
   const imgIds = ['defaultAvatarImg', 'profileAvatarImg', 'editProfileAvatarImg', 'composePostAvatarImg', ];
