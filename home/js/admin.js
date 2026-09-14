@@ -108,6 +108,21 @@ function switchTab(tabId) {
   if (tabEl) tabEl.classList.add('active');
   if (targetView) targetView.classList.add('active');
 
+  // Sync Mobile Bottom Navigation Bar (Figma Design)
+  const bottomTabsMap = {
+    tabDashboard: 'mTabDashboard',
+    tabUsers: 'mTabUsers',
+    tabExams: 'mTabExams',
+    tabReports: 'mTabApprovals',
+    tabAnnouncements: 'mTabApprovals'
+  };
+  document.querySelectorAll('.admin-bottom-tab').forEach(t => t.classList.remove('active'));
+  const activeMTabId = bottomTabsMap[target.id];
+  if (activeMTabId) {
+    const activeMTab = document.getElementById(activeMTabId);
+    if (activeMTab) activeMTab.classList.add('active');
+  }
+
   const pageTitleEl = document.getElementById('pageTitle');
   if (pageTitleEl && tabEl) {
     pageTitleEl.textContent = tabEl.textContent.trim();
@@ -200,15 +215,17 @@ async function loadDashboard(isManual = false) {
       const totalActions24h = breakdown.reduce((sum, h) => sum + (h.actions || 0), 0);
 
       const elSumUsers = document.getElementById('statSummaryTotalUsers24h');
+      const elSumCurrent = document.getElementById('statSummaryCurrent');
       const elSumActions = document.getElementById('statSummaryTotalActions24h');
       const elSumPeak = document.getElementById('statSummaryPeakHour');
       const elSumAvg = document.getElementById('statSummaryAvgPerHour');
       const elTime = document.getElementById('dashboardLastUpdatedTime');
 
-      if (elSumUsers) elSumUsers.textContent = `${totalUsers24h.toLocaleString()} คน`;
+      if (elSumUsers) elSumUsers.textContent = (totalUsers24h || 0).toLocaleString();
+      if (elSumCurrent) elSumCurrent.textContent = (totalOnline || currentOnlineUsers.length || 0).toLocaleString();
       if (elSumActions) elSumActions.textContent = `${totalActions24h.toLocaleString()} ครั้ง`;
-      if (elSumPeak) elSumPeak.textContent = peakHour !== '-' ? `${peakHour} (${peakCount} คน)` : '-';
-      if (elSumAvg) elSumAvg.textContent = `${avgUsers} คน/ชม.`;
+      if (elSumPeak) elSumPeak.textContent = peakHour !== '-' ? peakHour : '-';
+      if (elSumAvg) elSumAvg.textContent = typeof avgUsers === 'number' ? avgUsers.toFixed(1) : avgUsers;
       if (elTime) {
         const nowStr = new Date().toLocaleTimeString('th-TH', { hour12: false });
         elTime.textContent = `อัปเดตล่าสุด: ${nowStr} น.`;
@@ -276,27 +293,25 @@ function renderHourlyBarChart(breakdown = []) {
     // Height percentage (reserve space at top for value badge)
     const pct = users === 0 ? 3 : Math.max(12, Math.round((users / maxUsers) * 75));
 
-    // Colors
-    let fillBg = '#CBD5E1';
+    // Colors matching Figma design
+    let fillBg = '#DCE4EC';
     if (item.isCurrent) {
-      fillBg = 'linear-gradient(180deg, #10B981 0%, #059669 100%)';
+      fillBg = '#10B981';
     } else if (users > 0 && users === peakItem.users && peakItem.users > 0) {
-      fillBg = 'linear-gradient(180deg, #F59E0B 0%, #D97706 100%)';
-    } else if (users > 0) {
-      fillBg = 'linear-gradient(180deg, #3B82F6 0%, #1D4ED8 100%)';
+      fillBg = '#F59E0B';
     }
 
-    // Visible Value Badge directly on top of bar (no hover needed!)
+    // Visible Value Badge directly on top of bar (matching Figma mockup)
     let valueBadgeHtml = '';
     if (users > 0) {
       const isPeak = users === peakItem.users && peakItem.users > 0;
       const isCur = item.isCurrent;
       if (isPeak) {
-        valueBadgeHtml = `<div class="hourly-bar-val-badge peak">🔥 ${users}</div>`;
+        valueBadgeHtml = `<div class="hourly-bar-val-badge peak" style="font-size: 10px; font-weight: 800; color: #B45309; line-height: 1; margin-bottom: 3px;">${users}</div>`;
       } else if (isCur) {
-        valueBadgeHtml = `<div class="hourly-bar-val-badge current">${users}</div>`;
+        valueBadgeHtml = `<div class="hourly-bar-val-badge current" style="font-size: 10px; font-weight: 800; color: #059669; line-height: 1; margin-bottom: 3px;">🔥 ${users}</div>`;
       } else {
-        valueBadgeHtml = `<div class="hourly-bar-val-badge">${users}</div>`;
+        valueBadgeHtml = `<div class="hourly-bar-val-badge" style="font-size: 9.5px; font-weight: 700; color: #64748B; line-height: 1; margin-bottom: 3px;">${users}</div>`;
       }
     }
 
@@ -4110,6 +4125,10 @@ async function updateReportsCount() {
       const reports = await res.json();
       const badge = document.getElementById('reportsBadge');
       const headerBadge = document.getElementById('reportsHeaderBadge');
+      const elStatReports = document.getElementById('statReports');
+      if (elStatReports) {
+        elStatReports.textContent = (reports.length || 0).toLocaleString();
+      }
       if (badge) {
         if (reports.length > 0) {
           badge.textContent = reports.length;
