@@ -7464,7 +7464,7 @@ function renderQuizQuestionNavGrid() {
     const ans = userAnswers[idx];
     const isAnswered = ans !== undefined;
 
-    let style = 'width: 34px; height: 34px; border-radius: 10px; font-size: 11.5px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: all 0.15s; font-family: inherit;';
+    let style = 'width: 100%; aspect-ratio: 1; border-radius: 9px; font-size: 11px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; font-family: inherit; padding: 0;';
 
     if (isReviewMode) {
       // REVIEW MODE: Green for correct, Red for wrong / unanswered
