@@ -1699,7 +1699,30 @@ async function generateAIExamPreview() {
   }
 }
 
+function sanitizeOperationSymbols(text) {
+  if (!text || typeof text !== 'string') return text;
+  // Convert non-* operation symbols (@, #, Δ, ♦, ⊕, ★, etc.) to *
+  // Protect email addresses like user@domain.com
+  return text
+    .replace(/(\d+)\s*[@#Δ♦⊕⊗▲■★]\s*(\d+)/g, '$1 * $2')
+    .replace(/\b([a-zA-Zก-ฮ])\s*[@#Δ♦⊕⊗▲■★]\s*([a-zA-Zก-ฮ])(?!\.[a-zA-Z])/g, '$1 * $2')
+    .replace(/\(\s*([a-zA-Zก-ฮ\d]+)\s*[@#Δ♦⊕⊗▲■★]\s*([a-zA-Zก-ฮ\d]+)\s*\)/g, '($1 * $2)');
+}
+
 function renderExamPreviewModal(title, subject, knowledgeBase) {
+  // Normalize any non-* operation symbols in all preview questions
+  if (Array.isArray(previewExamQuestions)) {
+    previewExamQuestions = previewExamQuestions.map(q => ({
+      ...q,
+      questionText: sanitizeOperationSymbols(q.questionText || ''),
+      optionA: sanitizeOperationSymbols(q.optionA || ''),
+      optionB: sanitizeOperationSymbols(q.optionB || ''),
+      optionC: sanitizeOperationSymbols(q.optionC || ''),
+      optionD: sanitizeOperationSymbols(q.optionD || ''),
+      explanation: sanitizeOperationSymbols(q.explanation || '')
+    }));
+  }
+
   const engineText = window._lastEngineUsed ? ` • ⚡ ${window._lastEngineUsed}` : '';
   const crossText = window._lastCrossAudit?.enabled ? ` • 🥊 ตรวจข้ามค่ายสำเร็จ (${window._lastCrossAudit.agreed}/${window._lastCrossAudit.total} ข้อตรงกัน)` : '';
   const badge = document.getElementById('previewSummaryBadge');
@@ -1851,13 +1874,13 @@ async function saveVerifiedExamSet(status) {
     const corrEl = document.getElementById(`q_correct_${idx}`);
     const expEl = document.getElementById(`q_exp_${idx}`);
 
-    if (textEl) q.questionText = textEl.value;
-    if (aEl) q.optionA = aEl.value;
-    if (bEl) q.optionB = bEl.value;
-    if (cEl) q.optionC = cEl.value;
-    if (dEl) q.optionD = dEl.value;
+    if (textEl) q.questionText = sanitizeOperationSymbols(textEl.value);
+    if (aEl) q.optionA = sanitizeOperationSymbols(aEl.value);
+    if (bEl) q.optionB = sanitizeOperationSymbols(bEl.value);
+    if (cEl) q.optionC = sanitizeOperationSymbols(cEl.value);
+    if (dEl) q.optionD = sanitizeOperationSymbols(dEl.value);
     if (corrEl) q.correctOption = corrEl.value;
-    if (expEl) q.explanation = expEl.value;
+    if (expEl) q.explanation = sanitizeOperationSymbols(expEl.value);
   });
 
   const title = document.getElementById('examTitle').value.trim() || 'ชุดข้อสอบใหม่';

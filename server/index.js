@@ -8628,9 +8628,11 @@ function buildGeneralMathPrompt({ count, subcategory, title, contextText }) {
   } else if (target.includes('โอเปเรชั่น') || target.includes('iq') || target.includes('บทที่ 3') || target.includes('บทที่3')) {
     chapterTitle = 'บทที่ 3: โอเปเรชั่น (Operations) และตรรกะตัวเลข';
     chapterSpecificRules = `🎯 กฎเหล็กเฉพาะสำหรับ "บทที่ 3 โอเปเรชั่น":
-1. **ทุกข้อ (100%) ต้องเป็นโจทย์กำหนดสัญลักษณ์พิเศษ เช่น a * b หรือ a @ b:**
-   - มีตัวอย่างเงื่อนไข 2 ชุด แล้วให้หาค่าชุดที่ 3
-2. 💡 **คำอธิบายเฉลย:** แสดงสมการรูปทั่วไป เช่น a * b = (a + b) × 2 - 1 และแทนค่าคำนวณทีละขั้น`;
+1. ❌ **กฎเหล็กสัญลักษณ์: ต้องใช้เฉพาะเครื่องหมายดอกจัน (*) เท่านั้นในการดำเนินการโอเปเรชั่น!**
+   - ทุกข้อ (100%) ต้องใช้เฉพาะเครื่องหมายดอกจัน * เท่านั้น เช่น "a * b" หรือ "2 * 4 = 7"
+   - **ห้ามใช้ @, #, ^, Δ, ♦, ⊕, ★ หรือสัญลักษณ์อื่นใดนอกจาก * โดยเด็ดขาดทั้งในคำถาม ตัวเลือก และคำอธิบายเฉลย!** (ห้ามมี @ เด็ดขาด)
+   - รูปแบบโจทย์: กำหนดตัวอย่างเงื่อนไข 2 ชุด แล้วให้หาค่าชุดที่ 3 เช่น "กำหนดให้ 2 * 4 = 7 และ 4 * 6 = 15 จงหาค่า 6 * 8 = ?"
+2. 💡 **คำอธิบายเฉลย:** ต้องใช้สัญลักษณ์ * เท่านั้น แสดงสมการรูปทั่วไป เช่น a * b = (a × b) ÷ 2 + 3 และแทนค่าคำนวณทีละขั้นอย่างละเอียด`;
     exampleJson = `[
   {
     "questionText": "กำหนดให้ 2 * 3 = 13 และ 3 * 4 = 25 จงหาค่าของ 4 * 5 = ?",
@@ -8787,7 +8789,8 @@ ${contextText ? `คลังเนื้อหาอ้างอิง:\n${cont
 1. **ตัวเลขและคำตอบต้องถูกต้องตามหลักคณิตศาสตร์ 100%** (คำนวณซ้ำสองรอบให้แน่ใจว่าตัวเลขและคำตอบถูกต้อง)
 2. ❌ **ห้ามใช้สัญลักษณ์ LaTeX หรือเครื่องหมาย $ หรือ $$ หรือ \\( \\) หรือ \\[ \\] โดยเด็ดขาด!** ต้องพิมพ์เป็นข้อความธรรมดา (Plain Text) เหมือนในกระดาษข้อสอบจริง เช่น "ถ้า 2 * 3 = 13 และ 3 * 4 = 25 แล้ว 4 * 5 = ?" หรือ "วิธีคิด: a² + b² = 16 + 25 = 41" ห้ามมีเครื่องหมาย $ ปนมาเด็ดขาด
 3. ❌ **ห้ามออกข้อสอบข้ามหมวดบทเรียนที่ระบุ** ต้องออกเฉพาะหัวข้อ ${chapterTitle} เท่านั้น 100%
-4. 💡 **คำอธิบายเฉลย (Step-by-Step Math Calculation):** ต้องแสดงวิธีคิด สูตร และขั้นตอนการคำนวณอย่างละเอียดครบถ้วนทุกข้อ
+4. ❌ **สำหรับโจทย์การดำเนินการแบบโอเปเรชั่น (Operations): ต้องใช้เฉพาะเครื่องหมายดอกจัน (*) เท่านั้น!** ห้ามใช้ @, #, ^, Δ, หรือสัญลักษณ์อื่นใดนอกจาก * โดยเด็ดขาด เช่น "กำหนดให้ a * b = ..."
+5. 💡 **คำอธิบายเฉลย (Step-by-Step Math Calculation):** ต้องแสดงวิธีคิด สูตร และขั้นตอนการคำนวณอย่างละเอียดครบถ้วนทุกข้อ
 
 ${chapterSpecificRules}
 
@@ -9922,11 +9925,21 @@ function detectExplanationAnswerConflict(q) {
 }
 
 // --- Helper: Clean LaTeX math delimiters ($$, $, \( \), \[ \]) into clean, natural Plain Text ---
+function sanitizeOperationSymbols(text) {
+  if (!text || typeof text !== 'string') return text;
+  // Convert non-* operation symbols (@, #, Δ, ♦, ⊕, ★, etc.) to *
+  // Protect email addresses like saraban@domain.com
+  return text
+    .replace(/(\d+)\s*[@#Δ♦⊕⊗▲■★]\s*(\d+)/g, '$1 * $2')
+    .replace(/\b([a-zA-Zก-ฮ])\s*[@#Δ♦⊕⊗▲■★]\s*([a-zA-Zก-ฮ])(?!\.[a-zA-Z])/g, '$1 * $2')
+    .replace(/\(\s*([a-zA-Zก-ฮ\d]+)\s*[@#Δ♦⊕⊗▲■★]\s*([a-zA-Zก-ฮ\d]+)\s*\)/g, '($1 * $2)');
+}
+
 function sanitizeExamQuestionFormatting(q) {
   if (!q || typeof q !== 'object') return q;
   const cleanStr = (s) => {
     if (!s || typeof s !== 'string') return s;
-    return s
+    const cleaned = s
       .replace(/\$\$([\s\S]*?)\$\$/g, '$1')
       .replace(/\$([^\$]+?)\$/g, '$1')
       .replace(/\\\[([\s\S]*?)\\\]/g, '$1')
@@ -9940,6 +9953,7 @@ function sanitizeExamQuestionFormatting(q) {
       .replace(/\^3/g, '³')
       .replace(/\\cdot/g, '·')
       .trim();
+    return sanitizeOperationSymbols(cleaned);
   };
 
   return {
