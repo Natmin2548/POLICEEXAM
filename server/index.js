@@ -8810,31 +8810,182 @@ ${exampleJson}`;
 }
 
 function buildEnglishPrompt({ count, subcategory, title, contextText }) {
-  return `You are a master exam writer for the Royal Thai Police Examination (English Subject).
-Please create ${count} high-quality multiple-choice questions in English ${subcategory ? `focusing on topic: "${subcategory}"` : ''} ${title ? `Exam Set: "${title}"` : ''}.
-${contextText ? `Reference Context:\n${contextText.substring(0, 48000)}\n\n` : ''}
+  const target = `${subcategory || ''} ${title || ''}`.toLowerCase();
 
-🎯 Exam Structure and Requirements:
-1. **Situational Dialogues (Conversation ~30%)**: Realistic dialogues at a police station, airport, street asking for directions, reporting crimes, or emergency assistance.
-2. **Grammar & Sentence Structure (~35%)**: Tenses, Subject-Verb Agreement, Passive Voice, Conditional Sentences (If-clauses), Relative Clauses, Prepositions, Connectors.
-3. **Vocabulary in Context (~20%)**: Important vocabulary for law enforcement, public service, and daily life tested in meaningful sentence contexts.
-4. **Reading Comprehension (~15%)**: A short passage (3-5 sentences) such as a news report, public notice, or incident report followed by a comprehension question.
-5. **Output Language**:
-   - \`questionText\`, \`optionA\`, \`optionB\`, \`optionC\`, \`optionD\` MUST BE IN ENGLISH.
-   - \`explanation\` MUST BE IN THAI (อธิบายเฉลยอย่างละเอียดเป็นภาษาไทย แปลประโยค และชี้หลักไวยากรณ์).
+  let chapterTitle = '';
+  let chapterSpecificRules = '';
+  let exampleJson = '';
 
-Output format: Return ONLY a valid JSON Array:
-[
+  const isReading = target.includes('reading') || target.includes('การอ่าน') || target.includes('อ่านบทความ') || target.includes('จับใจความ') || target.includes('บทความ') || target.includes('บทที่ 3') || target.includes('บทที่3');
+  const isConversation = target.includes('conversation') || target.includes('สนทนา') || target.includes('บทสนทนา') || target.includes('dialogue') || target.includes('บทที่ 1') || target.includes('บทที่1');
+  const isVocabulary = target.includes('vocab') || target.includes('คำศัพท์') || target.includes('ศัพท์') || target.includes('บทที่ 2') || target.includes('บทที่2');
+  const isGrammar1 = target.includes('grammar 1') || target.includes('grammar1') || target.includes('tense') || target.includes('บทที่ 4') || target.includes('บทที่4');
+  const isGrammar2 = target.includes('grammar 2') || target.includes('grammar2') || target.includes('preposition') || target.includes('pronoun') || target.includes('บทที่ 5') || target.includes('บทที่5');
+  const isGrammar3 = target.includes('grammar 3') || target.includes('grammar3') || target.includes('passive') || target.includes('modal') || target.includes('บทที่ 6') || target.includes('บทที่6');
+  const isGrammar4 = target.includes('grammar 4') || target.includes('grammar4') || target.includes('comparison') || target.includes('connector') || target.includes('conjunction') || target.includes('บทที่ 7') || target.includes('บทที่7');
+  const isGrammar5 = target.includes('grammar 5') || target.includes('grammar5') || target.includes('if-clause') || target.includes('relative') || target.includes('บทที่ 8') || target.includes('บทที่8');
+  const isGeneralGrammar = target.includes('grammar') || target.includes('ไวยากรณ์');
+
+  if (isReading) {
+    chapterTitle = 'บทที่ 3: Reading Comprehension (การอ่านบทความ ป้ายประกาศ ข่าวสาร และจับใจความสำคัญ)';
+    chapterSpecificRules = `🎯 กฎเหล็กเฉพาะสำหรับหมวด "Reading (การอ่านบทความและจับใจความสำคัญ)" - บังคับ 100%:
+1. 📖 **ทุกข้อทั้งหมด (100%) ต้องมีบทความหรือข้อความอ่านจริง (Passage-Based Questions Only)**:
+   - ❌ **ห้ามออกโจทย์เติมคำในช่องว่างสั้นๆ ประโยคเดียวโดดๆ เด็ดขาด!**
+   - ทุกข้อต้องแต่งเป็นบทความสั้น ข่าวสาร ป้ายประกาศ จดหมาย/อีเมล หรือเรื่องเล่าความยาว 3 - 7 ประโยค
+   - เนื้อหาต้องหลากหลายและสมจริง:
+     * Public Notices & Warning Signs (ป้ายประกาศความปลอดภัย, กฎสถานที่ท่องเที่ยว, ประกาศสนามบิน, ป้ายเตือนจราจร)
+     * Short News & Incident Reports (ข่าวสั้น, รายงานสภาพอากาศ, ข่าวจราจร, ข่าวเหตุการณ์)
+     * Everyday Emails & Messages (การสอบถามข้อมูลท่องเที่ยว, อีเมลแจ้งข่าว, ข้อความขอบคุณ)
+     * General Interest & Lifestyle (สุขภาพ, เทคโนโลยีในชีวิตประจำวัน, สิ่งแวดล้อม, การดำเนินชีวิต)
+2. ⚖️ **ผสมผสานระดับความยากง่าย (Mixed Difficulty A1-B1) อย่างสมดุล**:
+   - ข้อง่าย (CEFR A1-A2 ~ 50%): บทความสั้น 3-4 ประโยค คำศัพท์พื้นฐาน ถามหาข้อมูลที่ระบุไว้ชัดเจนในบทความ (Direct details/Facts)
+   - ข้อปานกลาง/ท้าทาย (CEFR B1 ~ 50%): บทความ 5-7 ประโยค มีประโยคความรวม/ความซ้อน ถามใจความสำคัญ (Main idea), วัตถุประสงค์ (Purpose), หรือการสรุปความ (Inference)
+3. 📝 **รูปแบบข้อความโจทย์ (Question Text Format)**:
+   - ต้องขึ้นต้นด้วยคำสั่งให้อ่านและข้อความบทความในเครื่องหมายคำพูดเสมอ เช่น:
+     Read the following passage and answer the question:
+     "Passage content of 3-7 sentences..."
+     
+     What is the main purpose of this announcement?
+4. ⛔️ **ข้อห้ามเด็ดขาด (Strict Prohibition)**:
+   - ❌ **ห้ามเอาเรื่อง "งานสารบรรณ" (ระเบียบสำนักนายกฯ ตรารับ ทะเบียนรับ ทะเบียนส่ง หนังสือราชการ) หรือกฎหมายไทยมาแต่งเป็นภาษาอังกฤษเด็ดขาด!**`;
+
+    exampleJson = `[
   {
-    "questionText": "Question text or dialogue...",
-    "optionA": "Choice A",
-    "optionB": "Choice B",
-    "optionC": "Choice C",
-    "optionD": "Choice D",
+    "questionText": "Read the following announcement and answer the question:\\n\\\"Attention all passengers: Train number 42 to Chiang Mai is delayed by approximately 45 minutes due to heavy rain and track inspection. Passengers holding tickets for this train may wait inside the passenger lounge on Platform 3. Free drinking water is provided at Counter B. We apologize for any inconvenience caused.\\\"\\n\\nWhy is Train number 42 delayed?",
+    "optionA": "Because of bad weather and track inspection",
+    "optionB": "Because of an engine breakdown",
+    "optionC": "Because the driver arrived late",
+    "optionD": "Because Platform 3 was closed",
     "correctOption": "A",
-    "explanation": "คำอธิบายเฉลยภาษาไทยอย่างละเอียด แปลประโยคและอธิบายหลักไวยากรณ์..."
+    "explanation": "[ระดับ A2 - ปานกลาง]\\nแปลบทความ: \\\"ประกาศถึงผู้โดยสารทุกท่าน: รถไฟขบวนที่ 42 มุ่งหน้าสู่เชียงใหม่ ล่าช้าประมาณ 45 นาที เนื่องจากฝนตกหนักและการตรวจสอบรางรถไฟ...\\\"\\nเหตุผล: บทความระบุชัดเจนว่าล่าช้าเพราะ \\\"heavy rain and track inspection\\\" (ฝนตกหนักและการตรวจราง) ดังนั้นข้อ A จึงถูกต้องที่สุด"
+  },
+  {
+    "questionText": "Read the following article and answer the question:\\n\\\"Plastic pollution has become one of the most pressing environmental challenges of our time. Every year, millions of tons of plastic waste end up in oceans, severely harming marine animals that often mistake plastic bags for food. While recycling helps, environmental experts emphasize that reducing single-use plastic products is by far the most effective solution to protect our ecosystem.\\\"\\n\\nWhat is the main idea of this passage?",
+    "optionA": "Reducing single-use plastics is the best way to address plastic pollution",
+    "optionB": "Marine animals only eat plastic waste found in deep waters",
+    "optionC": "Recycling plastic has completely solved ocean pollution",
+    "optionD": "Plastic production will stop completely in the near future",
+    "correctOption": "A",
+    "explanation": "[ระดับ B1 - ท้าทาย]\\nแปลบทความ: \\\"มลพิษจากพลาสติกกลายเป็นหนึ่งในความท้าทายด้านสิ่งแวดล้อมที่เร่งด่วนที่สุด... ผู้เชี่ยวชาญเน้นย้ำว่าการลดการใช้พลาสติกแบบใช้ครั้งเดียวเป็นทางออกที่มีประสิทธิภาพที่สุดในการปกป้องระบบนิเวศ\\\"\\nใจความสำคัญ (Main Idea): ผู้เขียนเน้นว่าการลดการใช้พลาสติกแบบใช้ครั้งเดียวเป็นวิธีแก้ปัญหาที่ดีที่สุด ข้อ A จึงถูกต้องสมบูรณ์"
   }
 ]`;
+  } else if (isConversation) {
+    chapterTitle = 'บทที่ 1: Conversation & Situational Dialogues (บทสนทนาสถานการณ์จริง A1-B1)';
+    chapterSpecificRules = `🎯 กฎเหล็กเฉพาะสำหรับหมวด "Conversation (บทสนทนา)":
+1. **ทุกข้อ (100%) ต้องเป็นบทสนทนาโต้ตอบ (Dialogue) 2-4 บรรทัด**:
+   - สถานการณ์ในชีวิตประจำวันและการบริการประชาชน:
+     * การถามทางและบอกทิศทาง (Asking & Giving Directions)
+     * การให้ความช่วยเหลือชาวต่างชาติ / ของหาย (Lost & Found / Assisting Foreigners)
+     * การแจ้งเหตุหรือแจ้งของหายที่สถานีตำรวจ (Reporting lost passport, incident, or theft)
+     * การท่องเที่ยว การคมนาคม สนามบิน โรงแรม ร้านอาหาร (Travel, Transport, Hotel)
+     * การพูดคุยทางโทรศัพท์ (Phone conversations / Emergency Hotline 191/1155)
+2. **ระดับภาษา CEFR A1 - B1**: ภาษาที่สุภาพ เหมาะสมกับกาลเทศะ (Polite & Natural English)
+3. ⛔️ **ห้ามเอาเรื่องงานสารบรรณ หรือระเบียบราชการไทยมาแต่งเป็นบทสนทนาเด็ดขาด**`;
+    exampleJson = `[
+  {
+    "questionText": "Tourist: \\\"Excuse me, officer. Could you tell me how to get to the Grand Palace from here?\\\"\\nPolice Officer: \\\"_______________ It is about a ten-minute walk.\\\"",
+    "optionA": "Go straight along this street and turn left at the intersection.",
+    "optionB": "I don't think you should buy tickets today.",
+    "optionC": "The weather is very hot outside.",
+    "optionD": "You must show me your driver's license right now.",
+    "correctOption": "A",
+    "explanation": "[ระดับ A2]\\nแปลบทสนทนา: นักท่องเที่ยวถามทางไปพระบรมมหาราชวัง ตำรวจจึงต้องบอกทิศทางอย่างสุภาพ ข้อ A (เดินตรงไปตามถนนนี้แล้วเลี้ยวซ้ายที่สี่แยก) เหมาะสมและถูกต้องที่สุด"
+  }
+]`;
+  } else if (isVocabulary) {
+    chapterTitle = 'บทที่ 2: Vocabulary in Context (คำศัพท์ในบริบทชีวิตประจำวันและการบริการ A1-B1)';
+    chapterSpecificRules = `🎯 กฎเหล็กเฉพาะสำหรับหมวด "Vocabulary (คำศัพท์)":
+1. **ทดสอบคำศัพท์ในระดับ CEFR A1 - B1 (สูงสุดไม่เกิน B1)**:
+   - คำศัพท์ชีวิตประจำวัน, การคมนาคม, สุขภาพ, ความปลอดภัย, การช่วยเหลือ, สิ่งแวดล้อม, เทคโนโลยี
+   - รูปแบบคำถาม:
+     * เติมคำศัพท์ที่ถูกต้องลงในช่องว่างของประโยค (Meaning in sentence context)
+     * คำที่มีความหมายเหมือนกัน (Synonym)
+     * คำที่มีความหมายตรงกันข้าม (Antonym)
+2. ⛔️ **ห้ามออกคำศัพท์งานสารบรรณไทย หรือคำศัพท์เชิงวิชาการระดับปริญญาเอก (ห้ามเกินระดับ B1)**`;
+    exampleJson = `[
+  {
+    "questionText": "If you witness a traffic accident, you should remain calm and immediately call the emergency services for __________.",
+    "optionA": "assistance",
+    "optionB": "punishment",
+    "optionC": "pollution",
+    "optionD": "complaint",
+    "correctOption": "A",
+    "explanation": "[ระดับ A2]\\nแปลประโยค: \\\"หากคุณพบเห็นอุบัติเหตุจราจร คุณควรตั้งสติและโทรหาหน่วยบริการฉุกเฉินทันทีเพื่อขอความช่วยเหลือ (assistance)\\\"\\nตัวเลือกอื่น: punishment (การลงโทษ), pollution (มลพิษ), complaint (การร้องเรียน)"
+  }
+]`;
+  } else if (isGrammar1 || isGrammar2 || isGrammar3 || isGrammar4 || isGrammar5 || isGeneralGrammar) {
+    chapterTitle = subcategory || 'Grammar: ไวยากรณ์และโครงสร้างประโยค (CEFR A1-B1)';
+    chapterSpecificRules = `🎯 กฎเหล็กเฉพาะสำหรับหมวดไวยากรณ์ (Grammar A1-B1):
+1. **ระดับไวยากรณ์ต้องอยู่ในเกณฑ์ CEFR A1 - B1 เท่านั้น**:
+   - Tenses พื้นฐาน: Present Simple, Past Simple, Future Simple, Present Continuous, Present Perfect
+   - Subject-Verb Agreement, Pronouns, Prepositions (in, on, at, for, since, by, with)
+   - Passive Voice พื้นฐาน (is/are + V.3, was/were + V.3)
+   - Modals (can, could, must, should, may, might)
+   - Comparison of Adjectives (comparative, superlative, as...as)
+   - If-Clauses (Type 0, 1, 2)
+   - Conjunctions & Connectors (and, but, because, although, however, so)
+2. ⛔️ **ข้อห้ามเด็ดขาด (Strict Prohibition):**
+   - ❌ **ห้ามนำเนื้อหางานสารบรรณไทย (หนังสือราชการ ตรารับ ทะเบียนรับ ทะเบียนส่ง หนังสือสั่งการ) มาแปลเป็นประโยคภาษาอังกฤษเด็ดขาด!**
+   - ประโยคต้องเกี่ยวกับชีวิตประจำวัน, สิ่งแวดล้อม, การทำงานทั่วไป, เทคโนโลยี, สุขภาพ หรือการท่องเที่ยวสากล`;
+    exampleJson = `[
+  {
+    "questionText": "Yesterday, while the tourists __________ along the beach, they found a lost wallet and gave it to the local police.",
+    "optionA": "were walking",
+    "optionB": "are walking",
+    "optionC": "walked",
+    "optionD": "have walked",
+    "correctOption": "A",
+    "explanation": "[ระดับ B1]\\nแปลประโยค: \\\"เมื่อวานนี้ ขณะที่นักท่องเที่ยวกลุ่มนั้นกำลังเดิน (were walking) อยู่ริมชายหาด พวกเขาพบกระเป๋าสตางค์ที่ตกหายและนำไปมอบให้ตำรวจท้องที่\\\"\\nหลักไวยากรณ์: ใช้ Past Continuous (were walking) เพื่อบอกเหตุการณ์ที่กำลังดำเนินอยู่ในอดีต และมี Past Simple (found) เข้ามาแทรก"
+  }
+]`;
+  } else {
+    chapterTitle = 'ภาษาอังกฤษสำหรับสอบตำรวจ (English for Royal Thai Police Exam - CEFR A1-B1)';
+    chapterSpecificRules = `🎯 คำแนะนำสำหรับการออกข้อสอบแบบคละหัวข้อ (Comprehensive Mix):
+- ออกข้อสอบคละทั้ง 4 ด้านอย่างสมดุล: Conversation (~30%), Grammar (~35%), Vocabulary (~20%), Reading Comprehension (~15%)
+- สำหรับข้อ Reading Comprehension ต้องมีบทความสั้น 3-5 ประโยคเสมอ
+- ทุกข้อต้องอยู่ภายในระดับ CEFR A1 - B1 เท่านั้น
+- ❌ ห้ามนำเนื้อหางานสารบรรณ หรือกฎหมายไทยมาแต่งเป็นภาษาอังกฤษเด็ดขาด`;
+    exampleJson = `[
+  {
+    "questionText": "Tourist: \\\"Excuse me, officer. Could you tell me where the nearest pharmacy is?\\\"\\nPolice Officer: \\\"_______________\\\"",
+    "optionA": "It is right around the corner next to the supermarket.",
+    "optionB": "I do not want to buy medicine today.",
+    "optionC": "The weather is very hot this afternoon.",
+    "optionD": "You cannot park your bicycle here.",
+    "correctOption": "A",
+    "explanation": "[ระดับ A1]\\nแปลบทสนทนา: นักท่องเที่ยวถามทางไปร้านขายยาที่ใกล้ที่สุด ตำรวจจึงตอบบอกตำแหน่งอย่างสุภาพ ข้อ A ถูกต้องที่สุด"
+  }
+]`;
+  }
+
+  return `You are a master exam writer for the Royal Thai Police Examination (English Subject).
+Please create ${count} high-quality multiple-choice questions in English for:
+📚 Subject: ภาษาอังกฤษ (English)
+📖 Chapter/Topic: ${chapterTitle}
+${subcategory ? `🏷️ Specific Subcategory: "${subcategory}"` : ''}
+${title ? `🏷️ Exam Set Title: "${title}"` : ''}
+
+🎯 UNIVERSAL CORE MANDATES (บังคับ 100% ทุกข้อ):
+1. 🇬🇧 **PROFICIENCY LEVEL: STRICTLY CEFR A1 - B1 (Beginner to Intermediate)**:
+   - Maximum difficulty level is CEFR B1. Under NO circumstances should questions require C1/C2 advanced academic English.
+   - Mix difficulty naturally: combine easy questions (A1-A2 ~50%) with intermediate/moderately challenging questions (B1 ~50%) ("มียากมีง่ายปนไปในภาษาอังกฤษ").
+   - Vocabulary, phrasing, and sentence structures must reflect real-world everyday English suitable for Thai non-commissioned police officer exams.
+
+2. ⛔️ **STRICT PROHIBITION - DO NOT BRING IN OTHER SUBJECTS (ห้ามดึงเนื้อหาวิชาอื่น เช่น งานสารบรรณ มาแต่งเด็ดขาด)**:
+   - ❌ **ABSOLUTELY FORBIDDEN**: DO NOT write sentences or questions about Thai administrative document regulations (ระเบียบงานสารบรรณ), official receiving stamps (ตรารับ), document registry logbooks (ทะเบียนรับ/ส่ง), ministerial circulars, or Thai law sections!
+   - ❌ Contexts must be natural, global, and everyday: daily life, tourism, transportation, health, environment, general technology, community assistance, hotel, airport, and public safety.
+
+${chapterSpecificRules}
+
+3. 🇹🇭 **OUTPUT LANGUAGE AND DETAILED THAI EXPLANATION**:
+   - \`questionText\`, \`optionA\`, \`optionB\`, \`optionC\`, \`optionD\` MUST BE IN ENGLISH.
+   - \`explanation\` MUST BE IN THAI (อธิบายเฉลยภาษาไทยอย่างละเอียด):
+     * ระบุระดับ CEFR เช่น [ระดับ A2 - ปานกลาง] หรือ [ระดับ B1 - ท้าทาย]
+     * แปลประโยคหรือบทความทั้งหมดเป็นภาษาไทยอย่างสละสลวย
+     * อธิบายเหตุผลที่ข้อถูกถูกต้อง และชี้จุดผิดของตัวเลือกอื่น
+
+Output format: Return ONLY a valid JSON Array with no extra markdown:
+${exampleJson}`;
 }
 
 function buildComputerPrompt({ count, subcategory, title, contextText }) {
@@ -10496,7 +10647,7 @@ app.post('/api/admin/exams/preview-ai', authenticateToken, async (req, res) => {
     const isMathSubject = !isLawSubject && !isSarabanSubject && !isSaraban54Subject && !isCompSubject && !isThaiSubject && !isSocialSubject && !isEnglishSubject && (normSub === 'general' || normSub === 'ทั่วไป' || normSub === 'ความสามารถทั่วไป' || normSub.includes('ความสามารถทั่วไป') || normSub.includes('คณิต') || normSub.includes('คำนวณ') || normTitle.includes('คำนวณ') || normTitle.includes('คณิต') || normTitle.includes('อนุกรม') || normTitle.includes('โอเปเรชั่น') || normTitle.includes('ความสามารถทั่วไป'));
 
     let contextText = '';
-    if (docId && docId !== 'ALL' && docId !== 'ALL_2526' && docId !== 'ALL_54') {
+    if (docId && docId !== 'ALL' && docId !== 'ALL_2526' && docId !== 'ALL_54' && !isEnglishSubject) {
       const doc = await prisma.knowledgeDocument.findUnique({ where: { id: parseInt(docId) } });
       if (doc) {
         if (!isThaiSubject || (doc.category && (doc.category.includes('ไทย') || doc.category.includes('ภาษา')))) {
@@ -10669,6 +10820,10 @@ app.post('/api/admin/exams/preview-ai', authenticateToken, async (req, res) => {
       if (docs && docs.length > 0) {
         contextText = docs.map(d => `[${d.title}]\n${d.content}`).join('\n\n');
       }
+    }
+
+    if (isEnglishSubject) {
+      contextText = ''; // Guarantee absolute isolation: English must NEVER inherit non-English reference context
     }
 
     // Chunk generation into batches of up to 10 questions each
