@@ -1639,6 +1639,37 @@ async function updateDailyVisitStreak(user) {
   }
 }
 
+async function getUserAnsweredQuestionsCount(userId) {
+  let answeredQuestionsCount = 0;
+  try {
+    const completedProgress = await prisma.userStageProgress.findMany({
+      where: { userId, completed: true },
+      include: { stage: true }
+    });
+    if (completedProgress.length > 0) {
+      const stageTitles = completedProgress.map(p => p.stage.title);
+      const matchingExamSets = await prisma.examSet.findMany({
+        where: { title: { in: stageTitles } },
+        select: { totalCount: true }
+      });
+      answeredQuestionsCount += matchingExamSets.reduce((sum, es) => sum + es.totalCount, 0);
+    }
+
+    const quizAttempts = await prisma.quizAttempt.findMany({
+      where: { userId },
+      select: { setId: true, totalQuestions: true }
+    });
+    const validAttempts = quizAttempts.filter(a => {
+      const s = a.setId || '';
+      return !(s.startsWith('pretest_') && (s.includes('_general') || s.includes('_thai') || s.includes('_english') || s.includes('_computer') || s.includes('_law') || s.includes('_social') || s.includes('_saraban')));
+    });
+    answeredQuestionsCount += validAttempts.reduce((sum, a) => sum + (a.totalQuestions || 0), 0);
+  } catch (err) {
+    console.warn('getUserAnsweredQuestionsCount warning:', err);
+  }
+  return answeredQuestionsCount;
+}
+
 app.get(['/api/user', '/api/user/profile'], authenticateToken, async (req, res) => {
   try {
     let user = await prisma.user.findUnique({
@@ -1655,21 +1686,8 @@ app.get(['/api/user', '/api/user/profile'], authenticateToken, async (req, res) 
     // Automatically count daily visit streak on website visit/profile load
     user = await updateDailyVisitStreak(user);
 
-    // Calculate actual answered questions count from completed stages
-    const completedProgress = await prisma.userStageProgress.findMany({
-      where: { userId: req.user.userId, completed: true },
-      include: { stage: true }
-    });
-
-    let answeredQuestionsCount = 0;
-    if (completedProgress.length > 0) {
-      const stageTitles = completedProgress.map(p => p.stage.title);
-      const matchingExamSets = await prisma.examSet.findMany({
-        where: { title: { in: stageTitles } },
-        select: { totalCount: true }
-      });
-      answeredQuestionsCount = matchingExamSets.reduce((sum, es) => sum + es.totalCount, 0);
-    }
+    // Calculate actual answered questions count from stages and quizzes
+    const answeredQuestionsCount = await getUserAnsweredQuestionsCount(req.user.userId);
 
     const resetSetting = await prisma.systemSetting.findUnique({
       where: { key: 'GLOBAL_STATS_RESET_AT' }
@@ -12849,11 +12867,12 @@ app.post('/api/user/record-quiz', authenticateToken, async (req, res) => {
       }
     });
 
+    const answeredQuestionsCount = await getUserAnsweredQuestionsCount(req.user.userId);
     res.json({
       message: 'บันทึกคะแนนสำเร็จ! คุณได้รับ +' + xpGained + ' XP และ +' + pointsGained + ' คะแนน',
       xpGained,
       pointsGained,
-      user: { ...(updatedUser || {}), xp: newXp, points: newPoints },
+      user: { ...(updatedUser || {}), xp: newXp, points: newPoints, answeredQuestionsCount },
       attempt: formatQuizAttempt(attempt)
     });
   } catch (err) {

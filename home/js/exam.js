@@ -565,18 +565,18 @@ async function saveExamResult(correct, total, subjectStats) {
 
     const mainSubject = isPretest
       ? (examState.track === 'prabpram' ? 'Pretest สายปราบปราม' : 'Pretest สายอำนวยการ')
-      : (examState.subjectKey || 'ทั่วไป');
+      : (examState.subjectTitle || examState.subjectKey || 'ทั่วไป');
 
     const scorePct = total > 0 ? Math.round((correct / total) * 100) : 0;
     const nowIso = new Date().toISOString();
     const formattedDate = new Date().toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
 
     const mainRecord = {
-      id: 'pretest_' + Date.now(),
+      id: (isPretest ? 'pretest_' : 'quiz_') + Date.now(),
       subject: mainSubject,
       title: examTitle,
       setTitle: examTitle,
-      setId: isPretest ? `pretest_${examState.track}` : (examState.setId || null),
+      setId: isPretest ? `pretest_${examState.track}` : (examState.setId || `mixed_${examState.subjectKey || 'sub'}`),
       correctCount: correct,
       score: correct,
       totalQuestions: total,
@@ -654,7 +654,7 @@ async function saveExamResult(correct, total, subjectStats) {
             totalQuestions: total,
             scorePct: scorePct,
             subject: isPretest ? (examState.track === 'prabpram' ? 'ข้อสอบจำลอง สายปราบปราม' : 'ข้อสอบจำลอง สายอำนวยการ') : mainSubject,
-            setId: isPretest ? `pretest_${examState.track}` : (examState.setId || null),
+            setId: isPretest ? `pretest_${examState.track}` : (examState.setId || `mixed_${examState.subjectKey || 'sub'}`),
             setTitle: examTitle,
             createdAt: nowIso
           })
