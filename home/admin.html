@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Dashboard - POLICEEXAM</title>
   <link rel="stylesheet" href="css/admin.css">
-  <script src="js/admin.js?v=39" defer></script>
+  <script src="js/admin.js?v=60" defer></script>
 </head>
 <body>
 
@@ -130,17 +130,17 @@
           </div>
 
           <!-- Card 3: Total Users -->
-          <div class="stat-card">
+          <div class="stat-card" style="cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease;" onclick="switchTab('tabUsers')" title="คลิกเพื่อดูและจัดการสมาชิกทั้งหมด">
             <div class="stat-label">Total Users</div>
             <div class="stat-value" id="statUsers">0</div>
-            <div style="margin-top: 10px; font-size: 12px; color: #64748B;">บัญชีสมาชิกทั้งหมดในระบบ</div>
+            <div style="margin-top: 10px; font-size: 12px; color: #1D4ED8; font-weight: 600;">บัญชีสมาชิกทั้งหมด (คลิกเพื่อดู) 👥 ↗</div>
           </div>
 
           <!-- Card 4: Exam Sets -->
-          <div class="stat-card">
+          <div class="stat-card" style="cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease;" onclick="switchTab('tabExams')" title="คลิกเพื่อจัดการชุดข้อสอบ">
             <div class="stat-label">Exam Sets</div>
             <div class="stat-value" id="statExams">0</div>
-            <div style="margin-top: 10px; font-size: 12px; color: #64748B;">ชุดข้อสอบพร้อมใช้งาน</div>
+            <div style="margin-top: 10px; font-size: 12px; color: #64748B;">ชุดข้อสอบพร้อมใช้งาน 📝 ↗</div>
           </div>
 
           <!-- Card 5: Announcements -->
@@ -1481,6 +1481,9 @@
           <button type="button" class="btn btn-outline" onclick="closeExamSetAiRecheckModal()" style="padding: 10px 20px; border-radius: 12px; font-weight: 700;">ปิดหน้าต่าง</button>
         </div>
       </div>
+
+    </div>
+  </div>
 
   <!-- Online Users List Modal (ดูรายชื่อผู้ใช้ออนไลน์แบบเรียลไทม์) -->
   <div class="modal-overlay" id="onlineUsersModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(8px); z-index: 10030; align-items: center; justify-content: center; padding: 16px;">

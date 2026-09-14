@@ -84,35 +84,48 @@ async function initAdmin() {
 }
 
 // Tab Navigation
-function setupTabs() {
-  const tabs = [
-    { id: 'tabDashboard', view: 'viewDashboard', loadFn: loadDashboard },
-    { id: 'tabUsers', view: 'viewUsers', loadFn: loadUsers },
-    { id: 'tabExams', view: 'viewExams', loadFn: loadExams },
-    { id: 'tabAnnouncements', view: 'viewAnnouncements', loadFn: loadAnnouncements },
-    { id: 'tabReports', view: 'viewReports', loadFn: loadAdminReports }
-  ];
+const ADMIN_TABS = [
+  { id: 'tabDashboard', view: 'viewDashboard', loadFn: () => loadDashboard() },
+  { id: 'tabUsers', view: 'viewUsers', loadFn: () => loadUsers() },
+  { id: 'tabExams', view: 'viewExams', loadFn: () => loadExams() },
+  { id: 'tabAnnouncements', view: 'viewAnnouncements', loadFn: () => loadAnnouncements() },
+  { id: 'tabReports', view: 'viewReports', loadFn: () => loadAdminReports() }
+];
 
-  tabs.forEach(tab => {
+function switchTab(tabId) {
+  const target = ADMIN_TABS.find(t => t.id === tabId || t.view === tabId);
+  if (!target) return;
+
+  ADMIN_TABS.forEach(t => {
+    const el = document.getElementById(t.id);
+    const vEl = document.getElementById(t.view);
+    if (el) el.classList.remove('active');
+    if (vEl) vEl.classList.remove('active');
+  });
+
+  const tabEl = document.getElementById(target.id);
+  const targetView = document.getElementById(target.view);
+  if (tabEl) tabEl.classList.add('active');
+  if (targetView) targetView.classList.add('active');
+
+  const pageTitleEl = document.getElementById('pageTitle');
+  if (pageTitleEl && tabEl) {
+    pageTitleEl.textContent = tabEl.textContent.trim();
+  }
+
+  if (typeof target.loadFn === 'function') {
+    target.loadFn();
+  }
+}
+window.switchTab = switchTab;
+
+function setupTabs() {
+  ADMIN_TABS.forEach(tab => {
     const tabEl = document.getElementById(tab.id);
     if (!tabEl) return;
-    tabEl.addEventListener('click', () => {
-      // Remove active classes
-      tabs.forEach(t => {
-        const el = document.getElementById(t.id);
-        const vEl = document.getElementById(t.view);
-        if (el) el.classList.remove('active');
-        if (vEl) vEl.classList.remove('active');
-      });
-      // Set active
-      tabEl.classList.add('active');
-      const targetView = document.getElementById(tab.view);
-      if (targetView) targetView.classList.add('active');
-      
-      // Update Title & Load data
-      const pageTitleEl = document.getElementById('pageTitle');
-      if (pageTitleEl) pageTitleEl.textContent = tabEl.textContent.trim();
-      if (typeof tab.loadFn === 'function') tab.loadFn();
+    tabEl.addEventListener('click', (e) => {
+      e.preventDefault();
+      switchTab(tab.id);
     });
   });
 }
@@ -445,6 +458,14 @@ function renderOnlineUsersTable(usersList = []) {
 
   tbody.innerHTML = html;
 }
+
+// Global modal handlers
+window.openOnlineUsersModal = openOnlineUsersModal;
+window.closeOnlineUsersModal = closeOnlineUsersModal;
+window.refreshOnlineUsersModal = refreshOnlineUsersModal;
+window.filterOnlineUsersList = filterOnlineUsersList;
+window.loadDashboard = loadDashboard;
+window.loadUsers = loadUsers;
 
 // ==========================================
 // Users View & Detailed Statistics
