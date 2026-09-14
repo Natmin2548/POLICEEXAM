@@ -226,168 +226,133 @@
 
       </div>
 
-      <!-- Users View -->
+      <!-- Users View (Figma Image 1) -->
       <div id="viewUsers" class="tab-view">
-        <div class="table-container">
-          <div class="table-header-row" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; padding: 18px 24px; border-bottom: 1.5px solid #E2E8F0;">
-            <div>
-              <div class="table-title" style="font-size: 18px; font-weight: 800; color: #0F172A; display: flex; align-items: center; gap: 8px;">
-                <span>👥 สมาชิกและสถิติการใช้งาน (Manage Users & Stats)</span>
-                <span id="usersTotalCountBadge" style="background: #EEF2F6; color: #475569; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px;">0 คน</span>
-              </div>
-              <p style="margin: 4px 0 0 0; font-size: 13px; color: #64748B;">ตรวจสอบข้อมูลสมาชิก สถิติการทำข้อสอบ คะแนนเฉลี่ย และคลิกดูผลทดสอบรายวิชาแบบละเอียด</p>
-            </div>
+        <div class="admin-page-container">
+          <div class="admin-mobile-header">
+            <h1 class="admin-screen-title">Users</h1>
           </div>
 
-          <!-- Search & Filter Controls -->
-          <div style="background: #F8FAFC; border-bottom: 1.5px solid #E2E8F0; padding: 14px 24px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
-            <div style="flex: 1.5; min-width: 220px;">
-              <input type="text" id="userSearchInput" oninput="onUserSearchInput()" placeholder="🔍 ค้นหาชื่อผู้ใช้ (Username), ชื่อจริง หรือ อีเมล..." style="width: 100%; box-sizing: border-box; padding: 9px 14px; border-radius: 10px; border: 1.5px solid #CBD5E1; font-size: 13px; font-family: inherit; outline: none; background: white;">
-            </div>
-            <div style="min-width: 180px;">
-              <select id="userFilterExamStatus" onchange="onUserFilterStatusChange()" style="width: 100%; padding: 9px 12px; border-radius: 10px; border: 1.5px solid #CBD5E1; font-size: 13px; font-family: inherit; font-weight: 600; background: white; outline: none;">
-                <option value="ALL">ผู้ใช้ทั้งหมด (All Users)</option>
-                <option value="HAS_EXAMS">ทำข้อสอบแล้ว (มีสถิติ)</option>
-                <option value="NO_EXAMS">ยังไม่เคยทำข้อสอบ</option>
-                <option value="ADMIN_ONLY">เฉพาะผู้ดูแล (Admin / Owner)</option>
-              </select>
-            </div>
-            <div id="userFilterStatsSummary" style="font-size: 12.5px; font-weight: 600; color: #64748B; margin-left: auto;">
-              <!-- Summary text populated by JS -->
-            </div>
+          <!-- Search Input -->
+          <div style="margin-bottom: 14px;">
+            <input type="text" id="userSearchInput" oninput="onUserSearchInput()" placeholder="🔍 ค้นหาชื่อหรืออีเมล..." class="admin-figma-search-input">
           </div>
 
-          <div style="overflow-x: auto;">
-            <table>
-              <thead>
-                <tr>
-                  <th style="width: 60px;">ID</th>
-                  <th>ผู้ใช้งาน (User)</th>
-                  <th style="text-align: center;">ทำข้อสอบแล้ว</th>
-                  <th style="text-align: center;">คะแนนเฉลี่ย</th>
-                  <th style="text-align: center;">Streak</th>
-                  <th style="text-align: center;">สิทธิ์ (Role)</th>
-                  <th style="text-align: right;">การจัดการ & สถิติ</th>
-                </tr>
-              </thead>
-              <tbody id="usersTableBody">
-                <!-- Users populated via JS -->
-              </tbody>
-            </table>
+          <!-- Filter Pills -->
+          <div class="admin-filter-pills-row" style="margin-bottom: 16px;">
+            <button type="button" class="admin-pill-btn active" data-filter="ALL" onclick="setUserFilterStatus('ALL', this)">All</button>
+            <button type="button" class="admin-pill-btn" data-filter="HAS_EXAMS" onclick="setUserFilterStatus('HAS_EXAMS', this)">Has Exams</button>
+            <button type="button" class="admin-pill-btn" data-filter="NO_EXAMS" onclick="setUserFilterStatus('NO_EXAMS', this)">No Exams</button>
+            <button type="button" class="admin-pill-btn" data-filter="ADMIN_ONLY" onclick="setUserFilterStatus('ADMIN_ONLY', this)">Admins</button>
+            <span id="usersTotalCountBadge" style="margin-left: auto; font-size: 12px; font-weight: 700; color: #94A3B8; align-self: center;">0 คน</span>
           </div>
+
+          <!-- User Cards Container -->
+          <div id="usersCardsContainer" class="admin-users-cards-list">
+            <!-- Populated via JS -->
+          </div>
+
+          <!-- Hidden fallback table container for backwards compatibility -->
+          <table style="display: none;"><tbody id="usersTableBody"></tbody></table>
         </div>
       </div>
 
-      <!-- Exams View -->
+      <!-- Exams & Reports View (Figma Image 2 & 3) -->
       <div id="viewExams" class="tab-view">
-        <div class="table-container">
-          <div class="table-header-row" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
-            <div>
-              <div class="table-title" style="margin-bottom: 4px;">Manage Exam Sets (คลังชุดข้อสอบ)</div>
-              <p style="margin: 0; font-size: 13px; color: #64748B;">จัดการชุดข้อสอบ แก้ไขเนื้อหาข้อสอบ หรือสร้างข้อสอบด้วย AI</p>
+        <div class="admin-page-container">
+          <!-- Screen Header -->
+          <div class="admin-mobile-header" style="margin-bottom: 12px;">
+            <h1 class="admin-screen-title">Exams & Reports</h1>
+          </div>
+
+          <!-- Subtabs Nav (Figma Image 2 & 3: Exam Bank vs Question Reports ⚠️) -->
+          <div class="admin-subtabs-nav">
+            <button type="button" id="subtabExamBankBtn" class="admin-subtab-btn active" onclick="switchExamsSubtab('bank')">
+              Exam Bank
+            </button>
+            <button type="button" id="subtabReportsBtn" class="admin-subtab-btn" onclick="switchExamsSubtab('reports')">
+              Question Reports <span id="subtabReportsAlertBadge" style="font-size: 13px;">⚠️</span>
+            </button>
+          </div>
+
+          <!-- SUBTAB 1: EXAM BANK (Figma Image 2) -->
+          <div id="subtabExamBankContent" class="admin-subtab-pane active">
+            <!-- Action Bar: Add Exam (AI) & CSV Import (As user requested: "เพิมที่ให้กดสร้างข้อสอบเหมือนเดิมนะ") -->
+            <div class="admin-exam-actions-bar" style="display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap;">
+              <button type="button" class="btn btn-primary" onclick="showAddExamModal()" style="background: #BD1B0B; border: none; padding: 11px 18px; border-radius: 14px; font-weight: 800; font-size: 13.5px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 14px rgba(189,27,11,0.25); cursor: pointer; color: white; flex: 1; min-width: 170px; justify-content: center;">
+                <span>+ สร้างข้อสอบด้วย AI</span>
+              </button>
+              <button type="button" class="btn" onclick="openCsvExamModal()" style="background: #0284C7; color: white; border: none; padding: 11px 16px; border-radius: 14px; font-weight: 700; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 10px rgba(2,132,199,0.25); cursor: pointer;">
+                <span>📁 นำเข้า CSV</span>
+              </button>
+              <button type="button" class="btn btn-danger" onclick="clearAllExams()" style="background: #FFF1F2; color: #E11D48; border: 1.5px solid #FECDD3; padding: 11px 14px; border-radius: 14px; font-weight: 700; font-size: 12.5px; display: inline-flex; align-items: center; gap: 5px; cursor: pointer;">
+                <span>🗑️ ลบทั้งหมด</span>
+              </button>
             </div>
-            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-              <button class="btn btn-danger" onclick="clearAllExams()" style="background: #EF4444; border: none; padding: 10px 16px; border-radius: 12px; font-weight: 700; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(239,68,68,0.25);">
-                <span>🗑️ ลบข้อสอบทั้งหมด</span>
-              </button>
-              <button class="btn" onclick="openCsvExamModal()" style="background: #0284C7; color: white; border: none; padding: 10px 16px; border-radius: 12px; font-weight: 700; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(2,132,199,0.25); cursor: pointer;">
-                <span>📁 นำเข้าข้อสอบจาก CSV</span>
-              </button>
-              <button class="btn btn-primary" onclick="showAddExamModal()" style="background: #BD1B0B; border: none; padding: 10px 18px; border-radius: 12px; font-weight: 700; display: flex; align-items: center; gap: 6px;">
-                <span>+ เพิ่มชุดข้อสอบใหม่ (AI)</span>
-              </button>
+
+            <!-- Subject & Search Filter Bar -->
+            <div style="background: #F8FAFC; border: 1.5px solid #E2E8F0; border-radius: 14px; padding: 10px 14px; margin-bottom: 16px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+              <input type="text" id="filterExamSearch" placeholder="🔍 ค้นหาชื่อชุดข้อสอบ..." oninput="onFilterExamSearchChange()" style="flex: 1; min-width: 180px; padding: 9px 14px; border-radius: 10px; border: 1.5px solid #CBD5E1; font-size: 13px; font-family: inherit; background: white; outline: none;">
+              <select id="filterExamSubject" onchange="onFilterExamSubjectChange()" style="min-width: 150px; padding: 9px 12px; border-radius: 10px; border: 1.5px solid #CBD5E1; font-size: 12.5px; font-weight: 600; font-family: inherit; background: white; outline: none;">
+                <option value="ALL">ทุกวิชา (All Subjects)</option>
+                <option value="ทั่วไป">🧠 ความสามารถทั่วไป (คณิตศาสตร์)</option>
+                <option value="ภาษาไทย">🇹🇭 ภาษาไทย</option>
+                <option value="คอม">💻 คอมพิวเตอร์และสารสนเทศ</option>
+                <option value="กฏหมาย">⚖️ กฎหมายที่ประชาชนควรรู้</option>
+                <option value="สังคม">🏛️ สังคม วัฒนธรรม และจริยธรรม</option>
+                <option value="งานสารบรรณ_๒๕๒๖">📜 ระเบียบสารบรรณ (๒๕๒๖)</option>
+                <option value="สารบรรณตำรวจ_๕๔">📑 สารบรรณตำรวจ (ลักษณะ ๕๔)</option>
+                <option value="ภาษาอังกฤษ">🇬🇧 ภาษาอังกฤษ</option>
+              </select>
+              <select id="filterExamChapter" onchange="onFilterExamChapterChange()" style="display: none;">
+                <option value="ALL">ทุกหมวดหมู่</option>
+              </select>
+            </div>
+
+            <!-- Counter summary -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding: 0 4px;">
+              <span id="examsCountSummary" style="font-size: 12.5px; font-weight: 700; color: #64748B;">พบทั้งหมด 0 ชุดข้อสอบ</span>
+              <span id="examsActiveSubjectBadge" style="font-size: 12px; font-weight: 700; color: #94A3B8;">แสดงทุกวิชา</span>
+            </div>
+
+            <!-- Exam Bank Cards List (Figma Image 2) -->
+            <div id="examsCardsContainer" class="admin-exams-cards-list">
+              <!-- Rendered dynamically by JS -->
+            </div>
+
+            <!-- Compatibility containers for old table / bank views (hidden) -->
+            <div id="adminSubjectBanksNav" style="display: none;"></div>
+            <div id="adminBankChapterView" style="display: none;"></div>
+            <div id="adminFlatTableView" style="display: none;">
+              <table><tbody id="examsTableBody"></tbody></table>
             </div>
           </div>
 
-          <!-- Subject Banks Navigation Pills (คลังรายวิชา) -->
-          <div style="margin-bottom: 16px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-              <span style="font-size: 13px; font-weight: 800; color: #1E293B; display: flex; align-items: center; gap: 6px;">
-                <span>📚 คลังรายวิชา (Subject Question Banks)</span>
-              </span>
-              <span style="font-size: 11.5px; color: #64748B; font-weight: 600;">คลิกเพื่อกรองเฉพาะวิชา</span>
-            </div>
-            <div id="adminSubjectBanksNav" style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
-              <!-- Populated dynamically via renderAdminSubjectBanksNav() -->
-            </div>
-          </div>
-
-          <!-- Filters Bar: กรองตามหมวดหมู่ & ค้นหา & สลับโหมดมุมมอง -->
-          <div style="background: #F8FAFC; border: 1.5px solid #E2E8F0; border-radius: 16px; padding: 14px 16px; margin-bottom: 18px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between;">
-            <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; flex: 1; min-width: 280px;">
-              <div style="min-width: 170px; flex: 1;">
-                <label style="display: block; font-size: 11.5px; font-weight: 700; color: #475569; margin-bottom: 4px;">🔍 กรองวิชา:</label>
-                <select id="filterExamSubject" onchange="onFilterExamSubjectChange()" style="width: 100%; padding: 9px 12px; border-radius: 10px; border: 1.5px solid #CBD5E1; font-size: 13px; font-family: inherit; font-weight: 600; background: white; outline: none;">
-                  <option value="ALL">ทุกวิชา (All Subjects)</option>
-                  <option value="ทั่วไป">🧠 ความสามารถทั่วไป (คณิตศาสตร์)</option>
-                  <option value="ภาษาไทย">🇹🇭 ภาษาไทย</option>
-                  <option value="คอม">💻 คอมพิวเตอร์และสารสนเทศ</option>
-                  <option value="กฏหมาย">⚖️ กฎหมายที่ประชาชนควรรู้</option>
-                  <option value="สังคม">🏛️ สังคม วัฒนธรรม และจริยธรรม</option>
-                  <option value="งานสารบรรณ_๒๕๒๖">📜 ระเบียบสารบรรณ (๒๕๒๖)</option>
-                  <option value="สารบรรณตำรวจ_๕๔">📑 สารบรรณตำรวจ (ลักษณะ ๕๔)</option>
-                  <option value="ภาษาอังกฤษ">🇬🇧 ภาษาอังกฤษ</option>
-                </select>
+          <!-- SUBTAB 2: QUESTION REPORTS (Figma Image 3) -->
+          <div id="subtabReportsContent" class="admin-subtab-pane">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
+              <div style="font-size: 13px; font-weight: 700; color: #64748B;">
+                รายงานข้อผิดพลาด: <span id="reportsHeaderBadge" style="color: #DC2626; font-weight: 800;">0 รายการ</span>
               </div>
-
-              <div style="min-width: 200px; flex: 1.3;">
-                <label style="display: block; font-size: 11.5px; font-weight: 700; color: #475569; margin-bottom: 4px;">📑 กรองหมวดหมู่ / บทเรียน:</label>
-                <select id="filterExamChapter" onchange="onFilterExamChapterChange()" style="width: 100%; padding: 9px 12px; border-radius: 10px; border: 1.5px solid #CBD5E1; font-size: 13px; font-family: inherit; font-weight: 600; background: white; outline: none;">
-                  <option value="ALL">ทุกหมวดหมู่ (All Chapters)</option>
-                </select>
-              </div>
-
-              <div style="min-width: 170px; flex: 1.2;">
-                <label style="display: block; font-size: 11.5px; font-weight: 700; color: #475569; margin-bottom: 4px;">🔎 ค้นหาชื่อชุดข้อสอบ:</label>
-                <input type="text" id="filterExamSearch" placeholder="พิมพ์คำค้นหา..." oninput="onFilterExamSearchChange()" style="width: 100%; padding: 9px 12px; border-radius: 10px; border: 1.5px solid #CBD5E1; font-size: 13px; font-family: inherit; box-sizing: border-box; outline: none; background: white;">
-              </div>
-            </div>
-
-            <div style="display: flex; gap: 8px; align-items: flex-end; align-self: flex-end;">
-              <button onclick="resetExamFilters()" class="btn btn-outline" style="padding: 9px 14px; border-radius: 10px; font-size: 12.5px; font-weight: 600; height: 38px;">ล้างตัวกรอง</button>
-              
-              <!-- View Switcher -->
-              <div style="display: inline-flex; background: #E2E8F0; padding: 3px; border-radius: 12px; height: 38px; box-sizing: border-box;">
-                <button type="button" id="btnViewModeBank" onclick="toggleExamViewMode('bank')" style="padding: 6px 14px; border-radius: 9px; border: none; font-size: 12px; font-weight: 800; cursor: pointer; transition: all 0.15s; background: #BD1B0B; color: white; display: flex; align-items: center; gap: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-                  <span>🗂️ แยกตามคลังและหมวดหมู่</span>
+              <div style="display: flex; gap: 8px;">
+                <button type="button" class="btn" onclick="openBatchAiAuditModal()" style="background: linear-gradient(135deg, #4F46E5, #7C3AED); color: white; border: none; padding: 8px 14px; border-radius: 12px; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; box-shadow: 0 2px 8px rgba(79,70,229,0.25);">
+                  <span>⚡ AI ตรวจสอบทุกรายงาน</span>
                 </button>
-                <button type="button" id="btnViewModeTable" onclick="toggleExamViewMode('table')" style="padding: 6px 14px; border-radius: 9px; border: none; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.15s; background: transparent; color: #475569; display: flex; align-items: center; gap: 5px;">
-                  <span>📋 ตารางรวม</span>
+                <button type="button" class="btn btn-outline" onclick="loadAdminReports()" style="background: white; border: 1.5px solid #CBD5E1; color: #475569; padding: 8px 12px; border-radius: 12px; font-size: 12px; font-weight: 700; cursor: pointer;">
+                  <span>🔄 รีเฟรช</span>
                 </button>
               </div>
             </div>
+
+            <!-- Question Reports Cards List (Figma Image 3) -->
+            <div id="reportsCardsContainer" class="admin-reports-cards-list">
+              <!-- Rendered dynamically by JS -->
+            </div>
+
+            <!-- Compatibility container for old reports table (hidden) -->
+            <table style="display: none;"><tbody id="reportsTableBody"></tbody></table>
           </div>
 
-          <!-- Counter badge -->
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; padding: 0 4px;">
-            <span id="examsCountSummary" style="font-size: 13px; font-weight: 800; color: #334155;">พบทั้งหมด 0 ชุดข้อสอบ</span>
-            <span id="examsActiveSubjectBadge" style="font-size: 12px; font-weight: 700; color: #64748B;">แสดงทุกวิชา</span>
-          </div>
-
-          <!-- VIEW MODE 1: Bank & Chapters Grouped View (Default) -->
-          <div id="adminBankChapterView" style="display: flex; flex-direction: column; gap: 20px;">
-            <!-- Dynamically populated via renderExamsWithFilters() -->
-          </div>
-
-          <!-- VIEW MODE 2: Classic Flat Table View -->
-          <div id="adminFlatTableView" style="display: none; overflow-x: auto;">
-            <table>
-              <thead>
-                <tr>
-                  <th style="width: 50px;">ID</th>
-                  <th>ชื่อชุดข้อสอบ (Title)</th>
-                  <th>วิชา (Subject)</th>
-                  <th>หมวดหมู่ / บท (Chapter)</th>
-                  <th style="text-align: center;">จำนวนข้อ</th>
-                  <th style="text-align: center;">สถานะ</th>
-                  <th style="text-align: right;">การจัดการ</th>
-                </tr>
-              </thead>
-              <tbody id="examsTableBody">
-                <!-- Exams populated via JS -->
-              </tbody>
-            </table>
-          </div>
         </div>
       </div>
 
@@ -416,44 +381,8 @@
         </div>
       </div>
 
-      <!-- Reports View (กล่องรับข้อสอบข้อที่ผิด ระบุวิชา หมวด และข้อ พร้อมปุ่มแก้ไขข้อนั้นทันที) -->
-      <div id="viewReports" class="tab-view">
-        <div class="table-container">
-          <div class="table-header-row" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
-            <div>
-              <div class="table-title" style="margin-bottom: 4px; display: flex; align-items: center; gap: 8px;">
-                <span>🚩 ข้อสอบที่ผู้ใช้รายงานข้อผิดพลาด (Reported Questions)</span>
-                <span id="reportsHeaderBadge" style="font-size: 12px; font-weight: 700; background: #FEE2E2; color: #DC2626; padding: 3px 10px; border-radius: 999px;">0 รายการ</span>
-              </div>
-              <p style="margin: 0; font-size: 13px; color: #64748B;">กล่องรวบรวมข้อสอบที่นักเรียนส่งแจ้งผิดพลาด ระบุวิชา หมวดหมู่ ข้อที่ และสามารถกดแก้ไขข้อนั้นได้ทันที</p>
-            </div>
-            <div style="display: flex; gap: 8px;">
-              <button class="btn btn-primary" onclick="openBatchAiAuditModal()" style="background: linear-gradient(135deg, #4F46E5, #7C3AED); border: none; padding: 8px 16px; border-radius: 12px; font-weight: 700; font-size: 12.5px; display: flex; align-items: center; gap: 6px; color: white; cursor: pointer; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);">
-                <span>⚡ AI ตรวจสอบทุกรายงาน</span>
-              </button>
-              <button class="btn btn-outline" onclick="loadAdminReports()" style="background: #F8FAFC; border: 1.5px solid #CBD5E1; padding: 8px 14px; border-radius: 12px; font-weight: 700; font-size: 12.5px; display: flex; align-items: center; gap: 6px; cursor: pointer;">
-                <span>🔄 รีเฟรชข้อมูล</span>
-              </button>
-            </div>
-          </div>
-
-          <table>
-            <thead>
-              <tr>
-                <th style="width: 60px; text-align: center;">ลำดับ</th>
-                <th style="width: 150px;">วิชา (หมวดหมู่/บท)</th>
-                <th style="width: 90px; text-align: center;">ข้อที่</th>
-                <th>โจทย์ข้อสอบ & รายละเอียดที่แจ้งผิด</th>
-                <th style="width: 150px;">ผู้รายงาน / วันที่</th>
-                <th style="width: 230px; text-align: right;">การจัดการ</th>
-              </tr>
-            </thead>
-            <tbody id="reportsTableBody">
-              <!-- Populated via JS -->
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <!-- Reports View Alias (Points to viewExams reports subtab) -->
+      <div id="viewReports" class="tab-view" style="display: none;"></div>
 
     </div>
   </main>

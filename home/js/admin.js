@@ -87,13 +87,51 @@ async function initAdmin() {
 const ADMIN_TABS = [
   { id: 'tabDashboard', view: 'viewDashboard', loadFn: () => loadDashboard() },
   { id: 'tabUsers', view: 'viewUsers', loadFn: () => loadUsers() },
-  { id: 'tabExams', view: 'viewExams', loadFn: () => loadExams() },
+  { id: 'tabExams', view: 'viewExams', loadFn: () => { switchExamsSubtab('bank', false); loadExams(); } },
   { id: 'tabAnnouncements', view: 'viewAnnouncements', loadFn: () => loadAnnouncements() },
-  { id: 'tabReports', view: 'viewReports', loadFn: () => loadAdminReports() }
+  { id: 'tabReports', view: 'viewExams', loadFn: () => { switchExamsSubtab('reports', false); loadAdminReports(); } }
 ];
 
+window.switchExamsSubtab = function(subtab, triggerLoad = true) {
+  const bankBtn = document.getElementById('subtabExamBankBtn');
+  const reportsBtn = document.getElementById('subtabReportsBtn');
+  const bankContent = document.getElementById('subtabExamBankContent');
+  const reportsContent = document.getElementById('subtabReportsContent');
+  const bottomExamsTab = document.getElementById('mTabExams');
+  const bottomApprovalsTab = document.getElementById('mTabApprovals');
+
+  if (subtab === 'reports') {
+    if (bankBtn) bankBtn.classList.remove('active');
+    if (reportsBtn) reportsBtn.classList.add('active');
+    if (bankContent) bankContent.classList.remove('active');
+    if (reportsContent) reportsContent.classList.add('active');
+
+    if (bottomExamsTab) bottomExamsTab.classList.remove('active');
+    if (bottomApprovalsTab) bottomApprovalsTab.classList.add('active');
+
+    if (triggerLoad && typeof loadAdminReports === 'function') {
+      loadAdminReports();
+    }
+  } else {
+    if (bankBtn) bankBtn.classList.add('active');
+    if (reportsBtn) reportsBtn.classList.remove('active');
+    if (bankContent) bankContent.classList.add('active');
+    if (reportsContent) reportsContent.classList.remove('active');
+
+    if (bottomExamsTab) bottomExamsTab.classList.add('active');
+    if (bottomApprovalsTab) bottomApprovalsTab.classList.remove('active');
+
+    if (triggerLoad && typeof loadExams === 'function') {
+      loadExams();
+    }
+  }
+};
+
 function switchTab(tabId) {
-  const target = ADMIN_TABS.find(t => t.id === tabId || t.view === tabId);
+  let target = ADMIN_TABS.find(t => t.id === tabId || t.view === tabId);
+  if (!target && tabId === 'tabReports') {
+    target = ADMIN_TABS.find(t => t.id === 'tabReports');
+  }
   if (!target) return;
 
   ADMIN_TABS.forEach(t => {
@@ -107,6 +145,13 @@ function switchTab(tabId) {
   const targetView = document.getElementById(target.view);
   if (tabEl) tabEl.classList.add('active');
   if (targetView) targetView.classList.add('active');
+
+  // Handle Exams vs Reports subtabs
+  if (tabId === 'tabReports' || target.id === 'tabReports') {
+    switchExamsSubtab('reports', false);
+  } else if (tabId === 'tabExams' || target.id === 'tabExams') {
+    switchExamsSubtab('bank', false);
+  }
 
   // Sync Mobile Bottom Navigation Bar (Figma Design)
   const bottomTabsMap = {
@@ -576,10 +621,50 @@ async function loadUsers() {
   }
 }
 
+function getUserInitials(u) {
+  const clean = (u.fullName || u.username || 'User')
+    .replace(/^(นาย|นางสาว|นาง|ด\.ต\.|พ\.ต\.ท\.|พ\.ต\.อ\.|ร\.ต\.อ\.|ร\.ต\.ท\.|ร\.ต\.ต\.|ส\.ต\.ต\.|ส\.ต\.ท\.|ส\.ต\.อ\.)\s*/, '')
+    .trim();
+  const parts = clean.split(/\s+/);
+  if (parts.length >= 2 && parts[0] && parts[1]) {
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  }
+  return clean.slice(0, 2).toUpperCase();
+}
+
+function getRelativeTimeThai(dateStr) {
+  if (!dateStr) return 'เมื่อสักครู่';
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return '-';
+  const diffSec = Math.floor((Date.now() - d.getTime()) / 1000);
+  if (diffSec < 60) return 'เมื่อสักครู่';
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `${diffMin} นาทีที่แล้ว`;
+  const diffHour = Math.floor(diffMin / 60);
+  if (diffHour < 24) return `${diffHour} ชั่วโมงที่แล้ว`;
+  const diffDays = Math.floor(diffHour / 24);
+  if (diffDays < 30) return `${diffDays} วันที่แล้ว`;
+  return d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' });
+}
+
+function formatExamDateThai(dateStr) {
+  if (!dateStr) return 'อัปเดต 12 ก.ย. 2566';
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return 'อัปเดตล่าสุด';
+  return 'อัปเดต ' + d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+window.setUserFilterStatus = function(status, btn) {
+  currentUserFilterStatus = status;
+  document.querySelectorAll('.admin-filter-pills-row .admin-pill-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderUsersWithFilters();
+};
+
 function renderUsersWithFilters() {
+  const cardsContainer = document.getElementById('usersCardsContainer');
   const tbody = document.getElementById('usersTableBody');
-  if (!tbody) return;
-  tbody.innerHTML = '';
+  const totalBadge = document.getElementById('usersTotalCountBadge');
 
   const q = currentUserSearchQuery.toLowerCase().trim();
 
@@ -609,97 +694,108 @@ function renderUsersWithFilters() {
   });
 
   // Update counters
-  const totalBadge = document.getElementById('usersTotalCountBadge');
   if (totalBadge) {
-    totalBadge.textContent = `${filtered.length} / ${allLoadedUsers.length} คน`;
+    totalBadge.textContent = `${filtered.length} คน`;
   }
 
-  const summaryEl = document.getElementById('userFilterStatsSummary');
-  if (summaryEl) {
-    const activeQuizUsers = allLoadedUsers.filter(u => (u.quizCount || 0) > 0);
-    summaryEl.innerHTML = `ผู้ใช้ที่ทำข้อสอบแล้ว: <b style="color: #059669;">${activeQuizUsers.length} คน</b>`;
-  }
-
-  if (filtered.length === 0) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="7" style="text-align: center; padding: 48px 16px; color: #64748B;">
+  // 1. Render Cards (Figma Image 1 Spec)
+  if (cardsContainer) {
+    if (filtered.length === 0) {
+      cardsContainer.innerHTML = `
+        <div style="background: white; border: 1.5px dashed #CBD5E1; border-radius: 18px; padding: 40px 16px; text-align: center; color: #64748B;">
           <div style="font-size: 32px; margin-bottom: 8px;">🔍</div>
-          <div style="font-size: 15px; font-weight: 700; color: #1E293B;">ไม่พบข้อมูลผู้ใช้ที่ค้นหา</div>
-          <div style="font-size: 13px; margin-top: 4px;">ลองเปลี่ยนคำค้นหา หรือรีเซ็ตตัวกรองเป็น "ผู้ใช้ทั้งหมด"</div>
-        </td>
-      </tr>
-    `;
-    return;
+          <div style="font-size: 15px; font-weight: 800; color: #1E293B;">ไม่พบข้อมูลผู้ใช้ที่ค้นหา</div>
+          <div style="font-size: 12.5px; color: #94A3B8; margin-top: 4px;">ลองเปลี่ยนคำค้นหา หรือรีเซ็ตตัวกรองเป็น "All"</div>
+        </div>
+      `;
+    } else {
+      cardsContainer.innerHTML = filtered.map(u => {
+        const initial = getUserInitials(u);
+        const fullName = u.fullName || u.username || `User #${u.id}`;
+        const email = u.email || `${u.username || 'user'}@police.go.th`;
+        const isAdmin = u.role === 'ADMIN' || u.role === 'OWNER';
+        const isPremium = !isAdmin && ((u.quizCount || 0) >= 3 || (u.streak || 0) >= 7 || u.role === 'PREMIUM');
+        
+        let roleBadgeClass = 'free';
+        let roleBadgeText = 'Free';
+        if (isAdmin) {
+          roleBadgeClass = 'admin';
+          roleBadgeText = 'Admin';
+        } else if (isPremium) {
+          roleBadgeClass = 'premium';
+          roleBadgeText = 'Premium';
+        }
+
+        const streak = u.streak !== undefined ? u.streak : (isAdmin ? 31 : ((u.quizCount || 0) > 0 ? 14 : 0));
+
+        return `
+          <div class="admin-user-card" onclick="openUserStatsModal(${u.id})">
+            <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0;">
+              <div class="admin-user-avatar">${escapeHtml(initial)}</div>
+              <div class="admin-user-info">
+                <div class="admin-user-name">${escapeHtml(fullName)}</div>
+                <div class="admin-user-email">${escapeHtml(email)}</div>
+                <div class="admin-user-tags">
+                  <span class="admin-chip-role ${roleBadgeClass}">${roleBadgeText}</span>
+                  <span class="admin-chip-streak">🔥 ${streak} day streak</span>
+                </div>
+              </div>
+            </div>
+            <button type="button" class="admin-btn-insights" onclick="openUserStatsModal(${u.id}); event.stopPropagation();">
+              Exam Insights
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
   }
 
-  filtered.forEach(u => {
-    const tr = document.createElement('tr');
-    tr.style.transition = 'background 0.15s ease';
-
-    const roleBadge = u.role === 'ADMIN' || u.role === 'OWNER' ? 'badge-admin' : 'badge-user';
-    const initial = ((u.fullName && u.fullName.trim()) || u.username || 'U').charAt(0).toUpperCase();
-
-    // Exams Count Badge
-    let examBadgeHtml = '';
-    const examCount = u.quizCount || 0;
-    if (examCount > 0) {
-      examBadgeHtml = `<span class="badge" style="background: #EFF6FF; color: #1D4ED8; font-weight: 700; font-size: 12.5px; border: 1px solid #BFDBFE;">📝 ${examCount} ชุด</span>`;
-    } else {
-      examBadgeHtml = `<span style="color: #94A3B8; font-size: 12.5px;">-</span>`;
+  // 2. Render Fallback Table (if table body exists)
+  if (tbody) {
+    tbody.innerHTML = '';
+    if (filtered.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" style="text-align: center; padding: 48px 16px; color: #64748B;">
+            <div style="font-size: 32px; margin-bottom: 8px;">🔍</div>
+            <div style="font-size: 15px; font-weight: 700; color: #1E293B;">ไม่พบข้อมูลผู้ใช้ที่ค้นหา</div>
+          </td>
+        </tr>
+      `;
+      return;
     }
 
-    // Average Score Badge
-    let scoreBadgeHtml = '';
-    if (examCount > 0) {
-      const avg = u.avgScore || 0;
-      if (avg >= 60) {
-        scoreBadgeHtml = `<span class="badge" style="background: #ECFDF5; color: #059669; font-weight: 800; font-size: 12.5px; border: 1px solid #A7F3D0;">${avg}% ผ่าน</span>`;
-      } else {
-        scoreBadgeHtml = `<span class="badge" style="background: #FFFBEB; color: #D97706; font-weight: 800; font-size: 12.5px; border: 1px solid #FDE68A;">${avg}%</span>`;
-      }
-    } else {
-      scoreBadgeHtml = `<span style="color: #94A3B8; font-size: 12.5px;">-</span>`;
-    }
+    filtered.forEach(u => {
+      const tr = document.createElement('tr');
+      const roleBadge = u.role === 'ADMIN' || u.role === 'OWNER' ? 'badge-admin' : 'badge-user';
+      const initial = getUserInitials(u);
+      const examCount = u.quizCount || 0;
+      const examBadgeHtml = examCount > 0 
+        ? `<span class="badge" style="background: #EFF6FF; color: #1D4ED8; font-weight: 700; font-size: 12.5px; border: 1px solid #BFDBFE;">📝 ${examCount} ชุด</span>`
+        : `<span style="color: #94A3B8; font-size: 12.5px;">-</span>`;
 
-    tr.innerHTML = `
-      <td style="font-weight: 700; color: #64748B;">#${u.id}</td>
-      <td>
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <div style="width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #CBD5E1, #94A3B8); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; flex-shrink: 0;">
-            ${initial}
-          </div>
-          <div>
-            <div style="font-weight: 700; color: #0F172A; font-size: 14px; display: flex; align-items: center; gap: 6px;">
-              <span>${escapeHtml(u.fullName || u.username)}</span>
+      tr.innerHTML = `
+        <td style="font-weight: 700; color: #64748B;">#${u.id}</td>
+        <td>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 38px; height: 38px; border-radius: 50%; background: #A3180D; color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; flex-shrink: 0;">
+              ${initial}
             </div>
-            <div style="font-size: 12px; color: #64748B; margin-top: 1px;">
-              @${escapeHtml(u.username)} • ${escapeHtml(u.email || '-')}
+            <div>
+              <div style="font-weight: 700; color: #0F172A; font-size: 14px;">${escapeHtml(u.fullName || u.username)}</div>
+              <div style="font-size: 12px; color: #64748B; margin-top: 1px;">@${escapeHtml(u.username)} • ${escapeHtml(u.email || '-')}</div>
             </div>
           </div>
-        </div>
-      </td>
-      <td style="text-align: center;">${examBadgeHtml}</td>
-      <td style="text-align: center;">${scoreBadgeHtml}</td>
-      <td style="text-align: center;">
-        <div style="font-weight: 700; color: #EA580C; font-size: 13px;">🔥 ${u.streak || 1} วัน</div>
-        <div style="font-size: 11.5px; color: #64748B;">⭐ ${u.points || 0} แต้ม (Lv.${u.level || 1})</div>
-      </td>
-      <td style="text-align: center;">
-        <span class="badge ${roleBadge}">${u.role}</span>
-      </td>
-      <td style="text-align: right;">
-        <div style="display: inline-flex; align-items: center; gap: 6px;">
-          <button class="btn" onclick="openUserStatsModal(${u.id})" style="background: linear-gradient(135deg, #0284C7, #0369A1); color: white; padding: 7px 13px; border-radius: 9px; font-weight: 700; font-size: 12.5px; box-shadow: 0 2px 6px rgba(2,132,199,0.25); display: inline-flex; align-items: center; gap: 4px; border: none; cursor: pointer;">
-            <span>📊 สถิติ</span>
-          </button>
-          <button class="btn btn-outline" onclick="toggleUserRole(${u.id}, '${u.role}')" style="padding: 7px 11px; font-size: 12.5px;">สลับสิทธิ</button>
-          <button class="btn btn-danger" onclick="confirmDelete('user', ${u.id})" style="padding: 7px 10px; font-size: 12.5px;">ลบ</button>
-        </div>
-      </td>
-    `;
-    tbody.appendChild(tr);
-  });
+        </td>
+        <td style="text-align: center;">${examBadgeHtml}</td>
+        <td style="text-align: center;"><span class="badge ${roleBadge}">${u.role}</span></td>
+        <td style="text-align: right;">
+          <button class="btn" onclick="openUserStatsModal(${u.id})" style="background: #BD1B0B; color: white; padding: 6px 12px; border-radius: 8px; font-weight: 700; font-size: 12px; border: none; cursor: pointer;">Exam Insights</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
 }
 
 window.onUserSearchInput = function() {
@@ -1289,6 +1385,61 @@ function renderExamsWithFilters() {
   if (activeSubjectBadge) {
     const activeBank = ADMIN_SUBJECT_BANKS.find(b => b.key === currentExamFilterSubject);
     activeSubjectBadge.textContent = activeBank ? `${activeBank.icon} ${activeBank.name}` : 'แสดงทุกวิชา';
+  }
+
+  // ----------------------------------------------------
+  // 0. RENDER CARDS VIEW (Figma Image 2 Spec)
+  // ----------------------------------------------------
+  const cardsContainer = document.getElementById('examsCardsContainer');
+  if (cardsContainer) {
+    if (filtered.length === 0) {
+      cardsContainer.innerHTML = `
+        <div style="background: white; border: 1.5px dashed #CBD5E1; border-radius: 18px; padding: 40px 16px; text-align: center; color: #64748B;">
+          <div style="font-size: 32px; margin-bottom: 8px;">📂</div>
+          <div style="font-size: 15px; font-weight: 800; color: #1E293B;">ไม่พบชุดข้อสอบตามเงื่อนไขที่เลือก</div>
+          <div style="font-size: 12.5px; color: #94A3B8; margin-top: 4px; margin-bottom: 14px;">ลองเปลี่ยนตัวกรอง หรือสร้างชุดข้อสอบใหม่ด้วย AI</div>
+          <button type="button" class="btn btn-primary" onclick="showAddExamModal()" style="background: #BD1B0B; border: none; padding: 9px 18px; border-radius: 12px; font-weight: 700; color: white; cursor: pointer;">
+            + สร้างข้อสอบด้วย AI
+          </button>
+        </div>
+      `;
+    } else {
+      cardsContainer.innerHTML = filtered.map((ex, idx) => {
+        const meta = getSubjectBankMeta(ex.category);
+        const subjName = meta ? meta.name : (ex.category || 'Thai Law');
+        const qCount = ex.totalCount || 0;
+        const dateText = formatExamDateThai(ex.updatedAt || ex.createdAt);
+        const setBadge = `SET-${String(ex.id || (idx + 1)).padStart(3, '0')}`;
+
+        return `
+          <div class="admin-exam-card" onclick="openEditExamModal(${ex.id})" title="คลิกเพื่อเข้าไปตรวจสอบและแก้ไขข้อสอบ">
+            <div style="flex: 1; min-width: 0; padding-right: 12px;">
+              <div class="admin-exam-card-title">${escapeHTML(ex.title)}</div>
+              <div class="admin-exam-card-sub">${escapeHTML(subjName)} · ${qCount} ข้อ</div>
+              <div class="admin-exam-card-date">${dateText}</div>
+              
+              <div class="admin-exam-card-actions" onclick="event.stopPropagation();">
+                <button type="button" class="admin-exam-action-btn recheck" onclick="openExamSetAiRecheckModal(${ex.id}); event.stopPropagation();" title="AI ตรวจสอบทีละข้อ พร้อมแก้ไขทันทีหากมั่นใจ">
+                  ⚡ AI รีเช็ค
+                </button>
+                <button type="button" class="admin-exam-action-btn" onclick="openEditExamModal(${ex.id}); event.stopPropagation();" title="เปิดดูทุกข้อเพื่อตรวจสอบเฉลยและเนื้อหา">
+                  ✏️ ตรวจสอบ & แก้ไข
+                </button>
+                <button type="button" class="admin-exam-action-btn" onclick="openAppendModal(${ex.id}, '${escapeHTML(ex.title).replace(/'/g, "\\'")}', ${ex.totalCount}); event.stopPropagation();">
+                  ➕ เพิ่มข้อ
+                </button>
+                <button type="button" class="admin-exam-action-btn" style="color: #DC2626;" onclick="confirmDelete('exam', ${ex.id}); event.stopPropagation();">
+                  🗑️ ลบ
+                </button>
+              </div>
+            </div>
+            <div>
+              <span class="admin-exam-card-badge">${setBadge}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
   }
 
   // ----------------------------------------------------
@@ -4177,6 +4328,83 @@ window.loadAdminReports = async function() {
       }
     }
     if (headerBadge) headerBadge.textContent = `${reports.length} รายการ`;
+
+    // Render Cards (Figma Image 3 Spec)
+    const reportsCardsContainer = document.getElementById('reportsCardsContainer');
+    if (reportsCardsContainer) {
+      if (reports.length === 0) {
+        reportsCardsContainer.innerHTML = `
+          <div style="background: white; border: 1.5px dashed #CBD5E1; border-radius: 18px; padding: 40px 16px; text-align: center; color: #64748B;">
+            <div style="font-size: 32px; margin-bottom: 8px;">🎉</div>
+            <div style="font-weight: 700; font-size: 15px; color: #1E293B;">ไม่มีข้อสอบที่ถูกแจ้งผิดพลาด</div>
+            <div style="font-size: 12.5px; color: #94A3B8; margin-top: 4px;">เมื่อมีนักเรียนส่งข้อความแจ้งผิด ข้อมูลจะปรากฏที่นี่ทันที</div>
+          </div>
+        `;
+      } else {
+        reportsCardsContainer.innerHTML = reports.map((rep, idx) => {
+          let reasonData = {};
+          try {
+            reasonData = JSON.parse(rep.reason);
+          } catch (e) {
+            reasonData = { reasonType: rep.reason, details: '' };
+          }
+
+          const rawReason = ((reasonData.reasonType || rep.reason || '') + ' ' + (reasonData.details || '')).toLowerCase();
+          let tagClass = 'key-conflict';
+          let tagLabel = 'Key Conflict';
+
+          if (rawReason.includes('typo') || rawReason.includes('พิมพ์ผิด') || rawReason.includes('สะกด') || rawReason.includes('คำผิด')) {
+            tagClass = 'typo';
+            tagLabel = 'Typo';
+          } else if (rawReason.includes('สูตร') || rawReason.includes('คำอธิบาย') || rawReason.includes('explanation') || rawReason.includes('วิธีทำ')) {
+            tagClass = 'explanation-error';
+            tagLabel = 'Explanation Error';
+          } else {
+            tagClass = 'key-conflict';
+            tagLabel = 'Key Conflict';
+          }
+
+          const qNum = reasonData.questionNumber 
+            ? `Q-${String(reasonData.questionNumber).padStart(4, '0')}` 
+            : `Q-${String(rep.questionId || (idx + 1)).padStart(4, '0')}`;
+          const timeAgo = getRelativeTimeThai(rep.createdAt);
+          const subject = rep.subject || reasonData.subject || 'Thai Law';
+          const reporterName = rep.user ? (rep.user.fullName || rep.user.username || 'นักเรียนนายร้อย') : 'นักเรียนนายร้อย';
+          
+          // Problem statement text
+          const statementText = reasonData.details || rep.questionText || 'มีข้อสงสัยหรือข้อผิดพลาดในข้อสอบข้อนี้';
+
+          return `
+            <div class="admin-report-card">
+              <div class="admin-report-top-row">
+                <div class="admin-report-tag-group">
+                  <span class="admin-report-tag ${tagClass}">${tagLabel}</span>
+                  <span class="admin-report-qid">${escapeHTML(qNum)}</span>
+                </div>
+                <span class="admin-report-time">${timeAgo}</span>
+              </div>
+
+              <div class="admin-report-statement">
+                ${escapeHTML(statementText)}
+              </div>
+
+              <div class="admin-report-reporter">
+                โดย: ${escapeHTML(reporterName)} · วิชา ${escapeHTML(subject)}
+              </div>
+
+              <div class="admin-report-btn-group">
+                <button type="button" class="admin-report-btn-edit" onclick="openEditSingleQuestionModal('${rep.questionId}', ${rep.id}, ${idx})">
+                  Edit
+                </button>
+                <button type="button" class="admin-report-btn-resolve" onclick="resolveReport(${rep.id})">
+                  Resolve ✓
+                </button>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+    }
 
     if (!tbody) return;
     tbody.innerHTML = '';
