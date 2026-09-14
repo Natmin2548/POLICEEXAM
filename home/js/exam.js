@@ -198,6 +198,7 @@ function normalizeAnswerToIndex(rawAns, choices) {
   examState.userAnswers = {};
   examState.isSubmitted = false;
   examState.isReviewMode = false;
+  examState.startTime = Date.now();
 
   renderExamQuestion();
 }
@@ -460,11 +461,14 @@ async function submitExam() {
   examState.isReviewMode = false;
   examState.subjectStats = subjectStats;
 
+  const timeSpentSeconds = Math.max(1, Math.round((Date.now() - (examState.startTime || Date.now())) / 1000));
+  examState.timeSpentSeconds = timeSpentSeconds;
+
   // Show score modal immediately
   showResultsModal(subjectStats);
 
   // Save history & sync with server
-  saveExamResult(correct, total, subjectStats);
+  saveExamResult(correct, total, subjectStats, timeSpentSeconds);
 }
 
 function showResultsModal(subjectStats) {
@@ -550,7 +554,7 @@ window.handleExitExam = function() {
   window.location.href = examState.sourcePage || 'bank.html';
 };
 
-async function saveExamResult(correct, total, subjectStats) {
+async function saveExamResult(correct, total, subjectStats, timeSpentSeconds) {
   try {
     let userProfile = null;
     try {
@@ -561,6 +565,7 @@ async function saveExamResult(correct, total, subjectStats) {
     const userId = userProfile?.id || 'guest';
     const userKey = 'userQuizHistory_' + userId;
     const token = localStorage.getItem('authToken');
+    const duration = timeSpentSeconds || examState.timeSpentSeconds || 0;
 
     const isPretest = !!examState.track;
     const examTitle = isPretest
@@ -587,6 +592,8 @@ async function saveExamResult(correct, total, subjectStats) {
       totalCount: total,
       total: total,
       scorePct: scorePct,
+      timeSpentSeconds: duration,
+      durationSeconds: duration,
       date: formattedDate,
       createdAt: nowIso,
       timestamp: Date.now(),
@@ -644,6 +651,7 @@ async function saveExamResult(correct, total, subjectStats) {
 
       // Record the main overall exam attempt
       try {
+        const titleWithTime = isPretest ? `${examTitle} [time:${duration}]` : examTitle;
         const res = await fetch(apiEndpoint, {
           method: 'POST',
           headers: {
@@ -659,7 +667,9 @@ async function saveExamResult(correct, total, subjectStats) {
             scorePct: scorePct,
             subject: isPretest ? (examState.track === 'prabpram' ? 'ข้อสอบจำลอง สายปราบปราม' : 'ข้อสอบจำลอง สายอำนวยการ') : mainSubject,
             setId: isPretest ? `pretest_${examState.track}` : (examState.setId || `mixed_${examState.subjectKey || 'sub'}`),
-            setTitle: examTitle,
+            setTitle: titleWithTime,
+            timeSpentSeconds: duration,
+            durationSeconds: duration,
             createdAt: nowIso
           })
         });

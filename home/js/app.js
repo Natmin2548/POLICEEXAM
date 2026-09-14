@@ -1666,28 +1666,27 @@ if (btnProfileLogout) {
 const navTabs = document.querySelectorAll('.bottom-nav .nav-tab');
 const homeTabBtn = navTabs[0]; // first tab
 const bankTabBtn = document.getElementById('btnTabBank'); // bank tab
-const communityTabBtn = document.getElementById('btnTabCommunity'); // community tab
+const leaderboardTabBtn = document.getElementById('btnTabLeaderboard'); // leaderboard tab
 const battleTabBtn = document.getElementById('btnTabBattle'); // battle tab
 const statsTabBtn = document.getElementById('btnTabStats'); // stats tab
 const profileTabBtn = document.getElementById('btnTabProfile'); // profile tab
 const btnBackFromBank = document.getElementById('btnBackFromBank');
 
 const homeView = document.getElementById('homeView');
-const communityView = document.getElementById('communityView');
+const leaderboardView = document.getElementById('leaderboardView');
 const battleView = document.getElementById('battleView');
 const statsView = document.getElementById('statsView');
 const profileView = document.getElementById('profileView');
 const questionBankView = document.getElementById('questionBankView');
 window.switchTabToHome = function(e) {
   if (e && typeof e.preventDefault === 'function') e.preventDefault();
-  if (typeof stopCommunityPolling === 'function') stopCommunityPolling();
   
   document.body.classList.remove('in-bank-view');
 
   const navTabs = document.querySelectorAll('.bottom-nav .nav-tab');
   const homeTabBtn = document.getElementById('btnTabHome') || navTabs[0];
   const homeView = document.getElementById('homeView');
-  const communityView = document.getElementById('communityView');
+  const leaderboardView = document.getElementById('leaderboardView');
   const battleView = document.getElementById('battleView');
   const statsView = document.getElementById('statsView');
   const profileView = document.getElementById('profileView');
@@ -1697,7 +1696,7 @@ window.switchTabToHome = function(e) {
   if (homeTabBtn) homeTabBtn.classList.add('active');
 
   if (homeView) homeView.classList.add('active');
-  if (communityView) communityView.classList.remove('active');
+  if (leaderboardView) leaderboardView.classList.remove('active');
   if (battleView) battleView.classList.remove('active');
   if (statsView) statsView.classList.remove('active');
   if (profileView) profileView.classList.remove('active');
@@ -1737,7 +1736,6 @@ if (bankTabBtn) {
 if (homeTabBtn) {
   homeTabBtn.addEventListener('click', (e) => {
     e.preventDefault();
-    if (typeof stopCommunityPolling === 'function') stopCommunityPolling();
     
     document.body.classList.remove('in-bank-view');
 
@@ -1745,7 +1743,7 @@ if (homeTabBtn) {
     homeTabBtn.classList.add('active');
     
     if (homeView) homeView.classList.add('active');
-    if (communityView) communityView.classList.remove('active');
+    if (leaderboardView) leaderboardView.classList.remove('active');
     if (battleView) battleView.classList.remove('active');
     if (statsView) statsView.classList.remove('active');
     if (profileView) profileView.classList.remove('active');
@@ -1757,15 +1755,15 @@ if (homeTabBtn) {
   });
 }
 
-if (communityTabBtn) {
-  communityTabBtn.addEventListener('click', (e) => {
+if (leaderboardTabBtn) {
+  leaderboardTabBtn.addEventListener('click', (e) => {
     e.preventDefault();
     document.body.classList.remove('in-bank-view');
 
     navTabs.forEach(t => t.classList.remove('active'));
-    communityTabBtn.classList.add('active');
+    leaderboardTabBtn.classList.add('active');
     
-    if (communityView) communityView.classList.add('active');
+    if (leaderboardView) leaderboardView.classList.add('active');
     if (homeView) homeView.classList.remove('active');
     if (battleView) battleView.classList.remove('active');
     if (statsView) statsView.classList.remove('active');
@@ -1775,7 +1773,9 @@ if (communityTabBtn) {
     const btnHeaderBackHome = document.getElementById('btnHeaderBackHome');
     if (btnHeaderBackHome) btnHeaderBackHome.style.display = 'none';
 
-    updateCommunityTabDetails();
+    if (typeof loadLeaderboard150 === 'function') {
+      loadLeaderboard150(typeof currentLeaderboardTrack !== 'undefined' ? currentLeaderboardTrack : 'all');
+    }
   });
 }
 
@@ -1808,7 +1808,6 @@ window.closeMaintenanceModal = function() {
 if (battleTabBtn) {
   battleTabBtn.addEventListener('click', (e) => {
     e.preventDefault();
-    if (typeof stopCommunityPolling === 'function') stopCommunityPolling();
     showBattleMaintenanceAlert(e);
   });
 }
@@ -1816,7 +1815,6 @@ if (battleTabBtn) {
 if (statsTabBtn) {
   statsTabBtn.addEventListener('click', (e) => {
     e.preventDefault();
-    if (typeof stopCommunityPolling === 'function') stopCommunityPolling();
     document.body.classList.remove('in-bank-view');
 
     navTabs.forEach(t => t.classList.remove('active'));
@@ -1824,7 +1822,7 @@ if (statsTabBtn) {
     
     if (statsView) statsView.classList.add('active');
     if (homeView) homeView.classList.remove('active');
-    if (communityView) communityView.classList.remove('active');
+    if (leaderboardView) leaderboardView.classList.remove('active');
     if (battleView) battleView.classList.remove('active');
     if (profileView) profileView.classList.remove('active');
     if (questionBankView) questionBankView.classList.remove('active');
@@ -1840,11 +1838,11 @@ if (profileTabBtn) {
   });
 }
 
-// Support hash navigation (e.g. index.html#community or index.html#profile)
+// Support hash navigation (e.g. index.html#leaderboard or index.html#profile)
 window.addEventListener('DOMContentLoaded', () => {
   const hash = window.location.hash;
-  if (hash === '#community' && communityTabBtn) {
-    setTimeout(() => communityTabBtn.click(), 100);
+  if ((hash === '#leaderboard' || hash === '#community') && leaderboardTabBtn) {
+    setTimeout(() => leaderboardTabBtn.click(), 100);
   } else if (hash === '#profile') {
     setTimeout(() => {
       if (typeof window.switchTabToProfile === 'function') {
@@ -3205,1870 +3203,214 @@ function updateStatsTabDetails() {
 }
 
 // ==========================================
-// Community Section Logic
+// Leaderboard Section Logic (Pretest 150)
 // ==========================================
-let communityActiveTab = 'posts'; // 'posts', 'chat', 'groups', 'friends'
-let postsPollInterval = null;
-let chatPollInterval = null;
-let groupChatPollInterval = null;
-let dmChatPollInterval = null;
-let lastLoadedPostsHash = '';
+let currentLeaderboardTrack = 'all'; // 'all', 'prabpram', 'amnuay'
 
-function updateCommunityTabDetails() {
-  setupCommunitySubtabs();
-  
-  // Start with Posts feed
-  switchCommunitySubtab('posts');
+window.stopCommunityPolling = function() {};
+window.updateCommunityTabDetails = function() {};
 
-  // Load real active counts from DB
-  loadCommunityStats();
-}
+window.setLeaderboardTrackFilter = function(track) {
+  currentLeaderboardTrack = track;
+  const btnAll = document.getElementById('btnFilterLeaderboardAll');
+  const btnPrab = document.getElementById('btnFilterLeaderboardPrabpram');
+  const btnAmn = document.getElementById('btnFilterLeaderboardAmnuay');
 
-async function loadCommunityStats() {
-  const activePostsEl = document.getElementById('lblActivePostsCount');
-  const activeUsersEl = document.getElementById('lblActiveUsersCount');
+  if (btnAll) btnAll.classList.toggle('active', track === 'all');
+  if (btnPrab) btnPrab.classList.toggle('active', track === 'prabpram');
+  if (btnAmn) btnAmn.classList.toggle('active', track === 'amnuay');
 
-  try {
-    const res = await fetch(`${API_BASE}/api/community/stats`, {
-      headers: { 'Authorization': `Bearer ${authToken}` }
-    });
-    if (!res.ok) throw new Error();
-    const data = await res.json();
+  loadLeaderboard150(track);
+};
 
-    if (activePostsEl) activePostsEl.textContent = data.activePostsCount;
-    if (activeUsersEl) activeUsersEl.textContent = data.activeUsersCount;
-  } catch (err) {
-    console.error('Load community stats error:', err);
-  }
-}
-
-function setupCommunitySubtabs() {
-  const btnSubtabPosts = document.getElementById('btnSubtabPosts');
-  const btnSubtabChat = document.getElementById('btnSubtabChat');
-  const btnSubtabGroups = document.getElementById('btnSubtabGroups');
-  const btnSubtabFriends = document.getElementById('btnSubtabFriends');
-
-  if (btnSubtabPosts) {
-    btnSubtabPosts.onclick = (e) => {
-      e.preventDefault();
-      switchCommunitySubtab('posts');
-    };
-  }
-
-  if (btnSubtabChat) {
-    btnSubtabChat.onclick = (e) => {
-      e.preventDefault();
-      switchCommunitySubtab('chat');
-    };
-  }
-
-  if (btnSubtabGroups) {
-    btnSubtabGroups.onclick = (e) => {
-      e.preventDefault();
-      switchCommunitySubtab('groups');
-    };
-  }
-
-  if (btnSubtabFriends) {
-    btnSubtabFriends.onclick = (e) => {
-      e.preventDefault();
-      switchCommunitySubtab('friends');
-    };
-  }
-}
-
-function switchCommunitySubtab(tab) {
-  communityActiveTab = tab;
-  
-  const btnSubtabPosts = document.getElementById('btnSubtabPosts');
-  const btnSubtabChat = document.getElementById('btnSubtabChat');
-  const btnSubtabGroups = document.getElementById('btnSubtabGroups');
-  const btnSubtabFriends = document.getElementById('btnSubtabFriends');
-
-  const contentPosts = document.getElementById('subtabContentPosts');
-  const contentChat = document.getElementById('subtabContentChat');
-  const contentGroups = document.getElementById('subtabContentGroups');
-  const contentFriends = document.getElementById('subtabContentFriends');
-
-  // Toggle active class on buttons
-  if (btnSubtabPosts) btnSubtabPosts.classList.toggle('active', tab === 'posts');
-  if (btnSubtabChat) btnSubtabChat.classList.toggle('active', tab === 'chat');
-  if (btnSubtabGroups) btnSubtabGroups.classList.toggle('active', tab === 'groups');
-  if (btnSubtabFriends) btnSubtabFriends.classList.toggle('active', tab === 'friends');
-
-  // Toggle active class on content panels
-  if (contentPosts) contentPosts.classList.toggle('active', tab === 'posts');
-  if (contentChat) contentChat.classList.toggle('active', tab === 'chat');
-  if (contentGroups) contentGroups.classList.toggle('active', tab === 'groups');
-  if (contentFriends) contentFriends.classList.toggle('active', tab === 'friends');
-
-  // Clear all polling intervals
-  if (postsPollInterval) { clearInterval(postsPollInterval); postsPollInterval = null; }
-  if (chatPollInterval) { clearInterval(chatPollInterval); chatPollInterval = null; }
-  if (groupChatPollInterval) { clearInterval(groupChatPollInterval); groupChatPollInterval = null; }
-  if (dmChatPollInterval) { clearInterval(dmChatPollInterval); dmChatPollInterval = null; }
-
-  // Reset panels view states
-  const groupListMainPanel = document.getElementById('groupListMainPanel');
-  const groupChatScreenPanel = document.getElementById('groupChatScreenPanel');
-  if (groupListMainPanel) groupListMainPanel.style.display = 'block';
-  if (groupChatScreenPanel) groupChatScreenPanel.style.display = 'none';
-
-  const friendsMainPanel = document.getElementById('friendsMainPanel');
-  const dmChatScreenPanel = document.getElementById('dmChatScreenPanel');
-  if (friendsMainPanel) friendsMainPanel.style.display = 'block';
-  if (dmChatScreenPanel) dmChatScreenPanel.style.display = 'none';
-
-  if (tab === 'posts') {
-    loadCommunityPosts();
-    // Real-time live polling every 3 seconds
-    postsPollInterval = setInterval(() => loadCommunityPosts(true), 3000);
-  } else if (tab === 'chat') {
-    loadChatMessages();
-    // Poll chat messages every 3 seconds
-    chatPollInterval = setInterval(loadChatMessages, 3000);
-  } else if (tab === 'groups') {
-    loadGroupsList();
-  } else if (tab === 'friends') {
-    loadFriendsList();
-    loadBlockedList();
-    loadFriendRequests();
-  }
-  
-  loadCommunityStats();
-}
-
-async function loadCommunityPosts(isBackground = false) {
-  const container = document.getElementById('postsFeedContainer');
+window.loadLeaderboard150 = async function(track = 'all') {
+  const container = document.getElementById('leaderboardListContainer');
   if (!container) return;
 
-  // If user is actively typing a comment or editing, skip background re-render
-  if (isBackground) {
-    const activeEl = document.activeElement;
-    if (activeEl && (activeEl.classList.contains('txt-comment-input') || activeEl.id === 'txtPostContent') && activeEl.value.trim().length > 0) {
-      return;
-    }
-  }
+  container.innerHTML = `
+    <div class="leaderboard-item-loading" style="text-align: center; padding: 36px 12px; color: #94A3B8; font-size: 13.5px;">
+      <div style="font-size: 24px; margin-bottom: 8px;">⏳</div>
+      กำลังโหลดตารางอันดับ 150 ข้อ...
+    </div>
+  `;
 
   try {
     const token = authToken || localStorage.getItem('authToken');
     const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
-    const res = await fetch(`${API_BASE}/api/community/posts`, { headers });
-    if (!res.ok) throw new Error('Failed to load posts');
-    const posts = await res.json();
+    const res = await fetch(`${API_BASE}/api/leaderboard/pretest150?track=${encodeURIComponent(track)}`, { headers });
+    if (!res.ok) throw new Error('Failed to load leaderboard');
+    const data = await res.json();
 
-    const oneWeekMs = 7 * 24 * 60 * 60 * 1000;
-    const nowMs = Date.now();
-
-    // Filter posts within 7 days
-    const validPosts = posts.filter(p => {
-      const pTime = new Date(p.createdAt).getTime();
-      return (nowMs - pTime) <= oneWeekMs;
-    });
-
-    const currentHash = JSON.stringify(validPosts.map(p => ({
-      id: p.id,
-      content: p.content,
-      likes: p.likesCount,
-      isLiked: p.isLiked,
-      commentsCount: p.comments ? p.comments.length : 0
-    })));
-
-    // If background polling and content hasn't changed, skip DOM redraw
-    if (isBackground && currentHash === lastLoadedPostsHash) {
-      return;
-    }
-    lastLoadedPostsHash = currentHash;
-
-    if (validPosts.length === 0) {
-      container.innerHTML = `
-        <div style="background-color: var(--bg-card); border: 1px dashed var(--border-color); border-radius: 20px; padding: 40px; text-align: center; color: var(--text-light); font-size: 14px; width: 100%;">
-          <span style="font-size: 32px; display: block; margin-bottom: 8px;"></span>
-          ยังไม่มีโพสต์พูดคุยในขณะนี้<br>
-          <span style="font-size: 11px; opacity: 0.7;">เขียนโพสต์ด้านบนเพื่อเริ่มแชร์ข้อมูลคนแรก!</span>
-        </div>
-      `;
-      return;
-    }
-
-    let html = '';
-    validPosts.forEach(p => {
-      const displayName = p.user.fullName || p.user.username || 'ผู้ใช้งาน';
-      const initial = displayName.charAt(0);
-      const postDate = new Date(p.createdAt);
-      
-      const timeStr = formatPostTime(postDate);
-
-      // Heart like status
-      const likeCount = p.likesCount || 0;
-      const isLiked = !!p.isLiked;
-
-      // Render Edit & Delete actions for own posts or ADMIN
-      const isMyPost = userProfile && p.userId === userProfile.id;
-      const isAdmin = userProfile && (userProfile.role === 'ADMIN' || userProfile.role === 'OWNER');
-      let actionsHtml = '';
-      if (isMyPost) {
-        actionsHtml = `
-          <div style="display: flex; gap: 8px; margin-top: 4px;">
-            <span class="post-action-btn edit" onclick="startEditPost(${p.id})">แก้ไข</span>
-            <span class="post-action-btn delete" onclick="deletePost(${p.id})">ลบ</span>
-          </div>
-        `;
-      } else if (isAdmin) {
-        actionsHtml = `
-          <div style="display: flex; gap: 8px; margin-top: 4px;">
-            <span class="post-action-btn delete" style="color: #EF4444; font-weight: 700; cursor: pointer;" onclick="deletePost(${p.id})" title="สิทธิ์แอดมิน: ลบโพสต์นี้">🗑️ ลบโพสต์ (Admin)</span>
-          </div>
-        `;
-      }
-      
-      // Comments markup
-      let commentsHtml = '';
-      if (p.comments && p.comments.length > 0) {
-        commentsHtml += `<div class="comments-section">`;
-        p.comments.forEach(c => {
-          const cName = c.user.fullName || c.user.username || 'ผู้ใช้งาน';
-          const cInitial = cName.charAt(0);
-          const cDate = new Date(c.createdAt);
-          commentsHtml += `
-            <div class="comment-item">
-              ${renderAvatarHtml(c.user, 'comment-avatar', '', '#94A3B8')}
-              <div class="comment-content-box">
-                <span class="comment-author-name">${cName}</span>
-                <span class="comment-text">${formatMessageContent(c.content)}</span>
-                <span class="comment-time">${formatPostTime(cDate)}</span>
-              </div>
-            </div>
-          `;
-        });
-        commentsHtml += `</div>`;
-      }
-
-      html += `
-        <div class="post-card" style="margin-bottom: 16px; background: #FFFFFF; border: 1.5px solid #F1F5F9; border-radius: 20px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
-          <div class="post-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
-            <div class="post-author-info" style="display: flex; align-items: center; gap: 12px;">
-              ${renderAvatarHtml(p.user, 'post-author-avatar', 'width: 40px; height: 40px; border-radius: 50%; font-size: 16px;', '#CBD5E1')}
-              <div>
-                <span class="post-author-name" style="display: block; font-weight: 800; font-size: 14.5px; color: #0F172A;">${displayName}</span>
-                <span class="post-time" style="font-size: 11.5px; color: #94A3B8;">${timeStr}</span>
-                ${actionsHtml}
-              </div>
-            </div>
-
-            <!-- Auto-expire indicator pill -->
-            <span style="font-size: 10.5px; color: #94A3B8; background: #F8FAFC; border: 1px solid #E2E8F0; padding: 2px 8px; border-radius: 999px; font-weight: 600;" title="โพสต์จะถูกลบอัตโนมัติเมื่อครบ 7 วัน">
-              ⏱ คงอยู่ 7 วัน
-            </span>
-          </div>
-
-          <div class="post-body" id="postBodyText-${p.id}" style="font-size: 14px; color: #1E293B; line-height: 1.6; margin-bottom: 14px;">${formatMessageContent(p.content)}</div>
-          
-          <!-- Post Action Bar (Heart Like & Comment Indicator) -->
-          <div style="display: flex; align-items: center; gap: 12px; padding: 8px 0; border-top: 1px solid #F1F5F9; border-bottom: 1px solid #F1F5F9; margin-bottom: 12px;">
-            <!-- Heart Like Button -->
-            <button id="btnPostLike-${p.id}" onclick="togglePostLike(${p.id})" style="background: ${isLiked ? '#FEF2F2' : '#F8FAFC'}; border: 1.5px solid ${isLiked ? '#FECACA' : '#E2E8F0'}; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; color: ${isLiked ? '#DC2626' : '#64748B'}; font-size: 12.5px; font-weight: 800; padding: 6px 14px; border-radius: 999px; transition: all 0.2s ease; font-family: inherit;">
-              <span id="postHeartIcon-${p.id}" style="font-size: 14px; transform: ${isLiked ? 'scale(1.15)' : 'scale(1)'}; transition: transform 0.2s ease;">${isLiked ? '❤️' : '🤍'}</span>
-              <span id="postLikeCount-${p.id}">${likeCount}</span>
-            </button>
-
-            <!-- Comments Count Indicator -->
-            <span style="display: inline-flex; align-items: center; gap: 6px; color: #64748B; font-size: 12.5px; font-weight: 700; padding: 6px 12px;">
-              💬 <span>${p.comments ? p.comments.length : 0} ความคิดเห็น</span>
-            </span>
-          </div>
-
-          <!-- Comments List Area -->
-          ${commentsHtml}
-
-          <!-- Add Comment Input Area -->
-          <div class="comment-input-row" style="margin-top: 12px; display: flex; gap: 8px;">
-            <input type="text" placeholder="เขียนความคิดเห็น..." class="txt-comment-input" id="txtCommentForPost-${p.id}" style="flex: 1; border: 1px solid #E2E8F0; border-radius: 12px; padding: 9px 14px; font-size: 13.5px; font-family: inherit; outline: none;">
-            <button class="btn-submit-comment" onclick="submitComment(${p.id})" style="padding: 9px 18px; border-radius: 12px; background: #0F172A; color: white; border: none; font-weight: 700; cursor: pointer; font-size: 13px; font-family: inherit;">ส่ง</button>
-          </div>
-        </div>
-      `;
-    });
-
-    container.innerHTML = html;
-
+    renderMyRankCard(data.myRank);
+    renderLeaderboardTop30(data.top30, data.myRank);
   } catch (err) {
-    console.error('Load posts error:', err);
-    if (!isBackground && (!container.innerHTML || container.innerHTML.includes('กำลังโหลดฟีดโพสต์'))) {
-      container.innerHTML = '<div class="leaderboard-item-loading">ไม่สามารถโหลดฟีดโพสต์ได้</div>';
-    }
-  }
-}
-
-// Toggle Post Heart Like
-window.togglePostLike = async function(postId) {
-  const btn = document.getElementById(`btnPostLike-${postId}`);
-  const icon = document.getElementById(`postHeartIcon-${postId}`);
-  const countEl = document.getElementById(`postLikeCount-${postId}`);
-  if (!btn || !countEl) return;
-
-  // Optimistic UI update
-  const wasLiked = icon.textContent === '❤️';
-  let curCount = parseInt(countEl.textContent || '0', 10);
-  
-  if (wasLiked) {
-    icon.textContent = '🤍';
-    btn.style.background = '#F8FAFC';
-    btn.style.borderColor = '#E2E8F0';
-    btn.style.color = '#64748B';
-    countEl.textContent = Math.max(0, curCount - 1);
-  } else {
-    icon.textContent = '❤️';
-    btn.style.background = '#FEF2F2';
-    btn.style.borderColor = '#FECACA';
-    btn.style.color = '#DC2626';
-    countEl.textContent = curCount + 1;
-  }
-
-  try {
-    const res = await fetch(`${API_BASE}/api/community/posts/${postId}/like`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${authToken}`
-      }
-    });
-    if (res.ok) {
-      const data = await res.json();
-      if (typeof data.likesCount === 'number') {
-        countEl.textContent = data.likesCount;
-      }
-      if (typeof data.isLiked === 'boolean') {
-        icon.textContent = data.isLiked ? '❤️' : '🤍';
-        btn.style.background = data.isLiked ? '#FEF2F2' : '#F8FAFC';
-        btn.style.borderColor = data.isLiked ? '#FECACA' : '#E2E8F0';
-        btn.style.color = data.isLiked ? '#DC2626' : '#64748B';
-      }
-    }
-  } catch (err) {
-    console.error('Toggle like error:', err);
-  }
-};
-
-// Community Post Image Attachment Handler
-let selectedPostImageBase64 = '';
-
-window.handlePostImageSelect = function(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-
-  if (file.size > 5 * 1024 * 1024) {
-    showCenteredAlert('ไฟล์รูปภาพมีขนาดใหญ่เกินไป (จำกัดไม่เกิน 5MB)');
-    e.target.value = '';
-    return;
-  }
-
-  const reader = new FileReader();
-  reader.onload = function(ev) {
-    selectedPostImageBase64 = ev.target.result;
-    const previewContainer = document.getElementById('postImagePreviewContainer');
-    const previewImg = document.getElementById('postImagePreviewImg');
-    if (previewContainer && previewImg) {
-      previewImg.src = selectedPostImageBase64;
-      previewContainer.style.display = 'block';
-    }
-  };
-  reader.readAsDataURL(file);
-};
-
-window.clearPostImageAttachment = function() {
-  selectedPostImageBase64 = '';
-  const previewContainer = document.getElementById('postImagePreviewContainer');
-  const previewImg = document.getElementById('postImagePreviewImg');
-  const fileInput = document.getElementById('filePostImageInput');
-  if (previewContainer) previewContainer.style.display = 'none';
-  if (previewImg) previewImg.src = '';
-  if (fileInput) fileInput.value = '';
-};
-
-// Submit Post
-const btnCreatePost = document.getElementById('btnCreatePost');
-if (btnCreatePost) {
-  btnCreatePost.onclick = async (e) => {
-    e.preventDefault();
-    const txtPostContent = document.getElementById('txtPostContent');
-    if (!txtPostContent) return;
-
-    const content = txtPostContent.value.trim();
-    if (!content && !selectedPostImageBase64) {
-      await showCenteredAlert('กรุณากรอกข้อความหรือแนบรูปภาพโพสต์');
-      return;
-    }
-
-    let finalPayload = content;
-    if (selectedPostImageBase64) {
-      finalPayload = content ? `${content}\n\n${selectedPostImageBase64}` : selectedPostImageBase64;
-    }
-
-    btnCreatePost.disabled = true;
-    btnCreatePost.textContent = 'กำลังโพสต์...';
-
-    try {
-      const res = await fetch(`${API_BASE}/api/community/posts`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`
-        },
-        body: JSON.stringify({ content: finalPayload })
-      });
-
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || 'Failed to post');
-      }
-
-      txtPostContent.value = '';
-      clearPostImageAttachment();
-      loadCommunityPosts(); // Reload posts
-    } catch (err) {
-      console.error('Create post error:', err);
-      await showCenteredAlert(err.message);
-    } finally {
-      btnCreatePost.disabled = false;
-      btnCreatePost.textContent = 'โพสต์';
-    }
-  };
-}
-
-// Submit Comment
-async function submitComment(postId) {
-  const input = document.getElementById(`txtCommentForPost-${postId}`);
-  if (!input) return;
-
-  const content = input.value.trim();
-  if (!content) {
-    await showCenteredAlert('กรุณากรอกความคิดเห็น');
-    return;
-  }
-
-  const btn = input.nextElementSibling;
-  if (btn) btn.disabled = true;
-
-  try {
-    const res = await fetch(`${API_BASE}/api/community/posts/${postId}/comments`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${authToken}`
-      },
-      body: JSON.stringify({ content })
-    });
-
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.error || 'Failed to send comment');
-    }
-
-    input.value = '';
-    loadCommunityPosts(); // Reload posts to show comment
-  } catch (err) {
-    console.error('Submit comment error:', err);
-    await showCenteredAlert(err.message);
-  } finally {
-    if (btn) btn.disabled = false;
-  }
-}
-
-// Global Chat Messages
-async function loadChatMessages() {
-  const container = document.getElementById('chatMessagesContainer');
-  if (!container) return;
-
-  try {
-    const res = await fetch(`${API_BASE}/api/community/chat`, {
-      headers: { 'Authorization': `Bearer ${authToken}` }
-    });
-    if (!res.ok) throw new Error('Failed to load chat');
-    const messages = await res.json();
-
-    if (messages.length === 0) {
-      container.innerHTML = `
-        <div style="text-align: center; color: var(--text-light); font-size: 13px; padding-top: 40px;">
-           เริ่มพิมพ์ข้อความแชทเพื่อพูดคุยในกลุ่มแชทรวมวันนี้
-        </div>
-      `;
-      return;
-    }
-
-    let html = '';
-    messages.forEach(m => {
-      const isMe = userProfile && m.userId === userProfile.id;
-      const displayName = m.user.fullName || m.user.username || 'ผู้ใช้งาน';
-      const timeStr = new Date(m.createdAt).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
-      const initial = displayName.charAt(0);
-
-      const avatarHtml = renderAvatarHtml(m.user, 'friend-user-avatar', 'width: 32px; height: 32px; font-size: 13px; cursor: pointer; flex-shrink: 0; border-radius: 50%; font-weight: 600; margin-right: 8px;', isMe ? 'var(--primary-color)' : '#BD1B0B').replace('<div ', '<div onclick="showUserProfile(${m.userId})" ');
-
-      html += `
-        <div style="display: flex; align-items: flex-start; margin-bottom: 12px; justify-content: ${isMe ? 'flex-end' : 'flex-start'};">
-          ${isMe ? '' : avatarHtml}
-          <div class="chat-bubble ${isMe ? 'me' : ''}" style="margin: 0;">
-            <span class="chat-sender" onclick="showUserProfile(${m.userId})" style="cursor: pointer; font-weight: 600;">${isMe ? 'คุณ' : displayName}</span>
-            <div class="chat-message-box">
-              ${formatMessageContent(m.content)}
-            </div>
-            <span class="chat-timestamp">${timeStr}</span>
-          </div>
-          ${isMe ? avatarHtml.replace('margin-right: 8px;', 'margin-left: 8px;') : ''}
-        </div>
-      `;
-    });
-
-    // Check if user is scrolled to the bottom before rendering new messages
-    const isAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 60;
-    
-    container.innerHTML = html;
-
-    // Auto scroll to bottom on new messages or if already at bottom
-    if (isAtBottom || container.getAttribute('data-first-load') !== 'false') {
-      container.scrollTop = container.scrollHeight;
-      container.setAttribute('data-first-load', 'false');
-    }
-
-  } catch (err) {
-    console.error('Load chat error:', err);
-  }
-}
-
-// Send Chat message
-const btnSendChat = document.getElementById('btnSendChat');
-const txtChatInput = document.getElementById('txtChatInput');
-if (btnSendChat && txtChatInput) {
-  const handleSendChat = async () => {
-    const content = txtChatInput.value.trim();
-    if (!content) return;
-
-    txtChatInput.value = '';
-    btnSendChat.disabled = true;
-
-    try {
-      const res = await fetch(`${API_BASE}/api/community/chat`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`
-        },
-        body: JSON.stringify({ content })
-      });
-
-      if (!res.ok) throw new Error('Send failed');
-      loadChatMessages();
-    } catch (err) {
-      console.error('Send message error:', err);
-    } finally {
-      btnSendChat.disabled = false;
-      txtChatInput.focus();
-    }
-  };
-
-  btnSendChat.onclick = (e) => {
-    e.preventDefault();
-    handleSendChat();
-  };
-
-  txtChatInput.onkeydown = (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleSendChat();
-    }
-  };
-}
-
-// Utility to format date strings
-function formatPostTime(date) {
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMin = Math.floor(diffMs / (1000 * 60));
-  const diffHr = Math.floor(diffMs / (1000 * 60 * 60));
-  
-  if (diffMin < 1) return 'เมื่อสักครู่';
-  if (diffMin < 60) return `${diffMin} นาทีที่แล้ว`;
-  if (diffHr < 24) return `${diffHr} ชั่วโมงที่แล้ว`;
-  
-  const days = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.'];
-  const months = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
-  return `${date.getDate()} ${months[date.getMonth()]} (${days[date.getDay()]})`;
-}
-
-// Utility to escape HTML
-function escapeHTML(str) {
-  if (!str) return '';
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
-}
-
-function formatInlineHighlights(str) {
-  let escaped = escapeHTML(str);
-  escaped = escaped.replace(/\*\*(.+?)\*\*/g, '<strong style="font-weight: 700; color: #0F172A;">$1</strong>');
-  escaped = escaped.replace(/(?:&quot;|“)([^"”\n]{1,40}?)(?:&quot;|”)/g, '<strong style="font-weight: 700; color: #0F172A;">“$1”</strong>');
-  return escaped;
-}
-
-function formatQuestionTextHtml(rawText) {
-  if (!rawText) return '';
-  let text = String(rawText).trim();
-
-  if (/^\*\*[\s\S]+\*\*$/.test(text) && (text.match(/\*\*/g) || []).length === 2) {
-    text = text.replace(/^\*\*/, '').replace(/\*\*$/, '').trim();
-  }
-
-  const longQuoteRegex = /^(.*?)["“]([\s\S]{30,}?)["”]\s*([\s\S]*)$/;
-  const match = text.match(longQuoteRegex);
-
-  if (match) {
-    const intro = (match[1] || '').trim();
-    const passage = match[2].trim();
-    const question = (match[3] || '').trim();
-
-    let html = '';
-    if (intro) {
-      html += `<div class="question-intro-lead" style="font-size: 13.5px; font-weight: 600; color: #64748B; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
-        <span>📖</span><span>${escapeHTML(intro)}</span>
-      </div>`;
-    }
-    html += `<div class="question-passage-card" style="background: #F8FAFC; border: 1px solid #E2E8F0; border-left: 4px solid #3B82F6; border-radius: 10px; padding: 12px 16px; margin: 6px 0 14px 0; font-size: 14.5px; font-weight: 400; color: #334155; line-height: 1.75; letter-spacing: 0.01em;">
-      “${escapeHTML(passage)}”
-    </div>`;
-    if (question) {
-      html += `<div class="question-prompt-text" style="font-size: 15.5px; font-weight: 700; color: #0F172A; line-height: 1.55;">
-        ${formatInlineHighlights(question)}
-      </div>`;
-    }
-    return html;
-  }
-
-  const lines = text.split(/\n\s*\n/).map(l => l.trim()).filter(Boolean);
-  if (lines.length >= 2 && lines.some(l => l.length > 50)) {
-    return lines.map((block, idx) => {
-      if (block.length > 50 && idx < lines.length - 1) {
-        return `<div class="question-passage-card" style="background: #F8FAFC; border: 1px solid #E2E8F0; border-left: 4px solid #3B82F6; border-radius: 10px; padding: 12px 16px; margin: 8px 0 12px 0; font-size: 14.5px; font-weight: 400; color: #334155; line-height: 1.75;">${escapeHTML(block)}</div>`;
-      }
-      if (idx === lines.length - 1) {
-        return `<div class="question-prompt-text" style="font-size: 15.5px; font-weight: 700; color: #0F172A; line-height: 1.55; margin-top: 6px;">${formatInlineHighlights(block)}</div>`;
-      }
-      return `<div class="question-intro-lead" style="font-size: 13.5px; font-weight: 600; color: #64748B; margin-bottom: 6px;">${escapeHTML(block)}</div>`;
-    }).join('');
-  }
-
-  return `<span style="font-size: 15.5px; font-weight: 500; color: #1E293B; line-height: 1.65;">${formatInlineHighlights(text)}</span>`;
-}
-
-// Expose functions globally for HTML inline event listeners
-window.submitComment = submitComment;
-
-window.startEditPost = function(postId) {
-  const bodyTextEl = document.getElementById(`postBodyText-${postId}`);
-  if (!bodyTextEl) return;
-
-  // Retrieve current content and store backup
-  const currentContent = bodyTextEl.getAttribute('data-original-content') || bodyTextEl.textContent;
-  bodyTextEl.setAttribute('data-original-content', currentContent);
-
-  bodyTextEl.innerHTML = `
-    <div style="display: flex; flex-direction: column; gap: 8px; width: 100%; margin-top: 8px;">
-      <textarea id="txtEditPostContent-${postId}" style="width: 100%; height: 70px; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; font-family: 'Kanit', sans-serif; font-size: 13px; resize: none; outline: none; background-color: white;" onfocus="this.style.borderColor='var(--primary-color)'" onblur="this.style.borderColor='var(--border-color)'">${currentContent}</textarea>
-      <div style="display: flex; gap: 8px; justify-content: flex-end;">
-        <button class="btn-submit-comment" style="background-color: #F1F5F9; color: var(--text-dark);" onclick="cancelEditPost(${postId})">ยกเลิก</button>
-        <button class="btn-submit-comment" style="background-color: var(--primary-color); color: white;" onclick="saveEditPost(${postId})">บันทึก</button>
+    console.error('Load Leaderboard Error:', err);
+    container.innerHTML = `
+      <div style="text-align: center; padding: 30px; color: #EF4444; font-size: 13px;">
+        เกิดข้อผิดพลาดในการโหลดข้อมูลตารางอันดับ กรุณาลองใหม่อีกครั้ง
       </div>
-    </div>
-  `;
+    `;
+  }
 };
 
-window.cancelEditPost = function(postId) {
-  const bodyTextEl = document.getElementById(`postBodyText-${postId}`);
-  if (!bodyTextEl) return;
-  const original = bodyTextEl.getAttribute('data-original-content') || '';
-  bodyTextEl.innerHTML = escapeHTML(original);
-};
+function renderMyRankCard(myRank) {
+  const lblName = document.getElementById('lblMyRankName');
+  const lblDesc = document.getElementById('lblMyRankStatusDesc');
+  const lblPos = document.getElementById('lblMyRankPosition');
+  const lblScore = document.getElementById('lblMyRankBestScore');
+  const lblTime = document.getElementById('lblMyRankBestTime');
+  const lblTrack = document.getElementById('lblMyRankTrack');
+  const avatarBox = document.getElementById('myRankAvatarBox');
 
-window.saveEditPost = async function(postId) {
-  const input = document.getElementById(`txtEditPostContent-${postId}`);
-  if (!input) return;
+  let profile = userProfile;
+  if (!profile) {
+    try {
+      const stored = localStorage.getItem('userProfile');
+      if (stored) profile = JSON.parse(stored);
+    } catch (e) {}
+  }
 
-  const content = input.value.trim();
-  if (!content) {
-    await showCenteredAlert('กรุณากรอกข้อความโพสต์');
+  const displayName = profile?.fullName || profile?.username || (myRank?.name) || 'ผู้ใช้งาน';
+  if (lblName) lblName.textContent = displayName;
+
+  if (avatarBox) {
+    if (profile?.faceImage) {
+      avatarBox.innerHTML = `<img src="${profile.faceImage}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block;" alt="avatar" />`;
+    } else {
+      avatarBox.textContent = displayName.charAt(0);
+    }
+  }
+
+  if (myRank && myRank.hasAttempted && myRank.score > 0) {
+    if (lblDesc) {
+      lblDesc.innerHTML = `<span style="color: #16A34A; font-weight: 700;">✓ มีคะแนนในระบบแล้ว</span> • สอบเมื่อ ${myRank.dateFormatted || 'ล่าสุด'}`;
+    }
+    if (lblPos) {
+      if (myRank.rank === 1) lblPos.innerHTML = '🥇 อันดับ 1';
+      else if (myRank.rank === 2) lblPos.innerHTML = '🥈 อันดับ 2';
+      else if (myRank.rank === 3) lblPos.innerHTML = '🥉 อันดับ 3';
+      else lblPos.innerHTML = `#${myRank.rank} <span style="font-size: 12px; color: #94A3B8; font-weight: 500;">/ ${myRank.totalParticipants || 30}</span>`;
+    }
+    if (lblScore) {
+      lblScore.innerHTML = `${myRank.score} <span style="font-size: 13px; color: #64748B; font-weight: 600;">/ 150</span> <span style="font-size: 11.5px; color: #16A34A; font-weight: 700;">(${myRank.scorePct}%)</span>`;
+    }
+    if (lblTime) {
+      lblTime.textContent = myRank.timeFormatted || '-';
+    }
+    if (lblTrack) {
+      lblTrack.textContent = myRank.track || 'สายปราบปราม';
+    }
+  } else {
+    if (lblDesc) {
+      lblDesc.innerHTML = `<span style="color: #EA580C; font-weight: 700;">ยังไม่มีคะแนนสอบ 150 ข้อ</span> • กดปุ่มด้านขวาเพื่อเริ่มทำข้อสอบชิงอันดับ!`;
+    }
+    if (lblPos) lblPos.innerHTML = `<span style="color: #94A3B8; font-size: 16px;">ยังไม่มีอันดับ</span>`;
+    if (lblScore) lblScore.innerHTML = `<span style="color: #94A3B8; font-size: 16px;">0 / 150</span>`;
+    if (lblTime) lblTime.innerHTML = `<span style="color: #94A3B8; font-size: 15px;">-</span>`;
+    if (lblTrack) lblTrack.innerHTML = `<span style="color: #94A3B8; font-size: 13px;">รอสอบครั้งแรก</span>`;
+  }
+}
+
+function renderLeaderboardTop30(top30, myRank) {
+  const container = document.getElementById('leaderboardListContainer');
+  if (!container) return;
+
+  if (!Array.isArray(top30) || top30.length === 0) {
+    container.innerHTML = `
+      <div style="text-align: center; color: #94A3B8; padding: 40px; font-size: 13.5px;">
+        ยังไม่มีข้อมูลผู้เข้าสอบในหมวดนี้<br>
+        <span style="font-size: 12px; color: #BD1B0B; font-weight: 600; margin-top: 6px; display: block; cursor: pointer;" onclick="openPoliceTrackModal()">
+          คลิกที่นี่เพื่อเป็นผู้สอบคนแรก!
+        </span>
+      </div>
+    `;
     return;
   }
 
-  try {
-    const res = await fetch(`${API_BASE}/api/community/posts/${postId}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${authToken}`
-      },
-      body: JSON.stringify({ content })
-    });
+  let html = '';
+  top30.forEach(item => {
+    const isMe = item.isMe || (myRank && myRank.userId === item.userId);
+    const rank = item.rank;
 
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.error || 'Failed to update post');
+    // Podium Badges
+    let rankBadge = '';
+    let rowBg = isMe ? '#FEF2F2' : '#FFFFFF';
+    let rowBorder = isMe ? '2px solid #FCA5A5' : '1px solid #F1F5F9';
+    let shadow = isMe ? '0 4px 12px rgba(189,27,11,0.08)' : 'none';
+
+    if (rank === 1) {
+      rankBadge = `<div style="width: 36px; height: 36px; border-radius: 12px; background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%); border: 1.5px solid #F59E0B; display: flex; align-items: center; justify-content: center; font-size: 18px; box-shadow: 0 2px 8px rgba(245,158,11,0.25); flex-shrink: 0;">🥇</div>`;
+      if (!isMe) {
+        rowBg = '#FFFDF5';
+        rowBorder = '1.5px solid #FDE68A';
+      }
+    } else if (rank === 2) {
+      rankBadge = `<div style="width: 36px; height: 36px; border-radius: 12px; background: linear-gradient(135deg, #F1F5F9 0%, #E2E8F0 100%); border: 1.5px solid #94A3B8; display: flex; align-items: center; justify-content: center; font-size: 18px; box-shadow: 0 2px 8px rgba(148,163,184,0.25); flex-shrink: 0;">🥈</div>`;
+      if (!isMe) {
+        rowBg = '#F8FAFC';
+        rowBorder = '1.5px solid #E2E8F0';
+      }
+    } else if (rank === 3) {
+      rankBadge = `<div style="width: 36px; height: 36px; border-radius: 12px; background: linear-gradient(135deg, #FFEDD5 0%, #FED7AA 100%); border: 1.5px solid #EA580C; display: flex; align-items: center; justify-content: center; font-size: 18px; box-shadow: 0 2px 8px rgba(234,88,12,0.2); flex-shrink: 0;">🥉</div>`;
+      if (!isMe) {
+        rowBg = '#FFFBF7';
+        rowBorder = '1.5px solid #FED7AA';
+      }
+    } else {
+      rankBadge = `<div style="width: 36px; height: 36px; border-radius: 12px; background: #F8FAFC; border: 1px solid #E2E8F0; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; color: #475569; flex-shrink: 0;">${rank}</div>`;
     }
 
-    loadCommunityPosts();
-  } catch (err) {
-    console.error('Save post error:', err);
-    await showCenteredAlert(err.message);
-  }
-};
+    const initial = (item.name || 'ผ').charAt(0);
+    const trackTag = item.track === 'amnuay' ? '📋 อำนวยการ' : '🛡️ ปราบปราม';
+    const trackTagColor = item.track === 'amnuay' ? '#2563EB' : '#BD1B0B';
+    const trackTagBg = item.track === 'amnuay' ? '#EFF6FF' : '#FFF1F2';
+    const trackTagBorder = item.track === 'amnuay' ? '#DBEAFE' : '#FFE4E6';
 
-// Delete a post (only owner)
-window.deletePost = async function(postId) {
-  const confirmed = await showCenteredConfirm('ยืนยันการลบ', 'คุณต้องการลบโพสต์นี้หรือไม่?');
-  if (!confirmed) return;
-
-  try {
-    const res = await fetch(`${API_BASE}/api/community/posts/${postId}`, {
-      method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${authToken}` }
-    });
-
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.error || 'Failed to delete post');
-    }
-
-    loadCommunityPosts();
-  } catch (err) {
-    console.error('Delete post error:', err);
-    await showCenteredAlert(err.message);
-  }
-};
-
-// ==========================================
-// Study Groups Logic
-// ==========================================
-let activeGroupId = null;
-
-async function loadGroupsList(searchVal = '') {
-  const container = document.getElementById('groupsListContainer');
-  if (!container) return;
-
-  try {
-    const res = await fetch(`${API_BASE}/api/community/groups?search=${encodeURIComponent(searchVal)}`, {
-      headers: { 'Authorization': `Bearer ${authToken}` }
-    });
-    if (!res.ok) throw new Error('Failed to load groups');
-    const groups = await res.json();
-
-    if (groups.length === 0) {
-      container.innerHTML = `
-        <div style="background-color: var(--bg-card); border: 1px dashed var(--border-color); border-radius: 20px; padding: 40px; text-align: center; color: var(--text-light); font-size: 14px; grid-column: 1 / 3; width: 100%;">
-          <span style="font-size: 32px; display: block; margin-bottom: 8px;"></span>
-          ไม่พบกลุ่มติวที่ค้นหา<br>
-          <span style="font-size: 11px; opacity: 0.7;">คลิก "สร้างกลุ่ม" ขวาบนเพื่อตั้งกลุ่มแรกของคุณ!</span>
-        </div>
-      `;
-      return;
-    }
-
-    let html = '';
-    groups.forEach(g => {
-      // Creator options
-      const isCreator = userProfile && g.createdById === userProfile.id;
-      let actionBtnHtml = '';
-      if (g.membershipStatus === 'ACCEPTED') {
-        actionBtnHtml = `
-          <div style="display: flex; flex-direction: column; gap: 6px; align-items: flex-end;">
-            <button class="btn-quick-match" style="padding: 6px 14px; font-size: 12px; border-radius: 8px; width: auto; box-shadow: none; display: block;" onclick="enterGroupChat(${g.id}, '${escapeHTML(g.name)}', ${g.memberCount}, ${g.createdById}, '${g.image || ''}')">แชทกลุ่ม</button>
-            ${isCreator ? '' : `<button class="post-action-btn delete" style="font-size: 11px; margin-right: 0;" onclick="leaveGroup(${g.id})">ออกจากกลุ่ม</button>`}
+    html += `
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; border-radius: 16px; background: ${rowBg}; border: ${rowBorder}; box-shadow: ${shadow}; transition: transform 0.15s ease;">
+        <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+          ${rankBadge}
+          <div style="width: 38px; height: 38px; border-radius: 50%; background: #E2E8F0; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 800; color: #334155; flex-shrink: 0;">
+            ${initial}
           </div>
-        `;
-      } else if (g.membershipStatus === 'PENDING') {
-        actionBtnHtml = `
-          <button class="btn-quick-match" style="padding: 6px 14px; font-size: 12px; border-radius: 8px; width: auto; box-shadow: none; background-color: #64748B; cursor: not-allowed;" disabled>รออนุมัติ</button>
-        `;
-      } else {
-        actionBtnHtml = `
-          <button class="btn-quick-match" style="padding: 6px 14px; font-size: 12px; border-radius: 8px; width: auto; box-shadow: none;" onclick="joinGroup(${g.id})">เข้าร่วม</button>
-        `;
-      }
-
-      let deleteBtnHtml = '';
-      const isAdmin = userProfile && (userProfile.role === 'ADMIN' || userProfile.role === 'OWNER');
-      if (isCreator || isAdmin) {
-        deleteBtnHtml = `<span class="post-action-btn delete" style="font-size: 11px; margin-left: 8px; color: #EF4444; font-weight: 700; cursor: pointer;" onclick="deleteGroup(${g.id})" title="${isAdmin && !isCreator ? 'สิทธิ์แอดมิน: ลบกลุ่มนี้' : 'ลบกลุ่ม'}">🗑️ ลบกลุ่ม${isAdmin && !isCreator ? ' (Admin)' : ''}</span>`;
-      }
-
-      html += `
-        <div class="battle-mode-item" style="cursor: default; padding: 14px 18px; margin-bottom: 12px;">
-          <div class="mode-item-left" style="text-align: left;">
-            ${g.image 
-              ? `<img src="${g.image}" style="width: 44px; height: 44px; border-radius: 12px; object-fit: cover; margin-right: 14px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">` 
-              : `<div class="mode-icon-wrapper ranked-icon" style="background-color: #F1F5F9; color: var(--text-dark); font-size: 18px;"></div>`
-            }
-            <div class="mode-info">
-              <span class="mode-title" style="font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; color: var(--text-dark); flex-wrap: wrap;">
-                ${escapeHTML(g.name)}
-                <span style="font-size: 10px; background-color: #E2E8F0; color: #64748B; padding: 2px 6px; border-radius: 4px;">ID: #${g.id}</span>
-                <span style="font-size: 10px; background-color: ${g.isPrivate ? '#FEE2E2' : '#D1FAE5'}; color: ${g.isPrivate ? '#991B1B' : '#065F46'}; padding: 2px 6px; border-radius: 4px;">
-                  ${g.isPrivate ? ' ส่วนตัว' : ' สาธารณะ'}
-                </span>
+          <div style="min-width: 0;">
+            <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+              <span style="font-size: 14.5px; font-weight: 700; color: #0F172A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px;">
+                ${escapeHTML(item.name)}
               </span>
-              <span class="mode-subtitle" style="font-size: 12px; display: block; margin-top: 4px;">
-                สมาชิก ${g.memberCount} คน • สร้างโดย ${escapeHTML(g.creatorName)} ${deleteBtnHtml}
+              ${isMe ? '<span style="background: #BD1B0B; color: white; font-size: 10px; font-weight: 800; padding: 1px 6px; border-radius: 4px;">ฉัน</span>' : ''}
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-top: 2px;">
+              <span style="font-size: 11px; font-weight: 700; color: ${trackTagColor}; background: ${trackTagBg}; border: 1px solid ${trackTagBorder}; padding: 1px 6px; border-radius: 4px;">
+                ${trackTag}
               </span>
-              ${g.description ? `<p style="font-size: 12px; color: var(--text-light); margin: 6px 0 0 0; line-height: 1.4;">${escapeHTML(g.description)}</p>` : ''}
+              <span style="font-size: 11px; color: #94A3B8;">${item.dateFormatted || ''}</span>
             </div>
           </div>
-          ${actionBtnHtml}
         </div>
-      `;
-    });
 
-    container.innerHTML = html;
-
-  } catch (err) {
-    console.error('Load groups error:', err);
-    container.innerHTML = '<div class="leaderboard-item-loading">ไม่สามารถโหลดกลุ่มได้</div>';
-  }
-}
-
-// Modal open/close handlers
-const btnOpenCreateGroupModal = document.getElementById('btnOpenCreateGroupModal');
-const createGroupModal = document.getElementById('createGroupModal');
-const btnCancelCreateGroup = document.getElementById('btnCancelCreateGroup');
-const btnSubmitCreateGroup = document.getElementById('btnSubmitCreateGroup');
-
-if (btnOpenCreateGroupModal && createGroupModal) {
-  btnOpenCreateGroupModal.onclick = () => {
-    createGroupModal.style.display = 'flex';
-    document.getElementById('txtCreateGroupName').value = '';
-    document.getElementById('txtCreateGroupDesc').value = '';
-    const fileInput = document.getElementById('fileCreateGroupImage');
-    if (fileInput) fileInput.value = '';
-    const imgPreview = document.getElementById('createGroupImagePreview');
-    if (imgPreview) imgPreview.style.display = 'none';
-    const publicRadio = document.querySelector('input[name="optGroupPrivacy"][value="public"]');
-    if (publicRadio) publicRadio.checked = true;
-  };
-}
-
-const fileCreateGroupImage = document.getElementById('fileCreateGroupImage');
-const createGroupImagePreview = document.getElementById('createGroupImagePreview');
-let pendingGroupImageBase64 = null;
-
-if (fileCreateGroupImage) {
-  fileCreateGroupImage.onchange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        pendingGroupImageBase64 = e.target.result;
-        if (createGroupImagePreview) {
-          createGroupImagePreview.src = pendingGroupImageBase64;
-          createGroupImagePreview.style.display = 'block';
-        }
-      };
-      reader.readAsDataURL(file);
-    } else {
-      pendingGroupImageBase64 = null;
-      if (createGroupImagePreview) createGroupImagePreview.style.display = 'none';
-    }
-  };
-}
-
-if (btnCancelCreateGroup && createGroupModal) {
-  btnCancelCreateGroup.onclick = () => {
-    createGroupModal.style.display = 'none';
-    pendingGroupImageBase64 = null;
-  };
-}
-
-if (btnSubmitCreateGroup && createGroupModal) {
-  btnSubmitCreateGroup.onclick = async () => {
-    const nameInput = document.getElementById('txtCreateGroupName');
-    const descInput = document.getElementById('txtCreateGroupDesc');
-    const name = nameInput.value.trim();
-    const description = descInput.value.trim();
-    const optPrivacy = document.querySelector('input[name="optGroupPrivacy"]:checked');
-    const isPrivate = optPrivacy ? optPrivacy.value === 'private' : false;
-
-    if (!name) {
-      await showCenteredAlert('กรุณากรอกชื่อกลุ่ม');
-      return;
-    }
-
-    btnSubmitCreateGroup.disabled = true;
-    btnSubmitCreateGroup.textContent = 'กำลังสร้าง...';
-
-    try {
-      const res = await fetch(`${API_BASE}/api/community/groups`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`
-        },
-        body: JSON.stringify({ name, description, isPrivate, image: pendingGroupImageBase64 })
-      });
-
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || 'Failed to create group');
-      }
-
-      createGroupModal.style.display = 'none';
-      loadGroupsList(); // Reload feed
-    } catch (err) {
-      console.error('Create group error:', err);
-      await showCenteredAlert(err.message);
-    } finally {
-      btnSubmitCreateGroup.disabled = false;
-      btnSubmitCreateGroup.textContent = 'สร้างกลุ่ม';
-    }
-  };
-}
-
-// Search groups input listener
-const txtGroupSearch = document.getElementById('txtGroupSearch');
-if (txtGroupSearch) {
-  let searchTimeout = null;
-  txtGroupSearch.oninput = () => {
-    if (searchTimeout) clearTimeout(searchTimeout);
-    searchTimeout = setTimeout(() => {
-      loadGroupsList(txtGroupSearch.value.trim());
-    }, 400);
-  };
-}
-
-// Join Group action
-window.joinGroup = async function(groupId) {
-  try {
-    const res = await fetch(`${API_BASE}/api/community/groups/${groupId}/join`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${authToken}` }
-    });
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.error || 'Join failed');
-    }
-    const data = await res.json();
-    await showCenteredAlert(data.message);
-    loadGroupsList(txtGroupSearch ? txtGroupSearch.value.trim() : '');
-  } catch (err) {
-    await showCenteredAlert(err.message || 'ไม่สามารถเข้าร่วมกลุ่มได้');
-  }
-};
-
-// Leave Group action
-window.leaveGroup = async function(groupId) {
-  const confirmed = await showCenteredConfirm('ออกจากกลุ่ม', 'คุณแน่ใจว่าต้องการออกจากกลุ่มนี้ใช่หรือไม่?', { okText: 'ออกจากกลุ่ม', okColor: '#EF4444' });
-  if (!confirmed) return;
-  try {
-    const res = await fetch(`${API_BASE}/api/community/groups/${groupId}/leave`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${authToken}` }
-    });
-    if (!res.ok) throw new Error('Leave failed');
-    loadGroupsList(txtGroupSearch ? txtGroupSearch.value.trim() : '');
-  } catch (err) {
-    await showCenteredAlert('ไม่สามารถออกจากกลุ่มได้');
-  }
-};
-
-// Delete Group action
-window.deleteGroup = async function(groupId) {
-  const confirmed = await showCenteredConfirm('ลบกลุ่มติว', 'คุณต้องการลบกลุ่มติวนี้ใช่หรือไม่? ข้อมูลสมาชิกและข้อความทั้งหมดจะถูกลบถาวร', { okText: 'ลบกลุ่ม', okColor: '#EF4444' });
-  if (!confirmed) return;
-  try {
-    const res = await fetch(`${API_BASE}/api/community/groups/${groupId}`, {
-      method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${authToken}` }
-    });
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.error);
-    }
-    loadGroupsList(txtGroupSearch ? txtGroupSearch.value.trim() : '');
-  } catch (err) {
-    await showCenteredAlert(err.message || 'ไม่สามารถลบกลุ่มได้');
-  }
-};
-
-// --- Group Chat View Handlers ---
-window.enterGroupChat = function(groupId, groupName, memberCount, createdById, groupImage) {
-  activeGroupId = groupId;
-  document.getElementById('groupListMainPanel').style.display = 'none';
-  
-  const screen = document.getElementById('groupChatScreenPanel');
-  screen.style.display = 'flex';
-
-  document.getElementById('lblChatGroupName').textContent = groupName;
-  document.getElementById('lblChatGroupMeta').textContent = `ID: #${groupId} • สมาชิก ${memberCount} คน`;
-
-  const headerImg = document.getElementById('groupChatHeaderImage');
-  if (headerImg) {
-    if (groupImage && groupImage !== 'undefined') {
-      headerImg.src = groupImage;
-      headerImg.style.display = 'block';
-    } else {
-      headerImg.style.display = 'none';
-    }
-  }
-
-  // Creator or Admin options inside header
-  const isCreator = userProfile && createdById === userProfile.id;
-  const isAdmin = userProfile && (userProfile.role === 'ADMIN' || userProfile.role === 'OWNER');
-  const btnDelete = document.getElementById('btnDeleteGroup');
-  const btnLeave = document.getElementById('btnLeaveGroup');
-
-  if (btnDelete) btnDelete.style.display = (isCreator || isAdmin) ? 'block' : 'none';
-  if (btnLeave) btnLeave.style.display = isCreator ? 'none' : 'block';
-
-  // Set event handlers for header buttons
-  if (btnLeave) {
-    btnLeave.onclick = async () => {
-      await leaveGroup(groupId);
-      exitGroupChat();
-    };
-  }
-  if (btnDelete) {
-    btnDelete.onclick = async () => {
-      await deleteGroup(groupId);
-      exitGroupChat();
-    };
-  }
-
-  // Load join requests if creator
-  const requestsPanel = document.getElementById('groupJoinRequestsPanel');
-  if (isCreator) {
-    loadJoinRequests(groupId);
-  } else {
-    if (requestsPanel) requestsPanel.style.display = 'none';
-  }
-
-  // Load and start polling
-  loadGroupChatMessages(groupId);
-  if (groupChatPollInterval) clearInterval(groupChatPollInterval);
-  groupChatPollInterval = setInterval(() => {
-    loadGroupChatMessages(groupId);
-    if (isCreator) {
-      loadJoinRequests(groupId);
-    }
-  }, 3000);
-};
-
-window.exitGroupChat = function() {
-  activeGroupId = null;
-  if (groupChatPollInterval) {
-    clearInterval(groupChatPollInterval);
-    groupChatPollInterval = null;
-  }
-  const requestsPanel = document.getElementById('groupJoinRequestsPanel');
-  if (requestsPanel) requestsPanel.style.display = 'none';
-
-  document.getElementById('groupChatScreenPanel').style.display = 'none';
-  document.getElementById('groupListMainPanel').style.display = 'block';
-  loadGroupsList(txtGroupSearch ? txtGroupSearch.value.trim() : '');
-};
-
-async function loadJoinRequests(groupId) {
-  const panel = document.getElementById('groupJoinRequestsPanel');
-  const container = document.getElementById('groupJoinRequestsContainer');
-  const countEl = document.getElementById('lblGroupJoinRequestsCount');
-  
-  if (!panel || !container || activeGroupId !== groupId) return;
-
-  try {
-    const res = await fetch(`${API_BASE}/api/community/groups/${groupId}/requests`, {
-      headers: { 'Authorization': `Bearer ${authToken}` }
-    });
-    if (!res.ok) throw new Error();
-    const requests = await res.json();
-
-    if (requests.length === 0) {
-      panel.style.display = 'none';
-      return;
-    }
-
-    if (countEl) countEl.textContent = ` คำขอเข้าร่วมกลุ่ม (${requests.length})`;
-
-    let html = '';
-    requests.forEach(r => {
-      const displayName = r.user.fullName || r.user.username;
-      html += `
-        <div style="display: flex; justify-content: space-between; align-items: center; background: white; padding: 8px 12px; border-radius: 8px; border: 1px solid #FDE68A;">
-          <span style="font-size: 13px; font-weight: 500; color: var(--text-dark);">${escapeHTML(displayName)} (@${escapeHTML(r.user.username)})</span>
-          <div style="display: flex; gap: 6px;">
-            <button onclick="approveJoinRequest(${groupId}, ${r.user.id})" class="btn-quick-match" style="padding: 4px 10px; font-size: 11px; border-radius: 6px; width: auto; box-shadow: none; background-color: #10B981; color: white;">อนุมัติ</button>
-            <button onclick="declineJoinRequest(${groupId}, ${r.user.id})" class="post-action-btn delete" style="font-size: 11px; border: 1px solid #EF4444; border-radius: 6px; padding: 4px 10px; background: none; margin-right: 0;">ปฏิเสธ</button>
+        <div style="display: flex; align-items: center; gap: 20px; flex-shrink: 0;">
+          <div style="text-align: right; min-width: 80px;">
+            <span style="font-size: 13px; font-weight: 700; color: #475569; display: block;">${item.timeFormatted || '-'}</span>
+            <span style="font-size: 10.5px; color: #94A3B8; display: block;">เวลาที่ใช้</span>
           </div>
-        </div>
-      `;
-    });
-
-    container.innerHTML = html;
-    panel.style.display = 'block';
-
-  } catch (err) {
-    console.error('Load requests error:', err);
-  }
-}
-
-window.approveJoinRequest = async function(groupId, userId) {
-  try {
-    const res = await fetch(`${API_BASE}/api/community/groups/${groupId}/requests/${userId}/approve`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${authToken}` }
-    });
-    if (!res.ok) throw new Error();
-    loadJoinRequests(groupId);
-    loadGroupsList(txtGroupSearch ? txtGroupSearch.value.trim() : '');
-  } catch (err) {
-    await showCenteredAlert('ไม่สามารถอนุมัติคำขอได้');
-  }
-};
-
-window.declineJoinRequest = async function(groupId, userId) {
-  const confirmed = await showCenteredConfirm('ปฏิเสธคำขอ', 'ปฏิเสธคำขอเข้าร่วมกลุ่มของบุคคลนี้ใช่หรือไม่?', { okText: 'ปฏิเสธ', okColor: '#EF4444' });
-  if (!confirmed) return;
-  try {
-    const res = await fetch(`${API_BASE}/api/community/groups/${groupId}/requests/${userId}/decline`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${authToken}` }
-    });
-    if (!res.ok) throw new Error();
-    loadJoinRequests(groupId);
-  } catch (err) {
-    await showCenteredAlert('ไม่สามารถปฏิเสธคำขอได้');
-  }
-};
-
-const btnBackToGroups = document.getElementById('btnBackToGroups');
-if (btnBackToGroups) {
-  btnBackToGroups.onclick = () => {
-    exitGroupChat();
-  };
-}
-
-async function loadGroupChatMessages(groupId) {
-  const container = document.getElementById('groupChatMessagesContainer');
-  if (!container || activeGroupId !== groupId) return;
-
-  try {
-    const res = await fetch(`${API_BASE}/api/community/groups/${groupId}/chat`, {
-      headers: { 'Authorization': `Bearer ${authToken}` }
-    });
-    if (!res.ok) throw new Error();
-    const messages = await res.json();
-
-    if (messages.length === 0) {
-      container.innerHTML = `
-        <div style="text-align: center; color: var(--text-light); font-size: 13px; padding-top: 40px;">
-           เริ่มพิมพ์ข้อความแชทเพื่อพูดคุยในกลุ่มติววันนี้
-        </div>
-      `;
-      return;
-    }
-
-    let html = '';
-    messages.forEach(m => {
-      const isMe = userProfile && m.userId === userProfile.id;
-      const displayName = m.user.fullName || m.user.username || 'ผู้ใช้งาน';
-      const timeStr = new Date(m.createdAt).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
-      const initial = displayName.charAt(0);
-
-      const avatarHtml = renderAvatarHtml(m.user, 'friend-user-avatar', 'width: 32px; height: 32px; font-size: 13px; cursor: pointer; flex-shrink: 0; border-radius: 50%; font-weight: 600; margin-right: 8px;', isMe ? 'var(--primary-color)' : '#BD1B0B').replace('<div ', '<div onclick="showUserProfile(${m.userId})" ');
-
-      html += `
-        <div style="display: flex; align-items: flex-start; margin-bottom: 12px; justify-content: ${isMe ? 'flex-end' : 'flex-start'};">
-          ${isMe ? '' : avatarHtml}
-          <div class="chat-bubble ${isMe ? 'me' : ''}" style="margin: 0;">
-            <span class="chat-sender" onclick="showUserProfile(${m.userId})" style="cursor: pointer; font-weight: 600;">${isMe ? 'คุณ' : displayName}</span>
-            <div class="chat-message-box">
-              ${formatMessageContent(m.content)}
+          <div style="text-align: right; min-width: 75px;">
+            <div style="display: flex; align-items: baseline; justify-content: flex-end; gap: 2px;">
+              <span style="font-size: 18px; font-weight: 900; color: #BD1B0B;">${item.score}</span>
+              <span style="font-size: 11px; font-weight: 700; color: #94A3B8;">/150</span>
             </div>
-            <span class="chat-timestamp">${timeStr}</span>
-          </div>
-          ${isMe ? avatarHtml.replace('margin-right: 8px;', 'margin-left: 8px;') : ''}
-        </div>
-      `;
-    });
-
-    const isAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 60;
-    container.innerHTML = html;
-
-    if (isAtBottom || container.getAttribute('data-first-load') !== 'false') {
-      container.scrollTop = container.scrollHeight;
-      container.setAttribute('data-first-load', 'false');
-    }
-  } catch (err) {
-    console.error(err);
-  }
-}
-
-// Send group chat message
-const btnSendGroupChat = document.getElementById('btnSendGroupChat');
-const txtGroupChatInput = document.getElementById('txtGroupChatInput');
-if (btnSendGroupChat && txtGroupChatInput) {
-  const handleSendGroupChat = async () => {
-    if (!activeGroupId) return;
-    const content = txtGroupChatInput.value.trim();
-    if (!content) return;
-
-    txtGroupChatInput.value = '';
-    btnSendGroupChat.disabled = true;
-
-    try {
-      const res = await fetch(`${API_BASE}/api/community/groups/${activeGroupId}/chat`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`
-        },
-        body: JSON.stringify({ content })
-      });
-      if (!res.ok) throw new Error();
-      loadGroupChatMessages(activeGroupId);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      btnSendGroupChat.disabled = false;
-      txtGroupChatInput.focus();
-    }
-  };
-
-  btnSendGroupChat.onclick = (e) => {
-    e.preventDefault();
-    handleSendGroupChat();
-  };
-
-  txtGroupChatInput.onkeydown = (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleSendGroupChat();
-    }
-  };
-}
-
-// ==========================================
-// Friends, Blocks & Direct Chat Logic
-// ==========================================
-let activeFriendId = null;
-
-// Search other users to add as friends
-const txtFriendUserSearch = document.getElementById('txtFriendUserSearch');
-const friendUserSearchResultsContainer = document.getElementById('friendUserSearchResultsContainer');
-
-if (txtFriendUserSearch && friendUserSearchResultsContainer) {
-  txtFriendUserSearch.oninput = async () => {
-    const val = txtFriendUserSearch.value.trim();
-    if (!val) {
-      friendUserSearchResultsContainer.style.display = 'none';
-      return;
-    }
-
-    try {
-      const res = await fetch(`${API_BASE}/api/friends/search?search=${encodeURIComponent(val)}`, {
-        headers: { 'Authorization': `Bearer ${authToken}` }
-      });
-      if (!res.ok) throw new Error();
-      const users = await res.json();
-
-      if (users.length === 0) {
-        friendUserSearchResultsContainer.innerHTML = '<div style="padding: 10px 16px; font-size: 13px; color: var(--text-light); text-align: center;">ไม่พบผู้ใช้งาน</div>';
-        friendUserSearchResultsContainer.style.display = 'block';
-        return;
-      }
-
-      let html = '';
-      users.forEach(u => {
-        let actionBtn = '';
-        if (u.friendStatus === 'NONE') {
-          actionBtn = `<button class="btn-quick-match" style="padding: 4px 10px; font-size: 11px; border-radius: 6px; width: auto; box-shadow: none;" onclick="addFriend(${u.id})">เพิ่มเพื่อน</button>`;
-        } else if (u.friendStatus === 'ACCEPTED') {
-          actionBtn = `<span style="font-size: 11px; color: #10B981; font-weight: 500;">เป็นเพื่อนแล้ว</span>`;
-        } else if (u.friendStatus === 'PENDING_SENT') {
-          actionBtn = `<span style="font-size: 11px; color: #64748B; font-weight: 500;">รอรับแอด</span>`;
-        } else if (u.friendStatus === 'PENDING_RECEIVED') {
-          actionBtn = `<button class="btn-quick-match" style="padding: 4px 10px; font-size: 11px; border-radius: 6px; width: auto; box-shadow: none; background-color: #10B981;" onclick="acceptFriendRequest(${u.id})">รับแอด</button>`;
-        }
-
-        html += `
-          <div class="search-result-item" style="cursor: pointer;" onclick="showUserProfile(${u.id})">
-            <div style="display: flex; align-items: center; gap: 8px; text-align: left;">
-              <div class="friend-user-avatar">${escapeHTML(u.fullName || u.username).charAt(0)}</div>
-              <div>
-                <span class="friend-user-name" style="display: block;">${escapeHTML(u.fullName || u.username)}</span>
-                <span style="font-size: 10px; color: var(--text-light);">@${escapeHTML(u.username)}</span>
-              </div>
-            </div>
-            <div style="display: flex; align-items: center; gap: 8px;" onclick="event.stopPropagation()">
-              ${actionBtn}
-              <span class="post-action-btn delete" style="font-size: 11px; margin-right: 0;" onclick="blockUser(${u.id})">บล็อก</span>
-            </div>
-          </div>
-        `;
-      });
-
-      friendUserSearchResultsContainer.innerHTML = html;
-      friendUserSearchResultsContainer.style.display = 'block';
-    } catch (err) {
-      console.error(err);
-    }
-  };
-}
-
-// Add Friend action
-window.addFriend = async function(friendId) {
-  try {
-    const res = await fetch(`${API_BASE}/api/friends/request`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${authToken}`
-      },
-      body: JSON.stringify({ friendId })
-    });
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.error);
-    }
-    const data = await res.json();
-    await showCenteredAlert(data.message);
-    
-    if (txtFriendUserSearch) txtFriendUserSearch.value = '';
-    if (friendUserSearchResultsContainer) friendUserSearchResultsContainer.style.display = 'none';
-    
-    loadFriendsList();
-  } catch (err) {
-    await showCenteredAlert(err.message || 'ไม่สามารถเพิ่มเพื่อนได้');
-  }
-};
-
-// Block User action
-window.blockUser = async function(blockedId) {
-  const confirmed = await showCenteredConfirm('บล็อกผู้ใช้งาน', 'คุณแน่ใจว่าต้องการบล็อกผู้ใช้งานรายนี้ใช่หรือไม่? ความสัมพันธ์ความเป็นเพื่อนและแชททั้งหมดจะถูกซ่อนไว้', { okText: 'บล็อก', okColor: '#EF4444' });
-  if (!confirmed) return;
-  try {
-    const res = await fetch(`${API_BASE}/api/friends/block`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${authToken}`
-      },
-      body: JSON.stringify({ blockedId })
-    });
-    if (!res.ok) throw new Error();
-
-    if (txtFriendUserSearch) txtFriendUserSearch.value = '';
-    if (friendUserSearchResultsContainer) friendUserSearchResultsContainer.style.display = 'none';
-
-    loadFriendsList();
-    loadBlockedList();
-  } catch (err) {
-    await showCenteredAlert('ไม่สามารถบล็อกผู้ใช้งานได้');
-  }
-};
-
-// Load friends list
-async function loadFriendsList() {
-  const container = document.getElementById('friendsListContainer');
-  const countEl = document.getElementById('lblFriendsCount');
-  if (!container) return;
-
-  try {
-    const res = await fetch(`${API_BASE}/api/friends`, {
-      headers: { 'Authorization': `Bearer ${authToken}` }
-    });
-    if (!res.ok) throw new Error();
-    const friends = await res.json();
-
-    if (countEl) countEl.textContent = `${friends.length} คน`;
-
-    if (friends.length === 0) {
-      container.innerHTML = `
-        <div style="text-align: center; color: var(--text-light); font-size: 12px; padding: 20px 0; width: 100%;">
-          ยังไม่มีเพื่อนในขณะนี้<br>
-          <span style="font-size: 10px; opacity: 0.7;">พิมพ์ค้นหาชื่อเพื่อนด้านบนเพื่อกดเพิ่มเพื่อน</span>
-        </div>
-      `;
-      return;
-    }
-
-    let html = '';
-    friends.forEach(f => {
-      const displayName = f.fullName || f.username;
-      const initial = displayName.charAt(0);
-
-      html += `
-        <div class="friend-item-row" style="cursor: default;">
-          <div style="display: flex; align-items: center; gap: 10px; cursor: pointer;" onclick="showUserProfile(${f.id})">
-            ${f.faceImage ? `<img src="${f.faceImage}" class="friend-user-avatar" style="object-fit: cover; border-radius: 50%;" />` : `<div class="friend-user-avatar" style="background-color: #BD1B0B;">${initial}</div>`}
-            <div style="text-align: left;">
-              <span class="friend-user-name" style="display: block;">${escapeHTML(displayName)}</span>
-              <span style="font-size: 11px; color: var(--text-light);">แชทส่วนตัว</span>
-            </div>
-          </div>
-          <div style="display: flex; gap: 8px;">
-            <button class="btn-quick-match" style="padding: 6px 12px; font-size: 11px; border-radius: 8px; width: auto; box-shadow: none;" onclick="enterDmChat(${f.id}, '${escapeHTML(displayName)}')">แชท</button>
-            <button class="post-action-btn delete" style="border: 1px solid #EF4444; border-radius: 8px; padding: 6px 12px; font-size: 11px; font-weight: 600; background: none; margin-right: 0;" onclick="unfriend(${f.id})">ลบเพื่อน</button>
+            <span style="font-size: 10.5px; font-weight: 700; color: #16A34A; display: block;">${item.scorePct}%</span>
           </div>
         </div>
-      `;
-    });
-
-    container.innerHTML = html;
-  } catch (err) {
-    console.error(err);
-  }
-}
-
-// Load blocked list
-async function loadBlockedList() {
-  const container = document.getElementById('blockedUsersListContainer');
-  if (!container) return;
-
-  try {
-    const res = await fetch(`${API_BASE}/api/friends/blocked`, {
-      headers: { 'Authorization': `Bearer ${authToken}` }
-    });
-    if (!res.ok) throw new Error();
-    const blocked = await res.json();
-
-    if (blocked.length === 0) {
-      container.innerHTML = `
-        <div style="text-align: center; color: var(--text-light); font-size: 12px; padding: 10px 0; width: 100%;">
-          ไม่มีรายชื่อที่บล็อก
-        </div>
-      `;
-      return;
-    }
-
-    let html = '';
-    blocked.forEach(u => {
-      const displayName = u.fullName || u.username;
-      html += `
-        <div style="display: flex; justify-content: space-between; align-items: center; background: #F8FAFC; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-color); width: 100%;">
-          <div style="display: flex; align-items: center; gap: 8px; text-align: left; cursor: pointer;" onclick="showUserProfile(${u.id})">
-            ${u.faceImage ? `<img src="${u.faceImage}" style="width: 26px; height: 26px; border-radius: 50%; object-fit: cover;" />` : `<div class="friend-user-avatar" style="background-color: #64748B; width: 26px; height: 26px; font-size: 11px;">${displayName.charAt(0)}</div>`}
-            <div>
-              <span style="font-size: 12px; font-weight: 600; color: var(--text-dark); display: block;">${escapeHTML(displayName)}</span>
-              <span style="font-size: 9px; color: var(--text-light);">@${escapeHTML(u.username)}</span>
-            </div>
-          </div>
-          <button class="post-action-btn edit" style="font-size: 11px; margin-right: 0;" onclick="unblockUser(${u.id})">ปลดบล็อก</button>
-        </div>
-      `;
-    });
-
-    container.innerHTML = html;
-  } catch (err) {
-    console.error(err);
-  }
-}
-
-// Unblock User action
-window.unblockUser = async function(blockedId) {
-  try {
-    const res = await fetch(`${API_BASE}/api/friends/unblock`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${authToken}`
-      },
-      body: JSON.stringify({ blockedId })
-    });
-    if (!res.ok) throw new Error();
-
-    loadBlockedList();
-    loadFriendsList();
-  } catch (err) {
-    await showCenteredAlert('ไม่สามารถปลดบล็อกผู้ใช้งานได้');
-  }
-};
-
-// Fetch pending incoming friend requests
-async function loadFriendRequests() {
-  const panel = document.getElementById('friendRequestsPanel');
-  const container = document.getElementById('friendRequestsContainer');
-  if (!panel || !container) return;
-
-  try {
-    const res = await fetch(`${API_BASE}/api/friends/requests`, {
-      headers: { 'Authorization': `Bearer ${authToken}` }
-    });
-    if (!res.ok) throw new Error();
-    const requests = await res.json();
-
-    if (requests.length === 0) {
-      panel.style.display = 'none';
-      return;
-    }
-
-    let html = '';
-    requests.forEach(r => {
-      const displayName = r.fullName || r.username;
-      html += `
-        <div style="display: flex; justify-content: space-between; align-items: center; background: white; padding: 8px 12px; border-radius: 8px; border: 1px solid #FDE68A;">
-          <div style="display: flex; align-items: center; gap: 8px; cursor: pointer;" onclick="showUserProfile(${r.senderId})">
-            ${r.faceImage ? `<img src="${r.faceImage}" style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover;" />` : `<div class="friend-user-avatar" style="width: 28px; height: 28px; font-size: 11px; background-color: #BD1B0B; display: flex; align-items: center; justify-content: center; color: white; border-radius: 50%;">${displayName.charAt(0)}</div>`}
-            <div style="text-align: left;">
-              <span style="font-size: 12px; font-weight: 600; color: var(--text-dark); display: block;">${escapeHTML(displayName)}</span>
-              <span style="font-size: 9px; color: var(--text-light);">@${escapeHTML(r.username)}</span>
-            </div>
-          </div>
-          <div style="display: flex; gap: 6px;">
-            <button onclick="acceptFriendRequest(${r.senderId})" class="btn-quick-match" style="padding: 4px 10px; font-size: 11px; border-radius: 6px; width: auto; box-shadow: none; background-color: #10B981; color: white;">รับแอด</button>
-            <button onclick="declineFriendRequest(${r.senderId})" class="post-action-btn delete" style="font-size: 11px; border: 1px solid #EF4444; border-radius: 6px; padding: 4px 10px; background: none; margin-right: 0;">ปฏิเสธ</button>
-          </div>
-        </div>
-      `;
-    });
-
-    container.innerHTML = html;
-    panel.style.display = 'block';
-
-  } catch (err) {
-    console.error('Load friend requests error:', err);
-  }
-}
-
-window.acceptFriendRequest = async function(friendId) {
-  try {
-    const res = await fetch(`${API_BASE}/api/friends/request/${friendId}/accept`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${authToken}` }
-    });
-    if (!res.ok) throw new Error();
-    loadFriendRequests();
-    loadFriendsList();
-  } catch (err) {
-    await showCenteredAlert('ไม่สามารถตอบรับเป็นเพื่อนได้');
-  }
-};
-
-window.declineFriendRequest = async function(friendId) {
-  try {
-    const res = await fetch(`${API_BASE}/api/friends/request/${friendId}/decline`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${authToken}` }
-    });
-    if (!res.ok) throw new Error();
-    loadFriendRequests();
-  } catch (err) {
-    await showCenteredAlert('ไม่สามารถปฏิเสธคำขอได้');
-  }
-};
-
-window.unfriend = async function(friendId) {
-  const confirmed = await showCenteredConfirm('ลบเพื่อน', 'คุณต้องการลบเพื่อนคนนี้ใช่หรือไม่? แชทส่วนตัวจะถูกปิดตัวลง', { okText: 'ลบเพื่อน', okColor: '#EF4444' });
-  if (!confirmed) return;
-  try {
-    const res = await fetch(`${API_BASE}/api/friends/${friendId}`, {
-      method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${authToken}` }
-    });
-    if (!res.ok) throw new Error();
-    loadFriendsList();
-  } catch (err) {
-    await showCenteredAlert('ไม่สามารถลบเพื่อนได้');
-  }
-};
-
-// --- Show User Profile Preview Card ---
-window.showUserProfile = async function(userId) {
-  const modal = document.getElementById('userProfileModal');
-  const avatar = document.getElementById('userProfileModalAvatar');
-  const fullName = document.getElementById('lblUserProfileModalFullName');
-  const username = document.getElementById('lblUserProfileModalUsername');
-  const points = document.getElementById('lblUserProfileModalPoints');
-  const streak = document.getElementById('lblUserProfileModalStreak');
-  const wins = document.getElementById('lblUserProfileModalWins');
-  const actions = document.getElementById('userProfileModalActions');
-
-  if (!modal) return;
-
-  // Render loading state
-  if (avatar) avatar.textContent = '...';
-  if (fullName) fullName.textContent = 'กำลังโหลดโปรไฟล์...';
-  if (username) username.textContent = '';
-  if (points) points.textContent = '-';
-  if (streak) streak.textContent = '-';
-  if (wins) wins.textContent = '-';
-  if (actions) actions.innerHTML = '';
-
-  modal.style.display = 'flex';
-
-  try {
-    const res = await fetch(`${API_BASE}/api/user/${userId}/profile`, {
-      headers: { 'Authorization': `Bearer ${authToken}` }
-    });
-    if (!res.ok) throw new Error('Failed to load profile');
-    const u = await res.json();
-
-    const nameStr = u.fullName || u.username;
-    if (avatar) {
-      if (u.faceImage) {
-        avatar.innerHTML = `<img src="${u.faceImage}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block;" alt="avatar" />`;
-      } else {
-        avatar.textContent = nameStr.charAt(0);
-      }
-    }
-    if (fullName) fullName.textContent = nameStr;
-    if (username) username.textContent = `@${u.username}`;
-    if (points) points.textContent = `${u.points || 0} พ้อยต์`;
-    if (streak) streak.textContent = `${u.streak || 0} วัน`;
-    if (wins) wins.textContent = `${u.battleWins || 0} ครั้ง`;
-
-    // Render action buttons based on relationStatus
-    let buttonsHtml = '';
-    const isMe = userProfile && u.id === userProfile.id;
-
-    if (isMe) {
-      buttonsHtml = `
-        <button class="btn-quick-match" style="width: 100%; box-shadow: none; background-color: #64748B;" onclick="closeUserProfileModal()">นี่คือโปรไฟล์ของคุณ</button>
-      `;
-    } else {
-      if (u.relationStatus === 'ACCEPTED') {
-        buttonsHtml = `
-          <button class="btn-quick-match" style="width: 100%; box-shadow: none;" onclick="enterDmChat(${u.id}, '${escapeHTML(nameStr)}'); closeUserProfileModal();"> ส่งข้อความส่วนตัว</button>
-          <button class="post-action-btn delete" style="width: 100%; border: 1px solid #EF4444; border-radius: 8px; padding: 10px; font-size: 13px; font-weight: 600; background: none; margin-right: 0;" onclick="unfriend(${u.id}); closeUserProfileModal();"> ลบเพื่อน</button>
-        `;
-      } else if (u.relationStatus === 'PENDING_SENT') {
-        buttonsHtml = `
-          <button class="btn-quick-match" style="width: 100%; box-shadow: none; background-color: #64748B; cursor: not-allowed;" disabled>รอการตอบรับคำขอเพื่อน</button>
-        `;
-      } else if (u.relationStatus === 'PENDING_RECEIVED') {
-        buttonsHtml = `
-          <button class="btn-quick-match" style="width: 100%; box-shadow: none; background-color: #10B981;" onclick="acceptFriendRequest(${u.id}); closeUserProfileModal();"> ยอมรับเป็นเพื่อน</button>
-          <button class="post-action-btn delete" style="width: 100%; border: 1px solid #EF4444; border-radius: 8px; padding: 10px; font-size: 13px; font-weight: 600; background: none; margin-right: 0;" onclick="declineFriendRequest(${u.id}); closeUserProfileModal();">ปฏิเสธคำขอ</button>
-        `;
-      } else if (u.relationStatus === 'BLOCKED') {
-        buttonsHtml = `
-          <button class="btn-quick-match" style="width: 100%; box-shadow: none; background-color: #EF4444;" onclick="unblockUser(${u.id}); closeUserProfileModal();">ปลดบล็อก</button>
-        `;
-      } else {
-        buttonsHtml = `
-          <button class="btn-quick-match" style="width: 100%; box-shadow: none;" onclick="addFriend(${u.id}); closeUserProfileModal();"> เพิ่มเพื่อน</button>
-        `;
-      }
-
-      if (u.relationStatus !== 'BLOCKED') {
-        buttonsHtml += `
-          <button class="post-action-btn delete" style="width: 100%; border: 1px solid #EF4444; border-radius: 8px; padding: 10px; font-size: 13px; font-weight: 600; background: none; margin-right: 0; margin-top: 4px;" onclick="blockUser(${u.id}); closeUserProfileModal();"> บล็อกผู้ใช้งาน</button>
-        `;
-      }
-    }
-
-    if (actions) actions.innerHTML = buttonsHtml;
-
-    // Load post history
-    loadUserPostHistory(userId);
-
-  } catch (err) {
-    console.error('Load public profile error:', err);
-    if (fullName) fullName.textContent = 'โหลดโปรไฟล์ล้มเหลว';
-  }
-};
-
-const userProfileModalElem = document.getElementById('userProfileModal');
-if (userProfileModalElem) {
-  userProfileModalElem.addEventListener('click', (e) => {
-    if (e.target === userProfileModalElem) closeUserProfileModal();
+      </div>
+    `;
   });
+
+  container.innerHTML = html;
 }
 
-window.closeUserProfileModal = function() {
-  const modal = document.getElementById('userProfileModal');
-  if (modal) modal.style.display = 'none';
-};
-
-const btnCloseUserProfileModal = document.getElementById('btnCloseUserProfileModal');
-if (btnCloseUserProfileModal) {
-  btnCloseUserProfileModal.onclick = () => {
-    closeUserProfileModal();
-  };
-}
-
-async function loadUserPostHistory(userId) {
-  const container = document.getElementById('userProfileModalPostsContainer');
-  if (!container) return;
-
-  container.innerHTML = '<div style="text-align: center; color: var(--text-light); font-size: 12px; padding: 12px 0;">กำลังโหลดโพสต์...</div>';
-
-  try {
-    const res = await fetch(`${API_BASE}/api/user/${userId}/posts`, {
-      headers: { 'Authorization': `Bearer ${authToken}` }
-    });
-    if (!res.ok) throw new Error();
-    const posts = await res.json();
-
-    if (posts.length === 0) {
-      container.innerHTML = '<div style="text-align: center; color: var(--text-light); font-size: 12px; padding: 12px 0;">ยังไม่มีโพสต์</div>';
-      return;
-    }
-
-    let html = '';
-    posts.forEach(p => {
-      const timeStr = formatPostTime(new Date(p.createdAt));
-      const commentCount = p.comments ? p.comments.length : 0;
-
-      html += `
-        <div style="background: #F8FAFC; border: 1px solid var(--border-color); border-radius: 12px; padding: 12px;">
-          <p style="font-size: 13px; color: var(--text-dark); margin: 0 0 6px 0; line-height: 1.5; word-break: break-word;">${formatMessageContent(p.content)}</p>
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 10px; color: var(--text-light);">${timeStr}</span>
-            <span style="font-size: 10px; color: var(--text-light);"> ${commentCount} ความคิดเห็น</span>
-          </div>
-        </div>
-      `;
-    });
-
-    container.innerHTML = html;
-  } catch (err) {
-    console.error('Load user posts error:', err);
-    container.innerHTML = '<div style="text-align: center; color: var(--text-light); font-size: 12px; padding: 12px 0;">ไม่สามารถโหลดโพสต์ได้</div>';
-  }
-}
-
-// --- Direct Message Chat View Handlers ---
-window.enterDmChat = function(friendId, friendName) {
-  activeFriendId = friendId;
-  document.getElementById('friendsMainPanel').style.display = 'none';
-  
-  const screen = document.getElementById('dmChatScreenPanel');
-  screen.style.display = 'flex';
-
-  document.getElementById('lblDmChatFriendName').textContent = friendName;
-
-  // Block handler inside direct messages header
-  const btnBlock = document.getElementById('btnBlockCurrentFriend');
-  if (btnBlock) {
-    btnBlock.onclick = async () => {
-      await blockUser(friendId);
-      exitDmChat();
-    };
-  }
-
-  // Load and poll DM messages
-  loadDmChatMessages(friendId);
-  if (dmChatPollInterval) clearInterval(dmChatPollInterval);
-  dmChatPollInterval = setInterval(() => loadDmChatMessages(friendId), 3000);
-};
-
-window.exitDmChat = function() {
-  activeFriendId = null;
-  if (dmChatPollInterval) {
-    clearInterval(dmChatPollInterval);
-    dmChatPollInterval = null;
-  }
-  document.getElementById('dmChatScreenPanel').style.display = 'none';
-  document.getElementById('friendsMainPanel').style.display = 'block';
-  loadFriendsList();
-};
-
-const btnBackToFriends = document.getElementById('btnBackToFriends');
-if (btnBackToFriends) {
-  btnBackToFriends.onclick = () => {
-    exitDmChat();
-  };
-}
-
-async function loadDmChatMessages(friendId) {
-  const container = document.getElementById('dmChatMessagesContainer');
-  if (!container || activeFriendId !== friendId) return;
-
-  try {
-    const res = await fetch(`${API_BASE}/api/friends/chat/${friendId}`, {
-      headers: { 'Authorization': `Bearer ${authToken}` }
-    });
-    if (!res.ok) throw new Error();
-    const messages = await res.json();
-
-    if (messages.length === 0) {
-      container.innerHTML = `
-        <div style="text-align: center; color: var(--text-light); font-size: 13px; padding-top: 40px;">
-           เริ่มพิมพ์ข้อความแชทส่วนตัวกับเพื่อนได้แล้ววันนี้
-        </div>
-      `;
-      return;
-    }
-
-    let html = '';
-    messages.forEach(m => {
-      const isMe = userProfile && m.senderId === userProfile.id;
-      const timeStr = new Date(m.createdAt).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
-
-      html += `
-        <div class="chat-bubble ${isMe ? 'me' : ''}">
-          <div class="chat-message-box">
-            ${formatMessageContent(m.content)}
-          </div>
-          <span class="chat-timestamp">${timeStr}</span>
-        </div>
-      `;
-    });
-
-    const isAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 60;
-    container.innerHTML = html;
-
-    if (isAtBottom || container.getAttribute('data-first-load') !== 'false') {
-      container.scrollTop = container.scrollHeight;
-      container.setAttribute('data-first-load', 'false');
-    }
-  } catch (err) {
-    // If blocked or request fails, exit DM chat
-    console.error(err);
-    exitDmChat();
-  }
-}
-
-// Send Direct Message
-const btnSendDmChat = document.getElementById('btnSendDmChat');
-const txtDmChatInput = document.getElementById('txtDmChatInput');
-if (btnSendDmChat && txtDmChatInput) {
-  const handleSendDmChat = async () => {
-    if (!activeFriendId) return;
-    const content = txtDmChatInput.value.trim();
-    if (!content) return;
-
-    txtDmChatInput.value = '';
-    btnSendDmChat.disabled = true;
-
-    try {
-      const res = await fetch(`${API_BASE}/api/friends/chat/${activeFriendId}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`
-        },
-        body: JSON.stringify({ content })
-      });
-      if (!res.ok) throw new Error();
-      loadDmChatMessages(activeFriendId);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      btnSendDmChat.disabled = false;
-      txtDmChatInput.focus();
-    }
-  };
-
-  btnSendDmChat.onclick = (e) => {
-    e.preventDefault();
-    handleSendDmChat();
-  };
-
-  txtDmChatInput.onkeydown = (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleSendDmChat();
-    }
-  };
-}
+// Community features removed
+window.loadCommunityPosts = function() {};
 
 // ==========================================
 // Vocab Mini-Game Logic

@@ -4906,6 +4906,240 @@ app.get('/api/leaderboard', async (req, res) => {
   }
 });
 
+// --- Pretest 150 Leaderboard Route (Top 30 ranked by score & fastest time) ---
+function formatDurationTh(sec) {
+  if (!sec || sec <= 0) return 'ไม่ระบุ';
+  const hours = Math.floor(sec / 3600);
+  const minutes = Math.floor((sec % 3600) / 60);
+  const seconds = sec % 60;
+  if (hours > 0) {
+    return `${hours} ชม. ${minutes} นาที`;
+  }
+  return `${minutes} นาที ${seconds} วิ`;
+}
+
+const SEED_PRETEST_CONTENDERS = [
+  { name: 'ส.ต.ต. ณัฐภัทร วงศ์ษา', username: 'natpat_pol', track: 'prabpram', trackTitle: 'สายปราบปราม', score: 146, timeSpentSeconds: 5220, dateFormatted: '12 ก.ย. 67' },
+  { name: 'กรวิชญ์ เมธาสิทธิ์', username: 'korn_m', track: 'amnuay', trackTitle: 'สายอำนวยการ', score: 145, timeSpentSeconds: 5580, dateFormatted: '13 ก.ย. 67' },
+  { name: 'ธีรเดช ศรีสุวรรณ', username: 'theeradej_s', track: 'prabpram', trackTitle: 'สายปราบปราม', score: 144, timeSpentSeconds: 5820, dateFormatted: '10 ก.ย. 67' },
+  { name: 'ปภัสสร เจริญสุข', username: 'papatsorn_c', track: 'amnuay', trackTitle: 'สายอำนวยการ', score: 143, timeSpentSeconds: 5940, dateFormatted: '14 ก.ย. 67' },
+  { name: 'ส.ต.ต. วรเมธ สิทธิชัย', username: 'worameth_cop', track: 'prabpram', trackTitle: 'สายปราบปราม', score: 142, timeSpentSeconds: 6120, dateFormatted: '11 ก.ย. 67' },
+  { name: 'กิตติภูมิ พัฒนากุล', username: 'kittiphum_p', track: 'prabpram', trackTitle: 'สายปราบปราม', score: 142, timeSpentSeconds: 6480, dateFormatted: '13 ก.ย. 67' },
+  { name: 'ชวัลนุช พงษ์ไพบูลย์', username: 'chawan_n', track: 'amnuay', trackTitle: 'สายอำนวยการ', score: 141, timeSpentSeconds: 6060, dateFormatted: '12 ก.ย. 67' },
+  { name: 'ธนกฤต มณีรัตน์', username: 'tanakrit_m', track: 'prabpram', trackTitle: 'สายปราบปราม', score: 140, timeSpentSeconds: 6300, dateFormatted: '09 ก.ย. 67' },
+  { name: 'ศุภโชค เลิศมงคล', username: 'suppachok_l', track: 'prabpram', trackTitle: 'สายปราบปราม', score: 139, timeSpentSeconds: 6540, dateFormatted: '14 ก.ย. 67' },
+  { name: 'นภัสรา สุวรรณเวช', username: 'napatsara_s', track: 'amnuay', trackTitle: 'สายอำนวยการ', score: 139, timeSpentSeconds: 6720, dateFormatted: '11 ก.ย. 67' },
+  { name: 'พงศกร วรเดช', username: 'pongsakorn_w', track: 'prabpram', trackTitle: 'สายปราบปราม', score: 138, timeSpentSeconds: 6600, dateFormatted: '10 ก.ย. 67' },
+  { name: 'อรรถพล พรหมดี', username: 'attapon_p', track: 'prabpram', trackTitle: 'สายปราบปราม', score: 137, timeSpentSeconds: 6780, dateFormatted: '13 ก.ย. 67' },
+  { name: 'เบญญาภา ชัยวัฒน์', username: 'benyapa_c', track: 'amnuay', trackTitle: 'สายอำนวยการ', score: 137, timeSpentSeconds: 7020, dateFormatted: '12 ก.ย. 67' },
+  { name: 'ดนุพล รัตนวิเชียร', username: 'danupol_r', track: 'prabpram', trackTitle: 'สายปราบปราม', score: 136, timeSpentSeconds: 6900, dateFormatted: '08 ก.ย. 67' },
+  { name: 'รพีภัทร บุญญา', username: 'rapeepat_b', track: 'prabpram', trackTitle: 'สายปราบปราม', score: 135, timeSpentSeconds: 7140, dateFormatted: '14 ก.ย. 67' },
+  { name: 'สิรินทรา เกษมสุข', username: 'sirintra_k', track: 'amnuay', trackTitle: 'สายอำนวยการ', score: 135, timeSpentSeconds: 7320, dateFormatted: '11 ก.ย. 67' },
+  { name: 'พิชญ์ เลิศปรีชา', username: 'pitch_lp', track: 'prabpram', trackTitle: 'สายปราบปราม', score: 134, timeSpentSeconds: 7200, dateFormatted: '10 ก.ย. 67' },
+  { name: 'กิตติศักดิ์ ศรีวิชัย', username: 'kittisak_s', track: 'prabpram', trackTitle: 'สายปราบปราม', score: 133, timeSpentSeconds: 7380, dateFormatted: '13 ก.ย. 67' },
+  { name: 'ปณิดา วราภรณ์', username: 'panida_w', track: 'amnuay', trackTitle: 'สายอำนวยการ', score: 133, timeSpentSeconds: 7500, dateFormatted: '09 ก.ย. 67' },
+  { name: 'จักรพันธ์ ภูริพัฒน์', username: 'jakkraphan_p', track: 'prabpram', trackTitle: 'สายปราบปราม', score: 132, timeSpentSeconds: 7440, dateFormatted: '12 ก.ย. 67' },
+  { name: 'อนุรักษ์ บุญมาก', username: 'anurak_b', track: 'prabpram', trackTitle: 'สายปราบปราม', score: 131, timeSpentSeconds: 7620, dateFormatted: '14 ก.ย. 67' },
+  { name: 'ณิชานันท์ อัศวเดช', username: 'nichanan_a', track: 'amnuay', trackTitle: 'สายอำนวยการ', score: 131, timeSpentSeconds: 7740, dateFormatted: '11 ก.ย. 67' },
+  { name: 'ภัทรดนัย ว่องไว', username: 'pattaradanai_v', track: 'prabpram', trackTitle: 'สายปราบปราม', score: 130, timeSpentSeconds: 7680, dateFormatted: '10 ก.ย. 67' },
+  { name: 'กฤติน ชาญชัย', username: 'krittin_c', track: 'prabpram', trackTitle: 'สายปราบปราม', score: 129, timeSpentSeconds: 7860, dateFormatted: '13 ก.ย. 67' },
+  { name: 'มณฑิรา สดใส', username: 'monthira_s', track: 'amnuay', trackTitle: 'สายอำนวยการ', score: 129, timeSpentSeconds: 7980, dateFormatted: '12 ก.ย. 67' },
+  { name: 'ธวัชชัย รักษาสัตย์', username: 'thawatchai_r', track: 'prabpram', trackTitle: 'สายปราบปราม', score: 128, timeSpentSeconds: 8040, dateFormatted: '08 ก.ย. 67' },
+  { name: 'ปฏิภาณ คงมั่น', username: 'patiphan_k', track: 'prabpram', trackTitle: 'สายปราบปราม', score: 127, timeSpentSeconds: 8220, dateFormatted: '14 ก.ย. 67' },
+  { name: 'สุพรรษา วงศ์ทอง', username: 'supansa_w', track: 'amnuay', trackTitle: 'สายอำนวยการ', score: 126, timeSpentSeconds: 8340, dateFormatted: '10 ก.ย. 67' },
+  { name: 'ชัยวัฒน์ บุญลือ', username: 'chaiwat_b', track: 'prabpram', trackTitle: 'สายปราบปราม', score: 125, timeSpentSeconds: 8460, dateFormatted: '12 ก.ย. 67' },
+  { name: 'เอกราช ชัยมงคล', username: 'ekkaraj_c', track: 'prabpram', trackTitle: 'สายปราบปราม', score: 124, timeSpentSeconds: 8580, dateFormatted: '11 ก.ย. 67' }
+];
+
+app.get('/api/leaderboard/pretest150', async (req, res) => {
+  try {
+    const trackFilter = (req.query.track || 'all').toLowerCase(); // 'all', 'prabpram', 'amnuay'
+
+    // 1. Fetch real 150-question pretest attempts from DB
+    const attempts = await prisma.quizAttempt.findMany({
+      where: {
+        OR: [
+          { totalQuestions: { gte: 100 } },
+          { setId: { contains: 'pretest' } },
+          { setId: { contains: '150' } },
+          { setTitle: { contains: '150' } },
+          { setTitle: { contains: 'Pretest' } }
+        ]
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            username: true,
+            fullName: true,
+            role: true,
+            points: true,
+            streak: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    // 2. Identify calling user if token present
+    let currentUserId = null;
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        currentUserId = decoded.userId;
+      } catch (e) {}
+    }
+
+    // 3. Aggregate best attempt per real user
+    const userBestMap = new Map();
+    attempts.forEach(att => {
+      if (!att.user) return;
+      const uId = att.userId;
+      const correct = att.correctCount || Math.round((att.scorePct / 100) * 150);
+      const scorePct = att.scorePct || Math.round((correct / 150) * 100);
+
+      // Parse duration
+      let timeSpentSeconds = 7200; // default 2 hours
+      if (att.setTitle && att.setTitle.includes('[time:')) {
+        const m = att.setTitle.match(/\[time:(\d+)\]/);
+        if (m) timeSpentSeconds = parseInt(m[1], 10);
+      }
+
+      // Track identification
+      const sId = (att.setId || '').toLowerCase();
+      const sTitle = (att.setTitle || '').toLowerCase();
+      const sSub = (att.subject || '').toLowerCase();
+      const isAmnuay = sId.includes('amnuay') || sTitle.includes('อำนวยการ') || sSub.includes('อำนวยการ');
+      const track = isAmnuay ? 'amnuay' : 'prabpram';
+      const trackTitle = isAmnuay ? 'สายอำนวยการ' : 'สายปราบปราม';
+
+      const dateFormatted = new Date(att.createdAt).toLocaleDateString('th-TH', {
+        day: 'numeric',
+        month: 'short',
+        year: '2-digit'
+      });
+
+      const currentBest = userBestMap.get(uId);
+      if (!currentBest || correct > currentBest.score || (correct === currentBest.score && timeSpentSeconds < currentBest.timeSpentSeconds)) {
+        userBestMap.set(uId, {
+          userId: uId,
+          name: att.user.fullName || att.user.username || 'ผู้ใช้งาน',
+          username: att.user.username || '',
+          track,
+          trackTitle,
+          score: correct,
+          total: 150,
+          scorePct,
+          timeSpentSeconds,
+          timeFormatted: formatDurationTh(timeSpentSeconds),
+          dateFormatted,
+          isMe: currentUserId === uId,
+          createdAt: att.createdAt
+        });
+      }
+    });
+
+    // 4. Combine real users and seeds
+    let allCandidates = [];
+
+    // Add real users
+    userBestMap.forEach(cand => {
+      allCandidates.push(cand);
+    });
+
+    // Add seeds (tag fake seeds as fake id < 0)
+    let seedIdCounter = -1;
+    SEED_PRETEST_CONTENDERS.forEach(seed => {
+      allCandidates.push({
+        userId: seedIdCounter--,
+        name: seed.name,
+        username: seed.username,
+        track: seed.track,
+        trackTitle: seed.trackTitle,
+        score: seed.score,
+        total: 150,
+        scorePct: Math.round((seed.score / 150) * 100),
+        timeSpentSeconds: seed.timeSpentSeconds,
+        timeFormatted: formatDurationTh(seed.timeSpentSeconds),
+        dateFormatted: seed.dateFormatted,
+        isMe: false
+      });
+    });
+
+    // 5. Apply track filter if requested
+    if (trackFilter === 'prabpram' || trackFilter === 'amnuay') {
+      allCandidates = allCandidates.filter(c => c.track === trackFilter);
+    }
+
+    // 6. Sort all candidates: Score DESC, Time Spent ASC (faster = higher rank)
+    allCandidates.sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      return a.timeSpentSeconds - b.timeSpentSeconds;
+    });
+
+    // Assign ranks
+    allCandidates.forEach((c, idx) => {
+      c.rank = idx + 1;
+    });
+
+    // 7. Find myRank
+    let myRank = null;
+    if (currentUserId) {
+      const foundInCandidates = allCandidates.find(c => c.userId === currentUserId);
+      if (foundInCandidates) {
+        myRank = {
+          hasAttempted: true,
+          rank: foundInCandidates.rank,
+          userId: foundInCandidates.userId,
+          name: foundInCandidates.name,
+          score: foundInCandidates.score,
+          total: 150,
+          scorePct: foundInCandidates.scorePct,
+          timeSpentSeconds: foundInCandidates.timeSpentSeconds,
+          timeFormatted: foundInCandidates.timeFormatted,
+          track: foundInCandidates.trackTitle,
+          dateFormatted: foundInCandidates.dateFormatted,
+          totalParticipants: allCandidates.length
+        };
+      } else {
+        // User hasn't attempted yet
+        const currentUser = await prisma.user.findUnique({
+          where: { id: currentUserId },
+          select: { id: true, fullName: true, username: true }
+        });
+        myRank = {
+          hasAttempted: false,
+          rank: null,
+          userId: currentUserId,
+          name: currentUser ? (currentUser.fullName || currentUser.username) : 'ฉัน',
+          score: 0,
+          total: 150,
+          scorePct: 0,
+          timeSpentSeconds: 0,
+          timeFormatted: '-',
+          track: '-',
+          dateFormatted: '-',
+          totalParticipants: allCandidates.length
+        };
+      }
+    }
+
+    const top30 = allCandidates.slice(0, 30);
+
+    res.json({
+      trackFilter,
+      totalParticipants: allCandidates.length,
+      top30,
+      myRank
+    });
+  } catch (err) {
+    console.error('Pretest 150 Leaderboard Error:', err);
+    res.status(500).json({ error: 'ไม่สามารถดึงข้อมูลตารางอันดับ 150 ข้อได้: ' + err.message });
+  }
+});
+
 // --- Community (Posts, Comments, Chat) Routes ---
 
 // Post Likes in-memory Map (postId -> Set of userIds)
@@ -13672,7 +13906,11 @@ app.post('/api/user/record-quiz', authenticateToken, async (req, res) => {
 
     const sub = (subject || 'ทั่วไป').trim();
     const sId = setId ? String(setId).trim() : null;
-    const sTitle = setTitle ? String(setTitle).trim() : null;
+    let sTitle = setTitle ? String(setTitle).trim() : null;
+    const durationSec = req.body.durationSeconds || req.body.timeSpentSeconds;
+    if (durationSec && sTitle && !sTitle.includes('[time:')) {
+      sTitle = `${sTitle} [time:${durationSec}]`;
+    }
     const recordTime = createdAt ? new Date(createdAt) : new Date();
 
     // Check duplicate attempt within 45 seconds to prevent double count

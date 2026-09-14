@@ -356,10 +356,10 @@
             <p style="margin: 4px 0 0 0; font-size: 12px; color: #94A3B8; font-weight: 500;">เจาะทีละบท</p>
           </button>
           <!-- 3 -->
-          <button onclick="document.getElementById('btnTabCommunity').click()"
+          <button onclick="document.getElementById('btnTabLeaderboard').click()"
             style="background: #FFFFFF; border: 1.5px solid #F1F5F9; border-radius: 16px; padding: 16px 14px; text-align: left; cursor: pointer; transition: transform 0.15s ease; font-family: inherit; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
-            <h3 style="margin: 0; font-size: 15px; font-weight: 800; color: #0F172A;">ชุมชน</h3>
-            <p style="margin: 4px 0 0 0; font-size: 12px; color: #94A3B8; font-weight: 500;">ผลและประวัติ</p>
+            <h3 style="margin: 0; font-size: 15px; font-weight: 800; color: #BD1B0B;">🏆 อันดับ</h3>
+            <p style="margin: 4px 0 0 0; font-size: 12px; color: #94A3B8; font-weight: 500;">Top 30 ผู้สอบ 150 ข้อ</p>
           </button>
           <!-- 4 -->
           <button onclick="openVocabArena()"
@@ -418,305 +418,112 @@
 
       </div> <!-- Close homeView -->
 
-      <!-- Community View Content -->
-      <div id="communityView" class="tab-view">
+      <!-- Leaderboard View Content -->
+      <div id="leaderboardView" class="tab-view">
         <!-- Header title -->
         <section class="profile-header-title-section"
-          style="flex-direction: column; align-items: flex-start; gap: 16px; width: 100%;">
-          <h1 class="profile-header-title">ชุมชนเตรียมสอบ</h1>
+          style="flex-direction: column; align-items: flex-start; gap: 8px; width: 100%; margin-bottom: 18px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; flex-wrap: wrap; gap: 12px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div
+                style="width: 46px; height: 46px; border-radius: 14px; background: linear-gradient(135deg, #FFF1F2 0%, #FFE4E6 100%); border: 1.5px solid #FECDD3; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; box-shadow: 0 2px 8px rgba(189,27,11,0.08);">
+                🏆
+              </div>
+              <div>
+                <h1 class="profile-header-title" style="margin: 0; font-size: 20px; font-weight: 800; color: #0F172A;">ตารางอันดับข้อสอบ 150 ข้อ (Top 30)</h1>
+                <p style="margin: 2px 0 0 0; font-size: 13px; color: #64748B; font-weight: 500;">จัดอันดับตามคะแนนสูงสุด (150 ข้อ) และเวลาที่ทำเร็วที่สุด</p>
+              </div>
+            </div>
+            <button onclick="if(typeof loadLeaderboard150 === 'function') loadLeaderboard150(currentLeaderboardTrack)" title="รีเฟรชอันดับล่าสุด"
+              style="background: #FFFFFF; border: 1.5px solid #E2E8F0; padding: 8px 14px; border-radius: 12px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; color: #475569; font-size: 12.5px; font-weight: 700; font-family: inherit; transition: all 0.15s ease; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#BD1B0B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width: 15px; height: 15px;">
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <polyline points="1 20 1 14 7 14"></polyline>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+              </svg>
+              <span>รีเฟรช</span>
+            </button>
+          </div>
         </section>
 
-        <!-- Sub Tabs Bar -->
+        <!-- ช่องอันดับของฉัน (My Rank Card) -->
+        <div id="myRankCardContainer" style="margin-bottom: 20px; width: 100%;">
+          <div class="stats-card-box"
+            style="padding: 20px; border-radius: 20px; background: linear-gradient(135deg, #FFF5F5 0%, #FFFFFF 100%); border: 2px solid #FEE2E2; box-shadow: 0 4px 20px rgba(189,27,11,0.06);">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+              <div style="display: flex; align-items: center; gap: 14px;">
+                <div id="myRankAvatarBox"
+                  style="width: 52px; height: 52px; border-radius: 50%; background: linear-gradient(135deg, #BD1B0B 0%, #8B0000 100%); color: white; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800; border: 2px solid #FECACA; box-shadow: 0 4px 12px rgba(189,27,11,0.2); flex-shrink: 0;">
+                  ?
+                </div>
+                <div>
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span id="lblMyRankName" style="font-size: 16px; font-weight: 800; color: #0F172A;">กำลังโหลด...</span>
+                    <span style="font-size: 11px; font-weight: 700; background: #FEE2E2; color: #BD1B0B; padding: 2px 8px; border-radius: 6px;">อันดับของฉัน</span>
+                  </div>
+                  <div id="lblMyRankStatusDesc" style="font-size: 12.5px; color: #64748B; margin-top: 2px;">
+                    กำลังดึงข้อมูลอันดับจากระบบ...
+                  </div>
+                </div>
+              </div>
+              <button onclick="openPoliceTrackModal()" class="btn-quick-match"
+                style="padding: 11px 22px; font-size: 13.5px; font-weight: 800; border-radius: 14px; background: #BD1B0B; color: white; border: none; cursor: pointer; font-family: inherit; box-shadow: 0 4px 14px rgba(189,27,11,0.28); display: inline-flex; align-items: center; gap: 8px; transition: transform 0.15s ease;">
+                <span>🎯</span>
+                <span>ทำข้อสอบ 150 ข้อ ชิงอันดับ</span>
+              </button>
+            </div>
+
+            <!-- User 150-Question Quick Stats Strip -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-top: 16px; padding-top: 14px; border-top: 1.5px solid #FEE2E2;">
+              <div style="background: white; border: 1px solid #FEE2E2; border-radius: 12px; padding: 10px 14px; text-align: center;">
+                <span style="font-size: 11.5px; color: #64748B; display: block; font-weight: 600;">อันดับของคุณ</span>
+                <span id="lblMyRankPosition" style="font-size: 20px; font-weight: 900; color: #BD1B0B; display: block; margin-top: 2px;">-</span>
+              </div>
+              <div style="background: white; border: 1px solid #FEE2E2; border-radius: 12px; padding: 10px 14px; text-align: center;">
+                <span style="font-size: 11.5px; color: #64748B; display: block; font-weight: 600;">คะแนนสูงสุด (150 ข้อ)</span>
+                <span id="lblMyRankBestScore" style="font-size: 20px; font-weight: 900; color: #0F172A; display: block; margin-top: 2px;">-</span>
+              </div>
+              <div style="background: white; border: 1px solid #FEE2E2; border-radius: 12px; padding: 10px 14px; text-align: center;">
+                <span style="font-size: 11.5px; color: #64748B; display: block; font-weight: 600;">เวลาที่ใช้เร็วที่สุด</span>
+                <span id="lblMyRankBestTime" style="font-size: 18px; font-weight: 800; color: #0F172A; display: block; margin-top: 2px;">-</span>
+              </div>
+              <div style="background: white; border: 1px solid #FEE2E2; border-radius: 12px; padding: 10px 14px; text-align: center;">
+                <span style="font-size: 11.5px; color: #64748B; display: block; font-weight: 600;">สายการสอบ</span>
+                <span id="lblMyRankTrack" style="font-size: 14px; font-weight: 800; color: #475569; display: block; margin-top: 6px;">-</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filter Subtabs Bar (All, Prabpram, Amnuay) -->
         <div class="community-subtabs-bar"
-          style="display: flex; gap: 8px; width: 100%; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; flex-wrap: wrap; margin-bottom: 16px;">
-          <button class="subtab-btn active" id="btnSubtabPosts">โพสต์</button>
-          <button class="subtab-btn" id="btnSubtabChat">ช่องแชทรวม</button>
-          <button class="subtab-btn" id="btnSubtabGroups">กลุ่ม</button>
-          <button class="subtab-btn" id="btnSubtabFriends">เพื่อน & แชทส่วนตัว</button>
+          style="display: flex; gap: 8px; width: 100%; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 16px;">
+          <button class="subtab-btn active" id="btnFilterLeaderboardAll" onclick="setLeaderboardTrackFilter('all')">🏆 ทั้งหมด</button>
+          <button class="subtab-btn" id="btnFilterLeaderboardPrabpram" onclick="setLeaderboardTrackFilter('prabpram')">🛡️ สายปราบปราม (150 ข้อ)</button>
+          <button class="subtab-btn" id="btnFilterLeaderboardAmnuay" onclick="setLeaderboardTrackFilter('amnuay')">📋 สายอำนวยการ / พฐ. (150 ข้อ)</button>
         </div>
 
-        <!-- SUBTAB 1: Posts list & compose -->
-        <div id="subtabContentPosts" class="subtab-content active">
-          <!-- Create Post Box -->
-          <div class="stats-card-box"
-            style="padding: 18px; margin-bottom: 16px; border-radius: 20px; background: #FFFFFF; border: 1.5px solid #F1F5F9; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
-            <div style="display: flex; gap: 14px; align-items: flex-start; margin-bottom: 12px;">
-              <img src="" class="post-user-avatar" id="composePostAvatarImg"
-                style="width: 42px; height: 42px; border-radius: 50%; object-fit: cover; background: #E2E8F0; display: none;">
-              <div class="profile-avatar-box" id="composePostAvatarBox"
-                style="width: 42px; height: 42px; font-size: 16px; flex-shrink: 0;">?</div>
-              <div style="flex: 1; min-width: 0;">
-                <textarea id="txtPostContent" placeholder="แบ่งปันแนวข้อสอบ หรือพูดคุยเตรียมสอบกับเพื่อนๆ..."
-                  style="width: 100%; box-sizing: border-box; height: 84px; border: 1.5px solid #E2E8F0; border-radius: 14px; padding: 12px 14px; font-family: inherit; font-size: 14px; resize: none; outline: none; transition: 0.2s;"
-                  onfocus="this.style.borderColor='var(--primary-color)'"
-                  onblur="this.style.borderColor='#E2E8F0'"></textarea>
-
-                <!-- Post Image Attachment Preview -->
-                <div id="postImagePreviewContainer"
-                  style="display: none; position: relative; margin-top: 10px; width: fit-content; max-width: 100%;">
-                  <img id="postImagePreviewImg" src=""
-                    style="max-height: 180px; max-width: 100%; border-radius: 12px; border: 1.5px solid #E2E8F0; object-fit: contain; background: #F8FAFC; display: block;">
-                  <button type="button" onclick="clearPostImageAttachment()"
-                    style="position: absolute; top: 6px; right: 6px; width: 26px; height: 26px; border-radius: 50%; background: rgba(15, 23, 42, 0.75); color: white; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; line-height: 1;"
-                    title="ลบรูป">×</button>
-                </div>
-              </div>
+        <!-- Top 30 Leaderboard List Box -->
+        <div class="stats-card-box"
+          style="padding: 16px 20px; border-radius: 20px; background: #FFFFFF; border: 1.5px solid #F1F5F9; box-shadow: 0 1px 3px rgba(0,0,0,0.02); margin-bottom: 24px;">
+          
+          <!-- Column Headers -->
+          <div
+            style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1.5px solid #F1F5F9; margin-bottom: 12px; font-size: 12px; font-weight: 700; color: #94A3B8;">
+            <div style="display: flex; align-items: center; gap: 14px;">
+              <span style="width: 36px; text-align: center;">อันดับ</span>
+              <span>ผู้เข้าสอบ</span>
             </div>
-
-            <!-- Bottom Actions Bar: Attach Image & Post Button -->
-            <div
-              style="display: flex; justify-content: space-between; align-items: center; padding-top: 6px; border-top: 1px solid #F8FAFC;">
-              <label
-                style="cursor: pointer; display: inline-flex; align-items: center; gap: 7px; padding: 7px 14px; border-radius: 10px; background: #F8FAFC; color: #475569; border: 1.5px solid #E2E8F0; font-size: 12.5px; font-weight: 700; transition: all 0.15s ease;"
-                title="แนบรูปภาพ">
-                <input type="file" id="filePostImageInput" accept="image/*" style="display: none;"
-                  onchange="handlePostImageSelect(event)">
-                <svg viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2.2" stroke-linecap="round"
-                  stroke-linejoin="round" style="width: 16px; height: 16px;">
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                  <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                  <polyline points="21 15 16 10 5 21"></polyline>
-                </svg>
-                <span>แนบรูปภาพ</span>
-              </label>
-
-              <button id="btnCreatePost" class="btn-quick-match"
-                style="padding: 9px 26px; font-size: 13.5px; font-weight: 800; border-radius: 12px; background: #BD1B0B; color: white; border: none; cursor: pointer; font-family: inherit; box-shadow: 0 4px 12px rgba(189, 27, 11, 0.22);">โพสต์</button>
+            <div style="display: flex; align-items: center; gap: 20px;">
+              <span style="text-align: right; min-width: 80px;">เวลาที่ใช้</span>
+              <span style="text-align: right; min-width: 75px;">คะแนนสอบ</span>
             </div>
           </div>
 
-          <!-- Posts Feed Container -->
-          <div id="postsFeedContainer" class="ai-recommendations-list"
-            style="max-height: 500px; overflow-y: auto; padding-right: 4px;">
-            <div class="leaderboard-item-loading">กำลังโหลดฟีดโพสต์...</div>
-          </div>
-        </div>
-
-        <!-- SUBTAB 2: Global Chat View -->
-        <div id="subtabContentChat" class="subtab-content">
-          <div class="stats-card-box"
-            style="padding: 0; overflow: hidden; height: 480px; display: flex; flex-direction: column; justify-content: space-between; border-radius: 20px;">
-            <!-- Chat Messages Panel -->
-            <div id="chatMessagesContainer"
-              style="flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; background-color: #F8FAFC;">
-              <div class="leaderboard-item-loading">กำลังโหลดข้อความ...</div>
-            </div>
-            <!-- Chat Input Panel -->
-            <div
-              style="display: flex; align-items: center; padding: 12px; border-top: 1px solid var(--border-color); gap: 8px; background-color: white;">
-
-              <label
-                style="cursor: pointer; display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; background: #F8FAFC; color: #64748B; border: 1px solid #E2E8F0; flex-shrink: 0;"
-                title="ส่งรูปภาพ/GIF">
-                <input type="file" accept="image/*" style="display: none;"
-                  onchange="handleChatImageUpload(event, '/api/community/chat')">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                  stroke-linejoin="round" style="width: 16px; height: 16px;">
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                  <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                  <polyline points="21 15 16 10 5 21"></polyline>
-                </svg>
-              </label>
-
-              <input type="text" id="txtChatInput" placeholder="พิมพ์ข้อความคุยแชทรวม..."
-                style="flex: 1; border: 1px solid var(--border-color); border-radius: 12px; padding: 10px 14px; font-family: 'Kanit', sans-serif; font-size: 14px; outline: none;"
-                onfocus="this.style.borderColor='var(--primary-color)'"
-                onblur="this.style.borderColor='var(--border-color)'">
-              <button id="btnSendChat" class="btn-quick-match"
-                style="padding: 10px 16px; border-radius: 12px; box-shadow: none; flex-shrink: 0; width: auto;">ส่ง</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- SUBTAB 3: Groups View -->
-        <div id="subtabContentGroups" class="subtab-content">
-          <!-- Group List Main Panel -->
-          <div id="groupListMainPanel">
-            <div style="display: flex; gap: 12px; margin-bottom: 16px; align-items: center;">
-              <input type="text" id="txtGroupSearch" placeholder=" ค้นหาชื่อกลุ่มติว..."
-                style="flex: 1; border: 1px solid var(--border-color); border-radius: 12px; padding: 10px 14px; font-family: 'Kanit', sans-serif; font-size: 14px; outline: none;">
-              <button id="btnOpenCreateGroupModal" class="btn-quick-match"
-                style="padding: 10px 16px; border-radius: 12px; font-size: 13px; box-shadow: none; width: auto; flex-shrink: 0;">สร้างกลุ่ม</button>
-            </div>
-
-            <!-- Dynamic list -->
-            <div id="groupsListContainer" class="battle-modes-list">
-              <div class="leaderboard-item-loading">กำลังโหลดกลุ่มติว...</div>
-            </div>
-          </div>
-
-          <!-- Group Chat Screen (Initially Hidden) -->
-          <div id="groupChatScreenPanel"
-            style="display: none; flex-direction: column; height: 480px; background-color: white; border: 1px solid var(--border-color); border-radius: 20px; overflow: hidden;">
-            <!-- Header -->
-            <div
-              style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--border-color); background: #F8FAFC;">
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <button id="btnBackToGroups"
-                  style="background: none; border: none; font-size: 18px; cursor: pointer; color: var(--text-dark);">⬅</button>
-                <img id="groupChatHeaderImage" src=""
-                  style="width: 32px; height: 32px; border-radius: 8px; object-fit: cover; display: none;">
-                <div style="text-align: left;">
-                  <span id="lblChatGroupName"
-                    style="font-weight: 600; display: block; font-size: 14px; color: var(--text-dark);">ชื่อกลุ่ม</span>
-                  <span id="lblChatGroupMeta" style="font-size: 11px; color: var(--text-light); display: block;">ID:
-                    #1 • สมาชิก 1 คน</span>
-                </div>
-              </div>
-              <div style="display: flex; gap: 8px;">
-                <button id="btnLeaveGroup" class="post-action-btn delete"
-                  style="font-weight: 600; font-size: 12px; border: 1px solid #EF4444; padding: 4px 10px; border-radius: 6px; background: none; margin-right: 0;">ออกจากกลุ่ม</button>
-                <button id="btnDeleteGroup" class="post-action-btn delete"
-                  style="font-weight: 600; font-size: 12px; border: 1px solid #EF4444; padding: 4px 10px; border-radius: 6px; background: #EF4444; color: white; display: none; margin-right: 0;">ลบกลุ่ม</button>
-              </div>
-            </div>
-
-            <!-- Requests approval panel (Creator only, dynamic display) -->
-            <div id="groupJoinRequestsPanel"
-              style="display: none; background: #FFFBEB; border-bottom: 1px solid #FEF3C7; padding: 12px 16px; text-align: left;">
-              <span id="lblGroupJoinRequestsCount"
-                style="font-size: 12px; font-weight: 600; color: #B45309; display: block; margin-bottom: 8px;">
-                คำขอเข้าร่วมกลุ่ม (0)</span>
-              <div id="groupJoinRequestsContainer"
-                style="display: flex; flex-direction: column; gap: 8px; max-height: 120px; overflow-y: auto;">
-                <!-- pending requests -->
-              </div>
-            </div>
-
-            <!-- Message feed -->
-            <div id="groupChatMessagesContainer"
-              style="flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; background-color: #F8FAFC;">
-              <div class="leaderboard-item-loading">กำลังโหลดข้อความ...</div>
-            </div>
-
-            <!-- Input -->
-            <div
-              style="display: flex; align-items: center; padding: 12px; border-top: 1px solid var(--border-color); gap: 8px; background-color: white;">
-
-              <label
-                style="cursor: pointer; display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; background: #F8FAFC; color: #64748B; border: 1px solid #E2E8F0; flex-shrink: 0;"
-                title="ส่งรูปภาพ/GIF">
-                <input type="file" accept="image/*" style="display: none;"
-                  onchange="handleChatImageUpload(event, '/api/community/groups/:groupId/chat')">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                  stroke-linejoin="round" style="width: 16px; height: 16px;">
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                  <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                  <polyline points="21 15 16 10 5 21"></polyline>
-                </svg>
-              </label>
-
-              <input type="text" id="txtGroupChatInput" placeholder="พิมพ์ข้อความแชทคุยในกลุ่ม..."
-                style="flex: 1; border: 1px solid var(--border-color); border-radius: 12px; padding: 10px 14px; font-family: 'Kanit', sans-serif; font-size: 14px; outline: none;">
-              <button id="btnSendGroupChat" class="btn-quick-match"
-                style="padding: 10px 16px; border-radius: 12px; box-shadow: none; flex-shrink: 0; width: auto;">ส่ง</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- SUBTAB 4: Friends & Direct Chat -->
-        <div id="subtabContentFriends" class="subtab-content">
-          <!-- Active Chat Panel & Friends list -->
-          <div id="friendsMainPanel">
-            <!-- Friend Requests List -->
-            <div class="stats-card-box" id="friendRequestsPanel"
-              style="padding: 16px; display: none; margin-bottom: 16px; background-color: #FFFBEB; border: 1px solid #FDE68A;">
-              <h3 class="stats-card-title"
-                style="font-size: 14px; margin-bottom: 12px; color: #B45309; display: flex; justify-content: space-between; align-items: center;">
-                <span> คำขอเป็นเพื่อนใหม่</span>
-              </h3>
-              <div id="friendRequestsContainer"
-                style="display: flex; flex-direction: column; gap: 8px; max-height: 180px; overflow-y: auto;">
-                <!-- pending requests -->
-              </div>
-            </div>
-
-            <!-- Search Friends Input -->
-            <div style="margin-bottom: 16px; position: relative;">
-              <input type="text" id="txtFriendUserSearch" placeholder=" ค้นหาชื่อเพื่อเพิ่มเพื่อน..."
-                style="width: 100%; border: 1px solid var(--border-color); border-radius: 12px; padding: 10px 14px; font-family: 'Kanit', sans-serif; font-size: 14px; outline: none;">
-              <!-- Search results list -->
-              <div id="friendUserSearchResultsContainer"
-                style="position: absolute; left: 0; right: 0; top: 100%; margin-top: 4px; max-height: 180px; overflow-y: auto; display: none; background: white; border: 1px solid var(--border-color); border-radius: 12px; box-shadow: var(--shadow-sm); z-index: 50; padding: 6px 0;">
-                <!-- results -->
-              </div>
-            </div>
-
-            <div style="display: flex; flex-direction: column; gap: 16px;">
-              <!-- Friends List -->
-              <div class="stats-card-box" style="padding: 16px;">
-                <h3 class="stats-card-title"
-                  style="font-size: 14px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
-                  <span> รายชื่อเพื่อนของคุณ (คลิกเพื่อแชทส่วนตัว)</span>
-                  <span id="lblFriendsCount" style="font-size: 11px; font-weight: normal; color: var(--text-light);">0
-                    คน</span>
-                </h3>
-                <div id="friendsListContainer"
-                  style="display: flex; flex-direction: column; gap: 8px; max-height: 250px; overflow-y: auto;">
-                  <div class="leaderboard-item-loading" style="font-size: 12px;">กำลังโหลดรายชื่อเพื่อน...</div>
-                </div>
-              </div>
-
-              <!-- Blocked List -->
-              <div class="stats-card-box" style="padding: 16px;">
-                <h3 class="stats-card-title"
-                  style="font-size: 14px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
-                  <span> รายชื่อที่คุณบล็อก</span>
-                </h3>
-                <div id="blockedUsersListContainer"
-                  style="display: flex; flex-direction: column; gap: 8px; max-height: 150px; overflow-y: auto;">
-                  <div class="leaderboard-item-loading" style="font-size: 12px;">ไม่มีรายชื่อที่บล็อก</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Direct Message Chat Panel (Initially Hidden) -->
-          <div id="dmChatScreenPanel"
-            style="display: none; flex-direction: column; height: 480px; background-color: white; border: 1px solid var(--border-color); border-radius: 20px; overflow: hidden;">
-            <!-- Header -->
-            <div
-              style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--border-color); background: #F8FAFC;">
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <button id="btnBackToFriends"
-                  style="background: none; border: none; font-size: 18px; cursor: pointer; color: var(--text-dark);">⬅</button>
-                <div style="text-align: left;">
-                  <span id="lblDmChatFriendName"
-                    style="font-weight: 600; display: block; font-size: 14px; color: var(--text-dark);">ชื่อเพื่อน</span>
-                  <span style="font-size: 11px; color: var(--text-light); display: block;">แชทส่วนตัว</span>
-                </div>
-              </div>
-              <button id="btnBlockCurrentFriend" class="post-action-btn delete"
-                style="font-weight: 600; font-size: 12px; border: 1px solid #EF4444; padding: 4px 10px; border-radius: 6px; background: none; margin-right: 0;">บล็อก</button>
-            </div>
-
-            <!-- Message panel -->
-            <div id="dmChatMessagesContainer"
-              style="flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; background-color: #F8FAFC;">
-              <div class="leaderboard-item-loading">กำลังโหลดข้อความ...</div>
-            </div>
-
-            <!-- Input panel -->
-            <div
-              style="display: flex; align-items: center; padding: 12px; border-top: 1px solid var(--border-color); gap: 8px; background-color: white;">
-
-              <label
-                style="cursor: pointer; display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; background: #F8FAFC; color: #64748B; border: 1px solid #E2E8F0; flex-shrink: 0;"
-                title="ส่งรูปภาพ/GIF">
-                <input type="file" accept="image/*" style="display: none;"
-                  onchange="handleChatImageUpload(event, '/api/community/dm/:friendId')">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                  stroke-linejoin="round" style="width: 16px; height: 16px;">
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                  <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                  <polyline points="21 15 16 10 5 21"></polyline>
-                </svg>
-              </label>
-
-              <input type="text" id="txtDmChatInput" placeholder="พิมพ์ข้อความคุยแชทส่วนตัว..."
-                style="flex: 1; border: 1px solid var(--border-color); border-radius: 12px; padding: 10px 14px; font-family: 'Kanit', sans-serif; font-size: 14px; outline: none;">
-              <button id="btnSendDmChat" class="btn-quick-match"
-                style="padding: 10px 16px; border-radius: 12px; box-shadow: none; flex-shrink: 0; width: auto;">ส่ง</button>
+          <!-- Dynamic Top 30 List -->
+          <div id="leaderboardListContainer" style="display: flex; flex-direction: column; gap: 8px;">
+            <div class="leaderboard-item-loading" style="text-align: center; padding: 40px; color: #94A3B8; font-size: 13.5px;">
+              กำลังโหลดข้อมูลตารางอันดับ 150 ข้อ...
             </div>
           </div>
         </div>
@@ -1205,14 +1012,14 @@
         <span class="tab-label">คลัง</span>
       </a>
 
-      <a href="#" class="nav-tab" id="btnTabCommunity">
+      <a href="#" class="nav-tab" id="btnTabLeaderboard">
         <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-          <circle cx="9" cy="7" r="4" />
-          <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-          <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+          <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
+          <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
+          <path d="M4 22h16"></path>
+          <path d="M10 14.66V17c0 .55-.45 1-1 1H7v4h10v-4h-2c-.55 0-1-.45-1-1v-2.34c3.27-.79 5-3.32 5-6.66V3H5v5c0 3.34 1.73 5.87 5 6.66z"></path>
         </svg>
-        <span class="tab-label">ชุมชน</span>
+        <span class="tab-label">อันดับ</span>
       </a>
     </div>
   </nav>
