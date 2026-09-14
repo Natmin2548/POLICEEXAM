@@ -10077,9 +10077,14 @@ async function callGroqAiText(prompt, options = {}) {
     throw new Error('GROQ_KEY_NOT_FOUND: ไม่พบ API Key ของ Groq');
   }
 
-  const modelsToTry = Array.isArray(options.models)
+  const modelsToTry = Array.isArray(options.models) && options.models.length > 0
     ? options.models
-    : [options.model || 'qwen/qwen3.8-27b', 'openai/gpt-oss-120b', 'qwen/qwen3.6-27b', 'openai/gpt-oss-20b'];
+    : [
+        options.model || 'llama-3.3-70b-versatile',
+        'llama-3.1-8b-instant',
+        'deepseek-r1-distill-llama-70b',
+        'mixtral-8x7b-32768'
+      ];
 
   const temperature = options.temperature !== undefined ? options.temperature : 0.15;
   let lastErr = null;
@@ -10243,14 +10248,14 @@ async function callSpecializedAiText({ prompt, subject = '', customApiKey = '', 
   // 1. Math / Calculations / General Ability -> Groq -> Gemini -> OpenRouter
   if (isMath && resolvedGroqKey) {
     try {
-      console.log('[Router] 🧠 Routing Math/Reasoning to Groq (Qwen 3.8 / GPT-OSS 120B)...');
+      console.log('[Router] 🧠 Routing Math/Reasoning to Groq (Llama 3.3 70B / DeepSeek R1)...');
       const res = await callGroqAiText(prompt, {
-        models: ['qwen/qwen3.8-27b', 'openai/gpt-oss-120b', 'qwen/qwen3.6-27b'],
+        models: ['llama-3.3-70b-versatile', 'deepseek-r1-distill-llama-70b', 'llama-3.1-8b-instant'],
         temperature: 0.1,
         groqApiKey: resolvedGroqKey
       });
       if (res && res.text && res.text.trim()) {
-        const modelLabel = res.model.includes('qwen') ? 'Groq (Qwen 3.8 27B Reasoning)' : 'Groq (GPT-OSS 120B)';
+        const modelLabel = `Groq (${res.model})`;
         console.log(`[Router OK] ${modelLabel} generated successfully`);
         return { text: res.text, engine: modelLabel };
       }
@@ -10262,14 +10267,14 @@ async function callSpecializedAiText({ prompt, subject = '', customApiKey = '', 
   // 2. English -> Groq -> Gemini -> OpenRouter
   if (isEnglish && resolvedGroqKey) {
     try {
-      console.log('[Router] 🇬🇧 Routing English to Groq (GPT-OSS 120B / Qwen 3.8)...');
+      console.log('[Router] 🇬🇧 Routing English to Groq (Llama 3.3 70B / Llama 3.1 8B)...');
       const res = await callGroqAiText(prompt, {
-        models: ['openai/gpt-oss-120b', 'qwen/qwen3.8-27b'],
+        models: ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant'],
         temperature: 0.15,
         groqApiKey: resolvedGroqKey
       });
       if (res && res.text && res.text.trim()) {
-        const modelLabel = res.model.includes('gpt-oss') ? 'Groq (GPT-OSS 120B)' : 'Groq (Qwen 3.8 27B)';
+        const modelLabel = `Groq (${res.model})`;
         console.log(`[Router OK] ${modelLabel} generated successfully`);
         return { text: res.text, engine: modelLabel };
       }
@@ -10305,8 +10310,11 @@ async function callSpecializedAiText({ prompt, subject = '', customApiKey = '', 
 
   // 5. Final fallback attempt with Groq if key exists
   if (resolvedGroqKey) {
-    console.log('[Router] Final fallback attempt with Groq...');
-    const lastRes = await callGroqAiText(prompt, { groqApiKey: resolvedGroqKey });
+    console.log('[Router] Final fallback attempt with Groq (Llama 3.3 70B / Llama 3.1 8B)...');
+    const lastRes = await callGroqAiText(prompt, {
+      models: ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'mixtral-8x7b-32768'],
+      groqApiKey: resolvedGroqKey
+    });
     return { text: lastRes.text, engine: `Groq (${lastRes.model})` };
   }
 
@@ -10706,7 +10714,7 @@ ${JSON.stringify(blindQuestions, null, 2)}
     try {
       console.log('[Cross-Audit] 🥊 Primary is Gemini -> Sending to Groq for Blind Audit...');
       const groqRes = await callGroqAiText(blindPrompt, {
-        models: ['qwen/qwen3.8-27b', 'openai/gpt-oss-120b'],
+        models: ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant'],
         temperature: 0.1,
         groqApiKey
       });
@@ -11028,7 +11036,53 @@ app.post('/api/admin/exams/preview-ai', authenticateToken, async (req, res) => {
         if (docs && docs.length > 0) {
           contextText = docs.map(d => `[${d.title}]\n${d.content}`).join('\n\n');
         } else {
-          const p = path.join(__dirname, 'data', 'computer_full.json');
+            const p = path.join(__dirname, 'data', 'computer_full.json');
+            if (fs.existsSync(p)) {
+              const raw = JSON.parse(fs.readFileSync(p, 'utf8'));
+              if (subcategory && subcategory !== 'ALL') {
+                const cleanSub = subcategory.replace(/บทที่\s*\d+\s*/, '').trim().toLowerCase();
+                const matched = raw.filter(d => d.title.toLowerCase().includes(cleanSub) || (cleanSub && d.content.toLowerCase().includes(cleanSub)));
+                if (matched.length > 0) {
+                  contextText = matched.map(d => `[${d.title}]\n${d.content}`).join('\n\n');
+                } else {
+                  contextText = raw.slice(0, 4).map(d => `[${d.title}]\n${d.content}`).join('\n\n');
+                }
+              } else {
+                contextText = raw.slice(0, 4).map(d => `[${d.title}]\n${d.content}`).join('\n\n');
+              }
+            }
+          }
+        } catch (e) {
+          console.error('Fetch computer error:', e);
+        }
+      } else if (!contextText && isLawSubject) {
+        try {
+          const docs = await prisma.knowledgeDocument.findMany({ where: { category: { contains: 'กฎหมาย' } } });
+          if (docs && docs.length > 0) {
+            contextText = docs.slice(0, 4).map(d => `[${d.title}]\n${d.content}`).join('\n\n');
+          } else {
+            const p = path.join(__dirname, 'data', 'law_full.json');
+            if (fs.existsSync(p)) {
+              const raw = JSON.parse(fs.readFileSync(p, 'utf8'));
+              if (subcategory && subcategory !== 'ALL') {
+                const cleanSub = subcategory.replace(/บทที่\s*\d+\s*/, '').trim().toLowerCase();
+                const matched = raw.filter(d => d.title.toLowerCase().includes(cleanSub) || (cleanSub && d.content.toLowerCase().includes(cleanSub)));
+                if (matched.length > 0) {
+                  contextText = matched.map(d => `[${d.title}]\n${d.content}`).join('\n\n');
+                } else {
+                  contextText = raw.slice(0, 4).map(d => `[${d.title}]\n${d.content}`).join('\n\n');
+                }
+              } else {
+                contextText = raw.slice(0, 4).map(d => `[${d.title}]\n${d.content}`).join('\n\n');
+              }
+            }
+          }
+        } catch (e) {
+          console.error('Fetch law error:', e);
+        }
+      } else if (!contextText && isThaiSubject) {
+        try {
+          const p = path.join(__dirname, 'data', 'thai_full.json');
           if (fs.existsSync(p)) {
             const raw = JSON.parse(fs.readFileSync(p, 'utf8'));
             if (subcategory && subcategory !== 'ALL') {
@@ -11037,113 +11091,74 @@ app.post('/api/admin/exams/preview-ai', authenticateToken, async (req, res) => {
               if (matched.length > 0) {
                 contextText = matched.map(d => `[${d.title}]\n${d.content}`).join('\n\n');
               } else {
-                contextText = raw.map(d => `[${d.title}]\n${d.content}`).join('\n\n');
+                contextText = raw.slice(0, 4).map(d => `[${d.title}]\n${d.content}`).join('\n\n');
               }
             } else {
-              contextText = raw.map(d => `[${d.title}]\n${d.content}`).join('\n\n');
+              contextText = raw.slice(0, 4).map(d => `[${d.title}]\n${d.content}`).join('\n\n');
             }
           }
+        } catch (e) {
+          console.error('Fetch thai error:', e);
         }
-      } catch (e) {
-        console.error('Fetch computer error:', e);
-      }
-    } else if (!contextText && isLawSubject) {
-      try {
-        const docs = await prisma.knowledgeDocument.findMany({ where: { category: { contains: 'กฎหมาย' } } });
+      } else if (!contextText && isSocialSubject) {
+        try {
+          const p = path.join(__dirname, 'data', 'social_full.json');
+          if (fs.existsSync(p)) {
+            const raw = JSON.parse(fs.readFileSync(p, 'utf8'));
+            if (subcategory && subcategory !== 'ALL') {
+              const cleanSub = subcategory.replace(/บทที่\s*\d+\s*/, '').trim().toLowerCase();
+              const matched = raw.filter(d => d.title.toLowerCase().includes(cleanSub) || (cleanSub && d.content.toLowerCase().includes(cleanSub)));
+              if (matched.length > 0) {
+                contextText = matched.map(d => `[${d.title}]\n${d.content}`).join('\n\n');
+              } else {
+                contextText = raw.slice(0, 4).map(d => `[${d.title}]\n${d.content}`).join('\n\n');
+              }
+            } else {
+              contextText = raw.slice(0, 4).map(d => `[${d.title}]\n${d.content}`).join('\n\n');
+            }
+          }
+        } catch (e) {
+          console.error('Fetch social error:', e);
+        }
+      } else if (!contextText && isMathSubject) {
+        try {
+          const p = path.join(__dirname, 'data', 'math_full.json');
+          if (fs.existsSync(p)) {
+            const raw = JSON.parse(fs.readFileSync(p, 'utf8'));
+            if (subcategory && subcategory !== 'ALL') {
+              const cleanSub = subcategory.replace(/บทที่\s*\d+\s*/, '').trim().toLowerCase();
+              const matched = raw.filter(d => d.title.toLowerCase().includes(cleanSub) || (cleanSub && d.content.toLowerCase().includes(cleanSub)));
+              if (matched.length > 0) {
+                contextText = matched.map(d => `[${d.title}]\n${d.content}`).join('\n\n');
+              } else {
+                contextText = raw.slice(0, 4).map(d => `[${d.title}]\n${d.content}`).join('\n\n');
+              }
+            } else {
+              contextText = raw.slice(0, 4).map(d => `[${d.title}]\n${d.content}`).join('\n\n');
+            }
+          }
+        } catch (e) {
+          console.error('Fetch math error:', e);
+        }
+      } else if (!contextText && (knowledgeBase === 'ALL_SARABAN' || subject === 'งานสารบรรณ')) {
+        const docs = await prisma.knowledgeDocument.findMany({});
         if (docs && docs.length > 0) {
-          contextText = docs.map(d => `[${d.title}]\n${d.content}`).join('\n\n');
-        } else {
-          const p = path.join(__dirname, 'data', 'law_full.json');
-          if (fs.existsSync(p)) {
-            const raw = JSON.parse(fs.readFileSync(p, 'utf8'));
-            if (subcategory && subcategory !== 'ALL') {
-              const cleanSub = subcategory.replace(/บทที่\s*\d+\s*/, '').trim().toLowerCase();
-              const matched = raw.filter(d => d.title.toLowerCase().includes(cleanSub) || (cleanSub && d.content.toLowerCase().includes(cleanSub)));
-              if (matched.length > 0) {
-                contextText = matched.map(d => `[${d.title}]\n${d.content}`).join('\n\n');
-              } else {
-                contextText = raw.map(d => `[${d.title}]\n${d.content}`).join('\n\n');
-              }
-            } else {
-              contextText = raw.map(d => `[${d.title}]\n${d.content}`).join('\n\n');
-            }
-          }
+          contextText = docs.slice(0, 4).map(d => `[${d.title}]\n${d.content}`).join('\n\n');
         }
-      } catch (e) {
-        console.error('Fetch law error:', e);
       }
-    } else if (!contextText && isThaiSubject) {
-      try {
-        const p = path.join(__dirname, 'data', 'thai_full.json');
-        if (fs.existsSync(p)) {
-          const raw = JSON.parse(fs.readFileSync(p, 'utf8'));
-          if (subcategory && subcategory !== 'ALL') {
-            const cleanSub = subcategory.replace(/บทที่\s*\d+\s*/, '').trim().toLowerCase();
-            const matched = raw.filter(d => d.title.toLowerCase().includes(cleanSub) || (cleanSub && d.content.toLowerCase().includes(cleanSub)));
-            if (matched.length > 0) {
-              contextText = matched.map(d => `[${d.title}]\n${d.content}`).join('\n\n');
-            } else {
-              contextText = raw.map(d => `[${d.title}]\n${d.content}`).join('\n\n');
-            }
-          } else {
-            contextText = raw.map(d => `[${d.title}]\n${d.content}`).join('\n\n');
-          }
-        }
-      } catch (e) {
-        console.error('Fetch thai error:', e);
-      }
-    } else if (!contextText && isSocialSubject) {
-      try {
-        const p = path.join(__dirname, 'data', 'social_full.json');
-        if (fs.existsSync(p)) {
-          const raw = JSON.parse(fs.readFileSync(p, 'utf8'));
-          if (subcategory && subcategory !== 'ALL') {
-            const cleanSub = subcategory.replace(/บทที่\s*\d+\s*/, '').trim().toLowerCase();
-            const matched = raw.filter(d => d.title.toLowerCase().includes(cleanSub) || (cleanSub && d.content.toLowerCase().includes(cleanSub)));
-            if (matched.length > 0) {
-              contextText = matched.map(d => `[${d.title}]\n${d.content}`).join('\n\n');
-            } else {
-              contextText = raw.map(d => `[${d.title}]\n${d.content}`).join('\n\n');
-            }
-          } else {
-            contextText = raw.map(d => `[${d.title}]\n${d.content}`).join('\n\n');
-          }
-        }
-      } catch (e) {
-        console.error('Fetch social error:', e);
-      }
-    } else if (!contextText && isMathSubject) {
-      try {
-        const p = path.join(__dirname, 'data', 'math_full.json');
-        if (fs.existsSync(p)) {
-          const raw = JSON.parse(fs.readFileSync(p, 'utf8'));
-          if (subcategory && subcategory !== 'ALL') {
-            const cleanSub = subcategory.replace(/บทที่\s*\d+\s*/, '').trim().toLowerCase();
-            const matched = raw.filter(d => d.title.toLowerCase().includes(cleanSub) || (cleanSub && d.content.toLowerCase().includes(cleanSub)));
-            if (matched.length > 0) {
-              contextText = matched.map(d => `[${d.title}]\n${d.content}`).join('\n\n');
-            } else {
-              contextText = raw.map(d => `[${d.title}]\n${d.content}`).join('\n\n');
-            }
-          } else {
-            contextText = raw.map(d => `[${d.title}]\n${d.content}`).join('\n\n');
-          }
-        }
-      } catch (e) {
-        console.error('Fetch math error:', e);
-      }
-    } else if (!contextText && (knowledgeBase === 'ALL_SARABAN' || subject === 'งานสารบรรณ')) {
-      const docs = await prisma.knowledgeDocument.findMany({});
-      if (docs && docs.length > 0) {
-        contextText = docs.map(d => `[${d.title}]\n${d.content}`).join('\n\n');
-      }
-    }
 
-    if (isEnglishSubject) {
-      contextText = ''; // Guarantee absolute isolation: English must NEVER inherit non-English reference context
-    }
+      if (isEnglishSubject) {
+        contextText = ''; // Guarantee absolute isolation: English must NEVER inherit non-English reference context
+      }
 
-    // Chunk generation into batches of up to 10 questions each
+      // Guarantee contextText never exceeds 10,000 characters (~2,500 tokens) to prevent TPM overflows
+      if (contextText && contextText.length > 10000) {
+        const truncated = contextText.substring(0, 10000);
+        const lastSec = truncated.lastIndexOf('\n\n[');
+        contextText = (lastSec > 5000 ? truncated.substring(0, lastSec) : truncated) + '\n\n[...เนื้อหาอ้างอิงถูกจัดขนาดให้เหมาะสม...]';
+      }
+
+      // Chunk generation into batches of up to 10 questions each
     // This completely eliminates JSON cutoff / Unterminated string errors on 20, 30, 40, 50 questions
     const BATCH_SIZE = 10;
     const batchCounts = [];
@@ -11654,20 +11669,22 @@ app.post('/api/admin/exams/:examSetId/append-ai', authenticateToken, async (req,
 
     if (examSet.category === 'งานสารบรรณ' || cat.includes('สารบรรณ')) {
       const docs = await prisma.knowledgeDocument.findMany({});
-      if (docs && docs.length > 0) contextText = docs.map(d => `[${d.title}]\n${d.content}`).join('\n\n');
+      if (docs && docs.length > 0) contextText = docs.slice(0, 4).map(d => `[${d.title}]\n${d.content}`).join('\n\n');
     } else if (isThai) {
       const p = path.join(__dirname, 'data', 'thai_full.json');
       if (fs.existsSync(p)) {
         const raw = JSON.parse(fs.readFileSync(p, 'utf8'));
         const cleanSub = (examSet.subcategory || '').replace(/บทที่\s*\d+\s*/, '').trim().toLowerCase();
         const matched = raw.filter(d => cleanSub && (d.title.toLowerCase().includes(cleanSub) || d.content.toLowerCase().includes(cleanSub)));
-        contextText = (matched.length > 0 ? matched : raw).map(d => `[${d.title}]\n${d.content}`).join('\n\n');
+        contextText = (matched.length > 0 ? matched : raw.slice(0, 4)).map(d => `[${d.title}]\n${d.content}`).join('\n\n');
       }
     } else if (isComp) {
       const p = path.join(__dirname, 'data', 'computer_full.json');
       if (fs.existsSync(p)) {
         const raw = JSON.parse(fs.readFileSync(p, 'utf8'));
-        contextText = raw.map(d => `[${d.title}]\n${d.content}`).join('\n\n');
+        const cleanSub = (examSet.subcategory || '').replace(/บทที่\s*\d+\s*/, '').trim().toLowerCase();
+        const matched = raw.filter(d => cleanSub && (d.title.toLowerCase().includes(cleanSub) || d.content.toLowerCase().includes(cleanSub)));
+        contextText = (matched.length > 0 ? matched : raw.slice(0, 4)).map(d => `[${d.title}]\n${d.content}`).join('\n\n');
       }
     } else if (isLaw) {
       const p = path.join(__dirname, 'data', 'law_full.json');
@@ -11675,7 +11692,7 @@ app.post('/api/admin/exams/:examSetId/append-ai', authenticateToken, async (req,
         const raw = JSON.parse(fs.readFileSync(p, 'utf8'));
         const cleanSub = (examSet.subcategory || '').replace(/บทที่\s*\d+\s*/, '').trim().toLowerCase();
         const matched = raw.filter(d => cleanSub && (d.title.toLowerCase().includes(cleanSub) || d.content.toLowerCase().includes(cleanSub)));
-        contextText = (matched.length > 0 ? matched : raw).map(d => `[${d.title}]\n${d.content}`).join('\n\n');
+        contextText = (matched.length > 0 ? matched : raw.slice(0, 4)).map(d => `[${d.title}]\n${d.content}`).join('\n\n');
       }
     } else if (cat.includes('สังคม') || cat.includes('จริยธรรม') || cat.includes('social') || cat.includes('อาเซียน')) {
       const p = path.join(__dirname, 'data', 'social_full.json');
@@ -11683,7 +11700,7 @@ app.post('/api/admin/exams/:examSetId/append-ai', authenticateToken, async (req,
         const raw = JSON.parse(fs.readFileSync(p, 'utf8'));
         const cleanSub = (examSet.subcategory || '').replace(/บทที่\s*\d+\s*/, '').trim().toLowerCase();
         const matched = raw.filter(d => cleanSub && (d.title.toLowerCase().includes(cleanSub) || d.content.toLowerCase().includes(cleanSub)));
-        contextText = (matched.length > 0 ? matched : raw).map(d => `[${d.title}]\n${d.content}`).join('\n\n');
+        contextText = (matched.length > 0 ? matched : raw.slice(0, 4)).map(d => `[${d.title}]\n${d.content}`).join('\n\n');
       }
     } else if (cat === 'ทั่วไป' || cat === 'ความสามารถทั่วไป' || cat.includes('ความสามารถทั่วไป') || cat.includes('คำนวณ') || cat.includes('คณิต') || cat.includes('general') || cat.includes('อนุกรม')) {
       const p = path.join(__dirname, 'data', 'math_full.json');
@@ -11691,8 +11708,14 @@ app.post('/api/admin/exams/:examSetId/append-ai', authenticateToken, async (req,
         const raw = JSON.parse(fs.readFileSync(p, 'utf8'));
         const cleanSub = (examSet.subcategory || '').replace(/บทที่\s*\d+\s*/, '').trim().toLowerCase();
         const matched = raw.filter(d => cleanSub && (d.title.toLowerCase().includes(cleanSub) || d.content.toLowerCase().includes(cleanSub)));
-        contextText = (matched.length > 0 ? matched : raw).map(d => `[${d.title}]\n${d.content}`).join('\n\n');
+        contextText = (matched.length > 0 ? matched : raw.slice(0, 4)).map(d => `[${d.title}]\n${d.content}`).join('\n\n');
       }
+    }
+
+    if (contextText && contextText.length > 10000) {
+      const truncated = contextText.substring(0, 10000);
+      const lastSec = truncated.lastIndexOf('\n\n[');
+      contextText = (lastSec > 5000 ? truncated.substring(0, lastSec) : truncated) + '\n\n[...เนื้อหาอ้างอิงถูกจัดขนาดให้เหมาะสม...]';
     }
 
     const BATCH_SIZE = 10;
