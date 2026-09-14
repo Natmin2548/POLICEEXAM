@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+  <meta charset="UTF-8">
+  <script>
+    (function () {
+      try {
+        const token = localStorage.getItem('authToken');
+        const profile = localStorage.getItem('userProfile');
+        if (!token || !profile || token.startsWith('test_dev_') || token.startsWith('dev_')) {
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('userProfile');
+          window.location.replace('/index.html');
+        }
+      } catch (e) {
+        window.location.replace('/index.html');
+      }
+    })();
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>คลังข้อสอบรายบท - POLICE EXAM</title>
+  
+  <!-- Google Fonts: Kanit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="css/style.css?v=50">
+
+  <style>
+    body {
+      background-color: #F8FAFC;
+      font-family: 'Kanit', sans-serif;
+      padding-bottom: 90px;
+    }
+    .bank-container {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 20px 16px;
+    }
+    .subject-card-item:active, .chapter-card:active {
+      transform: scale(0.99);
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Main Bank Content -->
+  <main class="bank-container">
+
+    <!-- ==========================================
+           SCREEN 1: 7 Main Subject Categories
+           ========================================== -->
+    <div id="questionBankSubjectsList">
+      <!-- Injected via renderExamBankList in bank.js -->
+    </div>
+
+    <!-- ==========================================
+           SCREEN 2: Chapters List + Sub-tabs
+           ========================================== -->
+    <div id="questionBankChaptersList" style="display: none;">
+      <!-- Top Back Link -->
+      <button onclick="backToBankSubjects()"
+        style="background: none; border: none; padding: 0 0 14px 0; display: inline-flex; align-items: center; gap: 6px; color: #475569; font-weight: 700; font-size: 13.5px; cursor: pointer; font-family: inherit;">
+        <span style="font-size: 16px;">‹</span> <span>เลือกวิชาอื่น</span>
+      </button>
+
+      <!-- Subject Hero Card -->
+      <div class="subject-detail-header-card"
+        style="background: #F0F7FF; border: 1.5px solid #DBEAFE; border-radius: 24px; padding: 22px 24px; margin-bottom: 20px; display: flex; align-items: center; gap: 20px;">
+        <div id="currentSubjectChapterIcon"
+          style="width: 60px; height: 60px; border-radius: 18px; background: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 28px; box-shadow: 0 2px 8px rgba(37, 99, 235, 0.06); flex-shrink: 0;">
+          📄
+        </div>
+        <div style="flex: 1; min-width: 0;">
+          <h2 id="currentSubjectChapterTitle"
+            style="margin: 0; font-size: 19px; font-weight: 800; color: #0F172A; letter-spacing: -0.01em;">งานสารบรรณ</h2>
+          <p id="currentSubjectChapterSubtitle" style="margin: 3px 0 10px 0; font-size: 12.5px; color: #64748B;">
+            ระเบียบสำนักนายกฯ ๒๕๒๖</p>
+          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <span id="chaptersCountBadge"
+              style="background: #EFF6FF; border: 1px solid #DBEAFE; color: #2563EB; font-size: 11.5px; font-weight: 700; padding: 3px 12px; border-radius: 999px;">12 บทเรียน</span>
+            <span id="chaptersCompletedBadge" style="font-size: 12px; color: #475569; font-weight: 600;">✓ 0/0 บท</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sub-Tab Switcher -->
+      <div style="background: #F8FAFC; border: 1.5px solid #E2E8F0; border-radius: 16px; padding: 5px; display: flex; gap: 6px; margin-bottom: 18px;">
+        <button id="tabSubjectExamSets" onclick="switchSubjectSubtab('examSets')"
+          style="flex: 1; padding: 11px; border-radius: 12px; border: 2px solid #0F172A; font-weight: 800; font-size: 14px; font-family: inherit; cursor: pointer; transition: all 0.15s ease; background: #FFFFFF; color: #0F172A; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.04);" class="active">
+          บทเรียน
+        </button>
+        <button id="tabSubjectStats" onclick="switchSubjectSubtab('stats')"
+          style="flex: 1; padding: 11px; border-radius: 12px; border: 2px solid transparent; font-weight: 700; font-size: 14px; font-family: inherit; cursor: pointer; transition: all 0.15s ease; background: transparent; color: #64748B; text-align: center;">
+          สถิติรายวิชา
+        </button>
+      </div>
+
+      <!-- Tab 1: Chapters Directory List -->
+      <div id="contentSubjectExamSets">
+        <div class="chapters-list-grid" id="chaptersContainer"
+          style="display: flex; flex-direction: column; gap: 10px;">
+          <!-- Dynamically populated via JS -->
+        </div>
+      </div>
+
+      <!-- Tab 2: Subject Stats 2x2 Grid -->
+      <div id="contentSubjectStats" style="display: none;">
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px;">
+          <!-- 1. คะแนนสูงสุด -->
+          <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 18px; padding: 18px; position: relative;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+              <span style="font-size: 12px; color: #64748B; font-weight: 600;">คะแนนสูงสุด</span>
+              <span style="font-size: 16px;">🏆</span>
+            </div>
+            <div style="font-size: 24px; font-weight: 900; color: #16A34A; line-height: 1;">
+              <span id="subjStatBestScore">0</span> <span style="font-size: 13px; color: #94A3B8; font-weight: 600;">/100</span>
+            </div>
+            <div style="height: 4px; background: #F1F5F9; border-radius: 999px; margin-top: 14px; overflow: hidden;">
+              <div id="subjStatBestBar" style="height: 100%; width: 0%; background: #16A34A; border-radius: 999px;"></div>
+            </div>
+          </div>
+
+          <!-- 2. จำนวนครั้งที่ทำ -->
+          <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 18px; padding: 18px; position: relative;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+              <span style="font-size: 12px; color: #64748B; font-weight: 600;">จำนวนครั้งที่ทำ</span>
+              <span style="font-size: 16px;">📝</span>
+            </div>
+            <div style="font-size: 24px; font-weight: 900; color: #2563EB; line-height: 1;">
+              <span id="subjStatAttempts">0</span> <span style="font-size: 13px; color: #64748B; font-weight: 600;">ครั้ง</span>
+            </div>
+          </div>
+
+          <!-- 3. คะแนนเฉลี่ย -->
+          <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 18px; padding: 18px; position: relative;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+              <span style="font-size: 12px; color: #64748B; font-weight: 600;">คะแนนเฉลี่ย</span>
+              <span style="font-size: 16px;">📊</span>
+            </div>
+            <div style="font-size: 24px; font-weight: 900; color: #EA580C; line-height: 1;">
+              <span id="subjStatAvgScore">0</span> <span style="font-size: 13px; color: #64748B; font-weight: 600;">%</span>
+            </div>
+            <div style="height: 4px; background: #F1F5F9; border-radius: 999px; margin-top: 14px; overflow: hidden;">
+              <div id="subjStatAvgBar" style="height: 100%; width: 0%; background: #EA580C; border-radius: 999px;"></div>
+            </div>
+          </div>
+
+          <!-- 4. ระดับความชำนาญ -->
+          <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 18px; padding: 18px; position: relative;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+              <span style="font-size: 12px; color: #64748B; font-weight: 600;">ระดับความชำนาญ</span>
+              <span style="font-size: 16px;">⭐</span>
+            </div>
+            <div style="font-size: 22px; font-weight: 900; color: #16A34A; line-height: 1;" id="subjStatMastery">
+              ยังไม่เริ่ม
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==========================================
+           SCREEN 3: Exam Sets for Selected Chapter
+           ========================================== -->
+    <div id="questionBankExamSetsList" style="display: none;">
+      <!-- Top Back Link -->
+      <button onclick="backToChaptersList()"
+        style="background: none; border: none; padding: 0 0 12px 0; display: inline-flex; align-items: center; gap: 6px; color: #475569; font-weight: 700; font-size: 13.5px; cursor: pointer; font-family: inherit;">
+        <span style="font-size: 16px;">‹</span> <span>กลับไปเลือกหมวด</span>
+      </button>
+
+      <!-- Dark Navy Hero Card -->
+      <div style="background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%); color: white; border-radius: 22px; padding: 22px; margin-bottom: 20px; display: flex; align-items: center; gap: 16px; box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.3);">
+        <div style="width: 48px; height: 48px; border-radius: 14px; background: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0;">
+          📄
+        </div>
+        <div style="flex: 1; min-width: 0;">
+          <span id="currentExamSetsChapterSubtitle" style="font-size: 11.5px; color: #94A3B8; font-weight: 600; display: block;">งานสารบรรณ</span>
+          <h2 id="currentExamSetsChapterTitle" style="margin: 2px 0 6px 0; font-size: 17px; font-weight: 800; color: #FFFFFF;">
+            บทที่ 1 การรับ-ส่งหนังสือ
+          </h2>
+          <div style="display: flex; align-items: center; gap: 10px; font-size: 12px; color: #CBD5E1;">
+            <span id="currentChapterQuestionsCount">📄 25 ข้อทั้งหมด</span>
+            <span id="currentChapterExamSetsCount">1 ชุดข้อสอบ</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section Label -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding: 0 2px;">
+        <h3 style="margin: 0; font-size: 15px; font-weight: 800; color: #0F172A;">ชุดข้อสอบพร้อมสอบ</h3>
+        <span id="currentChapterCompletionTag" style="font-size: 12px; color: #64748B; font-weight: 600;">1 ชุดพร้อมสอบ</span>
+      </div>
+
+      <!-- Exam Sets List -->
+      <div class="exam-sets-grid" id="examSetsContainer" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px;">
+        <!-- Dynamically populated via JS -->
+      </div>
+
+      <!-- Tip Banner -->
+      <div style="background: #FEFCE8; border: 1px solid #FEF08A; border-radius: 16px; padding: 14px 18px; display: flex; align-items: center; gap: 10px; color: #854D0E; font-size: 12.5px; font-weight: 600; margin-bottom: 24px;">
+        <span>💡</span>
+        <span>ทำให้ครบทุกชุดเพื่อปลดล็อกสถิติและ AI วิเคราะห์จุดอ่อน</span>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Sticky Bottom Navigation for Mobile -->
+  <nav class="bottom-nav">
+    <div class="bottom-nav-container">
+      <a href="index.html" class="nav-tab">
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+          <polyline points="9 22 9 12 15 12 15 22" />
+        </svg>
+        <span class="tab-label">หน้าหลัก</span>
+      </a>
+
+      <a href="bank.html" class="nav-tab active">
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+        </svg>
+        <span class="tab-label">คลัง</span>
+      </a>
+
+      <a href="index.html#community" class="nav-tab">
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+          <circle cx="9" cy="7" r="4" />
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+          <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+        </svg>
+        <span class="tab-label">ชุมชน</span>
+      </a>
+
+      <a href="index.html#profile" class="nav-tab">
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+          <circle cx="12" cy="7" r="4" />
+        </svg>
+        <span class="tab-label">โปรไฟล์</span>
+      </a>
+    </div>
+  </nav>
+
+  <!-- Quiz Modal -->
+  <div id="subjectQuizModal" class="modal-overlay"
+    style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 10000; align-items: center; justify-content: center; padding: 16px;">
+    <div style="background: white; border-radius: 26px; padding: 22px 20px; max-width: 450px; width: 100%; max-height: 92vh; overflow-y: auto; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); border: 1.5px solid #FEE2E2; animation: scalePop 0.25s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column;">
+      
+      <!-- Quiz Header -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span id="quizSubjectBadge" style="background: #FEF2F2; color: #BD1B0B; font-weight: 700; font-size: 11px; padding: 4px 12px; border-radius: 999px; border: 1px solid #FECACA;">วิชาเตรียมสอบ</span>
+          <div id="quizTimerBadge" style="display: none; align-items: center; gap: 5px; background: #FFF1F2; border: 1.2px solid #FDA4AF; color: #E11D48; font-weight: 800; font-size: 12px; padding: 3px 10px; border-radius: 999px;">
+            <span>⏱️</span>
+            <span id="quizTimerText">00:00:00</span>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <button type="button" onclick="openReportCurrentQuestionModal()" title="แจ้งข้อสอบข้อนี้ผิดพลาด"
+            style="background: #FFFBEB; border: 1.2px solid #FDE68A; color: #D97706; padding: 4px 10px; border-radius: 999px; display: flex; align-items: center; gap: 4px; font-size: 11.5px; font-weight: 700; cursor: pointer; font-family: inherit;">
+            <span>🚩</span> <span>แจ้งข้อสอบผิด</span>
+          </button>
+          <button onclick="closeSubjectQuiz()"
+            style="background: #F1F5F9; border: none; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; color: #64748B; cursor: pointer; font-weight: 700;">&times;</button>
+        </div>
+      </div>
+
+      <h3 id="quizTitle" style="margin: 0 0 8px 0; font-size: 16.5px; font-weight: 800; color: #0F172A; line-height: 1.35;">ชุดข้อสอบ</h3>
+
+      <!-- Progress Bar -->
+      <div style="width: 100%; height: 6px; background: #E2E8F0; border-radius: 999px; overflow: hidden; margin-bottom: 12px;">
+        <div id="quizProgressBar" style="width: 10%; height: 100%; background: linear-gradient(90deg, #BD1B0B, #E11D48); border-radius: 999px; transition: width 0.3s ease;"></div>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <span id="quizStepText" style="font-size: 12px; font-weight: 700; color: #64748B;">ข้อที่ 1 / 20</span>
+        <span id="quizAnsweredCountLabel" style="font-size: 11.5px; font-weight: 700; color: #BD1B0B;">ทำแล้ว 0/20 ข้อ</span>
+      </div>
+
+      <!-- Quiz Body Question & Choices -->
+      <div id="quizBodyContent" style="flex: 1; margin-bottom: 14px;"></div>
+
+      <!-- Prev / Next Action Controls -->
+      <div id="quizActionButtonsRow" style="display: flex; gap: 10px; margin-bottom: 14px; width: 100%;">
+        <button id="btnPrevQuiz" onclick="prevQuizQuestion()"
+          style="flex: 1; background: #F8FAFC; color: #475569; border: 1.5px solid #CBD5E1; padding: 12px 10px; border-radius: 999px; font-weight: 700; font-size: 13.5px; cursor: pointer; font-family: inherit; display: flex; align-items: center; justify-content: center; gap: 4px;">
+          <span>‹ ข้อก่อนหน้า</span>
+        </button>
+        <button id="btnNextQuiz" onclick="nextQuizQuestion()"
+          style="flex: 1; background: #BD1B0B; color: white; border: none; padding: 12px 10px; border-radius: 999px; font-weight: 700; font-size: 13.5px; cursor: pointer; font-family: inherit; box-shadow: 0 4px 12px rgba(189, 27, 11, 0.25); display: flex; align-items: center; justify-content: center; gap: 4px;">
+          <span>ข้อถัดไป ›</span>
+        </button>
+      </div>
+
+      <!-- Bottom Question Numbers Grid -->
+      <div id="quizNavContainer" style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 18px; padding: 12px 14px;">
+        <div style="font-size: 11.5px; font-weight: 700; color: #64748B; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+          <span>🔢 แตะหมายเลขเพื่อข้ามไปทำข้อนั้น:</span>
+          <span id="quizSummaryNavHint" style="font-size: 10.5px; color: #94A3B8;">เลือกข้ามได้อิสระ</span>
+        </div>
+        <div id="quizQuestionNavGrid" style="display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; max-height: 120px; overflow-y: auto;"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Report Question Modal -->
+  <div id="reportQuestionModal" class="modal-overlay"
+    style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 10001; align-items: center; justify-content: center; padding: 16px;">
+    <div style="background: white; border-radius: 24px; padding: 24px 22px; max-width: 420px; width: 100%; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); border: 1px solid #E2E8F0;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #0F172A; display: flex; align-items: center; gap: 8px;">
+          <span>🚩</span> <span>รายงานข้อสอบผิดพลาด</span>
+        </h3>
+        <button onclick="closeReportQuestionModal()" style="background: #F1F5F9; border: none; width: 30px; height: 30px; border-radius: 50%; font-size: 16px; color: #64748B; cursor: pointer; font-weight: 700;">&times;</button>
+      </div>
+      <p style="font-size: 13px; color: #64748B; margin-bottom: 14px; line-height: 1.5;">หากพบโจทย์กำกวม คำตอบเฉลยไม่ถูกต้อง หรือแบบพิมพ์ตกหล่น สามารถแจ้งทีมงานได้ทันที</p>
+      
+      <div style="margin-bottom: 12px;">
+        <label style="display: block; font-size: 12.5px; font-weight: 700; color: #334155; margin-bottom: 6px;">ประเภทปัญหา</label>
+        <select id="reportQuestionType" style="width: 100%; padding: 10px 12px; border-radius: 12px; border: 1.5px solid #CBD5E1; font-family: inherit; font-size: 13.5px; background: #FFFFFF;">
+          <option value="WRONG_ANSWER">เฉลยคำตอบผิดพลาด</option>
+          <option value="TYPO_ERROR">พิมพ์ผิด / ข้อความตกหล่น</option>
+          <option value="AMBIGUOUS">โจทย์กำกวม มีหลายคำตอบที่ถูก</option>
+          <option value="IMAGE_PROBLEM">รูปภาพประกอบไม่ชัดเจน</option>
+          <option value="OTHER">อื่นๆ</option>
+        </select>
+      </div>
+
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; font-size: 12.5px; font-weight: 700; color: #334155; margin-bottom: 6px;">รายละเอียดเพิ่มเติม</label>
+        <textarea id="reportQuestionNote" rows="3" placeholder="ระบุเหตุผลหรือข้อเสนอแนะ..." style="width: 100%; padding: 10px 12px; border-radius: 12px; border: 1.5px solid #CBD5E1; font-family: inherit; font-size: 13px; resize: none;"></textarea>
+      </div>
+
+      <div style="display: flex; gap: 10px;">
+        <button onclick="submitQuestionReport()" style="flex: 1; background: #BD1B0B; color: white; border: none; padding: 12px; border-radius: 12px; font-size: 13.5px; font-weight: 800; cursor: pointer; font-family: inherit;">
+          ส่งรายงาน
+        </button>
+        <button onclick="closeReportQuestionModal()" style="flex: 1; background: #F1F5F9; color: #64748B; border: 1px solid #E2E8F0; padding: 12px; border-radius: 12px; font-size: 13.5px; font-weight: 700; cursor: pointer; font-family: inherit;">
+          ยกเลิก
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/shared.js?v=50"></script>
+  <script src="js/bank.js?v=50"></script>
+</body>
+
+</html>
