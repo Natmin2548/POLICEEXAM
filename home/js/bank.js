@@ -645,16 +645,22 @@ window.switchSubjectSubtab = function(tabName) {
 
 function renderSubjectChaptersGrid(subjectKey) {
   const container = document.getElementById('chaptersContainer');
-  const countBadge = document.getElementById('chaptersCountBadge');
-  const completedBadge = document.getElementById('chaptersCompletedBadge');
   if (!container) return;
 
-  const presetList = BANK_SUBJECT_CHAPTERS[subjectKey] || (SUBJECT_CONFIG[subjectKey]?.chapters || []).filter(c => c !== 'ทุกหมวด') || [];
-  const canonicalList = presetList.length > 0 ? [...presetList] : [];
+  // Build chapters list: Prefer real subcategories from activeSubjectDBSets if available, otherwise use BANK_SUBJECT_CHAPTERS or SUBJECT_CONFIG
+  let chaptersList = [];
+  if (Array.isArray(activeSubjectDBSets) && activeSubjectDBSets.length > 0) {
+    const subcats = activeSubjectDBSets
+      .map(s => (s.subcategory || s.title || '').trim())
+      .filter(s => Boolean(s) && !s.includes('รวมทุก'));
+    chaptersList = Array.from(new Set(subcats));
+  }
 
-  if (canonicalList.length === 0) {
-    if (countBadge) countBadge.textContent = '0 บทเรียน';
-    if (completedBadge) completedBadge.textContent = '✓ 0/0 บท';
+  if (chaptersList.length === 0) {
+    chaptersList = BANK_SUBJECT_CHAPTERS[subjectKey] || (SUBJECT_CONFIG[subjectKey]?.chapters || []).filter(c => c !== 'ทุกหมวด') || [];
+  }
+
+  if (chaptersList.length === 0) {
     container.innerHTML = `
       <div style="text-align: center; padding: 48px 16px; background: white; border-radius: 20px; border: 1.5px dashed #CBD5E1; color: #64748B;">
         <div style="font-size: 32px; margin-bottom: 8px;">📂</div>
@@ -665,47 +671,43 @@ function renderSubjectChaptersGrid(subjectKey) {
     return;
   }
 
-  const sortedChapters = canonicalList;
-  const history = getLocalQuizHistory(subjectKey);
-
-  let completedChaptersCount = 0;
-  const chaptersHTML = sortedChapters.map((ch, idx) => {
+  const chaptersHTML = chaptersList.map((rawTitle, idx) => {
     const chapterNumber = idx + 1;
-    const historyItem = history.find(h => (h.setTitle || '').includes(ch) || (h.chapter || '').includes(ch));
-    const isCompleted = Boolean(historyItem);
-    if (isCompleted) completedChaptersCount++;
+    // Clean display title: remove redundant prefix if present like 'บทที่ 1 '
+    let displayTitle = rawTitle.replace(/^บทที่\s*[\d๑-๙]+[\s:\-\.]*/i, '').trim();
+    if (!displayTitle) displayTitle = rawTitle;
+
+    // Count matching questions/sets
+    const matchingSets = (activeSubjectDBSets || []).filter(s =>
+      s.subcategory === rawTitle ||
+      (s.title && s.title.includes(rawTitle)) ||
+      (rawTitle.includes(s.subcategory || '___xyz___'))
+    );
+    const qCount = matchingSets.reduce((sum, s) => sum + (s.questionsCount || 30), 0) || 30;
 
     return `
-      <div class="chapter-card" onclick="openChapterExamSets('${escapeHTML(ch)}', ${chapterNumber})"
-        style="background: #FFFFFF; border: 1.5px solid #F1F5F9; border-radius: 20px; padding: 18px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; cursor: pointer; transition: all 0.15s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.02); margin-bottom: 10px;"
-        onmouseover="this.style.borderColor='#CBD5E1'; this.style.transform='translateY(-1px)';"
-        onmouseout="this.style.borderColor='#F1F5F9'; this.style.transform='none';">
-        <div style="display: flex; align-items: center; gap: 16px; flex: 1; min-width: 0;">
-          <div style="width: 44px; height: 44px; border-radius: 14px; background: #F8FAFC; border: 1.2px solid #E2E8F0; color: #0F172A; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px; flex-shrink: 0;">
+      <div class="chapter-card" onclick="openChapterExamSets('${escapeHTML(rawTitle)}', ${chapterNumber})"
+        style="background: #FFFFFF; border-bottom: 1px solid #F1F5F9; padding: 18px 8px; display: flex; align-items: center; justify-content: space-between; gap: 16px; cursor: pointer; transition: all 0.15s ease;">
+        <div style="display: flex; align-items: center; gap: 18px; flex: 1; min-width: 0;">
+          <div style="font-size: 18px; font-weight: 800; color: #DC2626; width: 22px; text-align: center; flex-shrink: 0; font-family: inherit;">
             ${chapterNumber}
           </div>
           <div style="flex: 1; min-width: 0;">
-            <h4 style="margin: 0; font-size: 15px; font-weight: 800; color: #0F172A; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-              ${escapeHTML(ch)}
-            </h4>
-            <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px; font-size: 12px; color: #94A3B8;">
-              <span>1 ชุดข้อสอบ</span>
-              <span>•</span>
-              <span style="color: ${isCompleted ? '#059669' : '#94A3B8'}; font-weight: ${isCompleted ? '700' : '500'};">
-                ${isCompleted ? '✓ ทำแล้ว' : 'ยังไม่เคยทำ'}
-              </span>
+            <div style="font-size: 15px; font-weight: 700; color: #0F172A; letter-spacing: -0.01em; line-height: 1.35; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+              ${escapeHTML(displayTitle)}
+            </div>
+            <div style="margin-top: 3px; font-size: 12.5px; color: #94A3B8; font-weight: 500;">
+              ${qCount} ข้อ
             </div>
           </div>
         </div>
-        <div style="width: 32px; height: 32px; border-radius: 50%; background: #F8FAFC; display: flex; align-items: center; justify-content: center; color: #94A3B8; font-size: 14px; font-weight: 700; flex-shrink: 0;">
+        <div style="color: #CBD5E1; font-size: 18px; font-weight: 600; flex-shrink: 0; padding-right: 4px;">
           ›
         </div>
       </div>
     `;
   }).join('');
 
-  if (countBadge) countBadge.textContent = `${sortedChapters.length} บทเรียน`;
-  if (completedBadge) completedBadge.textContent = `✓ ${completedChaptersCount}/${sortedChapters.length} บท`;
   container.innerHTML = chaptersHTML;
 }
 
@@ -722,10 +724,13 @@ window.openChapterExamSets = function(chapterName, chapterIdx) {
   if (chaptersPanel) chaptersPanel.style.display = 'none';
   if (examSetsPanel) examSetsPanel.style.display = 'block';
 
+  let cleanChapterName = chapterName.replace(/^บทที่\s*[\d๑-๙]+[\s:\-\.]*/i, '').trim();
+  if (!cleanChapterName) cleanChapterName = chapterName;
+
   const titleEl = document.getElementById('currentExamSetsChapterTitle');
   const subtitleEl = document.getElementById('currentExamSetsChapterSubtitle');
-  if (titleEl) titleEl.textContent = chapterName;
-  if (subtitleEl) subtitleEl.textContent = `วิชา ${activeSubjectKey}`;
+  if (titleEl) titleEl.textContent = cleanChapterName;
+  if (subtitleEl) subtitleEl.textContent = `วิชา${activeSubjectKey}`;
 
   renderExamSetsList(chapterName);
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -742,9 +747,6 @@ window.backToChaptersList = function() {
 
 function renderExamSetsList(chapterName) {
   const container = document.getElementById('examSetsContainer');
-  const questionsCountEl = document.getElementById('currentChapterQuestionsCount');
-  const examSetsCountEl = document.getElementById('currentChapterExamSetsCount');
-  const completionTag = document.getElementById('currentChapterCompletionTag');
   if (!container) return;
 
   const cfg = SUBJECT_CONFIG[activeSubjectKey] || SUBJECT_CONFIG['งานสารบรรณ'];
@@ -752,7 +754,7 @@ function renderExamSetsList(chapterName) {
   let matchingDBSets = (activeSubjectDBSets || []).filter(s =>
     s.subcategory === chapterName ||
     (s.title && s.title.includes(chapterName)) ||
-    (chapterName.includes(s.subcategory || '____'))
+    (chapterName.includes(s.subcategory || '___xyz___'))
   );
 
   let setsToRender = [];
@@ -761,57 +763,51 @@ function renderExamSetsList(chapterName) {
       id: s.id.toString().startsWith('db_') ? s.id : `db_${s.id}`,
       title: s.title,
       chapter: s.subcategory || chapterName,
-      count: s.questionsCount || 25,
+      count: s.questionsCount || 30,
       time: `${s.timeMinutes || 30} นาที`,
       isRealDB: true
     }));
   } else {
+    let cleanChapter = chapterName.replace(/^บทที่\s*[\d๑-๙]+[\s:\-\.]*/i, '').trim();
+    if (!cleanChapter) cleanChapter = chapterName;
     setsToRender = [
       {
         id: `custom_${activeSubjectKey}_1`,
-        title: `แบบทดสอบ${cfg.title}: ${chapterName} (ชุดที่ 1)`,
+        title: `แบบทดสอบ: ${cleanChapter} (ชุดที่ 1)`,
         chapter: chapterName,
-        count: 25,
+        count: 30,
         time: '30 นาที',
         isRealDB: false
       }
     ];
   }
 
-  const totalQuestions = setsToRender.reduce((sum, s) => sum + (s.count || 25), 0);
-  if (questionsCountEl) questionsCountEl.textContent = `📄 ${totalQuestions} ข้อทั้งหมด`;
-  if (examSetsCountEl) examSetsCountEl.textContent = `${setsToRender.length} ชุดข้อสอบ`;
-  if (completionTag) completionTag.textContent = `${setsToRender.length} ชุดพร้อมสอบ`;
-
   container.innerHTML = setsToRender.map((s, idx) => {
     const setNum = idx + 1;
-    const questionsCount = s.count || 25;
-    const timeText = s.time || '30 นาที';
+    const questionsCount = s.count || 30;
+
+    let cleanTitle = s.title.replace(/^แบบทดสอบ[^:]*:\s*/i, '').trim();
+    if (!cleanTitle) cleanTitle = s.title;
 
     return `
-      <div style="background: #FFFFFF; border: 1.5px solid #F1F5F9; border-radius: 22px; padding: 18px 22px; display: flex; align-items: center; justify-content: space-between; gap: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); margin-bottom: 10px;">
-        <div style="display: flex; align-items: center; gap: 16px; flex: 1; min-width: 0;">
-          <div style="width: 52px; height: 52px; border-radius: 16px; background: #FFF1F2; border: 1.5px solid #FFE4E6; color: #BD1B0B; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0;">
-            <span style="font-size: 10px; font-weight: 700; line-height: 1;">ชุดที่</span>
-            <span style="font-size: 20px; font-weight: 900; line-height: 1.1; margin-top: -1px;">${setNum}</span>
+      <div class="chapter-card" onclick="launchSelectedExamSet('${activeSubjectKey}', '${s.id}', ${questionsCount}, '${escapeHTML(s.title)}')"
+        style="background: #FFFFFF; border-bottom: 1px solid #F1F5F9; padding: 18px 8px; display: flex; align-items: center; justify-content: space-between; gap: 16px; cursor: pointer; transition: all 0.15s ease;">
+        <div style="display: flex; align-items: center; gap: 18px; flex: 1; min-width: 0;">
+          <div style="font-size: 18px; font-weight: 800; color: #DC2626; width: 22px; text-align: center; flex-shrink: 0; font-family: inherit;">
+            ${setNum}
           </div>
-
           <div style="flex: 1; min-width: 0;">
-            <div style="font-size: 14.5px; font-weight: 800; color: #0F172A; margin-bottom: 4px; line-height: 1.35;">
-              ${escapeHTML(s.title)}
+            <div style="font-size: 15px; font-weight: 700; color: #0F172A; letter-spacing: -0.01em; line-height: 1.35; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+              ${escapeHTML(cleanTitle)}
             </div>
-            <div style="display: flex; align-items: center; gap: 10px; font-size: 12.5px; color: #64748B; font-weight: 600;">
-              <span>📝 ${questionsCount} ข้อ</span>
-              <span>•</span>
-              <span>⏱️ ${timeText}</span>
-              ${s.isRealDB ? '<span style="background: #ECFDF5; color: #059669; padding: 2px 8px; border-radius: 999px; font-size: 11px;">คลังข้อสอบจริง</span>' : ''}
+            <div style="margin-top: 3px; font-size: 12.5px; color: #94A3B8; font-weight: 500;">
+              ${questionsCount} ข้อ
             </div>
           </div>
         </div>
-
-        <button onclick="launchSelectedExamSet('${activeSubjectKey}', '${s.id}', ${questionsCount}, '${escapeHTML(s.title)}')" style="background: #BD1B0B; color: #FFFFFF; border: none; padding: 11px 22px; border-radius: 14px; font-size: 13.5px; font-weight: 800; cursor: pointer; font-family: inherit; box-shadow: 0 4px 12px rgba(189, 27, 11, 0.22); flex-shrink: 0; transition: transform 0.15s ease;">
-          เริ่มทำข้อสอบ
-        </button>
+        <div style="color: #CBD5E1; font-size: 18px; font-weight: 600; flex-shrink: 0; padding-right: 4px;">
+          ›
+        </div>
       </div>
     `;
   }).join('');
@@ -1061,13 +1057,21 @@ function renderCurrentQuizQuestion() {
     const userAns = userAnswers[currentIndex];
     const isCorrect = userAns === q.correctAnswer;
     if (stepText) {
-      stepText.innerHTML = `เฉลยข้อที่ ${currentIndex + 1} / ${total} • ${userAns === undefined ? '<span style="color: #94A3B8; font-weight: 700;">(ไม่ได้ตอบ)</span>' : (isCorrect ? '<span style="color: #059669; font-weight: 800;">✅ ตอบถูกต้อง</span>' : '<span style="color: #DC2626; font-weight: 800;">❌ ตอบผิด</span>')}`;
+      stepText.textContent = `${currentIndex + 1} / ${total}`;
+    }
+    const scoreTextEl = document.getElementById('quizScoreText');
+    if (scoreTextEl) {
+      scoreTextEl.textContent = `${currentQuizState.score || 0} ถูก`;
     }
     if (answeredLabel) {
-      answeredLabel.innerHTML = `<span style="font-weight: 800; color: #1E293B;">คะแนนรวม: ${currentQuizState.score}/${total} ข้อ</span>`;
+      answeredLabel.textContent = `คะแนนรวม: ${currentQuizState.score || 0}/${total} ข้อ`;
     }
   } else {
-    if (stepText) stepText.textContent = `ข้อที่ ${currentIndex + 1} / ${total}`;
+    if (stepText) stepText.textContent = `${currentIndex + 1} / ${total}`;
+    const scoreTextEl = document.getElementById('quizScoreText');
+    if (scoreTextEl) {
+      scoreTextEl.textContent = `0 ถูก`;
+    }
     if (answeredLabel) answeredLabel.textContent = `ทำแล้ว ${answeredCount}/${total} ข้อ`;
   }
 
@@ -1088,46 +1092,46 @@ function renderCurrentQuizQuestion() {
   if (btnNext) {
     btnNext.style.display = 'flex';
     if (isReviewMode) {
-      btnNext.innerHTML = (currentIndex === total - 1) ? '<span>📊 ดูสรุปผลคะแนน</span>' : '<span>ข้อถัดไป ›</span>';
+      btnNext.innerHTML = (currentIndex === total - 1) ? '<span>📊 ดูสรุปผลคะแนน</span>' : '<span>ข้อถัดไป →</span>';
     } else {
-      btnNext.innerHTML = (currentIndex === total - 1) ? '<span>📝 ส่งข้อสอบ / ตรวจคะแนน 🏆</span>' : '<span>ข้อถัดไป ›</span>';
+      btnNext.innerHTML = (currentIndex === total - 1) ? '<span>ส่งข้อสอบ</span>' : '<span>ข้อถัดไป →</span>';
     }
   }
 
+  const thaiLetters = ['ก', 'ข', 'ค', 'ง'];
   const choicesList = q.choices || [q.choice1, q.choice2, q.choice3, q.choice4];
   let choicesHtml = choicesList.map((choiceText, idx) => {
     const choiceNum = idx + 1;
-    let btnStyle = 'background: #F8FAFC; border: 1.5px solid #E2E8F0; color: #1E293B;';
-    let badgeStyle = 'background: rgba(0,0,0,0.05); color: #1E293B;';
-    let statusTag = '';
+    const thaiLetter = thaiLetters[idx] || `${choiceNum}`;
+
+    let containerStyle = 'background: #FFFFFF; border: 1.5px solid #E2E8F0; color: #64748B;';
+    let badgeStyle = 'background: #F1F5F9; color: #94A3B8;';
 
     if (isReviewMode) {
       if (choiceNum === q.correctAnswer) {
-        btnStyle = 'background: #ECFDF5; border: 2px solid #10B981; color: #065F46; font-weight: 700;';
-        badgeStyle = 'background: #10B981; color: white;';
-        statusTag = '<span style="margin-left: auto; font-size: 11.5px; font-weight: 800; color: #059669; background: #D1FAE5; padding: 2px 8px; border-radius: 999px;">✓ เฉลยที่ถูกต้อง</span>';
+        containerStyle = 'background: #ECFDF5; border: 2px solid #059669; color: #065F46; font-weight: 700;';
+        badgeStyle = 'background: #059669; color: #FFFFFF; font-weight: 800;';
       } else if (choiceNum === selectedAnswer) {
-        btnStyle = 'background: #FEF2F2; border: 2px solid #EF4444; color: #991B1B; font-weight: 700;';
-        badgeStyle = 'background: #EF4444; color: white;';
-        statusTag = '<span style="margin-left: auto; font-size: 11.5px; font-weight: 800; color: #DC2626; background: #FEE2E2; padding: 2px 8px; border-radius: 999px;">✗ คำตอบของคุณ</span>';
+        containerStyle = 'background: #FEF2F2; border: 2px solid #DC2626; color: #991B1B; font-weight: 700;';
+        badgeStyle = 'background: #DC2626; color: #FFFFFF; font-weight: 800;';
       } else {
-        btnStyle = 'background: #F8FAFC; border: 1px solid #E2E8F0; color: #94A3B8; opacity: 0.6;';
+        containerStyle = 'background: #FFFFFF; border: 1.5px solid #E2E8F0; color: #94A3B8; opacity: 0.6;';
+        badgeStyle = 'background: #F1F5F9; color: #94A3B8;';
       }
     } else {
       if (choiceNum === selectedAnswer) {
-        btnStyle = 'background: #EFF6FF; border: 2px solid #2563EB; color: #1E40AF; font-weight: 700; box-shadow: 0 2px 8px rgba(37,99,235,0.12);';
-        badgeStyle = 'background: #2563EB; color: white;';
-        statusTag = '<span style="margin-left: auto; font-size: 11px; font-weight: 800; color: #2563EB; background: #DBEAFE; padding: 2px 8px; border-radius: 999px;">● เลือกข้อนี้</span>';
+        containerStyle = 'background: #FEF2F2; border: 2px solid #C62828; color: #991B1B; font-weight: 700; box-shadow: 0 2px 8px rgba(198, 40, 40, 0.1);';
+        badgeStyle = 'background: #C62828; color: #FFFFFF; font-weight: 800;';
       } else {
-        btnStyle = 'background: #F8FAFC; border: 1.5px solid #E2E8F0; color: #1E293B;';
+        containerStyle = 'background: #FFFFFF; border: 1.5px solid #E2E8F0; color: #64748B;';
+        badgeStyle = 'background: #F1F5F9; color: #94A3B8; font-weight: 700;';
       }
     }
 
     return `
-      <button onclick="selectQuizAnswer(${choiceNum})" ${isReviewMode ? 'disabled' : ''} style="${btnStyle} width: 100%; text-align: left; padding: 13px 16px; border-radius: 14px; font-size: 14px; font-family: inherit; margin-bottom: 8px; cursor: ${isReviewMode ? 'default' : 'pointer'}; transition: all 0.15s; display: flex; align-items: center; gap: 12px; line-height: 1.45;">
-        <span style="${badgeStyle} width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; flex-shrink: 0;">${choiceNum}</span>
-        <span>${escapeHTML(choiceText || '')}</span>
-        ${statusTag}
+      <button onclick="selectQuizAnswer(${choiceNum})" ${isReviewMode ? 'disabled' : ''} style="${containerStyle} width: 100%; text-align: left; padding: 13px 14px; border-radius: 18px; font-size: 14.5px; font-family: inherit; margin-bottom: 10px; cursor: ${isReviewMode ? 'default' : 'pointer'}; transition: all 0.15s ease; display: flex; align-items: center; gap: 14px; line-height: 1.45;">
+        <span style="${badgeStyle} width: 32px; height: 32px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0;">${thaiLetter}</span>
+        <span style="flex: 1; font-weight: inherit;">${escapeHTML(choiceText || '')}</span>
       </button>
     `;
   }).join('');
@@ -1136,7 +1140,7 @@ function renderCurrentQuizQuestion() {
   if (isReviewMode && q.explanation) {
     const isCorrect = selectedAnswer === q.correctAnswer;
     explanationHtml = `
-      <div style="margin-top: 14px; background: ${isCorrect ? '#ECFDF5' : '#FFFBEB'}; border: 1.5px solid ${isCorrect ? '#A7F3D0' : '#FDE68A'}; border-radius: 14px; padding: 14px 16px; font-size: 13px; color: ${isCorrect ? '#065F46' : '#92400E'}; line-height: 1.6;">
+      <div style="margin-top: 14px; background: ${isCorrect ? '#ECFDF5' : '#FFFBEB'}; border: 1.5px solid ${isCorrect ? '#A7F3D0' : '#FDE68A'}; border-radius: 16px; padding: 14px 16px; font-size: 13px; color: ${isCorrect ? '#065F46' : '#92400E'}; line-height: 1.6;">
         <div style="font-weight: 800; font-size: 13.5px; margin-bottom: 4px;">💡 คำอธิบายเฉลยอย่างละเอียด:</div>
         ${escapeHTML(q.explanation)}
       </div>
@@ -1145,8 +1149,8 @@ function renderCurrentQuizQuestion() {
 
   bodyContent.innerHTML = `
     <div>
-      <h3 style="font-size: 15.5px; font-weight: 800; color: #1E293B; line-height: 1.55; margin-top: 0; margin-bottom: 16px;">
-        ${currentIndex + 1}. ${escapeHTML(q.questionText)}
+      <h3 style="font-size: 16px; font-weight: 800; color: #0F172A; line-height: 1.55; margin-top: 0; margin-bottom: 18px; letter-spacing: -0.01em;">
+        ${escapeHTML(q.questionText)}
       </h3>
       <div>${choicesHtml}</div>
       ${explanationHtml}
