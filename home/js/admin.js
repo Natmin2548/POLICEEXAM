@@ -257,7 +257,7 @@ function renderHourlyBarChart(breakdown = []) {
   if (!container) return;
 
   if (!breakdown || breakdown.length === 0) {
-    container.innerHTML = `<div style="width: 100%; text-align: center; color: #94A3B8; font-size: 13px; margin: auto;">ยังไม่มีข้อมูลการใช้งานย้อนหลัง 24 ชั่วโมง</div>`;
+    container.innerHTML = `<div style="width: 100%; text-align: center; color: #64748B; font-size: 14px; font-weight: 600; margin: auto;">ยังไม่มีข้อมูลการใช้งานย้อนหลัง 24 ชั่วโมง</div>`;
     return;
   }
 
@@ -273,11 +273,11 @@ function renderHourlyBarChart(breakdown = []) {
     const hourNum = parseInt(hourLabel.split(':')[0], 10) || 0;
     const nextHourStr = (hourNum + 1).toString().padStart(2, '0');
 
-    // Height percentage (max 88% so tooltips have room)
-    const pct = users === 0 ? 5 : Math.max(8, Math.round((users / maxUsers) * 88));
+    // Height percentage (reserve space at top for value badge)
+    const pct = users === 0 ? 3 : Math.max(12, Math.round((users / maxUsers) * 75));
 
     // Colors
-    let fillBg = '#E2E8F0';
+    let fillBg = '#CBD5E1';
     if (item.isCurrent) {
       fillBg = 'linear-gradient(180deg, #10B981 0%, #059669 100%)';
     } else if (users > 0 && users === peakItem.users && peakItem.users > 0) {
@@ -286,11 +286,25 @@ function renderHourlyBarChart(breakdown = []) {
       fillBg = 'linear-gradient(180deg, #3B82F6 0%, #1D4ED8 100%)';
     }
 
-    // Tooltip Content
+    // Visible Value Badge directly on top of bar (no hover needed!)
+    let valueBadgeHtml = '';
+    if (users > 0) {
+      const isPeak = users === peakItem.users && peakItem.users > 0;
+      const isCur = item.isCurrent;
+      if (isPeak) {
+        valueBadgeHtml = `<div class="hourly-bar-val-badge peak">🔥 ${users}</div>`;
+      } else if (isCur) {
+        valueBadgeHtml = `<div class="hourly-bar-val-badge current">${users}</div>`;
+      } else {
+        valueBadgeHtml = `<div class="hourly-bar-val-badge">${users}</div>`;
+      }
+    }
+
+    // Tooltip Content on hover
     const statusTag = item.isCurrent 
-      ? '<span style="color: #34D399; font-weight: 700;">● ชั่วโมงปัจจุบัน</span><br>'
+      ? '<span style="color: #34D399; font-weight: 800;">● ชั่วโมงปัจจุบัน</span><br>'
       : (users > 0 && users === peakItem.users)
-      ? '<span style="color: #FBBF24; font-weight: 700;">★ ชั่วโมงพีคสุด (Peak)</span><br>'
+      ? '<span style="color: #FBBF24; font-weight: 800;">★ ชั่วโมงพีคสุด (Peak)</span><br>'
       : '';
 
     const tooltip = `
@@ -303,16 +317,18 @@ function renderHourlyBarChart(breakdown = []) {
       </div>
     `;
 
-    // Show label every 2-3 hours or for current hour
+    // Clear hour labels: every 2 hours or current hour, no ugly dots
     const showLabel = (idx % 2 === 0 || item.isCurrent);
-    const labelStyle = item.isCurrent ? 'color: #059669; font-weight: 800;' : '';
+    const displayLabel = item.isCurrent ? `<b>${escapeHTML(hourLabel)}</b>` : (showLabel ? escapeHTML(hourLabel) : '');
+    const labelStyle = item.isCurrent ? 'color: #047857; font-weight: 900; background: #D1FAE5; padding: 1px 4px; border-radius: 4px;' : '';
 
     chartHtml += `
       <div class="hourly-bar-col" title="${escapeHTML(hourLabel)}: ${users} คน">
         ${tooltip}
+        ${valueBadgeHtml}
         <div class="hourly-bar-fill" style="height: ${pct}%; background: ${fillBg};"></div>
         <div class="hourly-bar-label" style="${labelStyle}">
-          ${showLabel ? escapeHTML(hourLabel) : '•'}
+          ${displayLabel}
         </div>
       </div>
     `;

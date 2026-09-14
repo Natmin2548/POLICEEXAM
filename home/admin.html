@@ -4,8 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Dashboard - POLICEEXAM</title>
-  <link rel="stylesheet" href="css/admin.css">
-  <script src="js/admin.js?v=60" defer></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/admin.css?v=61">
+  <script src="js/admin.js?v=61" defer></script>
 </head>
 <body>
 
@@ -87,130 +90,141 @@
         </div>
 
         <!-- Metric Stat Cards Grid -->
-        <div class="card-grid" style="grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; margin-bottom: 24px;">
+        <div class="card-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; margin-bottom: 28px;">
           
           <!-- Card 1: Live Online Users -->
-          <div class="stat-card" style="position: relative; overflow: hidden; border: 1.5px solid #A7F3D0; background: linear-gradient(180deg, #FFFFFF 0%, #F0FDF4 100%); cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease;" onclick="openOnlineUsersModal()" title="คลิกเพื่อดูรายชื่อผู้ใช้ออนไลน์แบบละเอียด">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-              <div class="stat-label" style="color: #047857; display: flex; align-items: center; gap: 6px;">
+          <div class="stat-card" style="position: relative; overflow: hidden; border: 2px solid #86EFAC; background: #FFFFFF; cursor: pointer; transition: all 0.2s ease; padding: 22px 24px; border-radius: 16px; box-shadow: 0 4px 14px rgba(16,185,129,0.06);" onclick="openOnlineUsersModal()" title="คลิกเพื่อดูรายชื่อผู้ใช้ออนไลน์แบบละเอียด">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <div class="stat-label" style="color: #065F46; font-size: 14.5px; font-weight: 800; display: flex; align-items: center; gap: 8px;">
                 <span class="live-dot-pulse"></span>
                 <span>ผู้ใช้ออนไลน์ขณะนี้</span>
               </div>
-              <span style="font-size: 11px; font-weight: 700; color: #059669; background: #D1FAE5; padding: 2px 7px; border-radius: 6px;">Live (5 นาที)</span>
+              <span style="font-size: 12px; font-weight: 800; color: #065F46; background: #D1FAE5; padding: 3px 10px; border-radius: 8px; border: 1px solid #A7F3D0;">Live 5 นาที</span>
             </div>
-            <div class="stat-value" id="statOnlineTotal" style="color: #047857; margin-top: 10px; font-size: 36px; font-weight: 900;">0 <span style="font-size: 16px; font-weight: 600; color: #059669;">คน</span></div>
-            <div style="margin-top: 8px; font-size: 12.5px; color: #475569; display: flex; align-items: center; justify-content: space-between;">
-              <span>สมาชิก: <strong id="statOnlineMembers" style="color: #059669;">0</strong> คน</span>
-              <span>•</span>
-              <span>ทั่วไป: <strong id="statOnlineGuests" style="color: #64748B;">0</strong> คน</span>
+            <div class="stat-value" id="statOnlineTotal" style="color: #047857; margin: 8px 0 10px 0; font-size: 40px; font-weight: 900; line-height: 1;">0 <span style="font-size: 18px; font-weight: 700; color: #059669;">คน</span></div>
+            <div style="margin-top: 10px; font-size: 13.5px; color: #334155; font-weight: 600; display: flex; align-items: center; gap: 10px;">
+              <span style="background: #F0FDF4; border: 1px solid #DCFCE7; padding: 3px 10px; border-radius: 8px; color: #166534;">สมาชิก: <strong id="statOnlineMembers" style="color: #047857; font-weight: 800;">0</strong> คน</span>
+              <span style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 3px 10px; border-radius: 8px; color: #475569;">ทั่วไป: <strong id="statOnlineGuests" style="color: #334155; font-weight: 800;">0</strong> คน</span>
             </div>
-            <div style="margin-top: 10px; font-size: 12px; font-weight: 700; color: #047857; text-align: right;">
+            <div style="margin-top: 12px; font-size: 13px; font-weight: 700; color: #047857; text-align: right;">
               คลิกดูรายชื่อสมาชิกออนไลน์ 👥 ↗
             </div>
           </div>
 
           <!-- Card 2: Average Hourly Usage -->
-          <div class="stat-card" style="border: 1.5px solid #BFDBFE; background: linear-gradient(180deg, #FFFFFF 0%, #EFF6FF 100%);">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-              <div class="stat-label" style="color: #1D4ED8; display: flex; align-items: center; gap: 6px;">
+          <div class="stat-card" style="border: 2px solid #93C5FD; background: #FFFFFF; padding: 22px 24px; border-radius: 16px; box-shadow: 0 4px 14px rgba(37,99,235,0.06);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <div class="stat-label" style="color: #1E40AF; font-size: 14.5px; font-weight: 800; display: flex; align-items: center; gap: 8px;">
                 <span>⏱️</span>
                 <span>ยอดใช้งานเฉลี่ย / ชม.</span>
               </div>
-              <span style="font-size: 11px; font-weight: 700; color: #2563EB; background: #DBEAFE; padding: 2px 7px; border-radius: 6px;">24 ชม. ล่าสุด</span>
+              <span style="font-size: 12px; font-weight: 800; color: #1E40AF; background: #DBEAFE; padding: 3px 10px; border-radius: 8px; border: 1px solid #BFDBFE;">24 ชม. ล่าสุด</span>
             </div>
-            <div class="stat-value" id="statAvgUsersPerHour" style="color: #1D4ED8; margin-top: 10px; font-size: 36px; font-weight: 900;">0.0 <span style="font-size: 16px; font-weight: 600; color: #2563EB;">คน/ชม.</span></div>
-            <div style="margin-top: 8px; font-size: 12.5px; color: #475569; display: flex; justify-content: space-between;">
-              <span>คำขอเฉลี่ย: <strong id="statAvgActionsPerHour" style="color: #1D4ED8;">0.0</strong> ครั้ง/ชม.</span>
-            </div>
-            <div style="margin-top: 8px; font-size: 11.5px; color: #92400E; background: #FEF3C7; padding: 4px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;">
-              <span>🔥 พีคสุด:</span>
-              <strong id="statPeakHour">-</strong>
-              <span id="statPeakBadge" style="margin-left: 2px;">(0 คน)</span>
+            <div class="stat-value" id="statAvgUsersPerHour" style="color: #1D4ED8; margin: 8px 0 10px 0; font-size: 40px; font-weight: 900; line-height: 1;">0.0 <span style="font-size: 18px; font-weight: 700; color: #2563EB;">คน/ชม.</span></div>
+            <div style="margin-top: 10px; font-size: 13.5px; color: #334155; display: flex; flex-direction: column; gap: 6px;">
+              <span style="font-weight: 600;">คำขอเฉลี่ย: <strong id="statAvgActionsPerHour" style="color: #1D4ED8; font-weight: 800;">0.0</strong> ครั้ง/ชม.</span>
+              <div style="font-size: 12.5px; color: #92400E; background: #FEF3C7; border: 1px solid #FDE68A; padding: 4px 10px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px; font-weight: 700; width: fit-content;">
+                <span>🔥 พีคสุด:</span>
+                <strong id="statPeakHour">-</strong>
+                <span id="statPeakBadge" style="margin-left: 2px;">(0 คน)</span>
+              </div>
             </div>
           </div>
 
           <!-- Card 3: Total Users -->
-          <div class="stat-card" style="cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease;" onclick="switchTab('tabUsers')" title="คลิกเพื่อดูและจัดการสมาชิกทั้งหมด">
-            <div class="stat-label">Total Users</div>
-            <div class="stat-value" id="statUsers">0</div>
-            <div style="margin-top: 10px; font-size: 12px; color: #1D4ED8; font-weight: 600;">บัญชีสมาชิกทั้งหมด (คลิกเพื่อดู) 👥 ↗</div>
+          <div class="stat-card" style="border: 1.5px solid #E2E8F0; background: #FFFFFF; cursor: pointer; transition: all 0.2s ease; padding: 22px 24px; border-radius: 16px; box-shadow: 0 4px 14px rgba(0,0,0,0.03);" onclick="switchTab('tabUsers')" title="คลิกเพื่อดูและจัดการสมาชิกทั้งหมด">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <div class="stat-label" style="color: #334155; font-size: 14.5px; font-weight: 800;">ผู้ใช้ทั้งหมด (Users)</div>
+              <span style="font-size: 12px; font-weight: 700; color: #475569; background: #F1F5F9; padding: 3px 10px; border-radius: 8px;">บัญชีทั้งหมด</span>
+            </div>
+            <div class="stat-value" id="statUsers" style="color: #0F172A; margin: 8px 0 10px 0; font-size: 40px; font-weight: 900; line-height: 1;">0</div>
+            <div style="margin-top: 10px; font-size: 13.5px; color: #1D4ED8; font-weight: 700;">คลิกเพื่อดูและจัดการสมาชิก 👥 ↗</div>
           </div>
 
           <!-- Card 4: Exam Sets -->
-          <div class="stat-card" style="cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease;" onclick="switchTab('tabExams')" title="คลิกเพื่อจัดการชุดข้อสอบ">
-            <div class="stat-label">Exam Sets</div>
-            <div class="stat-value" id="statExams">0</div>
-            <div style="margin-top: 10px; font-size: 12px; color: #64748B;">ชุดข้อสอบพร้อมใช้งาน 📝 ↗</div>
+          <div class="stat-card" style="border: 1.5px solid #E2E8F0; background: #FFFFFF; cursor: pointer; transition: all 0.2s ease; padding: 22px 24px; border-radius: 16px; box-shadow: 0 4px 14px rgba(0,0,0,0.03);" onclick="switchTab('tabExams')" title="คลิกเพื่อจัดการชุดข้อสอบ">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <div class="stat-label" style="color: #334155; font-size: 14.5px; font-weight: 800;">ชุดข้อสอบ (Exam Sets)</div>
+              <span style="font-size: 12px; font-weight: 700; color: #475569; background: #F1F5F9; padding: 3px 10px; border-radius: 8px;">ในระบบ</span>
+            </div>
+            <div class="stat-value" id="statExams" style="color: #0F172A; margin: 8px 0 10px 0; font-size: 40px; font-weight: 900; line-height: 1;">0</div>
+            <div style="margin-top: 10px; font-size: 13.5px; color: #475569; font-weight: 600;">ชุดข้อสอบพร้อมใช้งาน 📝 ↗</div>
           </div>
 
           <!-- Card 5: Announcements -->
-          <div class="stat-card">
-            <div class="stat-label">Announcements</div>
-            <div class="stat-value" id="statAnnouncements">0</div>
-            <div style="margin-top: 10px; font-size: 12px; color: #64748B;">ประกาศข่าวสารทั้งหมด</div>
+          <div class="stat-card" style="border: 1.5px solid #E2E8F0; background: #FFFFFF; padding: 22px 24px; border-radius: 16px; box-shadow: 0 4px 14px rgba(0,0,0,0.03);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <div class="stat-label" style="color: #334155; font-size: 14.5px; font-weight: 800;">ประกาศ (Announcements)</div>
+              <span style="font-size: 12px; font-weight: 700; color: #475569; background: #F1F5F9; padding: 3px 10px; border-radius: 8px;">ข่าวสาร</span>
+            </div>
+            <div class="stat-value" id="statAnnouncements" style="color: #0F172A; margin: 8px 0 10px 0; font-size: 40px; font-weight: 900; line-height: 1;">0</div>
+            <div style="margin-top: 10px; font-size: 13.5px; color: #475569; font-weight: 600;">ประกาศข่าวสารทั้งหมด 📢</div>
           </div>
 
           <!-- Card 6: Premium Requests -->
-          <div class="stat-card">
-            <div class="stat-label">Premium Requests</div>
-            <div class="stat-value" id="statPremium" style="color: #D97706;">0</div>
-            <div style="margin-top: 10px; font-size: 12px; color: #64748B;">คำขอพรีเมียมรออนุมัติ</div>
+          <div class="stat-card" style="border: 1.5px solid #FDE68A; background: #FFFDF5; padding: 22px 24px; border-radius: 16px; box-shadow: 0 4px 14px rgba(217,119,6,0.05);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <div class="stat-label" style="color: #92400E; font-size: 14.5px; font-weight: 800;">คำขอพรีเมียม (Premium)</div>
+              <span style="font-size: 12px; font-weight: 800; color: #92400E; background: #FEF3C7; padding: 3px 10px; border-radius: 8px; border: 1px solid #FDE68A;">รออนุมัติ</span>
+            </div>
+            <div class="stat-value" id="statPremium" style="color: #D97706; margin: 8px 0 10px 0; font-size: 40px; font-weight: 900; line-height: 1;">0</div>
+            <div style="margin-top: 10px; font-size: 13.5px; color: #78350F; font-weight: 700;">คำขอพรีเมียมรออนุมัติ ⭐</div>
           </div>
 
         </div>
 
         <!-- Hourly Activity 24h Analytics Section -->
-        <div style="background: white; border: 1.5px solid #E2E8F0; border-radius: 20px; padding: 24px; margin-bottom: 30px; box-shadow: 0 4px 20px rgba(0,0,0,0.03);">
+        <div style="background: white; border: 1.5px solid #E2E8F0; border-radius: 20px; padding: 24px 28px; margin-bottom: 30px; box-shadow: 0 4px 20px rgba(0,0,0,0.04);">
           
           <!-- Section Header -->
-          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 22px;">
             <div>
-              <div style="font-size: 17px; font-weight: 800; color: #0F172A; display: flex; align-items: center; gap: 8px;">
+              <div style="font-size: 18px; font-weight: 800; color: #0F172A; display: flex; align-items: center; gap: 10px;">
                 <span>📈 สถิติการใช้งานรายชั่วโมง (24 ชั่วโมงล่าสุด)</span>
-                <span id="chartHourSpanBadge" style="font-size: 11.5px; font-weight: 700; background: #EEF2F6; color: #475569; padding: 2px 8px; border-radius: 999px;">24 ชม. ย้อนหลัง</span>
+                <span id="chartHourSpanBadge" style="font-size: 12px; font-weight: 800; background: #EEF2F6; color: #1E293B; padding: 3px 10px; border-radius: 999px;">24 ชม. ย้อนหลัง</span>
               </div>
-              <p style="margin: 4px 0 0 0; font-size: 13px; color: #64748B;">วิเคราะห์ความหนาแน่นของผู้ใช้งานรายชั่วโมง (Peak Times) เพื่อดูช่วงเวลาที่มีการทำข้อสอบมากที่สุด</p>
+              <p style="margin: 6px 0 0 0; font-size: 14px; color: #475569; font-weight: 500;">แสดงจำนวนผู้ใช้งานและช่วงเวลาที่คึกคักที่สุด (Peak Hours) สามารถมองเห็นตัวเลขของแต่ละชั่วโมงได้ทันที</p>
             </div>
             
             <!-- Quick Indicators -->
-            <div style="display: flex; align-items: center; gap: 14px; font-size: 12.5px; color: #475569;">
+            <div style="display: flex; align-items: center; gap: 16px; font-size: 13.5px; font-weight: 700; color: #334155;">
               <div style="display: flex; align-items: center; gap: 6px;">
-                <span style="width: 12px; height: 12px; border-radius: 3px; background: linear-gradient(180deg, #3B82F6, #1D4ED8);"></span>
-                <span>จำนวนผู้ใช้งาน (คน)</span>
+                <span style="width: 14px; height: 14px; border-radius: 4px; background: linear-gradient(180deg, #3B82F6, #1D4ED8);"></span>
+                <span>ชั่วโมงปกติ</span>
               </div>
               <div style="display: flex; align-items: center; gap: 6px;">
-                <span style="width: 12px; height: 12px; border-radius: 3px; background: #10B981;"></span>
-                <span>ชั่วโมงปัจจุบัน</span>
+                <span style="width: 14px; height: 14px; border-radius: 4px; background: #10B981;"></span>
+                <span>ชั่วโมงปัจจุบัน (Now)</span>
               </div>
               <div style="display: flex; align-items: center; gap: 6px;">
-                <span style="width: 12px; height: 12px; border-radius: 3px; background: #F59E0B;"></span>
-                <span>ชั่วโมงพีคสุด</span>
+                <span style="width: 14px; height: 14px; border-radius: 4px; background: #F59E0B;"></span>
+                <span>ชั่วโมงพีคสุด (Peak)</span>
               </div>
             </div>
           </div>
 
-          <!-- 24-Hour Bar Chart Container -->
-          <div id="hourlyChartContainer" style="position: relative; height: 210px; display: flex; align-items: flex-end; gap: 6px; padding: 20px 8px 32px 8px; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 14px; overflow-x: auto;">
-            <div style="width: 100%; text-align: center; color: #94A3B8; font-size: 13px; margin: auto;">กำลังโหลดข้อมูลกราฟรายชั่วโมง...</div>
+          <!-- 24-Hour Bar Chart Container (Full width, no horizontal scrollbar, clear layout) -->
+          <div id="hourlyChartContainer" style="position: relative; height: 230px; display: flex; align-items: flex-end; gap: 4px; padding: 28px 10px 14px 10px; background: #FFFFFF; border: 1.5px solid #E2E8F0; border-radius: 16px; box-sizing: border-box; width: 100%; overflow: hidden;">
+            <div style="width: 100%; text-align: center; color: #64748B; font-size: 14px; font-weight: 600; margin: auto;">กำลังโหลดข้อมูลกราฟรายชั่วโมง...</div>
           </div>
 
-          <!-- Chart Footer Summary Row -->
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-top: 16px;">
-            <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 10px 14px;">
-              <div style="font-size: 11.5px; color: #64748B; font-weight: 600;">ผู้ใช้งานรวมรอบ 24 ชม.</div>
-              <div style="font-size: 18px; font-weight: 800; color: #0F172A; margin-top: 2px;" id="statSummaryTotalUsers24h">0 คน</div>
+          <!-- Chart Footer Summary Row (High Contrast & Crisp) -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-top: 20px;">
+            <div style="background: #FFFFFF; border: 1.5px solid #CBD5E1; border-radius: 14px; padding: 14px 18px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
+              <div style="font-size: 13px; color: #475569; font-weight: 700;">👥 ผู้ใช้งานรวมรอบ 24 ชม.</div>
+              <div style="font-size: 26px; font-weight: 900; color: #0F172A; margin-top: 4px;" id="statSummaryTotalUsers24h">0 คน</div>
             </div>
-            <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 10px 14px;">
-              <div style="font-size: 11.5px; color: #64748B; font-weight: 600;">คำขอ/กิจกรรมรวม</div>
-              <div style="font-size: 18px; font-weight: 800; color: #0F172A; margin-top: 2px;" id="statSummaryTotalActions24h">0 ครั้ง</div>
+            <div style="background: #FFFFFF; border: 1.5px solid #CBD5E1; border-radius: 14px; padding: 14px 18px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
+              <div style="font-size: 13px; color: #475569; font-weight: 700;">⚡ คำขอ/กิจกรรมรวม</div>
+              <div style="font-size: 26px; font-weight: 900; color: #0F172A; margin-top: 4px;" id="statSummaryTotalActions24h">0 ครั้ง</div>
             </div>
-            <div style="background: #FEF3C7; border: 1px solid #FDE68A; border-radius: 12px; padding: 10px 14px;">
-              <div style="font-size: 11.5px; color: #92400E; font-weight: 600;">ช่วงเวลาพีคที่สุด (Peak Hour)</div>
-              <div style="font-size: 16px; font-weight: 800; color: #B45309; margin-top: 2px;" id="statSummaryPeakHour">-</div>
+            <div style="background: #FFFBEB; border: 1.5px solid #FCD34D; border-radius: 14px; padding: 14px 18px; box-shadow: 0 2px 6px rgba(245, 158, 11, 0.08);">
+              <div style="font-size: 13px; color: #92400E; font-weight: 800;">🔥 ช่วงเวลาพีคที่สุด (Peak Hour)</div>
+              <div style="font-size: 22px; font-weight: 900; color: #B45309; margin-top: 4px;" id="statSummaryPeakHour">-</div>
             </div>
-            <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 12px; padding: 10px 14px;">
-              <div style="font-size: 11.5px; color: #166534; font-weight: 600;">เฉลี่ยผู้ใช้งานต่อชั่วโมง</div>
-              <div style="font-size: 18px; font-weight: 800; color: #15803D; margin-top: 2px;" id="statSummaryAvgPerHour">0.0 คน/ชม.</div>
+            <div style="background: #F0FDF4; border: 1.5px solid #86EFAC; border-radius: 14px; padding: 14px 18px; box-shadow: 0 2px 6px rgba(16, 185, 129, 0.08);">
+              <div style="font-size: 13px; color: #166534; font-weight: 800;">📈 เฉลี่ยผู้ใช้งานต่อชั่วโมง</div>
+              <div style="font-size: 26px; font-weight: 900; color: #047857; margin-top: 4px;" id="statSummaryAvgPerHour">0.0 คน/ชม.</div>
             </div>
           </div>
 
