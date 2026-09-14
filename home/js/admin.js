@@ -68,7 +68,10 @@ async function initAdmin() {
       return;
     }
 
-    document.getElementById('adminUserInfo').textContent = `Admin: ${currentUser.username || currentUser.fullName || currentUser.email || 'Admin'}`;
+    const adminUserInfoEl = document.getElementById('adminUserInfo');
+    if (adminUserInfoEl) {
+      adminUserInfoEl.textContent = `Admin: ${currentUser.username || currentUser.fullName || currentUser.email || 'Admin'}`;
+    }
     
     // Setup Navigation
     setupTabs();
