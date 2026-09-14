@@ -390,6 +390,14 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Auth server is running.' });
 });
 
+app.get('/api/version', (req, res) => {
+  res.json({
+    version: '2.5.2',
+    timestamp: '2026-09-14T12:01:00Z',
+    features: ['chunked-10-questions', 'safe-parse-recovery', 'math-conflict-fix']
+  });
+});
+
 // --- Register Route ---
 app.post('/api/auth/register', async (req, res) => {
   const { username, email, password, fullName } = req.body;
@@ -9927,20 +9935,32 @@ function sanitizeExamQuestionFormatting(q) {
   };
 }
 
-// --- Helper: Resilient AI JSON Parser with Backward Boundary Recovery ---
+// --- Helper: Resilient AI JSON Parser with Backward Boundary Recovery & Control Char Sanitization ---
 function safeParseAIJson(rawText) {
   if (!rawText || typeof rawText !== 'string') return [];
   let clean = rawText.trim();
   if (clean.includes('</think>')) {
     clean = clean.substring(clean.indexOf('</think>') + 8).trim();
   }
-  // Strip markdown codeblocks
-  if (clean.startsWith('```json')) clean = clean.replace(/^```json\s*/i, '').replace(/\s*```$/, '').trim();
-  else if (clean.startsWith('```')) clean = clean.replace(/^```\s*/, '').replace(/\s*```$/, '').trim();
+  // Strip markdown codeblocks (anywhere in the response)
+  clean = clean.replace(/```json/gi, '').replace(/```/g, '').trim();
+
+  const tryJsonParse = (str) => {
+    try {
+      return JSON.parse(str);
+    } catch (e) {
+      // If error due to bad control char / literal newline inside quotes, sanitize and retry
+      try {
+        const sanitized = str.replace(/"((?:\\.|[^"\\])*)"/gs, (m, c) => '"' + c.replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/\t/g, '\\t') + '"');
+        return JSON.parse(sanitized);
+      } catch (_) {}
+      throw e;
+    }
+  };
 
   // 1. Direct JSON parse
   try {
-    const parsed = JSON.parse(clean);
+    const parsed = tryJsonParse(clean);
     return Array.isArray(parsed) ? parsed : (parsed.questions || parsed.data || parsed.items || []);
   } catch (e) {}
 
@@ -9951,7 +9971,7 @@ function safeParseAIJson(rawText) {
     const lastBracket = sub.lastIndexOf(']');
     if (lastBracket !== -1) {
       try {
-        const parsed = JSON.parse(sub.substring(0, lastBracket + 1));
+        const parsed = tryJsonParse(sub.substring(0, lastBracket + 1));
         return Array.isArray(parsed) ? parsed : (parsed.questions || parsed.data || parsed.items || []);
       } catch (e) {}
     }
@@ -9963,7 +9983,7 @@ function safeParseAIJson(rawText) {
       if (lastBrace === -1) break;
       try {
         const repaired = sub.substring(0, lastBrace + 1) + ']';
-        const parsed = JSON.parse(repaired);
+        const parsed = tryJsonParse(repaired);
         if (Array.isArray(parsed) && parsed.length > 0) {
           console.log(`[safeParseAIJson] Successfully recovered ${parsed.length} items from truncated array JSON`);
           return parsed;
@@ -9985,7 +10005,7 @@ function safeParseAIJson(rawText) {
         if (lastBrace === -1) break;
         try {
           const repaired = sub.substring(0, lastBrace + 1) + ']';
-          const parsed = JSON.parse(repaired);
+          const parsed = tryJsonParse(repaired);
           if (Array.isArray(parsed) && parsed.length > 0) {
             console.log(`[safeParseAIJson] Successfully recovered ${parsed.length} questions from truncated object JSON`);
             return parsed;
@@ -10003,7 +10023,7 @@ function safeParseAIJson(rawText) {
       const items = [];
       for (const m of matches) {
         try {
-          items.push(JSON.parse(m));
+          items.push(tryJsonParse(m));
         } catch (_) {}
       }
       if (items.length > 0) {
