@@ -10570,10 +10570,19 @@ app.post('/api/admin/exams/save-set', authenticateToken, async (req, res) => {
     }
 
     const parseCorrectNum = (val) => {
-      const opt = String(val || '1').trim().toUpperCase();
-      if (opt === '2' || opt === 'B' || opt === 'ข' || opt.includes('2') || opt.includes('ข')) return 2;
-      if (opt === '3' || opt === 'C' || opt === 'ค' || opt.includes('3') || opt.includes('ค')) return 3;
-      if (opt === '4' || opt === 'D' || opt === 'ง' || opt.includes('4') || opt.includes('ง')) return 4;
+      if (val === undefined || val === null) return 1;
+      const opt = String(val).trim().toUpperCase();
+      if (opt === '1' || opt === 'A' || opt === 'ก') return 1;
+      if (opt === '2' || opt === 'B' || opt === 'ข') return 2;
+      if (opt === '3' || opt === 'C' || opt === 'ค') return 3;
+      if (opt === '4' || opt === 'D' || opt === 'ง') return 4;
+      const stripped = opt.replace(/^(ข้อ|ตัวเลือก|OPTION|CHOICE|\.|\s)+/i, '').trim();
+      if (stripped.startsWith('1') || stripped.startsWith('A') || stripped.startsWith('ก')) return 1;
+      if (stripped.startsWith('2') || stripped.startsWith('B') || stripped.startsWith('ข')) return 2;
+      if (stripped.startsWith('3') || stripped.startsWith('C') || stripped.startsWith('ค')) return 3;
+      if (stripped.startsWith('4') || stripped.startsWith('D') || stripped.startsWith('ง')) return 4;
+      const num = parseInt(opt, 10);
+      if (!isNaN(num) && num >= 1 && num <= 4) return num;
       return 1;
     };
 
@@ -10642,10 +10651,19 @@ app.post('/api/admin/exams/:examSetId/append-questions', authenticateToken, asyn
     const currentCount = examSet.questions.length;
 
     const parseCorrectNum = (val) => {
-      const opt = String(val || '1').trim().toUpperCase();
-      if (opt === '2' || opt === 'B' || opt === 'ข' || opt.includes('2') || opt.includes('ข')) return 2;
-      if (opt === '3' || opt === 'C' || opt === 'ค' || opt.includes('3') || opt.includes('ค')) return 3;
-      if (opt === '4' || opt === 'D' || opt === 'ง' || opt.includes('4') || opt.includes('ง')) return 4;
+      if (val === undefined || val === null) return 1;
+      const opt = String(val).trim().toUpperCase();
+      if (opt === '1' || opt === 'A' || opt === 'ก') return 1;
+      if (opt === '2' || opt === 'B' || opt === 'ข') return 2;
+      if (opt === '3' || opt === 'C' || opt === 'ค') return 3;
+      if (opt === '4' || opt === 'D' || opt === 'ง') return 4;
+      const stripped = opt.replace(/^(ข้อ|ตัวเลือก|OPTION|CHOICE|\.|\s)+/i, '').trim();
+      if (stripped.startsWith('1') || stripped.startsWith('A') || stripped.startsWith('ก')) return 1;
+      if (stripped.startsWith('2') || stripped.startsWith('B') || stripped.startsWith('ข')) return 2;
+      if (stripped.startsWith('3') || stripped.startsWith('C') || stripped.startsWith('ค')) return 3;
+      if (stripped.startsWith('4') || stripped.startsWith('D') || stripped.startsWith('ง')) return 4;
+      const num = parseInt(opt, 10);
+      if (!isNaN(num) && num >= 1 && num <= 4) return num;
       return 1;
     };
 

@@ -125,6 +125,44 @@ async function loadExamQuestions(track, subject, setId, chapter, count, mode) {
     questions = generateStandardQuestions(examState.subjectKey, count || (track ? 150 : 30));
   }
 
+function normalizeAnswerToIndex(rawAns, choices) {
+  if (rawAns === undefined || rawAns === null) return 0;
+
+  // Direct choice text matching
+  if (Array.isArray(choices) && choices.length > 0) {
+    const exactMatch = choices.findIndex(c => String(c).trim() === String(rawAns).trim());
+    if (exactMatch !== -1) return exactMatch;
+  }
+
+  // If number
+  if (typeof rawAns === 'number') {
+    if (rawAns >= 1 && rawAns <= choices.length) return rawAns - 1;
+    if (rawAns >= 0 && rawAns < choices.length) return rawAns;
+    return 0;
+  }
+
+  // If string
+  const clean = String(rawAns).trim().toUpperCase();
+  if (clean === '1' || clean === 'A' || clean === 'ก') return 0;
+  if (clean === '2' || clean === 'B' || clean === 'ข') return 1;
+  if (clean === '3' || clean === 'C' || clean === 'ค') return 2;
+  if (clean === '4' || clean === 'D' || clean === 'ง') return 3;
+
+  const stripped = clean.replace(/^(ข้อ|ตัวเลือก|OPTION|CHOICE|\.|\s)+/i, '').trim();
+  if (stripped.startsWith('1') || stripped.startsWith('A') || stripped.startsWith('ก')) return 0;
+  if (stripped.startsWith('2') || stripped.startsWith('B') || stripped.startsWith('ข')) return 1;
+  if (stripped.startsWith('3') || stripped.startsWith('C') || stripped.startsWith('ค')) return 2;
+  if (stripped.startsWith('4') || stripped.startsWith('D') || stripped.startsWith('ง')) return 3;
+
+  const num = parseInt(clean, 10);
+  if (!isNaN(num)) {
+    if (num >= 1 && num <= choices.length) return num - 1;
+    if (num >= 0 && num < choices.length) return num;
+  }
+
+  return 0;
+}
+
   // Normalize questions array
   examState.questions = questions.map((q, idx) => {
     let normChoices = [];
@@ -139,21 +177,8 @@ async function loadExamQuestions(track, subject, setId, chapter, count, mode) {
     }
 
     // Determine 0-indexed correct answer
-    let normCorrect = 0;
-    if (typeof q.correctAnswer === 'number') {
-      if (q.correctAnswer >= 1 && q.correctAnswer <= normChoices.length) {
-        normCorrect = q.correctAnswer - 1;
-      } else if (q.correctAnswer >= 0 && q.correctAnswer < normChoices.length) {
-        normCorrect = q.correctAnswer;
-      }
-    } else if (typeof q.correctAnswer === 'string') {
-      const parsed = parseInt(q.correctAnswer, 10);
-      if (!isNaN(parsed) && parsed >= 1 && parsed <= normChoices.length) {
-        normCorrect = parsed - 1;
-      } else if (!isNaN(parsed) && parsed >= 0 && parsed < normChoices.length) {
-        normCorrect = parsed;
-      }
-    }
+    const rawAns = q.correctAnswer !== undefined ? q.correctAnswer : (q.correctOption !== undefined ? q.correctOption : q.answer);
+    const normCorrect = normalizeAnswerToIndex(rawAns, normChoices);
 
     const subTitle = q.shortSubjectName || q.subjectName || q.subjectTitle || q.category || examState.subjectTitle;
 
@@ -257,10 +282,26 @@ function renderExamQuestion() {
 
   // 7. Explanation Section (Review Mode only)
   const explanationBox = document.getElementById('explanationBox');
-  const explanationText = document.getElementById('explanationText');
+  const explanationText = document.getElementById('explanationText') || document.getElementById('explanationContent');
   if (explanationBox && explanationText) {
     if (isReviewMode && currentQ.explanation) {
-      explanationText.textContent = currentQ.explanation;
+      const selectedAns = userAnswers[currentIndex];
+      const isCorrect = selectedAns === currentQ.correctAnswer;
+      const selectedLetter = selectedAns !== undefined ? (THAI_LETTERS[selectedAns] || `${selectedAns + 1}`) : 'ไม่ได้ตอบ';
+      const correctLetter = THAI_LETTERS[currentQ.correctAnswer] || `${currentQ.correctAnswer + 1}`;
+
+      const statusHtml = isCorrect
+        ? `<div style="color: #059669; font-weight: 800; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; font-size: 14px;">
+             <span>✅</span><span>คุณตอบถูกต้อง! (ข้อ ${correctLetter})</span>
+           </div>`
+        : `<div style="color: #DC2626; font-weight: 800; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; font-size: 14px;">
+             <span>❌</span><span>คุณตอบ: ข้อ ${selectedLetter} (เฉลยที่ถูกต้องคือ: ข้อ ${correctLetter})</span>
+           </div>`;
+
+      explanationText.innerHTML = `
+        ${statusHtml}
+        <div style="color: #475569; font-size: 13.5px; line-height: 1.65; white-space: pre-line;">${escapeHTML(currentQ.explanation)}</div>
+      `;
       explanationBox.style.display = 'block';
     } else {
       explanationBox.style.display = 'none';
@@ -268,7 +309,7 @@ function renderExamQuestion() {
   }
 
   // 8. Main Action Button: Next vs Submit vs View Results
-  const btnAction = document.getElementById('btnActionMain');
+  const btnAction = document.getElementById('btnActionMain') || document.getElementById('btnMainAction');
   if (btnAction) {
     if (isReviewMode) {
       if (currentIndex === total - 1) {

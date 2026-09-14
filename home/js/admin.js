@@ -1937,9 +1937,17 @@ function parseCSV(text) {
 function normalizeCorrectAnswer(val) {
   if (val === undefined || val === null) return 1;
   const clean = String(val).trim().toUpperCase();
-  if (clean === '2' || clean === 'B' || clean === 'ข' || clean.includes('2') || clean.includes('ข')) return 2;
-  if (clean === '3' || clean === 'C' || clean === 'ค' || clean.includes('3') || clean.includes('ค')) return 3;
-  if (clean === '4' || clean === 'D' || clean === 'ง' || clean.includes('4') || clean.includes('ง')) return 4;
+  if (clean === '1' || clean === 'A' || clean === 'ก') return 1;
+  if (clean === '2' || clean === 'B' || clean === 'ข') return 2;
+  if (clean === '3' || clean === 'C' || clean === 'ค') return 3;
+  if (clean === '4' || clean === 'D' || clean === 'ง') return 4;
+  const stripped = clean.replace(/^(ข้อ|ตัวเลือก|OPTION|CHOICE|\.|\s)+/i, '').trim();
+  if (stripped.startsWith('1') || stripped.startsWith('A') || stripped.startsWith('ก')) return 1;
+  if (stripped.startsWith('2') || stripped.startsWith('B') || stripped.startsWith('ข')) return 2;
+  if (stripped.startsWith('3') || stripped.startsWith('C') || stripped.startsWith('ค')) return 3;
+  if (stripped.startsWith('4') || stripped.startsWith('D') || stripped.startsWith('ง')) return 4;
+  const num = parseInt(clean, 10);
+  if (!isNaN(num) && num >= 1 && num <= 4) return num;
   return 1;
 }
 
