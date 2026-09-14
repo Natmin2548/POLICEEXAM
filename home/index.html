@@ -29,7 +29,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;800&display=swap"
     rel="stylesheet">
   <!-- Stylesheet -->
-  <link rel="stylesheet" href="css/style.css?v=49">
+  <link rel="stylesheet" href="css/style.css?v=53">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
   <!-- Cropper.js -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
@@ -206,6 +206,41 @@
       color: #BD1B0B;
       box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
     }
+
+    /* Back to Home & Top Profile Buttons */
+    .btn-header-back-home {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      background: #FFFFFF;
+      border: 1.5px solid #E2E8F0;
+      border-radius: 12px;
+      padding: 6px 14px;
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #334155;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+      font-family: inherit;
+    }
+    .btn-header-back-home:hover,
+    .btn-profile-back-home:hover {
+      background: #F8FAFC !important;
+      border-color: #CBD5E1 !important;
+      color: #0F172A !important;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+    }
+    .btn-profile-menu:hover {
+      border-color: #BD1B0B !important;
+      box-shadow: 0 0 0 3px rgba(189, 27, 11, 0.18) !important;
+      transform: scale(1.05);
+    }
+    .nav-greeting:hover .greeting-title {
+      color: #BD1B0B !important;
+    }
   </style>
 </head>
 
@@ -217,10 +252,17 @@
     <div class="nav-container"
       style="display: flex; justify-content: space-between; align-items: center; max-width: 1080px; margin: 0 auto; padding: 0 24px;">
 
-      <!-- Left: Logo -->
-      <div style="display: flex; align-items: center;">
+      <!-- Left: Logo & Back Button -->
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <button id="btnHeaderBackHome" class="btn-header-back-home" onclick="switchTabToHome(event)"
+          title="ย้อนกลับหน้าหลัก">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+          <span>กลับหน้าหลัก</span>
+        </button>
         <a href="#"
-          onclick="if(document.getElementById('btnTabHome')) document.getElementById('btnTabHome').click(); return false;"
+          onclick="if(typeof switchTabToHome === 'function') switchTabToHome(event); else if(document.getElementById('btnTabHome')) document.getElementById('btnTabHome').click(); return false;"
           style="display: flex; align-items: center; gap: 8px; text-decoration: none;">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="#BD1B0B" stroke="#BD1B0B" stroke-width="0">
             <path d="M12 2L3 6v6c0 5.3 3.9 10.2 9 11.4C17.1 22.2 21 17.3 21 12V6L12 2z" />
@@ -230,21 +272,23 @@
         </a>
       </div>
 
-      <!-- Right: Greeting & User Avatar -->
+      <!-- Right: Greeting & User Avatar (Click to open Profile) -->
       <div class="header-actions" style="display: flex; align-items: center; gap: 10px;">
-        <div class="nav-greeting" style="display: flex; flex-direction: column; text-align: right;">
+        <div class="nav-greeting" style="display: flex; flex-direction: column; text-align: right; cursor: pointer; user-select: none;"
+          onclick="switchTabToProfile(event)" title="เปิดหน้าโปรไฟล์">
           <span class="greeting-subtitle"
             style="font-size: 11px; color: #94A3B8; font-weight: 500; line-height: 1;">สวัสดีตอนเช้า</span>
           <h1 class="greeting-title" id="greetingName"
-            style="font-size: 14.5px; font-weight: 800; color: #0F172A; margin: 3px 0 0 0;">มิน</h1>
+            style="font-size: 14.5px; font-weight: 800; color: #0F172A; margin: 3px 0 0 0; transition: color 0.15s ease;">มิน</h1>
         </div>
 
-        <!-- User Profile Dropdown Anchor -->
+        <!-- User Profile Avatar Button -->
         <div class="profile-menu-container" style="position: relative;">
           <button class="btn-profile-menu" id="btnProfileMenu"
-            onclick="const d = document.getElementById('profileDropdown'); if(d) d.classList.toggle('active'); event.stopPropagation();"
-            aria-label="Profile Menu"
-            style="width: 38px; height: 38px; border-radius: 50%; overflow: hidden; border: 1.5px solid #E2E8F0; padding: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; background: none;">
+            onclick="switchTabToProfile(event)"
+            aria-label="โปรไฟล์"
+            title="เปิดหน้าโปรไฟล์"
+            style="width: 38px; height: 38px; border-radius: 50%; overflow: hidden; border: 1.5px solid #E2E8F0; padding: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; background: none; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);">
             <img src="" alt="Google Avatar" class="header-avatar" id="headerAvatar"
               style="width: 100%; height: 100%; object-fit: cover; display: none;">
             <div class="default-avatar" id="defaultAvatar"
@@ -690,10 +734,21 @@
 
     <!-- Profile View Content -->
     <div id="profileView" class="tab-view">
-      <!-- Header title -->
-      <section class="profile-header-title-section">
-        <h1 class="profile-header-title">โปรไฟล์</h1>
-      </section>
+      <!-- Profile Header with Back to Home Button & Title -->
+      <div class="profile-top-bar"
+        style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid #F1F5F9;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <button type="button" class="btn-profile-back-home" onclick="switchTabToHome(event)"
+            style="display: inline-flex; align-items: center; gap: 8px; background: #FFFFFF; border: 1.5px solid #E2E8F0; border-radius: 12px; padding: 8px 16px; font-size: 14px; font-weight: 700; color: #334155; cursor: pointer; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 0 2px 5px rgba(0,0,0,0.03); font-family: inherit;"
+            title="ย้อนกลับหน้าหลัก">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+            <span>กลับหน้าหลัก</span>
+          </button>
+          <h1 class="profile-header-title" style="margin: 0; font-size: 22px; font-weight: 800; color: #0F172A;">โปรไฟล์</h1>
+        </div>
+      </div>
 
       <!-- Left Column Wrapper -->
       <div class="profile-left-column">
@@ -1346,14 +1401,6 @@
           <path d="M16 3.13a4 4 0 0 1 0 7.75" />
         </svg>
         <span class="tab-label">ชุมชน</span>
-      </a>
-
-      <a href="#" class="nav-tab" id="btnTabProfile">
-        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-          <circle cx="12" cy="7" r="4" />
-        </svg>
-        <span class="tab-label">โปรไฟล์</span>
       </a>
     </div>
   </nav>
@@ -3124,8 +3171,8 @@
   </script>
 
   <!-- Real System Application Scripts -->
-  <script src="vocab-data.js?v=51"></script>
-  <script src="js/app.js?v=52"></script>
+  <script src="vocab-data.js?v=53"></script>
+  <script src="js/app.js?v=53"></script>
 
 </body>
 

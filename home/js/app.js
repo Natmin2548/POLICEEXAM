@@ -1667,11 +1667,46 @@ window.switchTabToHome = function(e) {
   if (profileView) profileView.classList.remove('active');
   if (questionBankView) questionBankView.classList.remove('active');
 
+  const btnHeaderBackHome = document.getElementById('btnHeaderBackHome');
+  if (btnHeaderBackHome) btnHeaderBackHome.style.display = 'none';
+
   if (typeof loadRealProfile === 'function') loadRealProfile();
   if (typeof loadRadarChart === 'function') loadRadarChart();
   if (typeof updateStatsTabDetails === 'function') updateStatsTabDetails();
   if (typeof syncUserQuizHistoryWithServer === 'function') syncUserQuizHistoryWithServer();
 
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+window.switchTabToProfile = function(e) {
+  if (e && typeof e.preventDefault === 'function') e.preventDefault();
+  if (typeof stopCommunityPolling === 'function') stopCommunityPolling();
+  document.body.classList.remove('in-bank-view');
+
+  const navTabs = document.querySelectorAll('.bottom-nav .nav-tab');
+  navTabs.forEach(t => t.classList.remove('active'));
+
+  const homeView = document.getElementById('homeView');
+  const communityView = document.getElementById('communityView');
+  const battleView = document.getElementById('battleView');
+  const statsView = document.getElementById('statsView');
+  const profileView = document.getElementById('profileView');
+  const questionBankView = document.getElementById('questionBankView');
+
+  if (profileView) profileView.classList.add('active');
+  if (homeView) homeView.classList.remove('active');
+  if (communityView) communityView.classList.remove('active');
+  if (battleView) battleView.classList.remove('active');
+  if (statsView) statsView.classList.remove('active');
+  if (questionBankView) questionBankView.classList.remove('active');
+
+  const btnHeaderBackHome = document.getElementById('btnHeaderBackHome');
+  if (btnHeaderBackHome) btnHeaderBackHome.style.display = 'inline-flex';
+
+  const dropdown = document.getElementById('profileDropdown');
+  if (dropdown) dropdown.classList.remove('active');
+
+  if (typeof updateProfileTabDetails === 'function') updateProfileTabDetails();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
@@ -1725,6 +1760,9 @@ if (communityTabBtn) {
     if (profileView) profileView.classList.remove('active');
     if (questionBankView) questionBankView.classList.remove('active');
     
+    const btnHeaderBackHome = document.getElementById('btnHeaderBackHome');
+    if (btnHeaderBackHome) btnHeaderBackHome.style.display = 'none';
+
     updateCommunityTabDetails();
   });
 }
@@ -1786,22 +1824,7 @@ if (statsTabBtn) {
 
 if (profileTabBtn) {
   profileTabBtn.addEventListener('click', (e) => {
-    e.preventDefault();
-    if (typeof stopCommunityPolling === 'function') stopCommunityPolling();
-    document.body.classList.remove('in-bank-view');
-
-    navTabs.forEach(t => t.classList.remove('active'));
-    profileTabBtn.classList.add('active');
-    
-    if (profileView) profileView.classList.add('active');
-    if (homeView) homeView.classList.remove('active');
-    if (communityView) communityView.classList.remove('active');
-    if (battleView) battleView.classList.remove('active');
-    if (statsView) statsView.classList.remove('active');
-    if (questionBankView) questionBankView.classList.remove('active');
-    
-    // Bind profile view details from userProfile object
-    updateProfileTabDetails();
+    switchTabToProfile(e);
   });
 }
 
@@ -1810,8 +1833,12 @@ window.addEventListener('DOMContentLoaded', () => {
   const hash = window.location.hash;
   if (hash === '#community' && communityTabBtn) {
     setTimeout(() => communityTabBtn.click(), 100);
-  } else if (hash === '#profile' && profileTabBtn) {
-    setTimeout(() => profileTabBtn.click(), 100);
+  } else if (hash === '#profile') {
+    setTimeout(() => {
+      if (typeof window.switchTabToProfile === 'function') {
+        window.switchTabToProfile();
+      }
+    }, 100);
   }
 });
 
