@@ -832,6 +832,44 @@ const SUBJECT_CONFIG = {
     ],
     sets: []
   },
+  'ลักษณะที่ 54': {
+    title: 'ลักษณะที่ ๕๔',
+    subtitle: 'ประมวลระเบียบการตำรวจไม่เกี่ยวกับคดี ลักษณะที่ ๕๔ งานสารบรรณ ตร.',
+    badge: 'ระเบียบเฉพาะ ตร.',
+    icon: '📋',
+    iconBg: '#FDF2F8',
+    iconColor: '#BE185D',
+    chapters: [
+      'บทที่ ๑: บทนำ และขอบเขตงานสารบรรณตำรวจ',
+      'บทที่ ๑-๒: การลงชื่อ การสั่งการ และการใช้บันทึกข้อความ',
+      'บทที่ ๒-๓: เลขที่คำสั่งในบันทึกข้อความ และการเสนอ ผบ.ตร. (๕ หัวข้อ)',
+      'บทที่ ๔-๖: ศูนย์รับส่งหนังสือ ตร. และการรับรองสำเนา (ร.ต.ต.ขึ้นไป)',
+      'บทที่ ๗: เลขที่หนังสือออก และรหัสประจำหน่วยงาน ตร (ตร ๐๐๐๑-๐๐๓๖)',
+      'บทที่ ๘: คำย่อยศและตำแหน่งข้าราชการตำรวจ (ไทย)',
+      'บทที่ ๘: คำย่อยศและตำแหน่งข้าราชการตำรวจ (English Abbreviations)',
+      'บทที่ ๑๐-๑๑: ประกาศเจ้าพนักงานจราจร และไปรษณีย์สนามตำรวจชายแดน'
+    ],
+    sets: []
+  },
+  'ลักษณะ 54': {
+    title: 'ลักษณะที่ ๕๔',
+    subtitle: 'ประมวลระเบียบการตำรวจไม่เกี่ยวกับคดี ลักษณะที่ ๕๔ งานสารบรรณ ตร.',
+    badge: 'ระเบียบเฉพาะ ตร.',
+    icon: '📋',
+    iconBg: '#FDF2F8',
+    iconColor: '#BE185D',
+    chapters: [
+      'บทที่ ๑: บทนำ และขอบเขตงานสารบรรณตำรวจ',
+      'บทที่ ๑-๒: การลงชื่อ การสั่งการ และการใช้บันทึกข้อความ',
+      'บทที่ ๒-๓: เลขที่คำสั่งในบันทึกข้อความ และการเสนอ ผบ.ตร. (๕ หัวข้อ)',
+      'บทที่ ๔-๖: ศูนย์รับส่งหนังสือ ตร. และการรับรองสำเนา (ร.ต.ต.ขึ้นไป)',
+      'บทที่ ๗: เลขที่หนังสือออก และรหัสประจำหน่วยงาน ตร (ตร ๐๐๐๑-๐๐๓๖)',
+      'บทที่ ๘: คำย่อยศและตำแหน่งข้าราชการตำรวจ (ไทย)',
+      'บทที่ ๘: คำย่อยศและตำแหน่งข้าราชการตำรวจ (English Abbreviations)',
+      'บทที่ ๑๐-๑๑: ประกาศเจ้าพนักงานจราจร และไปรษณีย์สนามตำรวจชายแดน'
+    ],
+    sets: []
+  },
   'ลักษณะที่ ๕๔': {
     title: 'ลักษณะที่ ๕๔',
     subtitle: 'ประมวลระเบียบการตำรวจไม่เกี่ยวกับคดี ลักษณะที่ ๕๔ งานสารบรรณ ตร.',
@@ -1127,6 +1165,27 @@ window.renderExamBankList = function() {
         </div>
       </div>
 
+      <!-- 7. ลักษณะที่ 54 -->
+      <div class="subject-card-item" onclick="startBankSubject('ลักษณะที่54')"
+        style="display: flex; align-items: center; justify-content: space-between; padding: 16px 6px; border-bottom: 1px solid #F1F5F9; cursor: pointer; transition: all 0.15s ease; border-radius: 12px;"
+        onmouseover="this.style.backgroundColor='#F8FAFC'" onmouseout="this.style.backgroundColor='transparent'">
+        <div style="display: flex; align-items: center; gap: 16px;">
+          <div style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
+            📋
+          </div>
+          <div>
+            <div style="font-size: 15.5px; font-weight: 700; color: #0F172A; line-height: 1.35;">ลักษณะที่ 54</div>
+            <div id="bankQCount_law54" style="font-size: 12px; color: #94A3B8; margin-top: 2px; font-weight: 500;">8 ข้อในคลัง</div>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span id="bankChapBadge_law54" style="background: #FDF2F8; color: #BE185D; font-weight: 700; font-size: 12px; padding: 4px 12px; border-radius: 999px;">
+            3 บท
+          </span>
+          <span style="color: #CBD5E1; font-size: 16px; font-weight: 600;">›</span>
+        </div>
+      </div>
+
     </div>
   `;
 };
@@ -1153,17 +1212,21 @@ window.updateBankSubjectCounts = async function() {
       computer: { countEl: 'bankQCount_computer', chapEl: 'bankChapBadge_computer', defaultQ: 8, keywords: ['คอม', 'สารสนเทศ', 'ไอที'] },
       law: { countEl: 'bankQCount_law', chapEl: 'bankChapBadge_law', defaultQ: 9, keywords: ['กฎหมาย', 'กฏหมาย'] },
       social: { countEl: 'bankQCount_social', chapEl: 'bankChapBadge_social', defaultQ: 8, keywords: ['สังคม', 'วัฒนธรรม', 'จริยธรรม'] },
-      saraban: { countEl: 'bankQCount_saraban', chapEl: 'bankChapBadge_saraban', defaultQ: 7, keywords: ['สารบรรณ', 'งานสารบรรณ'] }
+      saraban: { countEl: 'bankQCount_saraban', chapEl: 'bankChapBadge_saraban', defaultQ: 7, keywords: ['สารบรรณ', 'งานสารบรรณ'], excludeKeywords: ['๕๔', '54', 'ลักษณะ'] },
+      law54: { countEl: 'bankQCount_law54', chapEl: 'bankChapBadge_law54', defaultQ: 8, keywords: ['๕๔', '54', 'ลักษณะ', 'สารบรรณตำรวจ'] }
     };
 
     Object.values(subjectsMap).forEach(sub => {
       const matched = sets.filter(s => {
         const text = `${s.category || ''} ${s.subcategory || ''} ${s.title || ''}`.toLowerCase();
+        if (sub.excludeKeywords && sub.excludeKeywords.some(k => text.includes(k.toLowerCase()))) {
+          return false;
+        }
         return sub.keywords.some(k => text.includes(k.toLowerCase()));
       });
 
       if (matched.length > 0) {
-        const totalQ = matched.reduce((acc, s) => acc + (s.questionsCount || 25), 0);
+        const totalQ = matched.reduce((acc, s) => acc + (s.questionsCount || s.totalCount || 25), 0);
         const chapSet = new Set(matched.map(s => s.subcategory).filter(Boolean));
         const chapCount = Math.max(3, chapSet.size);
 
