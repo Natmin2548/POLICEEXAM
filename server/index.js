@@ -9936,8 +9936,14 @@ async function callGeminiAiText(prompt, customApiKey = '') {
     throw new Error('KEY_NOT_FOUND: ไม่พบ API Key ของ Gemini กรุณาระบุ API Key ในเมนู Admin -> ตั้งค่าระบบ');
   }
 
-  // Model priority: Flash (fast+good) → Pro (best quality) → older/lite fallbacks
-  const modelsToTry = ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash', 'gemini-2.5-flash-lite', 'gemini-1.5-flash-latest'];
+  // Model priority: Gemini 3.x Flash (fast+accurate) → Gemini 2.5 Flash
+  const modelsToTry = [
+    'gemini-3.8-flash',
+    'gemini-3.7-flash',
+    'gemini-3.6-flash',
+    'gemini-3.5-flash',
+    'gemini-2.5-flash'
+  ];
 
   // Low temperature for exam generation accuracy — prevents hallucination and wrong answers
   const examGenerationConfig = {
@@ -10071,20 +10077,41 @@ async function resolveGroqApiKey(customKey = '') {
 }
 
 // --- Helper: Call Groq Specialized AI Models with Multi-Model Failover ---
+const GROQ_DEFAULT_MODELS = [
+  'qwen/qwen3.8-27b',
+  'groq/compound',
+  'openai/gpt-oss-120b',
+  'llama-3.3-70b-versatile',
+  'llama-3.1-8b-instant',
+  'qwen/qwen3.6-27b',
+  'groq/compound-mini'
+];
+
+const GROQ_DECOMMISSIONED_MODELS = new Set([
+  'mixtral-8x7b-32768',
+  'deepseek-r1-distill-llama-70b',
+  'llama-3.2-1b-preview',
+  'llama-3.2-3b-preview',
+  'llama3-70b-8192',
+  'llama3-8b-8192'
+]);
+
 async function callGroqAiText(prompt, options = {}) {
   const apiKey = options.groqApiKey || (await resolveGroqApiKey(options.groqApiKey));
   if (!apiKey) {
     throw new Error('GROQ_KEY_NOT_FOUND: ไม่พบ API Key ของ Groq');
   }
 
-  const modelsToTry = Array.isArray(options.models) && options.models.length > 0
-    ? options.models
-    : [
-        options.model || 'llama-3.3-70b-versatile',
-        'llama-3.1-8b-instant',
-        'deepseek-r1-distill-llama-70b',
-        'mixtral-8x7b-32768'
-      ];
+  // Filter out any decommissioned models and ensure valid candidates
+  let requestedModels = [];
+  if (Array.isArray(options.models) && options.models.length > 0) {
+    requestedModels = options.models.filter(m => !GROQ_DECOMMISSIONED_MODELS.has(m));
+  } else if (options.model && !GROQ_DECOMMISSIONED_MODELS.has(options.model)) {
+    requestedModels = [options.model];
+  }
+
+  // Fallback chain: requested valid models first, followed by resilient defaults
+  const modelsToTry = [...new Set([...requestedModels, ...GROQ_DEFAULT_MODELS])];
 
   const temperature = options.temperature !== undefined ? options.temperature : 0.15;
   let lastErr = null;
@@ -10248,9 +10275,9 @@ async function callSpecializedAiText({ prompt, subject = '', customApiKey = '', 
   // 1. Math / Calculations / General Ability -> Groq -> Gemini -> OpenRouter
   if (isMath && resolvedGroqKey) {
     try {
-      console.log('[Router] 🧠 Routing Math/Reasoning to Groq (Llama 3.3 70B / DeepSeek R1)...');
+      console.log('[Router] 🧠 Routing Math/Reasoning to Groq (Qwen 3.8 / Compound / Llama)...');
       const res = await callGroqAiText(prompt, {
-        models: ['llama-3.3-70b-versatile', 'deepseek-r1-distill-llama-70b', 'llama-3.1-8b-instant'],
+        models: ['qwen/qwen3.8-27b', 'groq/compound', 'openai/gpt-oss-120b', 'llama-3.3-70b-versatile', 'llama-3.1-8b-instant'],
         temperature: 0.1,
         groqApiKey: resolvedGroqKey
       });
@@ -10267,9 +10294,9 @@ async function callSpecializedAiText({ prompt, subject = '', customApiKey = '', 
   // 2. English -> Groq -> Gemini -> OpenRouter
   if (isEnglish && resolvedGroqKey) {
     try {
-      console.log('[Router] 🇬🇧 Routing English to Groq (Llama 3.3 70B / Llama 3.1 8B)...');
+      console.log('[Router] 🇬🇧 Routing English to Groq (Qwen 3.8 / Compound / Llama)...');
       const res = await callGroqAiText(prompt, {
-        models: ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant'],
+        models: ['qwen/qwen3.8-27b', 'groq/compound', 'llama-3.3-70b-versatile', 'llama-3.1-8b-instant'],
         temperature: 0.15,
         groqApiKey: resolvedGroqKey
       });
@@ -10310,9 +10337,9 @@ async function callSpecializedAiText({ prompt, subject = '', customApiKey = '', 
 
   // 5. Final fallback attempt with Groq if key exists
   if (resolvedGroqKey) {
-    console.log('[Router] Final fallback attempt with Groq (Llama 3.3 70B / Llama 3.1 8B)...');
+    console.log('[Router] Final fallback attempt with Groq (Qwen 3.8 / Compound / Llama)...');
     const lastRes = await callGroqAiText(prompt, {
-      models: ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'mixtral-8x7b-32768'],
+      models: ['qwen/qwen3.8-27b', 'groq/compound', 'openai/gpt-oss-120b', 'llama-3.3-70b-versatile', 'llama-3.1-8b-instant'],
       groqApiKey: resolvedGroqKey
     });
     return { text: lastRes.text, engine: `Groq (${lastRes.model})` };
@@ -10714,7 +10741,7 @@ ${JSON.stringify(blindQuestions, null, 2)}
     try {
       console.log('[Cross-Audit] 🥊 Primary is Gemini -> Sending to Groq for Blind Audit...');
       const groqRes = await callGroqAiText(blindPrompt, {
-        models: ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant'],
+        models: ['qwen/qwen3.8-27b', 'groq/compound', 'llama-3.3-70b-versatile', 'llama-3.1-8b-instant'],
         temperature: 0.1,
         groqApiKey
       });
