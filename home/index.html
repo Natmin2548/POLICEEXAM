@@ -1339,73 +1339,59 @@
     </div>
   </div>
 
-  <!-- Select Police Exam Track Modal (สายสอบ: ปราบปราม vs อำนวยการ/พิสูจน์หลักฐาน) -->
-  <div id="selectPoliceTrackModal" class="modal-overlay"
+  <!-- Select Police Exam Track Modal (Pretest 150 ข้อ) -->
+  <div id="selectPoliceTrackModal" class="modal-overlay" onclick="if(event.target === this) closePoliceTrackModal();"
     style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 10000; align-items: center; justify-content: center; padding: 16px;">
     <div
-      style="background: white; border-radius: 28px; padding: 24px 20px; max-width: 420px; width: 100%; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); border: 1.5px solid #FEE2E2; animation: scalePop 0.25s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column;">
+      style="background: white; border-radius: 28px; padding: 26px 22px; max-width: 440px; width: 100%; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); border: 1.5px solid #F1F5F9; animation: scalePop 0.25s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column;">
 
-      <!-- Modal Header -->
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-        <span
-          style="background: #FEF2F2; color: #BD1B0B; font-weight: 700; font-size: 11.5px; padding: 4px 12px; border-radius: 999px; border: 1px solid #FECACA;">
-          🔥 แบบทดสอบประจำวัน (Streak)
-        </span>
+      <!-- Header with Back Arrow and Title -->
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
         <button onclick="closePoliceTrackModal()"
-          style="background: #F1F5F9; border: none; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; color: #64748B; cursor: pointer; font-weight: 700;">&times;</button>
+          style="background: none; border: none; font-size: 22px; cursor: pointer; color: #0F172A; line-height: 1; padding: 4px 6px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-family: inherit;" title="ย้อนกลับ">
+          ←
+        </button>
+        <h2 style="margin: 0; font-size: 20px; font-weight: 800; color: #0F172A; letter-spacing: -0.01em;">Pretest 150 ข้อ</h2>
       </div>
+      <p style="margin: 0 0 20px 38px; font-size: 13.5px; color: #94A3B8; font-weight: 500;">เลือกสายที่ต้องการสอบ</p>
 
-      <h3 style="margin: 0 0 6px 0; font-size: 18px; font-weight: 800; color: #0F172A;">เลือกสายการสอบ</h3>
-      <p style="margin: 0 0 18px 0; font-size: 13px; color: #64748B; line-height: 1.45;">เลือกสายที่คุณกำลังเตรียมตัวสอบ
-        เพื่อทำข้อสอบตรงตามวิชาและรักษา Streak วันนี้</p>
+      <!-- 3 Clean Track Cards -->
+      <div style="display: flex; flex-direction: column; gap: 12px;">
 
-      <!-- 2 Track Cards -->
-      <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 18px;">
-
-        <!-- Track 1: สายปราบปราม -->
+        <!-- Card 1: สายปราบปราม -->
         <button onclick="startStreakChallenge('ปราบปราม')"
-          style="background: #FFFFFF; border: 2px solid #FEE2E2; border-radius: 18px; padding: 16px; text-align: left; cursor: pointer; transition: all 0.15s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.04); display: flex; align-items: center; gap: 14px;">
-          <div
-            style="width: 48px; height: 48px; border-radius: 14px; background: #FEF2F2; color: #BD1B0B; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; border: 1px solid #FECACA;">
-            👮‍♂️
-          </div>
-          <div style="flex: 1;">
-            <div
-              style="font-weight: 800; font-size: 15.5px; color: #0F172A; margin-bottom: 2px; display: flex; align-items: center; justify-content: space-between;">
-              <span>สายปราบปราม</span>
-              <span
-                style="font-size: 11px; background: #FEF2F2; color: #BD1B0B; padding: 2px 8px; border-radius: 999px; font-weight: 700;">นปพ.
-                / ปป.</span>
-            </div>
-            <div style="font-size: 12px; color: #64748B; line-height: 1.4;">นายสิบตำรวจ</div>
+          style="width: 100%; background: #FFFFFF; border: 1.5px solid #F1F5F9; border-radius: 20px; padding: 20px 18px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.02); font-family: inherit;">
+          <span style="font-size: 17px; font-weight: 800; color: #0F172A;">สายปราบปราม</span>
+          <div style="width: 38px; height: 38px; border-radius: 50%; background: #C62828; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 3px 8px rgba(198, 40, 40, 0.28);">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
           </div>
         </button>
 
-        <!-- Track 2: สายอำนวยการ / พิสูจน์หลักฐาน -->
+        <!-- Card 2: สายอำนวยการ -->
         <button onclick="startStreakChallenge('อำนวยการ_พิสูจน์หลักฐาน')"
-          style="background: #FFFFFF; border: 2px solid #FEE2E2; border-radius: 18px; padding: 16px; text-align: left; cursor: pointer; transition: all 0.15s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.04); display: flex; align-items: center; gap: 14px;">
-          <div
-            style="width: 48px; height: 48px; border-radius: 14px; background: #FEF2F2; color: #BD1B0B; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; border: 1px solid #FECACA;">
-            📑
+          style="width: 100%; background: #FFFFFF; border: 1.5px solid #F1F5F9; border-radius: 20px; padding: 20px 18px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.02); font-family: inherit;">
+          <span style="font-size: 17px; font-weight: 800; color: #0F172A;">สายอำนวยการ</span>
+          <div style="width: 38px; height: 38px; border-radius: 50%; background: #C62828; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 3px 8px rgba(198, 40, 40, 0.28);">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
           </div>
-          <div style="flex: 1;">
-            <div
-              style="font-weight: 800; font-size: 15.5px; color: #0F172A; margin-bottom: 2px; display: flex; align-items: center; justify-content: space-between;">
-              <span>สายอำนวยการ / พิสูจน์หลักฐาน</span>
-              <span
-                style="font-size: 11px; background: #FEF2F2; color: #BD1B0B; padding: 2px 8px; border-radius: 999px; font-weight: 700;">อก.
-                / พฐ.</span>
-            </div>
-            <div style="font-size: 12px; color: #64748B; line-height: 1.4;">เน้นระเบียบสารบรรณ </div>
+        </button>
+
+        <!-- Card 3: ทำข้อสอบรายวิชา -->
+        <button onclick="closePoliceTrackModal(); window.location.href='bank.html';"
+          style="width: 100%; background: #FFFFFF; border: 1.5px solid #F1F5F9; border-radius: 20px; padding: 20px 18px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.02); font-family: inherit;">
+          <span style="font-size: 17px; font-weight: 800; color: #0F172A;">ทำข้อสอบรายวิชา</span>
+          <div style="width: 38px; height: 38px; border-radius: 50%; background: #C62828; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 3px 8px rgba(198, 40, 40, 0.28);">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
           </div>
         </button>
 
       </div>
-
-      <button onclick="closePoliceTrackModal()"
-        style="width: 100%; background: #F8FAFC; border: 1.5px solid #E2E8F0; border-radius: 999px; padding: 11px; font-weight: 700; color: #64748B; font-size: 13px; cursor: pointer; font-family: inherit;">
-        ยกเลิก
-      </button>
 
     </div>
   </div>
