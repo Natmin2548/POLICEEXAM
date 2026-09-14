@@ -608,25 +608,44 @@ window.toggleProfileDropdown = function(e) {
   }
   const dropdown = document.getElementById('profileDropdown');
   if (dropdown) {
-    dropdown.classList.toggle('active');
+    const isNowActive = dropdown.classList.toggle('active');
+    if (isNowActive) {
+      try {
+        let u = window.userProfile || window.currentUser;
+        if (!u) {
+          const cached = localStorage.getItem('userProfile') || localStorage.getItem('user');
+          if (cached) u = JSON.parse(cached);
+        }
+        const role = ((u && u.role) || '').toUpperCase();
+        const isAdmin = (role === 'ADMIN' || role === 'OWNER');
+        const adminPanelEl = document.getElementById('dropdownAdminPanel');
+        if (adminPanelEl) {
+          adminPanelEl.style.display = isAdmin ? 'flex' : 'none';
+        }
+      } catch (err) {
+        console.warn('Admin check on dropdown toggle:', err);
+      }
+    }
   }
 };
 
-const btnProfileMenu = document.getElementById('btnProfileMenu');
 const profileDropdown = document.getElementById('profileDropdown');
-
-if (btnProfileMenu && profileDropdown) {
-  btnProfileMenu.addEventListener('click', (e) => {
+if (profileDropdown) {
+  profileDropdown.addEventListener('click', (e) => {
     e.stopPropagation();
-    profileDropdown.classList.toggle('active');
-  });
-
-  document.addEventListener('click', (e) => {
-    if (profileDropdown && !profileDropdown.contains(e.target) && !btnProfileMenu.contains(e.target)) {
-      profileDropdown.classList.remove('active');
-    }
   });
 }
+
+document.addEventListener('click', (e) => {
+  const dropdown = document.getElementById('profileDropdown');
+  const btn = document.getElementById('btnProfileMenu');
+  const greeting = document.querySelector('.nav-greeting');
+  if (dropdown && dropdown.classList.contains('active')) {
+    if (!dropdown.contains(e.target) && (!btn || !btn.contains(e.target)) && (!greeting || !greeting.contains(e.target))) {
+      dropdown.classList.remove('active');
+    }
+  }
+});
 
 // 2. Notifications Bell Toggle
 const btnNotification = document.getElementById('btnNotification');
