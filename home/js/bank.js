@@ -26,318 +26,141 @@ const SUBJECT_CONFIG = {
     iconColor: '#E11D48',
     chapters: [
       'บทที่ 1 วิเคราะห์บทความ',
-      'บทที่ 2 โวหารการเขียน',
-      'บทที่ 3 การสะกดคำและความหมาย',
-      'บทที่ 4 การเรียงประโยค',
-      'บทที่ 5 การใช้คำฟุ่มเฟือยและกำกวม',
-      'บทที่ 6 คำราชาศัพท์และระดับภาษา',
-      'บทที่ 7 สำนวน สุภาษิต คำพังเพย'
+      'บทที่ 2 โวหารการเขียน'
     ],
     sets: []
   },
   'ทั่วไป': {
     title: 'ความสามารถทั่วไป',
-    subtitle: 'คณิตศาสตร์ อนุกรม ร้อยละ สมการ และตรรกศาสตร์ (19 บทเรียน)',
+    subtitle: 'คณิตศาสตร์ อนุกรม ร้อยละ สมการ และตรรกศาสตร์',
     badge: 'คำนวณ & ตรรกะ',
     icon: '🧠',
     iconBg: '#F3E8FF',
     iconColor: '#9333EA',
     chapters: [
       'บทที่ 1 อนุกรม',
-      'บทที่ 2 อุปมา-อุปไมย',
-      'บทที่ 3 IQ (โอเปเรชั่น และฝึกการคิดทั่วไป)',
-      'บทที่ 4 เลขพื้นฐาน (กฎของเลขทั่วไป บวก ลบ คูณ หาร)',
-      'บทที่ 5 ห.ร.ม และ ค.ร.น',
-      'บทที่ 6 อัตราส่วน',
-      'บทที่ 7 ร้อยละ',
-      'บทที่ 8 สมการ',
-      'บทที่ 9 เลขยกกำลังและพหุนาม',
-      'บทที่ 10 อสมการ',
-      'บทที่ 11 ความน่าจะเป็น',
-      'บทที่ 12 เลขคณิตและเรขาคณิต',
-      'บทที่ 13 พื้นที่และปริมาตร',
-      'บทที่ 14 สามเหลี่ยม',
-      'บทที่ 15 เลขฐาน',
-      'บทที่ 16 เลข สถิติ',
-      'บทที่ 17 เลข เซต',
-      'บทที่ 18 ตรรกศาสตร์',
-      'บทที่ 19 การให้เหตุผล'
+      'บทที่ 2 อุปมา-อุปไมย'
     ],
     sets: []
   },
   'ความสามารถทั่วไป': {
     title: 'ความสามารถทั่วไป',
-    subtitle: 'คณิตศาสตร์ อนุกรม ร้อยละ สมการ และตรรกศาสตร์ (19 บทเรียน)',
+    subtitle: 'คณิตศาสตร์ อนุกรม ร้อยละ สมการ และตรรกศาสตร์',
     badge: 'คำนวณ & ตรรกะ',
     icon: '🧠',
     iconBg: '#F3E8FF',
     iconColor: '#9333EA',
     chapters: [
       'บทที่ 1 อนุกรม',
-      'บทที่ 2 อุปมา-อุปไมย',
-      'บทที่ 3 IQ (โอเปเรชั่น และฝึกการคิดทั่วไป)',
-      'บทที่ 4 เลขพื้นฐาน (กฎของเลขทั่วไป บวก ลบ คูณ หาร)',
-      'บทที่ 5 ห.ร.ม และ ค.ร.น',
-      'บทที่ 6 อัตราส่วน',
-      'บทที่ 7 ร้อยละ',
-      'บทที่ 8 สมการ'
+      'บทที่ 2 อุปมา-อุปไมย'
     ],
     sets: []
   },
   'คอม': {
-    title: 'เทคโนโลยีสารสนเทศ',
-    subtitle: 'ระบบเครือข่าย ซอฟต์แวร์ อินเทอร์เน็ต ความปลอดภัย และโปรแกรมสำนักงาน',
+    title: 'คอมพิวเตอร์',
+    subtitle: 'ระบบเครือข่าย ซอฟต์แวร์ อินเทอร์เน็ต ความปลอดภัย และเทคโนโลยีสารสนเทศ',
     badge: 'ดิจิทัล & คอมฯ',
     icon: '💻',
     iconBg: '#EFF6FF',
     iconColor: '#2563EB',
     chapters: [
       'บทที่ 1 ความรู้พื้นฐานและประวัติคอมพิวเตอร์',
-      'บทที่ 2 ข้อมูลและสารสนเทศ',
-      'บทที่ 3 IPOS และหน่วยประมวลผล',
-      'บทที่ 4 ซอฟต์แวร์',
-      'บทที่ 5 ชนิดข้อมูลและรหัสแทนข้อมูล',
-      'บทที่ 6 Procedure และผังงาน (Flowchart)',
-      'บทที่ 7 ระบบเครือข่ายคอมพิวเตอร์',
-      'บทที่ 8 Internet',
-      'บทที่ 9 E-commerce',
-      'บทที่ 10 ความปลอดภัยของคอมพิวเตอร์',
-      'บทที่ 11 Social Media และ Cloud',
-      'บทที่ 12 Microsoft Word',
-      'บทที่ 13 Microsoft Excel',
-      'บทที่ 14 PowerPoint (คำสั่งลัด)'
+      'บทที่ 2 ข้อมูลและสารสนเทศ'
     ],
     sets: []
   },
   'คอมพิวเตอร์': {
-    title: 'เทคโนโลยีสารสนเทศ',
-    subtitle: 'ระบบเครือข่าย ซอฟต์แวร์ อินเทอร์เน็ต ความปลอดภัย และโปรแกรมสำนักงาน',
+    title: 'คอมพิวเตอร์',
+    subtitle: 'ระบบเครือข่าย ซอฟต์แวร์ อินเทอร์เน็ต ความปลอดภัย และเทคโนโลยีสารสนเทศ',
     badge: 'ดิจิทัล & คอมฯ',
     icon: '💻',
     iconBg: '#EFF6FF',
     iconColor: '#2563EB',
     chapters: [
       'บทที่ 1 ความรู้พื้นฐานและประวัติคอมพิวเตอร์',
-      'บทที่ 2 ข้อมูลและสารสนเทศ',
-      'บทที่ 3 IPOS และหน่วยประมวลผล',
-      'บทที่ 4 ซอฟต์แวร์'
+      'บทที่ 2 ข้อมูลและสารสนเทศ'
     ],
     sets: []
   },
   'กฏหมาย': {
-    title: 'กฎหมายที่ประชาชนควรรู้',
-    subtitle: 'กฎหมายรัฐธรรมนูญ กฎหมายปกครอง กฎหมายแพ่งและพาณิชย์ กฎหมายอาญา และกฎหมายเฉพาะด้าน',
-    badge: 'กฎหมายตำรวจ',
+    title: 'กฎหมาย',
+    subtitle: 'กฎหมายที่ประชาชนควรรู้ ประมวลกฎหมาย และแนวทางปฏิบัติราชการ',
+    badge: 'นิติศาสตร์',
     icon: '⚖️',
     iconBg: '#FEF3C7',
     iconColor: '#D97706',
     chapters: [
-      'บทที่ 1 ความรู้ทั่วไปเกี่ยวกับกฎหมาย',
-      'บทที่ 2 ความรู้ทั่วไปเกี่ยวกับรัฐ',
-      'บทที่ 3 ประวัติศาสตร์กฎหมายไทย',
-      'บทที่ 4 รัฐธรรมนูญ (กฎหมายสูงสุด)',
-      'บทที่ 5 กฎหมายปกครอง (กฎหมายมหาชน)',
-      'บทที่ 6 กฎหมายแพ่ง — บุคคล',
-      'บทที่ 7 กฎหมายแพ่ง — ทรัพย์',
-      'บทที่ 8 กฎหมายแพ่ง — นิติกรรมและสัญญา',
-      'บทที่ 9 กฎหมายแพ่ง — หนี้',
-      'บทที่ 10 กฎหมายแพ่ง — ครอบครัว',
-      'บทที่ 11 กฎหมายแพ่ง — มรดกและพินัยกรรม',
-      'บทที่ 12 กฎหมายอาญา — หลักทั่วไป',
-      'บทที่ 13 กฎหมายอาญา — โครงสร้างความรับผิดทางอาญา',
-      'บทที่ 14 กฎหมายอาญา — เหตุยกเว้นความผิด/โทษ และบทลงโทษ',
-      'บทที่ 15 กฎหมายอาญา — ตัวการ ผู้ใช้ ผู้สนับสนุน',
-      'บทที่ 16 ความผิดเกี่ยวกับทรัพย์ (อาญา)',
-      'บทที่ 17 ทรัพย์สินทางปัญญา',
-      'บทที่ 18 กฎหมายคุ้มครองผู้บริโภคและ PDPA',
-      'บทที่ 19 กฎหมายแรงงาน',
-      'บทที่ 20 กฎหมายภาษี',
-      'บทที่ 21 กฎหมายทั่วไปเกี่ยวกับทะเบียนราษฎร์และสิทธิพลเมือง',
-      'บทที่ 22 กฎหมายเฉพาะเรื่องอื่นๆ'
+      'บทที่ 2 ความรู้ทั่วไปเกี่ยวกับรัฐ'
     ],
     sets: []
   },
   'กฎหมาย': {
-    title: 'กฎหมายที่ประชาชนควรรู้',
-    subtitle: 'กฎหมายรัฐธรรมนูญ กฎหมายปกครอง กฎหมายแพ่งและพาณิชย์ กฎหมายอาญา และกฎหมายเฉพาะด้าน',
-    badge: 'กฎหมายตำรวจ',
+    title: 'กฎหมาย',
+    subtitle: 'กฎหมายที่ประชาชนควรรู้ ประมวลกฎหมาย และแนวทางปฏิบัติราชการ',
+    badge: 'นิติศาสตร์',
     icon: '⚖️',
     iconBg: '#FEF3C7',
     iconColor: '#D97706',
     chapters: [
-      'บทที่ 1 ความรู้ทั่วไปเกี่ยวกับกฎหมาย',
-      'บทที่ 2 ความรู้ทั่วไปเกี่ยวกับรัฐ',
-      'บทที่ 3 ประวัติศาสตร์กฎหมายไทย',
-      'บทที่ 4 รัฐธรรมนูญ (กฎหมายสูงสุด)',
-      'บทที่ 5 กฎหมายปกครอง (กฎหมายมหาชน)'
+      'บทที่ 2 ความรู้ทั่วไปเกี่ยวกับรัฐ'
     ],
     sets: []
   },
   'สังคม': {
-    title: 'สังคมและวัฒนธรรม',
-    subtitle: 'สังคมวิทยา ศาสนา วัฒนธรรม ภูมิศาสตร์ และอาเซียน (10 บทเรียน)',
-    badge: 'รอบรู้สังคม',
+    title: 'สังคม',
+    subtitle: 'สังคม วัฒนธรรม จริยธรรม สิทธิมนุษยชน และความรู้เกี่ยวกับอาเซียน',
+    badge: 'สังคม & จริยธรรม',
     icon: '🌍',
     iconBg: '#ECFDF5',
     iconColor: '#059669',
     chapters: [
       'บทที่ 1 สังคมวิทยา',
-      'บทที่ 2 วัฒนธรรม ประเพณี และสังคมไทย',
-      'บทที่ 3 หลักธรรมาภิบาล',
-      'บทที่ 4 ศาสนา',
-      'บทที่ 5 Thailand ยุทธศาสตร์ แผนพัฒนาเศรษฐกิจ',
-      'บทที่ 6 เศรษฐกิจพอเพียง',
-      'บทที่ 7 ประวัติศาสตร์ และบุคคลสำคัญ',
-      'บทที่ 8 ภูมิศาสตร์',
-      'บทที่ 9 เศรษฐศาสตร์พื้นฐาน',
-      'บทที่ 10 อาเซียน'
+      'บทที่ 2 วัฒนธรรม ประเพณี และสังคมไทย'
     ],
     sets: []
   },
   'งานสารบรรณ': {
     title: 'งานสารบรรณ',
-    subtitle: 'ระเบียบสำนักนายกรัฐมนตรี พ.ศ. ๒๕๒๖ และแก้ไขเพิ่มเติม',
-    badge: 'วิชาหลักสำคัญ',
+    subtitle: 'ระเบียบสำนักนายกรัฐมนตรีว่าด้วยงานสารบรรณ พ.ศ. ๒๕๒๖ และแก้ไขเพิ่มเติม',
+    badge: 'งานสารบรรณ',
     icon: '📄',
     iconBg: '#FFF7ED',
     iconColor: '#EA580C',
     chapters: [
       'บทที่ 1 บทนำและนิยาม',
       'บทที่ 2 มาตรฐานแบบพิมพ์ ตราครุฑ',
-      'บทที่ 3 หนังสือภายนอก หนังสือภายใน หนังสือประทับตรา',
-      'บทที่ 4 หนังสือสั่งการ',
-      'บทที่ 5 หนังสือประชาสัมพันธ์',
-      'บทที่ 6 หนังสือที่เจ้าหน้าที่จัดทำขึ้นหรือรับไว้เป็นหลักฐาน',
-      'บทที่ 7 เบ็ดเตล็ด สำเนา สำเนาคู่ฉบับ หนังสือเวียน',
-      'บทที่ 8 การรับส่งหนังสือ',
-      'บทที่ 9 การเก็บรักษา',
-      'บทที่ 10 การยืม',
-      'บทที่ 11 การทำลาย',
-      'บทที่ 12 ระบบสารบรรณอิเล็กทรอนิกส์',
-      'บทที่ 13 รหัสพยัญชนะประจำส่วนราชการ'
+      'บทที่ 3 หนังสือภายนอก หนังสือภายใน หนังสือประทับตรา'
     ],
     sets: []
   },
   'ลักษณะที่54': {
-    title: 'ลักษณะที่ ๕๔',
-    subtitle: 'ประมวลระเบียบการตำรวจไม่เกี่ยวกับคดี ลักษณะที่ ๕๔ งานสารบรรณ ตร.',
-    badge: 'ระเบียบเฉพาะ ตร.',
+    title: 'ลักษณะที่ 54',
+    subtitle: 'ประมวลระเบียบการตำรวจไม่เกี่ยวกับคดี ลักษณะที่ ๕๔ งานสารบรรณ (พ.ศ. ๒๕๕๖)',
+    badge: 'สารบรรณตำรวจ',
     icon: '📋',
     iconBg: '#FDF2F8',
     iconColor: '#BE185D',
     chapters: [
       'บทที่ ๑: บทนำ และขอบเขตงานสารบรรณตำรวจ',
       'บทที่ ๑-๒: การลงชื่อ การสั่งการ และการใช้บันทึกข้อความ',
-      'บทที่ ๒-๓: เลขที่คำสั่งในบันทึกข้อความ และการเสนอ ผบ.ตร. (๕ หัวข้อ)',
-      'บทที่ ๔-๖: ศูนย์รับส่งหนังสือ ตร. และการรับรองสำเนา (ร.ต.ต.ขึ้นไป)',
-      'บทที่ ๗: เลขที่หนังสือออก และรหัสประจำหน่วยงาน ตร (ตร ๐๐๐๑-๐๐๓๖)',
-      'บทที่ ๘: คำย่อยศและตำแหน่งข้าราชการตำรวจ (ไทย)',
-      'บทที่ ๘: คำย่อยศและตำแหน่งข้าราชการตำรวจ (English Abbreviations)',
-      'บทที่ ๑๐-๑๑: ประกาศเจ้าพนักงานจราจร และไปรษณีย์สนามตำรวจชายแดน'
+      'บทที่ ๒-๓: เลขที่คำสั่งในบันทึกข้อความ และการเสนอ ผบ.ตร. (๕ หัวข้อ)'
     ],
     sets: []
   },
   'ลักษณะที่ 54': {
-    title: 'ลักษณะที่ ๕๔',
-    subtitle: 'ประมวลระเบียบการตำรวจไม่เกี่ยวกับคดี ลักษณะที่ ๕๔ งานสารบรรณ ตร.',
-    badge: 'ระเบียบเฉพาะ ตร.',
+    title: 'ลักษณะที่ 54',
+    subtitle: 'ประมวลระเบียบการตำรวจไม่เกี่ยวกับคดี ลักษณะที่ ๕๔ งานสารบรรณ (พ.ศ. ๒๕๕๖)',
+    badge: 'สารบรรณตำรวจ',
     icon: '📋',
     iconBg: '#FDF2F8',
     iconColor: '#BE185D',
     chapters: [
       'บทที่ ๑: บทนำ และขอบเขตงานสารบรรณตำรวจ',
       'บทที่ ๑-๒: การลงชื่อ การสั่งการ และการใช้บันทึกข้อความ',
-      'บทที่ ๒-๓: เลขที่คำสั่งในบันทึกข้อความ และการเสนอ ผบ.ตร. (๕ หัวข้อ)',
-      'บทที่ ๔-๖: ศูนย์รับส่งหนังสือ ตร. และการรับรองสำเนา (ร.ต.ต.ขึ้นไป)',
-      'บทที่ ๗: เลขที่หนังสือออก และรหัสประจำหน่วยงาน ตร (ตร ๐๐๐๑-๐๐๓๖)',
-      'บทที่ ๘: คำย่อยศและตำแหน่งข้าราชการตำรวจ (ไทย)',
-      'บทที่ ๘: คำย่อยศและตำแหน่งข้าราชการตำรวจ (English Abbreviations)',
-      'บทที่ ๑๐-๑๑: ประกาศเจ้าพนักงานจราจร และไปรษณีย์สนามตำรวจชายแดน'
-    ],
-    sets: []
-  },
-  'ลักษณะที่ ๕๔': {
-    title: 'ลักษณะที่ ๕๔',
-    subtitle: 'ประมวลระเบียบการตำรวจไม่เกี่ยวกับคดี ลักษณะที่ ๕๔ งานสารบรรณ ตร.',
-    badge: 'ระเบียบเฉพาะ ตร.',
-    icon: '📋',
-    iconBg: '#FDF2F8',
-    iconColor: '#BE185D',
-    chapters: [
-      'บทที่ ๑: บทนำ และขอบเขตงานสารบรรณตำรวจ',
-      'บทที่ ๑-๒: การลงชื่อ การสั่งการ และการใช้บันทึกข้อความ',
-      'บทที่ ๒-๓: เลขที่คำสั่งในบันทึกข้อความ และการเสนอ ผบ.ตร. (๕ หัวข้อ)',
-      'บทที่ ๔-๖: ศูนย์รับส่งหนังสือ ตร. และการรับรองสำเนา (ร.ต.ต.ขึ้นไป)',
-      'บทที่ ๗: เลขที่หนังสือออก และรหัสประจำหน่วยงาน ตร (ตร ๐๐๐๑-๐๐๓๖)',
-      'บทที่ ๘: คำย่อยศและตำแหน่งข้าราชการตำรวจ (ไทย)',
-      'บทที่ ๘: คำย่อยศและตำแหน่งข้าราชการตำรวจ (English Abbreviations)',
-      'บทที่ ๑๐-๑๑: ประกาศเจ้าพนักงานจราจร และไปรษณีย์สนามตำรวจชายแดน'
+      'บทที่ ๒-๓: เลขที่คำสั่งในบันทึกข้อความ และการเสนอ ผบ.ตร. (๕ หัวข้อ)'
     ],
     sets: []
   }
-};
-
-const BANK_SUBJECT_CHAPTERS = {
-  'งานสารบรรณ': [
-    'บทที่ 1 บทนำและนิยาม',
-    'บทที่ 2 มาตรฐานแบบพิมพ์ ตราครุฑ',
-    'บทที่ 3 หนังสือภายนอก หนังสือภายใน หนังสือประทับตรา',
-    'บทที่ 4 หนังสือสั่งการ',
-    'บทที่ 5 หนังสือประชาสัมพันธ์',
-    'บทที่ 6 หนังสือที่เจ้าหน้าที่จัดทำขึ้นหรือรับไว้เป็นหลักฐาน',
-    'บทที่ 7 เบ็ดเตล็ด สำเนา สำเนาคู่ฉบับ หนังสือเวียน',
-    'บทที่ 8 การรับส่งหนังสือ',
-    'บทที่ 9 การเก็บรักษา',
-    'บทที่ 10 การยืม',
-    'บทที่ 11 การทำลาย',
-    'บทที่ 12 ระบบสารบรรณอิเล็กทรอนิกส์',
-    'บทที่ 13 รหัสพยัญชนะประจำส่วนราชการ'
-  ],
-  'ลักษณะที่54': [
-    'บทที่ ๑: บทนำ และขอบเขตงานสารบรรณตำรวจ',
-    'บทที่ ๑-๒: การลงชื่อ การสั่งการ และการใช้บันทึกข้อความ',
-    'บทที่ ๒-๓: เลขที่คำสั่งในบันทึกข้อความ และการเสนอ ผบ.ตร. (๕ หัวข้อ)',
-    'บทที่ ๔-๖: ศูนย์รับส่งหนังสือ ตร. และการรับรองสำเนา (ร.ต.ต.ขึ้นไป)',
-    'บทที่ ๗: เลขที่หนังสือออก และรหัสประจำหน่วยงาน ตร (ตร ๐๐๐๑-๐๐๓๖)',
-    'บทที่ ๘: คำย่อยศและตำแหน่งข้าราชการตำรวจ (ไทย)',
-    'บทที่ ๘: คำย่อยศและตำแหน่งข้าราชการตำรวจ (English Abbreviations)',
-    'บทที่ ๑๐-๑๑: ประกาศเจ้าพนักงานจราจร และไปรษณีย์สนามตำรวจชายแดน'
-  ],
-  'ทั่วไป': [
-    'บทที่ 1 อนุกรม',
-    'บทที่ 2 อุปมา-อุปไมย',
-    'บทที่ 3 IQ (โอเปเรชั่น และฝึกการคิดทั่วไป)',
-    'บทที่ 4 เลขพื้นฐาน (กฎของเลขทั่วไป บวก ลบ คูณ หาร)',
-    'บทที่ 5 ห.ร.ม และ ค.ร.น',
-    'บทที่ 6 อัตราส่วน',
-    'บทที่ 7 ร้อยละ',
-    'บทที่ 8 สมการ'
-  ],
-  'คอม': [
-    'บทที่ 1 ความรู้พื้นฐานและประวัติคอมพิวเตอร์',
-    'บทที่ 2 ข้อมูลและสารสนเทศ',
-    'บทที่ 3 IPOS และหน่วยประมวลผล',
-    'บทที่ 4 ซอฟต์แวร์'
-  ],
-  'กฏหมาย': [
-    'บทที่ 1 ความรู้ทั่วไปเกี่ยวกับกฎหมาย',
-    'บทที่ 2 ความรู้ทั่วไปเกี่ยวกับรัฐ',
-    'บทที่ 3 ประวัติศาสตร์กฎหมายไทย',
-    'บทที่ 4 รัฐธรรมนูญ (กฎหมายสูงสุด)',
-    'บทที่ 5 กฎหมายปกครอง (กฎหมายมหาชน)'
-  ],
-  'สังคม': [
-    'บทที่ 1 สังคมวิทยา',
-    'บทที่ 2 วัฒนธรรม ประเพณี และสังคมไทย',
-    'บทที่ 3 หลักธรรมาภิบาล',
-    'บทที่ 4 ศาสนา'
-  ],
-  'ภาษาไทย': [
-    'บทที่ 1 วิเคราะห์บทความ',
-    'บทที่ 2 โวหารการเขียน',
-    'บทที่ 3 การสะกดคำและความหมาย',
-    'บทที่ 4 การเรียงประโยค'
-  ]
 };
 
 // ==========================================
@@ -374,12 +197,12 @@ window.renderExamBankList = function() {
           </div>
           <div>
             <div style="font-size: 15.5px; font-weight: 700; color: #0F172A; line-height: 1.35;">ภาษาไทย</div>
-            <div id="bankQCount_thai" style="font-size: 12px; color: #94A3B8; margin-top: 2px; font-weight: 500;">9 ข้อในคลัง</div>
+            <div id="bankQCount_thai" style="font-size: 12px; color: #94A3B8; margin-top: 2px; font-weight: 500;">60 ข้อในคลัง</div>
           </div>
         </div>
         <div style="display: flex; align-items: center; gap: 8px;">
           <span id="bankChapBadge_thai" style="background: #FFF1F2; color: #E11D48; font-weight: 700; font-size: 12px; padding: 4px 12px; border-radius: 999px;">
-            3 บท
+            2 บท
           </span>
           <span style="color: #CBD5E1; font-size: 16px; font-weight: 600;">›</span>
         </div>
@@ -395,12 +218,12 @@ window.renderExamBankList = function() {
           </div>
           <div>
             <div style="font-size: 15.5px; font-weight: 700; color: #0F172A; line-height: 1.35;">ความสามารถทั่วไป</div>
-            <div id="bankQCount_general" style="font-size: 12px; color: #94A3B8; margin-top: 2px; font-weight: 500;">9 ข้อในคลัง</div>
+            <div id="bankQCount_general" style="font-size: 12px; color: #94A3B8; margin-top: 2px; font-weight: 500;">60 ข้อในคลัง</div>
           </div>
         </div>
         <div style="display: flex; align-items: center; gap: 8px;">
           <span id="bankChapBadge_general" style="background: #F3E8FF; color: #9333EA; font-weight: 700; font-size: 12px; padding: 4px 12px; border-radius: 999px;">
-            3 บท
+            2 บท
           </span>
           <span style="color: #CBD5E1; font-size: 16px; font-weight: 600;">›</span>
         </div>
@@ -416,12 +239,12 @@ window.renderExamBankList = function() {
           </div>
           <div>
             <div style="font-size: 15.5px; font-weight: 700; color: #0F172A; line-height: 1.35;">คอมพิวเตอร์</div>
-            <div id="bankQCount_computer" style="font-size: 12px; color: #94A3B8; margin-top: 2px; font-weight: 500;">8 ข้อในคลัง</div>
+            <div id="bankQCount_computer" style="font-size: 12px; color: #94A3B8; margin-top: 2px; font-weight: 500;">60 ข้อในคลัง</div>
           </div>
         </div>
         <div style="display: flex; align-items: center; gap: 8px;">
           <span id="bankChapBadge_computer" style="background: #EFF6FF; color: #2563EB; font-weight: 700; font-size: 12px; padding: 4px 12px; border-radius: 999px;">
-            3 บท
+            2 บท
           </span>
           <span style="color: #CBD5E1; font-size: 16px; font-weight: 600;">›</span>
         </div>
@@ -437,12 +260,12 @@ window.renderExamBankList = function() {
           </div>
           <div>
             <div style="font-size: 15.5px; font-weight: 700; color: #0F172A; line-height: 1.35;">กฎหมาย</div>
-            <div id="bankQCount_law" style="font-size: 12px; color: #94A3B8; margin-top: 2px; font-weight: 500;">9 ข้อในคลัง</div>
+            <div id="bankQCount_law" style="font-size: 12px; color: #94A3B8; margin-top: 2px; font-weight: 500;">30 ข้อในคลัง</div>
           </div>
         </div>
         <div style="display: flex; align-items: center; gap: 8px;">
           <span id="bankChapBadge_law" style="background: #FEF3C7; color: #D97706; font-weight: 700; font-size: 12px; padding: 4px 12px; border-radius: 999px;">
-            3 บท
+            1 บท
           </span>
           <span style="color: #CBD5E1; font-size: 16px; font-weight: 600;">›</span>
         </div>
@@ -458,12 +281,12 @@ window.renderExamBankList = function() {
           </div>
           <div>
             <div style="font-size: 15.5px; font-weight: 700; color: #0F172A; line-height: 1.35;">สังคม</div>
-            <div id="bankQCount_social" style="font-size: 12px; color: #94A3B8; margin-top: 2px; font-weight: 500;">8 ข้อในคลัง</div>
+            <div id="bankQCount_social" style="font-size: 12px; color: #94A3B8; margin-top: 2px; font-weight: 500;">60 ข้อในคลัง</div>
           </div>
         </div>
         <div style="display: flex; align-items: center; gap: 8px;">
           <span id="bankChapBadge_social" style="background: #ECFDF5; color: #059669; font-weight: 700; font-size: 12px; padding: 4px 12px; border-radius: 999px;">
-            3 บท
+            2 บท
           </span>
           <span style="color: #CBD5E1; font-size: 16px; font-weight: 600;">›</span>
         </div>
@@ -479,7 +302,7 @@ window.renderExamBankList = function() {
           </div>
           <div>
             <div style="font-size: 15.5px; font-weight: 700; color: #0F172A; line-height: 1.35;">งานสารบรรณ</div>
-            <div id="bankQCount_saraban" style="font-size: 12px; color: #94A3B8; margin-top: 2px; font-weight: 500;">7 ข้อในคลัง</div>
+            <div id="bankQCount_saraban" style="font-size: 12px; color: #94A3B8; margin-top: 2px; font-weight: 500;">90 ข้อในคลัง</div>
           </div>
         </div>
         <div style="display: flex; align-items: center; gap: 8px;">
@@ -500,7 +323,7 @@ window.renderExamBankList = function() {
           </div>
           <div>
             <div style="font-size: 15.5px; font-weight: 700; color: #0F172A; line-height: 1.35;">ลักษณะที่ 54</div>
-            <div id="bankQCount_law54" style="font-size: 12px; color: #94A3B8; margin-top: 2px; font-weight: 500;">8 ข้อในคลัง</div>
+            <div id="bankQCount_law54" style="font-size: 12px; color: #94A3B8; margin-top: 2px; font-weight: 500;">90 ข้อในคลัง</div>
           </div>
         </div>
         <div style="display: flex; align-items: center; gap: 8px;">
@@ -538,28 +361,79 @@ window.updateBankSubjectCounts = async function() {
     if (!Array.isArray(sets) || sets.length === 0) return;
 
     const subjectsMap = {
-      thai: { countEl: 'bankQCount_thai', chapEl: 'bankChapBadge_thai', defaultQ: 9, keywords: ['ไทย', 'ภาษาไทย'] },
-      general: { countEl: 'bankQCount_general', chapEl: 'bankChapBadge_general', defaultQ: 9, keywords: ['ทั่วไป', 'คณิต', 'คำนวณ', 'อนุกรม'] },
-      computer: { countEl: 'bankQCount_computer', chapEl: 'bankChapBadge_computer', defaultQ: 8, keywords: ['คอม', 'สารสนเทศ', 'ไอที'] },
-      law: { countEl: 'bankQCount_law', chapEl: 'bankChapBadge_law', defaultQ: 9, keywords: ['กฎหมาย', 'กฏหมาย'] },
-      social: { countEl: 'bankQCount_social', chapEl: 'bankChapBadge_social', defaultQ: 8, keywords: ['สังคม', 'วัฒนธรรม', 'จริยธรรม'] },
-      saraban: { countEl: 'bankQCount_saraban', chapEl: 'bankChapBadge_saraban', defaultQ: 7, keywords: ['สารบรรณ', 'งานสารบรรณ'], excludeKeywords: ['๕๔', '54', 'ลักษณะ'] },
-      law54: { countEl: 'bankQCount_law54', chapEl: 'bankChapBadge_law54', defaultQ: 8, keywords: ['๕๔', '54', 'ลักษณะ', 'สารบรรณตำรวจ'] }
+      thai: {
+        countEl: 'bankQCount_thai',
+        chapEl: 'bankChapBadge_thai',
+        match: s => {
+          const cat = s.category || '';
+          const title = s.title || '';
+          return (cat === 'ภาษาไทย' || cat === 'ไทย' || title.includes('แบบทดสอบภาษาไทย')) && !cat.includes('สังคม') && !title.includes('สังคม');
+        }
+      },
+      general: {
+        countEl: 'bankQCount_general',
+        chapEl: 'bankChapBadge_general',
+        match: s => {
+          const cat = s.category || '';
+          const title = s.title || '';
+          return (cat === 'ทั่วไป' || cat === 'ความสามารถทั่วไป' || title.includes('แบบทดสอบทั่วไป')) && !cat.includes('กฏหมาย') && !cat.includes('กฎหมาย') && !title.includes('กฏหมาย') && !title.includes('กฎหมาย');
+        }
+      },
+      computer: {
+        countEl: 'bankQCount_computer',
+        chapEl: 'bankChapBadge_computer',
+        match: s => {
+          const cat = s.category || '';
+          const title = s.title || '';
+          return cat === 'คอม' || cat === 'คอมพิวเตอร์' || cat === 'เทคโนโลยีสารสนเทศ' || title.includes('แบบทดสอบคอม');
+        }
+      },
+      law: {
+        countEl: 'bankQCount_law',
+        chapEl: 'bankChapBadge_law',
+        match: s => {
+          const cat = s.category || '';
+          const title = s.title || '';
+          return cat === 'กฏหมาย' || cat === 'กฎหมาย' || title.includes('แบบทดสอบกฏหมาย') || title.includes('แบบทดสอบกฎหมาย');
+        }
+      },
+      social: {
+        countEl: 'bankQCount_social',
+        chapEl: 'bankChapBadge_social',
+        match: s => {
+          const cat = s.category || '';
+          const title = s.title || '';
+          return cat === 'สังคม' || cat === 'สังคมและวัฒนธรรม' || title.includes('แบบทดสอบสังคม');
+        }
+      },
+      saraban: {
+        countEl: 'bankQCount_saraban',
+        chapEl: 'bankChapBadge_saraban',
+        match: s => {
+          const cat = s.category || '';
+          const title = s.title || '';
+          const isLaw54 = cat.includes('๕๔') || cat.includes('54') || cat.includes('สารบรรณตำรวจ') || title.includes('๕๔') || title.includes('54') || title.includes('สารบรรณตำรวจ');
+          return (cat.includes('สารบรรณ') || cat.includes('งานสารบรรณ') || title.includes('ระเบียบสารบรรณ')) && !isLaw54;
+        }
+      },
+      law54: {
+        countEl: 'bankQCount_law54',
+        chapEl: 'bankChapBadge_law54',
+        match: s => {
+          const cat = s.category || '';
+          const title = s.title || '';
+          return cat.includes('๕๔') || cat.includes('54') || cat.includes('สารบรรณตำรวจ') || cat.includes('ลักษณะ') || title.includes('๕๔') || title.includes('54') || title.includes('สารบรรณตำรวจ');
+        }
+      }
     };
 
     Object.values(subjectsMap).forEach(sub => {
-      const matched = sets.filter(s => {
-        const text = `${s.category || ''} ${s.subcategory || ''} ${s.title || ''}`.toLowerCase();
-        if (sub.excludeKeywords && sub.excludeKeywords.some(k => text.includes(k.toLowerCase()))) {
-          return false;
-        }
-        return sub.keywords.some(k => text.includes(k.toLowerCase()));
-      });
+      const matched = sets.filter(sub.match);
 
       if (matched.length > 0) {
-        const totalQ = matched.reduce((acc, s) => acc + (s.questionsCount || s.totalCount || 25), 0);
+        const totalQ = matched.reduce((acc, s) => acc + (s.questionsCount || s.totalCount || 30), 0);
         const chapSet = new Set(matched.map(s => s.subcategory).filter(Boolean));
-        const chapCount = Math.max(3, chapSet.size);
+        const chapCount = chapSet.size;
 
         const countEl = document.getElementById(sub.countEl);
         const chapEl = document.getElementById(sub.chapEl);
@@ -657,7 +531,7 @@ function renderSubjectChaptersGrid(subjectKey) {
   }
 
   if (chaptersList.length === 0) {
-    chaptersList = BANK_SUBJECT_CHAPTERS[subjectKey] || (SUBJECT_CONFIG[subjectKey]?.chapters || []).filter(c => c !== 'ทุกหมวด') || [];
+    chaptersList = (typeof BANK_SUBJECT_CHAPTERS !== 'undefined' && BANK_SUBJECT_CHAPTERS[subjectKey]) || (SUBJECT_CONFIG[subjectKey]?.chapters || []).filter(c => c !== 'ทุกหมวด') || [];
   }
 
   if (chaptersList.length === 0) {
