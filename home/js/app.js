@@ -1020,14 +1020,8 @@ window.renderExamBankList = function() {
   container.style.margin = '0 auto';
   container.style.padding = '6px 4px';
   container.innerHTML = `
-    <!-- Top Nav Bar: Arrow Back + Title (100% matching Image 1) -->
-    <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 22px; padding: 4px 0;">
-      <button type="button" onclick="switchTabToHome(event)" style="background: none; border: none; cursor: pointer; padding: 4px 6px 4px 0; color: #64748B; display: flex; align-items: center; justify-content: center; line-height: 1; transition: transform 0.15s ease;" title="กลับหน้าแรก">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="19" y1="12" x2="5" y2="12"></line>
-          <polyline points="12 19 5 12 12 5"></polyline>
-        </svg>
-      </button>
+    <!-- Top Nav Bar: Title -->
+    <div style="margin-bottom: 22px; padding: 4px 0;">
       <h2 style="margin: 0; font-size: 20px; font-weight: 700; color: #0F172A; letter-spacing: -0.3px;">คลังข้อสอบรายบท</h2>
     </div>
 
@@ -1187,6 +1181,13 @@ window.renderExamBankList = function() {
       </div>
 
     </div>
+
+    <!-- Back to Home Button at Bottom -->
+    <button type="button" onclick="switchTabToHome(event)"
+      style="width: 100%; margin-top: 28px; padding: 13px 20px; background: #FFFFFF; border: 1.5px solid #BD1B0B; border-radius: 14px; color: #BD1B0B; font-size: 15px; font-weight: 700; font-family: inherit; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.15s ease;"
+      onmouseover="this.style.backgroundColor='#FFF1F2'" onmouseout="this.style.backgroundColor='#FFFFFF'">
+      <span style="font-size: 16px; font-weight: 700;">←</span> <span>กลับหน้าหลัก</span>
+    </button>
   `;
 };
 
