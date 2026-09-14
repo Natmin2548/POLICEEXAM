@@ -1945,6 +1945,7 @@ async function generateQuestionFromTerm(term, apiKey) {
 6. ถ้า record มี "question_types" ให้พยายามเลือกออกข้อสอบในรูปแบบที่ระบุไว้
 7. document ใน "source" ต้องตรงกับ document_name หรือ source ของ record ที่ใช้ และ section ต้องตรงกับ section หรือ category ของ record นั้น
 8. source_line ต้องตรงกับ source_line ของ record ที่ใช้เป๊ะๆ
+9. ❌ ห้ามเฉลยคำตอบหรือบอกใบ้คำตอบในข้อความคำถาม (question) เด็ดขาด เช่น ห้ามใส่ (ตอบ...), ห้ามระบุคำตอบไว้ในเนื้อเรื่องโจทย์แล้วถามซ้ำสิ่งที่เพิ่งบอกไป
 
 ตอบเป็น JSON เท่านั้น ห้ามมี text อื่นนอกจาก JSON:
 {
@@ -1993,8 +1994,11 @@ async function generateQuestionFromTerm(term, apiKey) {
     if (!rawText) throw new Error('No text');
 
     const parsed = JSON.parse(rawText.trim());
+    const sanitizedQ = sanitizeQuestionAnswerLeak({
+      questionText: parsed.question || 'คำถามสารบรรณ'
+    });
     return {
-      questionText: parsed.question || 'คำถามสารบรรณ',
+      questionText: sanitizedQ.questionText,
       choices: parsed.choices || [],
       answer: parsed.answer || 'A',
       explanation: parsed.explanation || 'คำอธิบายเฉลย...',
@@ -2045,6 +2049,10 @@ app.get('/api/exams/generate-ai', authenticateToken, async (req, res) => {
    - คำตอบที่ถูกต้องและคำอธิบายเฉลยต้องตรงตามตัวบทกฎหมายและระเบียบจริง ไม่มั่วข้อเท็จจริง
 5. **คำอธิบายเฉลยที่เจาะลึก (Deep-Dive Explanation)**:
    - อธิบายว่าทำไมข้อที่ถูกจึงถูกต้อง และชี้จุดว่าตัวเลือกหลอกข้ออื่นผิดตรงจุดไหนอย่างชัดเจน
+6. ❌ **ห้ามเฉลยคำตอบในตัวโจทย์ (questionText) เด็ดขาด 100%**:
+   - ห้ามใส่ข้อความเฉลย เช่น (ตอบ ข), [ตอบ ข้อ 2], (เฉลย ค) ไว้ใน questionText
+   - ห้ามบอกคำตอบที่ถูกต้องไว้ในเนื้อหาโจทย์แล้วมาถามซ้ำสิ่งที่เพิ่งบอกไป
+   - ตัวโจทย์ ตัวเลือก และเฉลยต้องสอดคล้องกัน 100%
 
 ผลลัพธ์ที่คุณส่งกลับต้องเป็น JSON Array ของข้อสอบ 10 ข้อนี้เท่านั้น ห้ามมี markdown (เช่น \`\`\`json) หรือข้อความอธิบายใดๆ นอกเหนือจาก JSON:
 [
@@ -2085,21 +2093,24 @@ app.get('/api/exams/generate-ai', authenticateToken, async (req, res) => {
       throw new Error('Parsed response is not a JSON Array');
     }
 
-    // Map into standard structure with mock IDs
-    const questions = parsed.slice(0, 10).map((q, idx) => ({
-      id: `ai-gen-${subject}-${idx}-${Date.now()}`,
-      questionText: q.questionText || q.question || 'ข้อคำถามจำลอง',
-      choice1: q.choice1 || q.choices?.[0] || 'ตัวเลือก ก',
-      choice2: q.choice2 || q.choices?.[1] || 'ตัวเลือก ข',
-      choice3: q.choice3 || q.choices?.[2] || 'ตัวเลือก ค',
-      choice4: q.choice4 || q.choices?.[3] || 'ตัวเลือก ง',
-      correctAnswer: typeof q.correctAnswer === 'number' ? q.correctAnswer : 0,
-      explanation: q.explanation || 'เฉลยรายละเอียด...',
-      examSet: {
-        category: subject,
-        subcategory: 'AI เจนเนอเรต'
-      }
-    }));
+    // Map into standard structure with mock IDs and clean formatting
+    const questions = parsed.slice(0, 10).map((q, idx) => {
+      const raw = {
+        id: `ai-gen-${subject}-${idx}-${Date.now()}`,
+        questionText: q.questionText || q.question || 'ข้อคำถามจำลอง',
+        choice1: q.choice1 || q.choices?.[0] || 'ตัวเลือก ก',
+        choice2: q.choice2 || q.choices?.[1] || 'ตัวเลือก ข',
+        choice3: q.choice3 || q.choices?.[2] || 'ตัวเลือก ค',
+        choice4: q.choice4 || q.choices?.[3] || 'ตัวเลือก ง',
+        correctAnswer: typeof q.correctAnswer === 'number' ? q.correctAnswer : 0,
+        explanation: q.explanation || 'เฉลยรายละเอียด...',
+        examSet: {
+          category: subject,
+          subcategory: 'AI เจนเนอเรต'
+        }
+      };
+      return sanitizeExamQuestionFormatting(sanitizeQuestionAnswerLeak(raw));
+    });
 
     // Run batch verification on the generated questions
     console.log(`[AI Verifier] Running verification for ${questions.length} questions...`);
@@ -9342,75 +9353,56 @@ function buildSubjectSpecificExamPrompt({ subject, subcategory, title, count, co
   const normSubcat = String(subcategory || '').toLowerCase().trim();
   const normTitle = String(title || '').toLowerCase().trim();
 
+  let basePrompt = '';
+
   // 1. HIGHEST PRIORITY: Explicit Subject selection
   // Law / กฎหมายที่ควรรู้
   if (normSub === 'law' || normSub === 'กฏหมาย' || normSub === 'กฎหมาย' || normSub.includes('กฎหมาย') || normSub.includes('กฏหมาย')) {
-    return buildLawPrompt({ count, subcategory, title, contextText });
+    basePrompt = buildLawPrompt({ count, subcategory, title, contextText });
+  } else if (normSub === 'สารบรรณตำรวจ_๕๔' || normSub === 'ลักษณะที่54' || normSub === 'ลักษณะที่ ๕๔' || normSub.includes('๕๔') || normSub.includes('54') || normSub.includes('สารบรรณตำรวจ')) {
+    basePrompt = buildPoliceSaraban54Prompt({ count, subcategory, title, contextText });
+  } else if (normSub === 'งานสารบรรณ_๒๕๒๖' || normSub === 'secretariat' || normSub === 'งานสารบรรณ' || normSub.includes('สารบรรณ') || normSub.includes('๒๕๒๖')) {
+    basePrompt = buildSecretariatPrompt({ count, subcategory, title, contextText });
+  } else if (normSub === 'computer' || normSub === 'คอม' || normSub === 'คอมพิวเตอร์' || normSub.includes('คอม') || normSub.includes('สารสนเทศ')) {
+    basePrompt = buildComputerPrompt({ count, subcategory, title, contextText });
+  } else if (normSub === 'social' || normSub === 'สังคม' || normSub.includes('สังคม') || normSub.includes('จริยธรรม') || normSub.includes('อาเซียน')) {
+    basePrompt = buildSocialPrompt({ count, subcategory, title, contextText });
+  } else if (normSub === 'thai' || normSub === 'ภาษาไทย' || normSub === 'ไทย' || normSub.includes('ภาษาไทย')) {
+    basePrompt = buildThaiPrompt({ count, subcategory, title, contextText });
+  } else if (normSub === 'english' || normSub === 'อังกฤษ' || normSub === 'ภาษาอังกฤษ' || normSub.includes('english') || normSub.includes('อังกฤษ')) {
+    basePrompt = buildEnglishPrompt({ count, subcategory, title, contextText });
+  } else if (normSub === 'general' || normSub === 'ทั่วไป' || normSub === 'ความสามารถทั่วไป' || normSub.includes('ความสามารถทั่วไป') || normSub.includes('คณิต') || normSub.includes('คำนวณ')) {
+    basePrompt = buildGeneralMathPrompt({ count, subcategory, title, contextText });
+  } else if (normTitle.includes('กฎหมาย') || normTitle.includes('กฏหมาย') || normSubcat.includes('กฎหมาย') || normSubcat.includes('กฏหมาย')) {
+    basePrompt = buildLawPrompt({ count, subcategory, title, contextText });
+  } else if (normTitle.includes('๕๔') || normTitle.includes('54') || normTitle.includes('สารบรรณตำรวจ') || normSubcat.includes('๕๔') || normSubcat.includes('54')) {
+    basePrompt = buildPoliceSaraban54Prompt({ count, subcategory, title, contextText });
+  } else if (normTitle.includes('สารบรรณ') || normTitle.includes('๒๕๒๖') || normSubcat.includes('สารบรรณ')) {
+    basePrompt = buildSecretariatPrompt({ count, subcategory, title, contextText });
+  } else if (normTitle.includes('คอม') || normTitle.includes('สารสนเทศ') || normTitle.includes('ไอที') || normSubcat.includes('คอม')) {
+    basePrompt = buildComputerPrompt({ count, subcategory, title, contextText });
+  } else if (normTitle.includes('สังคม') || normTitle.includes('จริยธรรม') || normTitle.includes('อาเซียน') || normSubcat.includes('สังคม')) {
+    basePrompt = buildSocialPrompt({ count, subcategory, title, contextText });
+  } else if (normTitle.includes('อังกฤษ') || normTitle.includes('english') || normSubcat.includes('อังกฤษ') || normSubcat.includes('english')) {
+    basePrompt = buildEnglishPrompt({ count, subcategory, title, contextText });
+  } else if (normTitle.includes('ภาษาไทย') || normSubcat.includes('ภาษาไทย') || normTitle.includes('ภาษา ไทย')) {
+    basePrompt = buildThaiPrompt({ count, subcategory, title, contextText });
+  } else if (normTitle.includes('คณิต') || normTitle.includes('คำนวณ') || normTitle.includes('อนุกรม') || normTitle.includes('โอเปเรชั่น') || normTitle.includes('ความสามารถทั่วไป') || normSubcat.includes('อนุกรม') || normSubcat.includes('โอเปเรชั่น') || normSubcat.includes('ความสามารถทั่วไป') || normSubcat.includes('คณิต')) {
+    basePrompt = buildGeneralMathPrompt({ count, subcategory, title, contextText });
+  } else {
+    basePrompt = buildThaiPrompt({ count, subcategory, title, contextText });
   }
 
-  // Police Saraban 54 / สารบรรณตำรวจ ลักษณะ ๕๔
-  if (normSub === 'สารบรรณตำรวจ_๕๔' || normSub === 'ลักษณะที่54' || normSub === 'ลักษณะที่ ๕๔' || normSub.includes('๕๔') || normSub.includes('54') || normSub.includes('สารบรรณตำรวจ')) {
-    return buildPoliceSaraban54Prompt({ count, subcategory, title, contextText });
-  }
+  const universalAntiLeakRules = `
+⛔️ กฎเหล็กป้องกันการเฉลยคำตอบในตัวโจทย์ (Strict Anti-Answer-Leak & Question-Answer Sync - บังคับ 100%):
+1. ❌ **ห้ามเฉลยคำตอบหรือบอกใบ้คำตอบในข้อความโจทย์คำถาม (questionText) เด็ดขาด 100%**:
+   - ห้ามใส่ข้อความเช่น "(ตอบ ก)", "(ตอบ ข้อ 2)", "[เฉลย ค]", "(คำตอบ: 1)" ใน questionText เด็ดขาด
+   - ห้ามระบุคำตอบที่ถูกต้องไว้ในเนื้อหาโจทย์แล้วมาถามซ้ำสิ่งที่เพิ่งบอกไป เช่น "พ.ร.บ. มีผลบังคับใช้ 1 ม.ค. 2566... ถามว่า พ.ร.บ. มีผลบังคับใช้เมื่อใด"
+   - ห้ามมีข้อความชี้นำที่ทำให้รู้คำตอบโดยไม่ต้องคิด
+2. 🔄 **ความสอดคล้องกัน 100% (100% Question-Answer Consistency)**:
+   - ข้อความคำถาม (questionText) ตัวเลือก ก-ง และคำตอบที่ถูกต้อง (correctOption / correctAnswer) ต้องตรงกันอย่างแม่นยำ ไม่ขัดแย้งกัน`;
 
-  // Secretariat 2526 / ระเบียบสำนักนายกฯ งานสารบรรณ ๒๕๒๖
-  if (normSub === 'งานสารบรรณ_๒๕๒๖' || normSub === 'secretariat' || normSub === 'งานสารบรรณ' || normSub.includes('สารบรรณ') || normSub.includes('๒๕๒๖')) {
-    return buildSecretariatPrompt({ count, subcategory, title, contextText });
-  }
-
-  // Computer / IT / สารสนเทศ
-  if (normSub === 'computer' || normSub === 'คอม' || normSub === 'คอมพิวเตอร์' || normSub.includes('คอม') || normSub.includes('สารสนเทศ')) {
-    return buildComputerPrompt({ count, subcategory, title, contextText });
-  }
-
-  // Social / Ethics / ASEAN / สังคมและวัฒนธรรม
-  if (normSub === 'social' || normSub === 'สังคม' || normSub.includes('สังคม') || normSub.includes('จริยธรรม') || normSub.includes('อาเซียน')) {
-    return buildSocialPrompt({ count, subcategory, title, contextText });
-  }
-
-  // Thai Language / ภาษาไทย
-  if (normSub === 'thai' || normSub === 'ภาษาไทย' || normSub === 'ไทย' || normSub.includes('ภาษาไทย')) {
-    return buildThaiPrompt({ count, subcategory, title, contextText });
-  }
-
-  // English / ภาษาอังกฤษ
-  if (normSub === 'english' || normSub === 'อังกฤษ' || normSub === 'ภาษาอังกฤษ' || normSub.includes('english') || normSub.includes('อังกฤษ')) {
-    return buildEnglishPrompt({ count, subcategory, title, contextText });
-  }
-
-  // General Ability / Math (ONLY when subject explicitly is General Math)
-  if (normSub === 'general' || normSub === 'ทั่วไป' || normSub === 'ความสามารถทั่วไป' || normSub.includes('ความสามารถทั่วไป') || normSub.includes('คณิต') || normSub.includes('คำนวณ')) {
-    return buildGeneralMathPrompt({ count, subcategory, title, contextText });
-  }
-
-  // 2. FALLBACK: Subject was empty or unrecognized -> Infer from Title & Subcategory
-  // Notice: We NEVER match bare 'ทั่วไป' because chapters in law, computer, social contain 'ความรู้ทั่วไป'
-  if (normTitle.includes('กฎหมาย') || normTitle.includes('กฏหมาย') || normSubcat.includes('กฎหมาย') || normSubcat.includes('กฏหมาย')) {
-    return buildLawPrompt({ count, subcategory, title, contextText });
-  }
-  if (normTitle.includes('๕๔') || normTitle.includes('54') || normTitle.includes('สารบรรณตำรวจ') || normSubcat.includes('๕๔') || normSubcat.includes('54')) {
-    return buildPoliceSaraban54Prompt({ count, subcategory, title, contextText });
-  }
-  if (normTitle.includes('สารบรรณ') || normTitle.includes('๒๕๒๖') || normSubcat.includes('สารบรรณ')) {
-    return buildSecretariatPrompt({ count, subcategory, title, contextText });
-  }
-  if (normTitle.includes('คอม') || normTitle.includes('สารสนเทศ') || normTitle.includes('ไอที') || normSubcat.includes('คอม')) {
-    return buildComputerPrompt({ count, subcategory, title, contextText });
-  }
-  if (normTitle.includes('สังคม') || normTitle.includes('จริยธรรม') || normTitle.includes('อาเซียน') || normSubcat.includes('สังคม')) {
-    return buildSocialPrompt({ count, subcategory, title, contextText });
-  }
-  if (normTitle.includes('อังกฤษ') || normTitle.includes('english') || normSubcat.includes('อังกฤษ') || normSubcat.includes('english')) {
-    return buildEnglishPrompt({ count, subcategory, title, contextText });
-  }
-  if (normTitle.includes('ภาษาไทย') || normSubcat.includes('ภาษาไทย') || normTitle.includes('ภาษา ไทย')) {
-    return buildThaiPrompt({ count, subcategory, title, contextText });
-  }
-  if (normTitle.includes('คณิต') || normTitle.includes('คำนวณ') || normTitle.includes('อนุกรม') || normTitle.includes('โอเปเรชั่น') || normTitle.includes('ความสามารถทั่วไป') || normSubcat.includes('อนุกรม') || normSubcat.includes('โอเปเรชั่น') || normSubcat.includes('ความสามารถทั่วไป') || normSubcat.includes('คณิต')) {
-    return buildGeneralMathPrompt({ count, subcategory, title, contextText });
-  }
-
-  return buildThaiPrompt({ count, subcategory, title, contextText });
+  return basePrompt + '\n\n' + universalAntiLeakRules;
 }
 
 // --- Shared Helper: Resolve All Gemini API Keys ---
@@ -9924,6 +9916,86 @@ function detectExplanationAnswerConflict(q) {
   return { hasConflict: false, currentAnswer: currentAns };
 }
 
+// --- Helper: Detect and Sanitize Question Text Leaking the Correct Answer ---
+function detectQuestionAnswerLeak(q) {
+  if (!q || typeof q !== 'object') return { hasLeak: false };
+  const qText = String(q.questionText || q.question || '').trim();
+  if (!qText) return { hasLeak: false };
+
+  const rawAns = String(q.correctOption || q.correctAnswer || 'A').trim().toUpperCase();
+  const optMap = { '1': 'A', 'A': 'A', 'ก': 'A', '2': 'B', 'B': 'B', 'ข': 'B', '3': 'C', 'C': 'C', 'ค': 'C', '4': 'D', 'D': 'D', 'ง': 'D' };
+  const normAns = optMap[rawAns] || 'A';
+
+  const choices = {
+    'A': String(q.optionA || q.choice1 || '').trim(),
+    'B': String(q.optionB || q.choice2 || '').trim(),
+    'C': String(q.optionC || q.choice3 || '').trim(),
+    'D': String(q.optionD || q.choice4 || '').trim()
+  };
+
+  const correctChoiceText = choices[normAns];
+
+  // Pattern 1: Question explicitly writes answer hint in parentheses, brackets, or as answer clause
+  // e.g. "(ตอบ ข้อ ก)", "[เฉลย 2]", "(ตอบ ข)", "(เฉลย: 45 บาท)", "คำตอบคือ ก"
+  const patExplicitBracket = /[\(\[\{【]\s*(?:ตอบ|เฉลย|คำตอบคือ|คำตอบที่ถูกต้องคือ|คำตอบ\s*:|เฉลย\s*:)\s*(?:ข้อ|ตัวเลือก(?:ที่)?)?\s*([1-4ก-งA-D])(?![ก-๙a-zA-Z0-9])\s*[\)\]\}】]/i;
+  const patExplicitPlain = /(?:^|[\(\[\{【]|\s+)(?:ตอบ|เฉลย|คำตอบคือ|คำตอบที่ถูกต้องคือ|คำตอบ\s*:|เฉลย\s*:)\s*(?:ข้อ|ตัวเลือก(?:ที่)?)?\s*([1-4ก-งA-D])(?![ก-๙a-zA-Z0-9])[\)\]\}】]?(?=[,\.\s]|$)/i;
+  const patColonLeak = /[\(\[\{【]\s*(?:ตอบ|เฉลย)\s*:[^\)\]\}】]+[\)\]\}】]/i;
+
+  const mExp = qText.match(patExplicitBracket) || qText.match(patExplicitPlain) || qText.match(patColonLeak);
+  if (mExp) {
+    return {
+      hasLeak: true,
+      leakType: 'EXPLICIT_TAG',
+      snippet: mExp[0].trim(),
+      leakChoice: mExp[1] || normAns,
+      reason: `ตัวโจทย์มีข้อความเฉลยคำตอบติดอยู่: "${mExp[0].trim()}"`
+    };
+  }
+
+  // Pattern 2: Question gives away the exact correct choice text with an answer-revealing lead-in
+  // e.g. "คือ [ChoiceText]", "ได้แก่ [ChoiceText]", "เท่ากับ [ChoiceText]", "มีจำนวน [ChoiceText]"
+  if (correctChoiceText && correctChoiceText.length >= 4) {
+    const escaped = correctChoiceText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const leakLeadRegex = new RegExp(`(?:คือ|ได้แก่|เท่ากับ|มีผลลัพธ์คือ|เป็นจำนวน|รวมเป็น|คำตอบคือ|โดยมีคำตอบคือ)\\s*["'«]?${escaped}["'»]?`, 'i');
+    const mLead = qText.match(leakLeadRegex);
+    if (mLead) {
+      return {
+        hasLeak: true,
+        leakType: 'PREMISE_REVEAL',
+        snippet: mLead[0],
+        leakChoice: normAns,
+        reason: `ตัวโจทย์เฉลยคำตอบในคำถาม: "${mLead[0]}"`
+      };
+    }
+  }
+
+  return { hasLeak: false };
+}
+
+function sanitizeQuestionAnswerLeak(q) {
+  if (!q || typeof q !== 'object') return q;
+  let qText = String(q.questionText || q.question || '');
+
+  // 1. Strip bracketed answer tags e.g. (ตอบ ข), [เฉลย 1], (คำตอบ: ข้อ ก)
+  const bracketLeakRegex = /\s*[\(\[\{【]\s*(?:ตอบ|เฉลย|คำตอบคือ|คำตอบที่ถูกต้องคือ|คำตอบ\s*:|เฉลย\s*:)\s*(?:ข้อ|ตัวเลือก(?:ที่)?)?\s*[1-4ก-งA-D](?![ก-๙a-zA-Z0-9])\s*[\)\]\}】]/gi;
+  qText = qText.replace(bracketLeakRegex, '');
+
+  // 2. Strip bracketed explanations e.g. (ตอบ: ...)
+  qText = qText.replace(/\s*[\(\[\{【]\s*(?:ตอบ|เฉลย)\s*:[^\)\]\}】]+[\)\]\}】]/gi, '');
+
+  // 3. Strip standalone answer lead e.g. "คำตอบคือ ก", "เฉลย: ข้อ ข"
+  const plainLeakRegex = /(?:^|[\(\[\{【]|\s+)(?:ตอบ|เฉลย|คำตอบคือ|คำตอบที่ถูกต้องคือ|คำตอบ\s*:|เฉลย\s*:)\s*(?:ข้อ|ตัวเลือก(?:ที่)?)?\s*[1-4ก-งA-D](?![ก-๙a-zA-Z0-9])[\)\]\}】]?(?=[,\.\s]|$)/gi;
+  qText = qText.replace(plainLeakRegex, '');
+
+  // 4. Clean formatting
+  qText = qText.replace(/\s{2,}/g, ' ').replace(/^[:\-–\s]+/, '').replace(/[:\-–\s]+$/, '').trim();
+
+  return {
+    ...q,
+    questionText: qText
+  };
+}
+
 // --- Helper: Clean LaTeX math delimiters ($$, $, \( \), \[ \]) into clean, natural Plain Text ---
 function sanitizeOperationSymbols(text) {
   if (!text || typeof text !== 'string') return text;
@@ -9964,7 +10036,7 @@ function sanitizeExamQuestionFormatting(q) {
     return sanitizeOperationSymbols(cleaned);
   };
 
-  return {
+  const sanitized = {
     ...q,
     questionText: cleanStr(q.questionText || q.question || ''),
     optionA: cleanStr(q.optionA || q.choice1 || ''),
@@ -9973,6 +10045,8 @@ function sanitizeExamQuestionFormatting(q) {
     optionD: cleanStr(q.optionD || q.choice4 || ''),
     explanation: cleanAuditTags(cleanStr(q.explanation || ''))
   };
+
+  return sanitizeQuestionAnswerLeak(sanitized);
 }
 
 // --- Helper: Resilient AI JSON Parser with Backward Boundary Recovery & Control Char Sanitization ---
@@ -10711,14 +10785,17 @@ app.post('/api/admin/exams/recheck-ai', authenticateToken, async (req, res) => {
       };
     });
 
-    // Pass 2 & 3: Deep AI Review (Fact-check & Explanation Optimization)
+    // Pass 2 & 3: Deep AI Review (Fact-check, Explanation Optimization & Question-Answer Sync)
     const auditPrompt = `คุณคือคณะกรรมการตรวจสอบและปรับปรุงคุณภาพข้อสอบตำรวจ (Police Exam Quality Auditor)
 วิชา: "${subject || 'ทั่วไป'}" ${subcategory ? `หัวข้อ: "${subcategory}"` : ''}
 โปรดทำการตรวจสอบข้อสอบ 3 รอบ (3-Pass Review):
-1. **Pass 1 - ตรวจสอบความสอดคล้องของเฉลยกับตัวเลือก (Answer-Explanation Consistency)**: ตรวจดูว่าคำอธิบายเฉลยกับคำตอบที่เลือกไว้ตรงกันหรือไม่ (เช่น ในคำอธิบายบอกตอบข้อ ข แต่ระบบเลือกข้อ 1 หรือไม่)
+1. **Pass 1 - ตรวจสอบความสอดคล้องของเฉลยกับตัวเลือก และตัวโจทย์ (Answer-Explanation & Question Consistency)**:
+   - ตรวจดูว่าคำอธิบายเฉลยกับคำตอบที่เลือกไว้ตรงกันหรือไม่ (เช่น ในคำอธิบายบอกตอบข้อ ข แต่ระบบเลือกข้อ 1 หรือไม่)
+   - 🎯 **กฎเหล็กซิงค์โจทย์ (Crucial Question-Answer Sync Rule)**: หากจำเป็นต้องเปลี่ยนข้อคำตอบ (correctAnswer) หรือเปลี่ยนตัวเลือก **ต้องปรับปรุงข้อความในตัวโจทย์ (questionText) ให้สอดคล้องกับคำตอบใหม่ 100% เสมอ** ห้ามเปลี่ยนแค่เฉลยแล้วปล่อยให้ตัวโจทย์ยังถามหาอีกสิ่งหนึ่งอยู่เด็ดขาด!
+   - ⛔️ **ห้ามเฉลยคำตอบลงในตัวโจทย์ (Strict Anti-Answer-Leak Rule)**: ตรวจสอบว่าในตัวโจทย์ (questionText) มีการเผลอระบุคำตอบ ใบ้เฉลย หรือใส่ข้อความจำพวก "(ตอบ...)", "(เฉลย...)" หรือบอกคำตอบไว้ในเนื้อเรื่องโจทย์แล้วถามซ้ำสิ่งที่เพิ่งบอกไปหรือไม่ หากพบ **ต้องตัดเฉลยออกจากตัวโจทย์ให้เป็นโจทย์คำถามที่สมบูรณ์ทันที**
 2. **Pass 2 - ตรวจสอบความถูกต้องทางวิชาการและกฎหมาย (Fact & Law Check)**: ตรวจสอบความถูกต้องตามประมวลกฎหมาย, ระเบียบสารบรรณ, ไวยากรณ์อังกฤษ, สูตรคณิตศาสตร์ หรือสารสนเทศ มีตัวเลือกซ้ำหรือไม่มีคำตอบที่ถูกหรือไม่
 3. **Pass 3 - ขัดเกลาและแก้ไขออโต้ (Auto-Fix & Optimize)**: 
-   - หากเฉลยผิด หรือเลือกข้อผิด ให้แก้ให้ถูกต้อง
+   - หากเฉลยผิด หรือเลือกข้อผิด ให้แก้ให้ถูกต้อง พร้อมตรวจปรับตัวโจทย์ให้ตรงกัน
    - หากคำอธิบายแปลกๆ คลุมเครือ หรือยาวเกินไป ให้เขียนใหม่ให้กระชับ ชัดเจน ตรงประเด็น (ความยาวประมาณ 1-3 ประโยค อ้างอิงมาตรา/หลักวิชาการชัดเจน)
 
 รายการข้อสอบที่ต้องตรวจสอบ (${formattedQuestions.length} ข้อ):
@@ -10742,7 +10819,7 @@ ${JSON.stringify(formattedQuestions, null, 2)}
   "fixedQuestions": [
     {
       "index": 0,
-      "questionText": "...",
+      "questionText": "โจทย์ที่ได้รับการตรวจสอบและปรับปรุงให้ตรงกับคำตอบและไม่มีเฉลยในโจทย์",
       "choice1": "...",
       "choice2": "...",
       "choice3": "...",
@@ -10805,6 +10882,28 @@ ${JSON.stringify(formattedQuestions, null, 2)}
       });
     }
 
+    // Check for question-answer leaks in formatted questions
+    formattedQuestions.forEach((fq, idx) => {
+      const leakCheck = detectQuestionAnswerLeak(fq);
+      if (leakCheck.hasLeak) {
+        const exists = (aiResult.issues || []).some(i => i.index === idx && (i.issueType === 'LEAK' || i.title.includes('เฉลยในโจทย์')));
+        if (!exists) {
+          if (!aiResult.issues) aiResult.issues = [];
+          aiResult.issues.push({
+            index: idx,
+            questionNumber: idx + 1,
+            issueType: 'LEAK',
+            title: 'พบเฉลยปนอยู่ในข้อความคำถาม',
+            description: leakCheck.reason,
+            originalCorrectAnswer: fq.correctAnswer,
+            suggestedCorrectAnswer: fq.correctAnswer,
+            originalExplanation: fq.explanation,
+            suggestedExplanation: fq.explanation
+          });
+        }
+      }
+    });
+
     // Merge any rule conflict that AI might have missed
     ruleConflicts.forEach(rc => {
       const exists = (aiResult.issues || []).some(i => i.index === rc.index);
@@ -10829,7 +10928,7 @@ ${JSON.stringify(formattedQuestions, null, 2)}
     });
 
     const issues = aiResult.issues || [];
-    const fixedQuestions = (aiResult.fixedQuestions && aiResult.fixedQuestions.length === formattedQuestions.length)
+    const fixedQuestionsRaw = (aiResult.fixedQuestions && aiResult.fixedQuestions.length === formattedQuestions.length)
       ? aiResult.fixedQuestions
       : formattedQuestions.map((q, idx) => {
           const issue = issues.find(i => i.index === idx);
@@ -10842,6 +10941,9 @@ ${JSON.stringify(formattedQuestions, null, 2)}
           }
           return q;
         });
+
+    // Ensure all fixed questions pass through sanitizeExamQuestionFormatting (strips math LaTeX, non-* ops, and leaks)
+    const fixedQuestions = fixedQuestionsRaw.map(sanitizeExamQuestionFormatting);
 
     res.json({
       success: true,
@@ -11681,6 +11783,10 @@ app.post('/api/admin/reports/:id/ai-audit', requireAdmin, async (req, res) => {
 1. ❌ **ห้ามสร้างตัวเลือกห้วนๆ ด้วนๆ หรือคำโดดๆ** เช่น คำว่า "นำเสนอ", "คำนวณ", "ประมวลผล" เด็ดขาด เพราะทำให้ผู้สอบสับสน
 2. **หากโจทย์ถามหาชื่อโปรแกรม/ซอฟต์แวร์**: ตัวเลือกต้องเป็นชื่อโปรแกรมที่เป็นสากล เช่น "Microsoft PowerPoint", "Microsoft Excel", "Microsoft Word", "Adobe Photoshop"
 3. **หากถามประเภทของซอฟต์แวร์**: ตัวเลือกต้องระบุชื่อเต็มและมีภาษาอังกฤษกำกับให้ชัดเจน เช่น "ซอฟต์แวร์นำเสนอข้อมูล (Presentation Software)", "ซอฟต์แวร์ประมวลผลคำ (Word Processing Software)"
+4. 🔄 **การปรับปรุงตัวโจทย์ให้สอดคล้องกับคำตอบใหม่ (Question-Answer Synchronization - สำคัญที่สุด!)**:
+   - หากมีการเปลี่ยนคำตอบ หรือปรับปรุงตัวเลือก ต้องปรับปรุง repairedQuestionText ให้สอดคล้องกับคำตอบและคำอธิบายใหม่อย่างสมบูรณ์ 100% เสมอ ห้ามเปลี่ยนแต่เฉลยโดยทิ้งให้โจทย์ยังถามหาคำตอบเดิมเด็ดขาด!
+5. ❌ **ห้ามเฉลยคำตอบในตัวโจทย์ (repairedQuestionText) เด็ดขาด 100%**:
+   - ห้ามมีข้อความเฉลย เช่น (ตอบ ข), [เฉลย 2] หรือบอกคำตอบไว้ในเนื้อหาคำถามแล้วถามซ้ำสิ่งที่เพิ่งบอกไป
 
 ตอบกลับเฉพาะ JSON เท่านั้น:
 {
@@ -11717,6 +11823,10 @@ app.post('/api/admin/reports/:id/ai-audit', requireAdmin, async (req, res) => {
       if (clean.startsWith('```json')) clean = clean.replace(/^```json\s*/i, '').replace(/\s*```$/, '').trim();
       else if (clean.startsWith('```')) clean = clean.replace(/^```\s*/, '').replace(/\s*```$/, '').trim();
       aiAudit = JSON.parse(clean);
+      if (aiAudit && aiAudit.repairProposal && aiAudit.repairProposal.repairedQuestionText) {
+        const sanitizedLeak = sanitizeQuestionAnswerLeak({ questionText: aiAudit.repairProposal.repairedQuestionText });
+        aiAudit.repairProposal.repairedQuestionText = sanitizedLeak.questionText;
+      }
     } catch (aiErr) {
       console.warn('AI Audit LLM error, using fallback verdict:', aiErr.message);
       if (ruleConflict.hasConflict) {
@@ -11732,7 +11842,7 @@ app.post('/api/admin/reports/:id/ai-audit', requireAdmin, async (req, res) => {
             action: 'FIX_ANSWER',
             actionTitle: 'ปรับปรุงเฉลยให้ตรงกับคำอธิบาย',
             highlightChanges: `เปลี่ยนเฉลยจากข้อ ${currentAnswer} เป็นข้อ ${ruleConflict.detectedAnswer}`,
-            repairedQuestionText: questionText,
+            repairedQuestionText: sanitizeQuestionAnswerLeak({ questionText }).questionText,
             repairedChoice1: choice1,
             repairedChoice2: choice2,
             repairedChoice3: choice3,
@@ -12204,8 +12314,12 @@ app.post('/api/admin/exams/:id/recheck-full-set', requireAdmin, async (req, res)
    - เฉลยกับคำอธิบายตรงกันหรือไม่?
    - มีคำตอบที่ถูกต้องตรงกับหลักวิชาการ/กฎหมายชัดเจนเพียงข้อเดียวหรือไม่?
    - ถ้าถามหาข้อผิด (เช่น ข้อใดสะกดผิด) แต่ทุกข้อดันเขียนถูกหมด -> ต้องแก้ตัวเลือกให้มีข้อผิดจริงตามเฉลย!
-3. **เกณฑ์การแก้ไขอัตโนมัติ (Auto-Fix Decision)**:
-   - หากโจทย์ไม่สมเหตุสมผล, ไม่เหมือนข้อสอบจริง, ตัวเลือกห้วน/ด้วน, เฉลยผิด, หรือมีความมั่นใจตั้งแต่ 90% ขึ้นไป ให้ตั้ง "shouldFix": true และส่งข้อมูลข้อที่แก้ไขสมบูรณ์แล้วกลับมา
+3. **การปรับปรุงตัวโจทย์ให้ตรงกับเฉลยใหม่ (Question-Answer Synchronization - สำคัญที่สุด!)**:
+   - หากคุณเปลี่ยนตัวเลขเฉลย (correctAnswer) หรือเปลี่ยนตัวเลือก หรือเปลี่ยนคำอธิบาย **คุณต้องปรับแก้ข้อความในตัวโจทย์ (questionText) ให้สอดคล้องกับคำตอบและคำอธิบายใหม่อย่างแม่นยำ 100% เสมอ! ห้ามเปลี่ยนแต่เฉลยโดยปล่อยให้โจทย์ยังคงถามหาคำตอบเดิมเด็ดขาด!**
+4. **ห้ามเฉลยคำตอบในตัวโจทย์เด็ดขาด (Strict Anti-Answer-Leak Rule)**:
+   - ตรวจสอบว่าในตัวโจทย์ (questionText) มีข้อความเฉลยปนอยู่หรือไม่ เช่น (ตอบ ข), [เฉลย 2], (คำตอบ: ค) หรือบอกคำตอบไว้ในเนื้อเรื่องโจทย์แล้วถามซ้ำสิ่งที่เพิ่งบอกไป หากมี **ต้องตัดเฉลยออกจากตัวโจทย์ให้หมด 100%**
+5. **เกณฑ์การแก้ไขอัตโนมัติ (Auto-Fix Decision)**:
+   - หากโจทย์ไม่สมเหตุสมผล, ไม่เหมือนข้อสอบจริง, ตัวเลือกห้วน/ด้วน, เฉลยผิด, ตัวโจทย์มีเฉลยปน, ตัวโจทย์กับเฉลยไม่สัมพันธ์กัน, หรือมีความมั่นใจตั้งแต่ 90% ขึ้นไป ให้ตั้ง "shouldFix": true และส่งข้อมูลข้อที่แก้ไขสมบูรณ์แล้วกลับมา
    - หากข้อสอบถูกต้อง สละสลวย สมเหตุสมผลดีอยู่แล้ว ให้ตั้ง "shouldFix": false
 
 ตอบกลับเฉพาะ JSON เท่านั้น:
@@ -12258,7 +12372,7 @@ app.post('/api/admin/exams/:id/recheck-full-set', requireAdmin, async (req, res)
             shouldFix: true,
             fixReason: `ตรวจพบเฉลยขัดแย้ง: ${ruleConflict.reason}`,
             repairedQuestion: {
-              questionText: q.questionText,
+              questionText: sanitizeQuestionAnswerLeak(q).questionText,
               choice1: q.choice1,
               choice2: q.choice2,
               choice3: q.choice3,

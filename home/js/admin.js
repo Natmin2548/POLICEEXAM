@@ -1313,8 +1313,10 @@ function renderEditQuestionsList() {
 
   currentEditQuestions.forEach((q, idx) => {
     const conflict = clientDetectConflict(q);
+    const leak = clientDetectQuestionLeak(q);
+    const hasIssue = conflict.hasConflict || leak.hasLeak;
     const card = document.createElement('div');
-    card.style.cssText = conflict.hasConflict
+    card.style.cssText = hasIssue
       ? 'background: #FFF5F5; border: 1.5px solid #F87171; border-radius: 16px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);'
       : 'background: white; border: 1.5px solid #E2E8F0; border-radius: 16px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);';
 
@@ -1323,6 +1325,15 @@ function renderEditQuestionsList() {
         <span style="font-weight: 700;">⚠️ ${escapeHTML(conflict.reason)}</span>
         <button type="button" onclick="editQuickFixChoice(${idx}, ${conflict.detectedAnswer})" style="background: #DC2626; color: white; border: none; padding: 3px 10px; border-radius: 6px; font-weight: 800; font-size: 11px; cursor: pointer;">
           สลับเป็นข้อ ${conflict.detectedAnswerLabel} ทันที
+        </button>
+      </div>
+    ` : '';
+
+    const leakHTML = leak.hasLeak ? `
+      <div style="background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 8px; padding: 7px 10px; margin-bottom: 10px; font-size: 12px; color: #92400E; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+        <span style="font-weight: 700;">⚠️ ${escapeHTML(leak.reason)}</span>
+        <button type="button" onclick="editQuickFixLeak(${idx})" style="background: #D97706; color: white; border: none; padding: 3px 10px; border-radius: 6px; font-weight: 800; font-size: 11px; cursor: pointer;">
+          ✂️ ลบเฉลยออกจากโจทย์ทันที
         </button>
       </div>
     ` : '';
@@ -1336,6 +1347,7 @@ function renderEditQuestionsList() {
           <span style="font-weight: 800; color: #1E293B; font-size: 13.5px;">ข้อที่ ${idx + 1}</span>
           ${q.id ? `<span style="font-size: 11px; color: #94A3B8; font-family: monospace;">(ID: ${q.id})</span>` : '<span style="font-size: 11px; color: #059669; font-weight: 700; background: #ECFDF5; padding: 1px 6px; border-radius: 6px;">(ข้อใหม่)</span>'}
           ${conflict.hasConflict ? '<span style="background: #FEE2E2; color: #DC2626; font-size: 10.5px; font-weight: 800; padding: 1px 6px; border-radius: 6px;">เฉลยขัดแย้ง</span>' : ''}
+          ${leak.hasLeak ? '<span style="background: #FEF3C7; color: #D97706; font-size: 10.5px; font-weight: 800; padding: 1px 6px; border-radius: 6px;">มีเฉลยในโจทย์</span>' : ''}
         </div>
         <button type="button" onclick="removeQuestionFromEditList(${idx})" style="background: #FEF2F2; border: 1px solid #FECACA; color: #EF4444; padding: 4px 10px; border-radius: 8px; font-size: 11.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 4px;">
           🗑️ ลบข้อนี้
@@ -1343,6 +1355,7 @@ function renderEditQuestionsList() {
       </div>
 
       ${conflictHTML}
+      ${leakHTML}
 
       <!-- โจทย์ / คำถาม -->
       <div style="margin-bottom: 14px;">
@@ -2168,14 +2181,18 @@ function renderExamPreviewModal(title, subject, knowledgeBase) {
   container.innerHTML = '';
 
   let conflictCount = 0;
+  let leakCount = 0;
 
   previewExamQuestions.forEach((q, idx) => {
     const conflict = clientDetectConflict(q);
+    const leak = clientDetectQuestionLeak(q);
     if (conflict.hasConflict) conflictCount++;
+    if (leak.hasLeak) leakCount++;
 
+    const hasIssue = conflict.hasConflict || leak.hasLeak;
     const card = document.createElement('div');
     card.className = 'stat-card';
-    card.style.cssText = conflict.hasConflict
+    card.style.cssText = hasIssue
       ? 'padding: 16px; border: 1.5px solid #F87171; border-radius: 14px; background: #FFF5F5; text-align: left; position: relative;'
       : 'padding: 16px; border: 1px solid #E2E8F0; border-radius: 12px; background: #F8FAFC; text-align: left;';
 
@@ -2184,6 +2201,15 @@ function renderExamPreviewModal(title, subject, knowledgeBase) {
         <span style="font-weight: 700;">⚠️ ${escapeHTML(conflict.reason)}</span>
         <button type="button" onclick="previewQuickFixChoice(${idx}, '${conflict.detectedOptionLetter}')" style="background: #DC2626; color: white; border: none; padding: 3px 10px; border-radius: 6px; font-weight: 800; font-size: 11px; cursor: pointer;">
           สลับเป็นข้อ ${conflict.detectedAnswerLabel} ทันที
+        </button>
+      </div>
+    ` : '';
+
+    const leakHTML = leak.hasLeak ? `
+      <div style="background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 8px; padding: 7px 10px; margin-bottom: 10px; font-size: 12px; color: #92400E; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+        <span style="font-weight: 700;">⚠️ ${escapeHTML(leak.reason)}</span>
+        <button type="button" onclick="previewQuickFixLeak(${idx})" style="background: #D97706; color: white; border: none; padding: 3px 10px; border-radius: 6px; font-weight: 800; font-size: 11px; cursor: pointer;">
+          ✂️ ลบเฉลยออกจากโจทย์ทันที
         </button>
       </div>
     ` : '';
@@ -2200,11 +2226,13 @@ function renderExamPreviewModal(title, subject, knowledgeBase) {
         <div style="display: flex; align-items: center; gap: 6px;">
           <span style="font-weight: 800; color: #BD1B0B; font-size: 14px;">ข้อที่ ${idx + 1}</span>
           ${conflict.hasConflict ? '<span style="background: #FEE2E2; color: #DC2626; font-size: 10.5px; font-weight: 800; padding: 1px 6px; border-radius: 6px;">เฉลยขัดแย้ง</span>' : ''}
+          ${leak.hasLeak ? '<span style="background: #FEF3C7; color: #D97706; font-size: 10.5px; font-weight: 800; padding: 1px 6px; border-radius: 6px;">มีเฉลยในโจทย์</span>' : ''}
         </div>
         <button type="button" onclick="removePreviewQuestion(${idx})" style="background: none; border: none; color: #EF4444; font-size: 12px; font-weight: 600; cursor: pointer;">🗑️ ลบข้อนี้</button>
       </div>
 
       ${conflictHTML}
+      ${leakHTML}
       ${crossAuditHTML}
 
       <div class="form-group" style="margin-bottom: 10px;">
@@ -4090,6 +4118,56 @@ window.editQuickFixChoice = function(idx, ansNum) {
 let pendingAiFixedPreviewQuestions = null;
 let currentAuditReportData = null;
 
+// Client-side question answer leak detector & sanitizer
+function clientDetectQuestionLeak(q) {
+  const qText = String(q.questionText || q.question || '').trim();
+  if (!qText) return { hasLeak: false };
+
+  const patBracket = /[\(\[\{【]\s*(?:ตอบ|เฉลย|คำตอบคือ|คำตอบที่ถูกต้องคือ|คำตอบ\s*:|เฉลย\s*:)\s*(?:ข้อ|ตัวเลือก(?:ที่)?)?\s*([1-4ก-งA-D])(?![ก-๙a-zA-Z0-9])\s*[\)\]\}】]/i;
+  const patPlain = /(?:^|[\(\[\{【]|\s+)(?:ตอบ|เฉลย|คำตอบคือ|คำตอบที่ถูกต้องคือ|คำตอบ\s*:|เฉลย\s*:)\s*(?:ข้อ|ตัวเลือก(?:ที่)?)?\s*([1-4ก-งA-D])(?![ก-๙a-zA-Z0-9])[\)\]\}】]?(?=[,\.\s]|$)/i;
+  const patColon = /[\(\[\{【]\s*(?:ตอบ|เฉลย)\s*:[^\)\]\}】]+[\)\]\}】]/i;
+
+  const match = qText.match(patBracket) || qText.match(patPlain) || qText.match(patColon);
+  if (match) {
+    return {
+      hasLeak: true,
+      leakedAnswer: match[1] || '',
+      snippet: match[0].trim(),
+      reason: `ตัวโจทย์มีเฉลยคำตอบปนอยู่: "${match[0].trim()}"`
+    };
+  }
+  return { hasLeak: false };
+}
+
+function clientSanitizeQuestionLeak(text) {
+  if (!text) return '';
+  let s = String(text);
+  const bracketRegex = /\s*[\(\[\{【]\s*(?:ตอบ|เฉลย|คำตอบคือ|คำตอบที่ถูกต้องคือ|คำตอบ\s*:|เฉลย\s*:)\s*(?:ข้อ|ตัวเลือก(?:ที่)?)?\s*[1-4ก-งA-D](?![ก-๙a-zA-Z0-9])\s*[\)\]\}】]/gi;
+  s = s.replace(bracketRegex, '');
+  const colonRegex = /\s*[\(\[\{【]\s*(?:ตอบ|เฉลย)\s*:[^\)\]\}】]+[\)\]\}】]/gi;
+  s = s.replace(colonRegex, '');
+  const plainRegex = /(?:^|[\(\[\{【]|\s+)(?:ตอบ|เฉลย|คำตอบคือ|คำตอบที่ถูกต้องคือ|คำตอบ\s*:|เฉลย\s*:)\s*(?:ข้อ|ตัวเลือก(?:ที่)?)?\s*[1-4ก-งA-D](?![ก-๙a-zA-Z0-9])[\)\]\}】]?(?=[,\.\s]|$)/gi;
+  s = s.replace(plainRegex, '');
+  return s.replace(/\s{2,}/g, ' ').replace(/^[:\-–\s]+/, '').replace(/[:\-–\s]+$/, '').trim();
+}
+
+window.previewQuickFixLeak = function(idx) {
+  if (previewExamQuestions && previewExamQuestions[idx]) {
+    previewExamQuestions[idx].questionText = clientSanitizeQuestionLeak(previewExamQuestions[idx].questionText);
+    const title = document.getElementById('examTitle') ? document.getElementById('examTitle').value : '';
+    const subject = document.getElementById('examSubject') ? document.getElementById('examSubject').value : '';
+    const knowledgeBase = document.getElementById('knowledgeBaseSelect') ? document.getElementById('knowledgeBaseSelect').value : '';
+    renderExamPreviewModal(title, subject, knowledgeBase);
+  }
+};
+
+window.editQuickFixLeak = function(idx) {
+  if (currentEditQuestions && currentEditQuestions[idx]) {
+    currentEditQuestions[idx].questionText = clientSanitizeQuestionLeak(currentEditQuestions[idx].questionText);
+    renderEditQuestionsList();
+  }
+};
+
 // Client-side rule-based conflict detector
 function clientDetectConflict(q) {
   const exp = (q.explanation || '').trim();
@@ -4913,9 +4991,14 @@ window.runAiCheckOnSingleModal = async function() {
     const data = await res.json();
     if (data.fixedQuestions && data.fixedQuestions[0]) {
       const fixed = data.fixedQuestions[0];
+      if (fixed.questionText) document.getElementById('editSingleQuestionText').value = fixed.questionText;
+      if (fixed.choice1) document.getElementById('editSingleChoice1').value = fixed.choice1;
+      if (fixed.choice2) document.getElementById('editSingleChoice2').value = fixed.choice2;
+      if (fixed.choice3) document.getElementById('editSingleChoice3').value = fixed.choice3;
+      if (fixed.choice4) document.getElementById('editSingleChoice4').value = fixed.choice4;
       document.getElementById('editSingleCorrectAnswer').value = String(fixed.correctAnswer);
       document.getElementById('editSingleExplanation').value = fixed.explanation;
-      alert(`✨ AI ตรวจสอบและปรับปรุงให้เรียบร้อยแล้ว:\n• เฉลยเป็นข้อ: ${fixed.correctAnswer}\n• ปรับปรุงคำอธิบายให้กระชับ ชัดเจน`);
+      alert(`✨ AI ตรวจสอบและปรับปรุงข้อสอบให้เรียบร้อยแล้ว:\n• ปรับปรุงโจทย์และตัวเลือกให้สอดคล้องกัน 100%\n• เฉลยเป็นข้อ: ${fixed.correctAnswer}\n• ปรับปรุงคำอธิบายให้กระชับ ชัดเจน`);
     }
 
   } catch (err) {
