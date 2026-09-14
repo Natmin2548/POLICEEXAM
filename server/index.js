@@ -9846,24 +9846,30 @@ function detectExplanationAnswerConflict(q) {
     'ง': 4, '4': 4, 'D': 4
   };
 
-  const pat1 = /(?:ข้อ|ตัวเลือกที่?)\s*([1-4ก-งA-D])[.)]?\s*(?:จึง|เป็น|คือ)?\s*(?:ถูกต้อง|ถูก|คำตอบ|เฉลย)/i;
-  const pat2 = /(?:ตอบ|เฉลย|คำตอบคือ|คำตอบที่ถูกต้องคือ|ดังนั้น)\s*(?:ข้อ|ตัวเลือกที่?)?\s*([1-4ก-งA-D])[.)]?/i;
-  const pat3 = /ถูกต้องคือ\s*(?:ข้อ|ตัวเลือก)?\s*([1-4ก-งA-D])[.)]?/i;
+  // 1. Explicit answer declaration: 'ตอบข้อ 2', 'เฉลยข้อ ข', 'คำตอบที่ถูกต้องคือข้อ 3', 'เลือกตัวเลือกที่ 1'
+  const patAnswer = /(?:ตอบ|เฉลย|คำตอบคือ|คำตอบที่ถูกต้องคือ|เลือก)\s*(?:ข้อ|ตัวเลือก(?:ที่)?)\s*([1-4ก-งA-D])(?![0-9a-zA-Z\+\-\*\/=×÷%^])/i;
+
+  // 2. Trailing confirmation: 'ข้อ 2 จึงถูกต้อง', 'ข้อ ก ถูก', 'ตัวเลือกที่ 3 คือคำตอบที่ถูกต้อง'
+  const patConfirm = /(?:ข้อ|ตัวเลือก(?:ที่)?)\s*([1-4ก-งA-D])(?![0-9a-zA-Z\+\-\*\/=×÷%^])\s*(?:จึง|เป็น|คือ)?\s*(?:ถูกต้อง|ถูก|คำตอบ|คำตอบที่ถูก)/i;
+
+  // 3. Thai Choice letter or Latin Choice letter with answer verb: 'ตอบ ข', 'เฉลย ก', 'คำตอบคือ ค'
+  // Strictly letters ก-ง or A-D, NEVER standalone digits 1-4 to avoid matching math values (e.g. 'ดังนั้น 4*10', 'ตอบ 40')
+  const patLetter = /(?:ตอบ|เฉลย|คำตอบคือ|คำตอบที่ถูกต้องคือ)\s*([ก-งA-D])(?![ก-๙a-zA-Z0-9\+\-\*\/=×÷%^])/i;
 
   let detectedAns = null;
   let matchSnippet = '';
 
-  const m1 = exp.match(pat1);
+  const m1 = exp.match(patAnswer);
   if (m1 && m1[1] && mapChoice[m1[1].toUpperCase()]) {
     detectedAns = mapChoice[m1[1].toUpperCase()];
     matchSnippet = m1[0];
   } else {
-    const m2 = exp.match(pat2);
+    const m2 = exp.match(patConfirm);
     if (m2 && m2[1] && mapChoice[m2[1].toUpperCase()]) {
       detectedAns = mapChoice[m2[1].toUpperCase()];
       matchSnippet = m2[0];
     } else {
-      const m3 = exp.match(pat3);
+      const m3 = exp.match(patLetter);
       if (m3 && m3[1] && mapChoice[m3[1].toUpperCase()]) {
         detectedAns = mapChoice[m3[1].toUpperCase()];
         matchSnippet = m3[0];
@@ -9873,12 +9879,14 @@ function detectExplanationAnswerConflict(q) {
 
   if (detectedAns !== null && detectedAns !== currentAns) {
     const thaiChoiceNames = ['', 'ก (1)', 'ข (2)', 'ค (3)', 'ง (4)'];
+    const optLetters = ['', 'A', 'B', 'C', 'D'];
     return {
       hasConflict: true,
       currentAnswer: currentAns,
       currentAnswerLabel: thaiChoiceNames[currentAns],
       detectedAnswer: detectedAns,
       detectedAnswerLabel: thaiChoiceNames[detectedAns],
+      detectedOptionLetter: optLetters[detectedAns],
       matchSnippet,
       reason: `คำอธิบายเฉลยระบุว่า "${matchSnippet}" แต่ระบบตั้งค่าเฉลยไว้เป็นข้อ ${thaiChoiceNames[currentAns]}`
     };
