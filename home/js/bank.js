@@ -1171,28 +1171,48 @@ window.submitQuestionReport = async function() {
     return;
   }
 
+  const q = (currentQuizState && currentQuizState.questions && currentQuizState.questions[currentQuizState.currentIndex]) || {};
+  const questionId = String(q.id || `bank_${Date.now()}`);
+  const questionText = q.questionText || q.question || 'ข้อสอบจากคลังข้อสอบ';
+  const qNum = (currentQuizState && currentQuizState.currentIndex !== undefined) ? currentQuizState.currentIndex + 1 : 1;
+
+  const payloadReason = {
+    subject: activeSubjectKey || 'หมวดคลังข้อสอบ',
+    chapter: activeChapterTitle || '-',
+    questionNumber: qNum,
+    reasonType: type === 'WRONG_ANSWER' ? 'เฉลยคำตอบผิดพลาด' : (type === 'TYPO_ERROR' ? 'พิมพ์ผิด / ข้อความตกหล่น' : (type === 'AMBIGUOUS' ? 'โจทย์กำกวม' : type)),
+    details: note,
+    choices: q.choices || [q.choice1, q.choice2, q.choice3, q.choice4],
+    correctAnswer: q.correctAnswer !== undefined ? q.correctAnswer : 1,
+    explanation: q.explanation || ''
+  };
+
   try {
     const token = localStorage.getItem('authToken');
-    const res = await fetch(`${API_BASE}/api/questions/report`, {
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const res = await fetch(`${API_BASE}/api/user/reports`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-      },
+      headers,
       body: JSON.stringify({
-        type,
-        note,
-        subject: activeSubjectKey,
-        chapter: activeChapterTitle
+        questionId,
+        questionText,
+        reason: JSON.stringify(payloadReason)
       })
     });
 
-    alert('ขอบคุณสำหรับข้อมูล! รายงานข้อผิดพลาดส่งไปยังทีมผู้ตรวจเรียบร้อยแล้ว');
-    closeReportQuestionModal();
-    if (noteEl) noteEl.value = '';
+    if (res.ok) {
+      alert('✅ ขอบคุณสำหรับข้อมูล! รายงานข้อผิดพลาดส่งไปยังทีมผู้ตรวจเรียบร้อยแล้ว');
+      closeReportQuestionModal();
+      if (noteEl) noteEl.value = '';
+    } else {
+      const data = await res.json().catch(() => ({}));
+      alert('❌ ไม่สามารถส่งรายงานได้: ' + (data.error || 'เกิดข้อผิดพลาด'));
+    }
   } catch (err) {
-    alert('ส่งรายงานเรียบร้อยแล้ว');
-    closeReportQuestionModal();
+    console.error('Submit report question error:', err);
+    alert('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + err.message);
   }
 };
 

@@ -3665,26 +3665,81 @@ app.delete('/api/user/bookmarks/:questionId', authenticateToken, async (req, res
   }
 });
 
-// POST to report a question
-app.post('/api/user/reports', authenticateToken, async (req, res) => {
-  const { questionId, questionText, reason } = req.body;
-  if (!questionId || !questionText || !reason) {
-    return res.status(400).json({ error: 'กรุณากรอกเหตุผลและข้อมูลข้อสอบที่ต้องการรายงาน' });
-  }
-
+// POST to report a question (Supports both logged-in users and guests, and both route paths)
+app.post(['/api/user/reports', '/api/questions/report'], async (req, res) => {
   try {
+    let { questionId, questionText, reason, type, note, subject, chapter } = req.body || {};
+
+    // 1. Resolve userId: if valid auth token present, link to user, otherwise link to guest user
+    let userId = null;
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        if (decoded && decoded.userId) {
+          userId = decoded.userId;
+        }
+      } catch (e) {
+        // Token expired/invalid -> proceed as guest
+      }
+    }
+
+    if (!userId) {
+      let guestUser = await prisma.user.findFirst({
+        where: { username: 'guest_reporter' }
+      });
+      if (!guestUser) {
+        guestUser = await prisma.user.create({
+          data: {
+            username: 'guest_reporter',
+            email: 'guest@police-exam.local',
+            password: 'GUEST_NO_LOGIN_' + Date.now(),
+            role: 'USER',
+            fullName: 'ผู้ใช้ทั่วไป (Guest)'
+          }
+        }).catch(async (e) => {
+          console.warn('Create guest reporter fallback error:', e.message);
+          return await prisma.user.findFirst();
+        });
+      }
+      userId = guestUser ? guestUser.id : 1;
+    }
+
+    // 2. Normalize questionId and questionText
+    questionId = String(questionId || `rep_${Date.now()}`);
+    if (!questionText || typeof questionText !== 'string' || !questionText.trim()) {
+      questionText = (note ? `[รายงานจาก ${subject || 'หมวดทั่วไป'}] ${note}` : `ข้อสอบ ${subject || ''} ${chapter || ''}`).trim() || 'ข้อสอบจากระบบ';
+    }
+
+    // 3. Normalize reason payload
+    let reasonString = '';
+    if (typeof reason === 'object' && reason !== null) {
+      reasonString = JSON.stringify(reason);
+    } else if (typeof reason === 'string' && reason.trim()) {
+      reasonString = reason.trim();
+    } else {
+      reasonString = JSON.stringify({
+        reasonType: type || 'WRONG_ANSWER',
+        details: note || 'ผู้ใช้รายงานข้อผิดพลาด',
+        subject: subject || '-',
+        chapter: chapter || '-'
+      });
+    }
+
     const report = await prisma.reportedQuestion.create({
       data: {
-        userId: req.user.userId,
-        questionId: String(questionId),
+        userId,
+        questionId,
         questionText,
-        reason
+        reason: reasonString
       }
     });
-    res.json({ message: 'ส่งรายงานข้อสอบเรียบร้อยแล้ว ขอบคุณสำหรับการแจ้งข้อมูล' });
+
+    res.json({ success: true, message: 'ส่งรายงานข้อสอบเรียบร้อยแล้ว ขอบคุณสำหรับการแจ้งข้อมูล' });
   } catch (err) {
     console.error('Error reporting question:', err);
-    res.status(500).json({ error: 'ไม่สามารถส่งรายงานข้อสอบได้' });
+    res.status(500).json({ error: 'ไม่สามารถส่งรายงานข้อสอบได้: ' + err.message });
   }
 });
 

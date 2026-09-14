@@ -7916,12 +7916,14 @@ window.submitReportCurrentQuestion = async function() {
   }
 
   try {
+    const headers = { 'Content-Type': 'application/json' };
+    if (authToken && authToken !== 'null' && authToken !== 'undefined') {
+      headers['Authorization'] = `Bearer ${authToken}`;
+    }
+
     const res = await fetch(`${API_BASE}/api/user/reports`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${authToken}`
-      },
+      headers,
       body: JSON.stringify({
         questionId: String(q.id || `q_${Date.now()}`),
         questionText: q.questionText || q.question || '',

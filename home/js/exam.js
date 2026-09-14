@@ -703,14 +703,58 @@ window.closeReportModal = function() {
   if (modal) modal.style.display = 'none';
 };
 
-window.submitReport = function() {
+window.submitReport = async function() {
   const note = document.getElementById('reportNote')?.value?.trim();
+  const type = document.getElementById('reportType')?.value || 'WRONG_ANSWER';
   if (!note) {
     alert('กรุณาระบุรายละเอียดข้อผิดพลาด');
     return;
   }
-  alert('ขอบคุณสำหรับข้อมูล! รายงานข้อผิดพลาดส่งไปยังทีมผู้ตรวจเรียบร้อยแล้ว');
-  closeReportModal();
+
+  const q = (examState && examState.questions && examState.questions[examState.currentIndex]) || {};
+  const questionId = String(q.id || `exam_${Date.now()}`);
+  const questionText = q.questionText || q.question || 'ข้อสอบจากสนามสอบจำลอง';
+  const qNum = (examState && examState.currentIndex !== undefined) ? examState.currentIndex + 1 : 1;
+
+  const payloadReason = {
+    subject: examState.subjectKey || examState.subject || 'สนามสอบจำลอง',
+    chapter: examState.chapter || '-',
+    questionNumber: qNum,
+    reasonType: type === 'WRONG_ANSWER' ? 'เฉลยคำตอบไม่ถูกต้อง' : (type === 'TYPO_ERROR' ? 'พิมพ์ผิด / ข้อความตกหล่น' : (type === 'AMBIGUOUS' ? 'โจทย์กำกวม' : type)),
+    details: note,
+    choices: q.choices || [q.choice1, q.choice2, q.choice3, q.choice4],
+    correctAnswer: q.correctAnswer !== undefined ? q.correctAnswer : 1,
+    explanation: q.explanation || ''
+  };
+
+  try {
+    const token = localStorage.getItem('authToken');
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const res = await fetch(`${API_BASE}/api/user/reports`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        questionId,
+        questionText,
+        reason: JSON.stringify(payloadReason)
+      })
+    });
+
+    if (res.ok) {
+      alert('✅ ขอบคุณสำหรับข้อมูล! รายงานข้อผิดพลาดส่งไปยังทีมผู้ตรวจเรียบร้อยแล้ว');
+      closeReportModal();
+      const noteInput = document.getElementById('reportNote');
+      if (noteInput) noteInput.value = '';
+    } else {
+      const data = await res.json().catch(() => ({}));
+      alert('❌ ไม่สามารถส่งรายงานได้: ' + (data.error || 'เกิดข้อผิดพลาด'));
+    }
+  } catch (err) {
+    console.error('Submit report error:', err);
+    alert('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + err.message);
+  }
 };
 
 function generateStandardQuestions(subject, count) {
