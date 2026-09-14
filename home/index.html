@@ -1381,13 +1381,156 @@
         </button>
 
         <!-- Card 3: ทำข้อสอบรายวิชา -->
-        <button onclick="closePoliceTrackModal(); window.location.href='bank.html';"
+        <button onclick="closePoliceTrackModal(); openSelectSubjectExamModal();"
           style="width: 100%; background: #FFFFFF; border: 1.5px solid #F1F5F9; border-radius: 20px; padding: 20px 18px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.02); font-family: inherit;">
           <span style="font-size: 17px; font-weight: 800; color: #0F172A;">ทำข้อสอบรายวิชา</span>
           <div style="width: 38px; height: 38px; border-radius: 50%; background: #C62828; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 3px 8px rgba(198, 40, 40, 0.28);">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="9 18 15 12 9 6"></polyline>
             </svg>
+          </div>
+        </button>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Select Subject Exam Modal (ทำข้อสอบรายวิชา 30 ข้อ: เลือก 7 รายวิชา) -->
+  <div id="selectSubjectExamModal" class="modal-overlay" onclick="if(event.target === this) closeSelectSubjectExamModal();"
+    style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 10000; align-items: center; justify-content: center; padding: 16px;">
+    <div
+      style="background: white; border-radius: 28px; padding: 26px 22px; max-width: 440px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); border: 1.5px solid #F1F5F9; animation: scalePop 0.25s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column;">
+
+      <!-- Header with Back Arrow and Title -->
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+        <button onclick="closeSelectSubjectExamModal(); openPoliceTrackModal();"
+          style="background: none; border: none; font-size: 22px; cursor: pointer; color: #0F172A; line-height: 1; padding: 4px 6px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-family: inherit;" title="ย้อนกลับ">
+          ←
+        </button>
+        <h2 style="margin: 0; font-size: 20px; font-weight: 800; color: #0F172A; letter-spacing: -0.01em;">ทำข้อสอบรายวิชา</h2>
+      </div>
+      <p style="margin: 0 0 18px 38px; font-size: 13px; color: #94A3B8; font-weight: 500;">สุ่มคละทุกบทในวิชา รวม 30 ข้อ</p>
+
+      <!-- 7 Subject Cards -->
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+
+        <!-- 1. ภาษาไทย -->
+        <button onclick="startSubjectMixedQuiz('ภาษาไทย')"
+          style="width: 100%; background: #FFFFFF; border: 1.5px solid #F1F5F9; border-radius: 18px; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.15s ease; box-shadow: 0 2px 6px rgba(0,0,0,0.02); font-family: inherit;">
+          <div style="display: flex; align-items: center; gap: 12px; text-align: left;">
+            <div style="width: 40px; height: 40px; border-radius: 12px; background: #FFF1F2; color: #E11D48; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">
+              📕
+            </div>
+            <div>
+              <div style="font-size: 15.5px; font-weight: 800; color: #0F172A;">ภาษาไทย</div>
+              <div style="font-size: 11.5px; color: #94A3B8; font-weight: 500;">สุ่มคละทุกบทเรียน (30 ข้อ)</div>
+            </div>
+          </div>
+          <div style="width: 32px; height: 32px; border-radius: 50%; background: #C62828; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 6px rgba(198, 40, 40, 0.25);">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </div>
+        </button>
+
+        <!-- 2. ความสามารถทั่วไป -->
+        <button onclick="startSubjectMixedQuiz('ทั่วไป')"
+          style="width: 100%; background: #FFFFFF; border: 1.5px solid #F1F5F9; border-radius: 18px; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.15s ease; box-shadow: 0 2px 6px rgba(0,0,0,0.02); font-family: inherit;">
+          <div style="display: flex; align-items: center; gap: 12px; text-align: left;">
+            <div style="width: 40px; height: 40px; border-radius: 12px; background: #F3E8FF; color: #9333EA; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">
+              🧮
+            </div>
+            <div>
+              <div style="font-size: 15.5px; font-weight: 800; color: #0F172A;">ความสามารถทั่วไป</div>
+              <div style="font-size: 11.5px; color: #94A3B8; font-weight: 500;">สุ่มคละทุกบทเรียน (30 ข้อ)</div>
+            </div>
+          </div>
+          <div style="width: 32px; height: 32px; border-radius: 50%; background: #C62828; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 6px rgba(198, 40, 40, 0.25);">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </div>
+        </button>
+
+        <!-- 3. คอมพิวเตอร์และสารสนเทศ -->
+        <button onclick="startSubjectMixedQuiz('คอม')"
+          style="width: 100%; background: #FFFFFF; border: 1.5px solid #F1F5F9; border-radius: 18px; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.15s ease; box-shadow: 0 2px 6px rgba(0,0,0,0.02); font-family: inherit;">
+          <div style="display: flex; align-items: center; gap: 12px; text-align: left;">
+            <div style="width: 40px; height: 40px; border-radius: 12px; background: #EFF6FF; color: #2563EB; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">
+              💻
+            </div>
+            <div>
+              <div style="font-size: 15.5px; font-weight: 800; color: #0F172A;">คอมพิวเตอร์และสารสนเทศ</div>
+              <div style="font-size: 11.5px; color: #94A3B8; font-weight: 500;">สุ่มคละทุกบทเรียน (30 ข้อ)</div>
+            </div>
+          </div>
+          <div style="width: 32px; height: 32px; border-radius: 50%; background: #C62828; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 6px rgba(198, 40, 40, 0.25);">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </div>
+        </button>
+
+        <!-- 4. กฎหมายที่ประชาชนควรรู้ -->
+        <button onclick="startSubjectMixedQuiz('กฏหมาย')"
+          style="width: 100%; background: #FFFFFF; border: 1.5px solid #F1F5F9; border-radius: 18px; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.15s ease; box-shadow: 0 2px 6px rgba(0,0,0,0.02); font-family: inherit;">
+          <div style="display: flex; align-items: center; gap: 12px; text-align: left;">
+            <div style="width: 40px; height: 40px; border-radius: 12px; background: #F8FAFC; color: #475569; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">
+              ⚖️
+            </div>
+            <div>
+              <div style="font-size: 15.5px; font-weight: 800; color: #0F172A;">กฎหมายที่ประชาชนควรรู้</div>
+              <div style="font-size: 11.5px; color: #94A3B8; font-weight: 500;">สุ่มคละทุกบทเรียน (30 ข้อ)</div>
+            </div>
+          </div>
+          <div style="width: 32px; height: 32px; border-radius: 50%; background: #C62828; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 6px rgba(198, 40, 40, 0.25);">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </div>
+        </button>
+
+        <!-- 5. สังคมและวัฒนธรรม -->
+        <button onclick="startSubjectMixedQuiz('สังคม')"
+          style="width: 100%; background: #FFFFFF; border: 1.5px solid #F1F5F9; border-radius: 18px; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.15s ease; box-shadow: 0 2px 6px rgba(0,0,0,0.02); font-family: inherit;">
+          <div style="display: flex; align-items: center; gap: 12px; text-align: left;">
+            <div style="width: 40px; height: 40px; border-radius: 12px; background: #ECFDF5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">
+              🌏
+            </div>
+            <div>
+              <div style="font-size: 15.5px; font-weight: 800; color: #0F172A;">สังคมและวัฒนธรรม</div>
+              <div style="font-size: 11.5px; color: #94A3B8; font-weight: 500;">สุ่มคละทุกบทเรียน (30 ข้อ)</div>
+            </div>
+          </div>
+          <div style="width: 32px; height: 32px; border-radius: 50%; background: #C62828; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 6px rgba(198, 40, 40, 0.25);">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </div>
+        </button>
+
+        <!-- 6. งานสารบรรณ -->
+        <button onclick="startSubjectMixedQuiz('งานสารบรรณ')"
+          style="width: 100%; background: #FFFFFF; border: 1.5px solid #F1F5F9; border-radius: 18px; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.15s ease; box-shadow: 0 2px 6px rgba(0,0,0,0.02); font-family: inherit;">
+          <div style="display: flex; align-items: center; gap: 12px; text-align: left;">
+            <div style="width: 40px; height: 40px; border-radius: 12px; background: #FFF7ED; color: #EA580C; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">
+              📄
+            </div>
+            <div>
+              <div style="font-size: 15.5px; font-weight: 800; color: #0F172A;">งานสารบรรณ (๒๕๒๖)</div>
+              <div style="font-size: 11.5px; color: #94A3B8; font-weight: 500;">สุ่มคละทุกบทเรียน (30 ข้อ)</div>
+            </div>
+          </div>
+          <div style="width: 32px; height: 32px; border-radius: 50%; background: #C62828; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 6px rgba(198, 40, 40, 0.25);">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </div>
+        </button>
+
+        <!-- 7. ลักษณะที่ ๕๔ -->
+        <button onclick="startSubjectMixedQuiz('ลักษณะที่54')"
+          style="width: 100%; background: #FFFFFF; border: 1.5px solid #F1F5F9; border-radius: 18px; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.15s ease; box-shadow: 0 2px 6px rgba(0,0,0,0.02); font-family: inherit;">
+          <div style="display: flex; align-items: center; gap: 12px; text-align: left;">
+            <div style="width: 40px; height: 40px; border-radius: 12px; background: #FDF2F8; color: #BE185D; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">
+              📋
+            </div>
+            <div>
+              <div style="font-size: 15.5px; font-weight: 800; color: #0F172A;">ระเบียบตำรวจ ลักษณะที่ ๕๔</div>
+              <div style="font-size: 11.5px; color: #94A3B8; font-weight: 500;">สุ่มคละทุกบทเรียน (30 ข้อ)</div>
+            </div>
+          </div>
+          <div style="width: 32px; height: 32px; border-radius: 50%; background: #C62828; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 6px rgba(198, 40, 40, 0.25);">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
           </div>
         </button>
 

@@ -651,6 +651,94 @@ window.startStreakChallenge = function(trackKey) {
   }
 };
 
+window.openSelectSubjectExamModal = function() {
+  const modal = document.getElementById('selectSubjectExamModal');
+  if (modal) modal.style.display = 'flex';
+};
+
+window.closeSelectSubjectExamModal = function() {
+  const modal = document.getElementById('selectSubjectExamModal');
+  if (modal) modal.style.display = 'none';
+};
+
+window.startSubjectMixedQuiz = async function(subjectKey) {
+  closeSelectSubjectExamModal();
+
+  const modal = document.getElementById('subjectQuizModal');
+  const badgeEl = document.getElementById('quizSubjectBadge');
+  const titleEl = document.getElementById('quizTitle');
+  const bodyContent = document.getElementById('quizBodyContent');
+  const stepText = document.getElementById('quizStepText');
+  const actionRow = document.getElementById('quizActionButtonsRow');
+  const navContainer = document.getElementById('quizNavContainer');
+  const progressBar = document.getElementById('quizProgressBar');
+
+  if (!modal || !bodyContent) return;
+
+  stopQuizCountdownTimer();
+  modal.style.display = 'flex';
+  if (badgeEl) badgeEl.textContent = `🎯 วิชา: ${subjectKey} (30 ข้อ)`;
+  if (titleEl) titleEl.textContent = `ข้อสอบรายวิชา: ${subjectKey} (สุ่มคละทุกบทเรียน)`;
+  if (stepText) stepText.textContent = 'กำลังสุ่มและจัดเรียงข้อสอบ 30 ข้อ...';
+  if (actionRow) actionRow.style.display = 'none';
+  if (navContainer) navContainer.style.display = 'none';
+  if (progressBar) progressBar.style.width = '5%';
+
+  bodyContent.innerHTML = `
+    <div style="text-align: center; color: #64748B; padding: 40px; font-size: 14px;">
+      <div style="font-size: 32px; margin-bottom: 12px;">⏳</div>
+      กำลังสุ่มข้อสอบ 30 ข้อจากทุกบทเรียนในวิชา "${escapeHTML(subjectKey)}"...<br>
+      <span style="font-size: 12px; color: #94A3B8; margin-top: 6px; display: block;">(สุ่มคละทุกบทเรียน • พร้อมจับเวลา 45 นาที)</span>
+    </div>
+  `;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/exams/subject-mixed?subject=${encodeURIComponent(subjectKey)}&count=30`);
+    if (!res.ok) throw new Error('Failed to fetch subject mixed questions');
+    const data = await res.json();
+
+    if (!data.questions || data.questions.length === 0) {
+      throw new Error('ไม่พบข้อสอบในระบบ');
+    }
+
+    const questions = data.questions.map(q => ({
+      ...q,
+      choices: q.choices || [q.choice1, q.choice2, q.choice3, q.choice4]
+    }));
+
+    currentQuizState = {
+      subjectKey: subjectKey,
+      setId: 'mixed_30_' + subjectKey,
+      setTitle: `ข้อสอบรายวิชา: ${data.subjectTitle || subjectKey} (30 ข้อ คละทุกบท)`,
+      track: 'subject_mixed',
+      questions: questions,
+      currentIndex: 0,
+      userAnswers: {},
+      score: 0,
+      startTime: Date.now(),
+      isSubmitted: false,
+      isReviewMode: false
+    };
+
+    // 45 minutes countdown timer (45 * 60 = 2,700s)
+    startQuizCountdownTimer(45 * 60);
+
+    renderCurrentQuizQuestion();
+  } catch (err) {
+    console.error('Start subject mixed quiz error:', err);
+    bodyContent.innerHTML = `
+      <div style="text-align: center; padding: 30px 20px;">
+        <div style="font-size: 36px; margin-bottom: 10px;">⚠️</div>
+        <h4 style="font-size: 16px; font-weight: 800; color: #0F172A; margin-bottom: 6px;">ไม่สามารถโหลดข้อสอบได้</h4>
+        <p style="font-size: 13px; color: #64748B; margin-bottom: 16px;">${escapeHTML(err.message || 'เกิดข้อผิดพลาดในการเชื่อมต่อ')}</p>
+        <button onclick="closeSubjectQuiz()" style="padding: 10px 20px; border-radius: 12px; background: #BD1B0B; color: white; border: none; font-weight: 700; cursor: pointer; font-family: inherit;">
+          ปิดหน้าต่าง
+        </button>
+      </div>
+    `;
+  }
+};
+
 
 
 // Handle subject selection from Question Bank
@@ -7710,7 +7798,49 @@ function renderQuizResults() {
     `;
   }
 
-  const retakeAction = track === 'amnuay' ? 'startAmnuayMainExam()' : (track === 'prabpram' ? 'startPrabpramMainExam()' : `startBankSubjectQuiz('${subjectKey}', '${setId}', ${total}, '${escapeHTML(setTitle)}')`);
+  if (track === 'subject_mixed') {
+    const chStats = {};
+    questions.forEach((q, idx) => {
+      const ch = q.chapter || 'บททั่วไป';
+      if (!chStats[ch]) chStats[ch] = { total: 0, correct: 0 };
+      chStats[ch].total++;
+      if (currentQuizState.userAnswers[idx] === q.correctAnswer) {
+        chStats[ch].correct++;
+      }
+    });
+
+    const chRows = Object.entries(chStats).map(([chName, data], i) => {
+      const chPct = Math.round((data.correct / data.total) * 100);
+      const pass = chPct >= 60;
+      return `
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 9px 12px; background: ${i % 2 === 0 ? '#F8FAFC' : '#FFFFFF'}; border-radius: 10px; font-size: 12.5px;">
+          <div style="text-align: left; max-width: 65%;">
+            <span style="font-weight: 700; color: #1E293B;">${chName}</span>
+            <span style="font-size: 11px; color: #94A3B8; margin-left: 4px;">(${data.total} ข้อ)</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-weight: 800; color: ${pass ? '#059669' : '#DC2626'};">${data.correct}/${data.total} (${chPct}%)</span>
+            <span style="font-size: 10px; padding: 2px 6px; border-radius: 999px; font-weight: 700; background: ${pass ? '#ECFDF5' : '#FEF2F2'}; color: ${pass ? '#059669' : '#DC2626'};">
+              ${pass ? 'ผ่าน' : 'ทบทวน'}
+            </span>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    subjectBreakdownHtml = `
+      <div style="margin-top: 14px; margin-bottom: 20px; border: 1.5px solid #E2E8F0; border-radius: 16px; padding: 14px; background: white;">
+        <h4 style="margin: 0 0 10px 0; font-size: 13.5px; font-weight: 800; color: #0F172A; text-align: left;">
+          📊 ผลคะแนนแยกตามบทเรียน (สุ่มคละ ${questions.length} ข้อ):
+        </h4>
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          ${chRows}
+        </div>
+      </div>
+    `;
+  }
+
+  const retakeAction = track === 'amnuay' ? 'startAmnuayMainExam()' : (track === 'prabpram' ? 'startPrabpramMainExam()' : (track === 'subject_mixed' ? `startSubjectMixedQuiz('${subjectKey}')` : `startBankSubjectQuiz('${subjectKey}', '${setId}', ${total}, '${escapeHTML(setTitle)}')`));
 
   bodyContent.innerHTML = `
     <div style="text-align: center; padding: 20px 10px;">

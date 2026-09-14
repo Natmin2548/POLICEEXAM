@@ -12123,6 +12123,150 @@ app.get('/api/exams/subject-questions', authenticateToken, async (req, res) => {
   }
 });
 
+// GET /api/exams/subject-mixed - Random 30 questions from all available chapters of a chosen subject
+app.get('/api/exams/subject-mixed', async (req, res) => {
+  try {
+    const { subject, count } = req.query;
+    const targetCount = parseInt(count) || 30;
+    const rawSubject = (subject || 'ภาษาไทย').trim();
+
+    let orCategories = [];
+    let notCategories = [];
+    let displayTitle = rawSubject;
+
+    if (rawSubject === 'ภาษาไทย') {
+      orCategories = [{ category: { contains: 'ภาษาไทย' } }];
+      displayTitle = 'ภาษาไทย';
+    } else if (rawSubject === 'ทั่วไป' || rawSubject === 'ความสามารถทั่วไป' || rawSubject === 'คณิต') {
+      orCategories = [
+        { category: { contains: 'ทั่วไป' } },
+        { category: { contains: 'ความสามารถทั่วไป' } },
+        { category: { contains: 'คณิต' } }
+      ];
+      displayTitle = 'ความสามารถทั่วไป (คณิตศาสตร์/คำนวณ)';
+    } else if (rawSubject === 'คอม' || rawSubject === 'คอมพิวเตอร์') {
+      orCategories = [
+        { category: { contains: 'คอม' } },
+        { category: { contains: 'สารสนเทศ' } }
+      ];
+      displayTitle = 'คอมพิวเตอร์และสารสนเทศ';
+    } else if (rawSubject === 'กฏหมาย' || rawSubject === 'กฎหมาย') {
+      orCategories = [
+        { category: { contains: 'กฏหมาย' } },
+        { category: { contains: 'กฎหมาย' } }
+      ];
+      notCategories = [
+        { category: { contains: 'สารบรรณ' } },
+        { category: { contains: '๕๔' } },
+        { category: { contains: '54' } }
+      ];
+      displayTitle = 'กฎหมายที่ประชาชนควรรู้';
+    } else if (rawSubject === 'สังคม' || rawSubject === 'สังคมและวัฒนธรรม') {
+      orCategories = [{ category: { contains: 'สังคม' } }];
+      displayTitle = 'สังคมและวัฒนธรรม';
+    } else if (rawSubject === 'งานสารบรรณ' || rawSubject === 'สารบรรณ') {
+      orCategories = [
+        { category: { contains: 'งานสารบรรณ' } },
+        { category: { contains: 'สารบรรณ_๒๕๒๖' } }
+      ];
+      notCategories = [
+        { category: { contains: '๕๔' } },
+        { category: { contains: '54' } }
+      ];
+      displayTitle = 'งานสารบรรณ พ.ศ. ๒๕๒๖';
+    } else if (rawSubject === 'ลักษณะที่54' || rawSubject === 'ลักษณะที่ 54' || rawSubject === 'ลักษณะที่ ๕๔' || rawSubject === 'สารบรรณตำรวจ_๕๔') {
+      orCategories = [
+        { category: { contains: 'สารบรรณตำรวจ_๕๔' } },
+        { category: { contains: '๕๔' } },
+        { category: { contains: '54' } }
+      ];
+      displayTitle = 'ระเบียบตำรวจ ลักษณะที่ ๕๔';
+    } else {
+      orCategories = [{ category: { contains: rawSubject } }];
+    }
+
+    const whereClause = {
+      OR: orCategories
+    };
+    if (notCategories.length > 0) {
+      whereClause.NOT = notCategories;
+    }
+
+    const examSets = await prisma.examSet.findMany({
+      where: whereClause,
+      include: {
+        questions: true
+      }
+    });
+
+    const chapterMap = {};
+    examSets.forEach(set => {
+      const chName = (set.subcategory || set.title || 'บททั่วไป').trim();
+      if (!chapterMap[chName]) chapterMap[chName] = [];
+      if (set.questions && set.questions.length > 0) {
+        set.questions.forEach(q => {
+          chapterMap[chName].push({
+            id: q.id,
+            questionText: q.questionText,
+            choices: [q.choice1, q.choice2, q.choice3, q.choice4],
+            choice1: q.choice1,
+            choice2: q.choice2,
+            choice3: q.choice3,
+            choice4: q.choice4,
+            correctAnswer: q.correctAnswer,
+            explanation: q.explanation || 'เฉลยและเหตุผลอ้างอิงตามระเบียบและมาตรฐานข้อสอบตำรวจ',
+            chapter: chName,
+            set: set.title
+          });
+        });
+      }
+    });
+
+    const chapterKeys = Object.keys(chapterMap).filter(k => chapterMap[k].length > 0);
+
+    if (chapterKeys.length === 0) {
+      return res.status(404).json({ error: `ไม่พบข้อสอบในหมวด ${rawSubject}` });
+    }
+
+    chapterKeys.forEach(k => {
+      chapterMap[k].sort(() => 0.5 - Math.random());
+    });
+
+    const pickedQuestions = [];
+    let chIdx = 0;
+    let attempts = 0;
+    const maxAttempts = targetCount * 30;
+
+    while (pickedQuestions.length < targetCount && attempts < maxAttempts) {
+      attempts++;
+      const currentChapter = chapterKeys[chIdx % chapterKeys.length];
+      const pool = chapterMap[currentChapter];
+      if (pool && pool.length > 0) {
+        const q = pool.shift();
+        pickedQuestions.push(q);
+      }
+      chIdx++;
+      const hasAnyLeft = chapterKeys.some(k => chapterMap[k].length > 0);
+      if (!hasAnyLeft) break;
+    }
+
+    // Mix/interleave all chapters together
+    pickedQuestions.sort(() => 0.5 - Math.random());
+
+    res.json({
+      subjectKey: rawSubject,
+      subjectTitle: displayTitle,
+      totalQuestions: pickedQuestions.length,
+      chaptersCount: chapterKeys.length,
+      chapters: chapterKeys,
+      questions: pickedQuestions
+    });
+  } catch (err) {
+    console.error('Subject mixed questions error:', err);
+    res.status(500).json({ error: 'เกิดข้อผิดพลาดในการโหลดข้อสอบ: ' + err.message });
+  }
+});
+
 // GET /api/exams/prabpram - Main Exam Simulation for สายปราบปราม (100% Real DB Questions Only)
 app.get('/api/exams/prabpram', async (req, res) => {
   try {
