@@ -160,46 +160,78 @@
             </div>
           </div>
 
-          <!-- Filters Bar: แยกวิชา & แยกหมวดหมู่ -->
-          <div style="background: #F8FAFC; border: 1.5px solid #E2E8F0; border-radius: 16px; padding: 14px 16px; margin-bottom: 18px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
-            <div style="flex: 1.2; min-width: 180px;">
-              <label style="display: block; font-size: 11.5px; font-weight: 700; color: #475569; margin-bottom: 4px;">🔍 1. กรองตามวิชา:</label>
-              <select id="filterExamSubject" onchange="onFilterExamSubjectChange()" style="width: 100%; padding: 9px 12px; border-radius: 10px; border: 1.5px solid #CBD5E1; font-size: 13px; font-family: inherit; font-weight: 600; background: white; outline: none;">
-                <option value="ALL">ทุกวิชา (All Subjects)</option>
-                <option value="งานสารบรรณ">📜 ระเบียบสารบรรณ (๒๕๒๖)</option>
-                <option value="ลักษณะที่54">📑 สารบรรณตำรวจ (ลักษณะ ๕๔)</option>
-                <option value="ทั่วไป">🧠 ความสามารถทั่วไป (คณิตศาสตร์)</option>
-                <option value="ภาษาไทย">🇹🇭 ภาษาไทย</option>
-                <option value="ภาษาอังกฤษ">🇬🇧 ภาษาอังกฤษ</option>
-                <option value="สังคม">🏛️ สังคม วัฒนธรรม และอาเซียน</option>
-                <option value="กฏหมาย">⚖️ กฎหมายที่ควรรู้</option>
-                <option value="คอม">💻 เทคโนโลยีสารสนเทศ</option>
-              </select>
+          <!-- Subject Banks Navigation Pills (คลังรายวิชา) -->
+          <div style="margin-bottom: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <span style="font-size: 13px; font-weight: 800; color: #1E293B; display: flex; align-items: center; gap: 6px;">
+                <span>📚 คลังรายวิชา (Subject Question Banks)</span>
+              </span>
+              <span style="font-size: 11.5px; color: #64748B; font-weight: 600;">คลิกเพื่อกรองเฉพาะวิชา</span>
+            </div>
+            <div id="adminSubjectBanksNav" style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+              <!-- Populated dynamically via renderAdminSubjectBanksNav() -->
+            </div>
+          </div>
+
+          <!-- Filters Bar: กรองตามหมวดหมู่ & ค้นหา & สลับโหมดมุมมอง -->
+          <div style="background: #F8FAFC; border: 1.5px solid #E2E8F0; border-radius: 16px; padding: 14px 16px; margin-bottom: 18px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between;">
+            <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; flex: 1; min-width: 280px;">
+              <div style="min-width: 170px; flex: 1;">
+                <label style="display: block; font-size: 11.5px; font-weight: 700; color: #475569; margin-bottom: 4px;">🔍 กรองวิชา:</label>
+                <select id="filterExamSubject" onchange="onFilterExamSubjectChange()" style="width: 100%; padding: 9px 12px; border-radius: 10px; border: 1.5px solid #CBD5E1; font-size: 13px; font-family: inherit; font-weight: 600; background: white; outline: none;">
+                  <option value="ALL">ทุกวิชา (All Subjects)</option>
+                  <option value="ทั่วไป">🧠 ความสามารถทั่วไป (คณิตศาสตร์)</option>
+                  <option value="ภาษาไทย">🇹🇭 ภาษาไทย</option>
+                  <option value="คอม">💻 คอมพิวเตอร์และสารสนเทศ</option>
+                  <option value="กฏหมาย">⚖️ กฎหมายที่ประชาชนควรรู้</option>
+                  <option value="สังคม">🏛️ สังคม วัฒนธรรม และจริยธรรม</option>
+                  <option value="งานสารบรรณ_๒๕๒๖">📜 ระเบียบสารบรรณ (๒๕๒๖)</option>
+                  <option value="สารบรรณตำรวจ_๕๔">📑 สารบรรณตำรวจ (ลักษณะ ๕๔)</option>
+                  <option value="ภาษาอังกฤษ">🇬🇧 ภาษาอังกฤษ</option>
+                </select>
+              </div>
+
+              <div style="min-width: 200px; flex: 1.3;">
+                <label style="display: block; font-size: 11.5px; font-weight: 700; color: #475569; margin-bottom: 4px;">📑 กรองหมวดหมู่ / บทเรียน:</label>
+                <select id="filterExamChapter" onchange="onFilterExamChapterChange()" style="width: 100%; padding: 9px 12px; border-radius: 10px; border: 1.5px solid #CBD5E1; font-size: 13px; font-family: inherit; font-weight: 600; background: white; outline: none;">
+                  <option value="ALL">ทุกหมวดหมู่ (All Chapters)</option>
+                </select>
+              </div>
+
+              <div style="min-width: 170px; flex: 1.2;">
+                <label style="display: block; font-size: 11.5px; font-weight: 700; color: #475569; margin-bottom: 4px;">🔎 ค้นหาชื่อชุดข้อสอบ:</label>
+                <input type="text" id="filterExamSearch" placeholder="พิมพ์คำค้นหา..." oninput="onFilterExamSearchChange()" style="width: 100%; padding: 9px 12px; border-radius: 10px; border: 1.5px solid #CBD5E1; font-size: 13px; font-family: inherit; box-sizing: border-box; outline: none; background: white;">
+              </div>
             </div>
 
-            <div style="flex: 1.5; min-width: 180px;">
-              <label style="display: block; font-size: 11.5px; font-weight: 700; color: #475569; margin-bottom: 4px;">📑 2. กรองตามหมวดหมู่ / บทเรียน:</label>
-              <select id="filterExamChapter" onchange="onFilterExamChapterChange()" style="width: 100%; padding: 9px 12px; border-radius: 10px; border: 1.5px solid #CBD5E1; font-size: 13px; font-family: inherit; font-weight: 600; background: white; outline: none;">
-                <option value="ALL">ทุกหมวดหมู่ (All Chapters)</option>
-              </select>
-            </div>
-
-            <div style="flex: 1; min-width: 150px;">
-              <label style="display: block; font-size: 11.5px; font-weight: 700; color: #475569; margin-bottom: 4px;">🔎 3. ค้นหาชื่อชุดข้อสอบ:</label>
-              <input type="text" id="filterExamSearch" placeholder="พิมพ์คำค้นหา..." oninput="onFilterExamSearchChange()" style="width: 100%; padding: 9px 12px; border-radius: 10px; border: 1.5px solid #CBD5E1; font-size: 13px; font-family: inherit; box-sizing: border-box; outline: none;">
-            </div>
-
-            <div style="align-self: flex-end;">
+            <div style="display: flex; gap: 8px; align-items: flex-end; align-self: flex-end;">
               <button onclick="resetExamFilters()" class="btn btn-outline" style="padding: 9px 14px; border-radius: 10px; font-size: 12.5px; font-weight: 600; height: 38px;">ล้างตัวกรอง</button>
+              
+              <!-- View Switcher -->
+              <div style="display: inline-flex; background: #E2E8F0; padding: 3px; border-radius: 12px; height: 38px; box-sizing: border-box;">
+                <button type="button" id="btnViewModeBank" onclick="toggleExamViewMode('bank')" style="padding: 6px 14px; border-radius: 9px; border: none; font-size: 12px; font-weight: 800; cursor: pointer; transition: all 0.15s; background: #BD1B0B; color: white; display: flex; align-items: center; gap: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                  <span>🗂️ แยกตามคลังและหมวดหมู่</span>
+                </button>
+                <button type="button" id="btnViewModeTable" onclick="toggleExamViewMode('table')" style="padding: 6px 14px; border-radius: 9px; border: none; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.15s; background: transparent; color: #475569; display: flex; align-items: center; gap: 5px;">
+                  <span>📋 ตารางรวม</span>
+                </button>
+              </div>
             </div>
           </div>
 
           <!-- Counter badge -->
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 0 4px;">
-            <span id="examsCountSummary" style="font-size: 13px; font-weight: 700; color: #475569;">พบทั้งหมด 0 ชุดข้อสอบ</span>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; padding: 0 4px;">
+            <span id="examsCountSummary" style="font-size: 13px; font-weight: 800; color: #334155;">พบทั้งหมด 0 ชุดข้อสอบ</span>
+            <span id="examsActiveSubjectBadge" style="font-size: 12px; font-weight: 700; color: #64748B;">แสดงทุกวิชา</span>
           </div>
 
-          <div style="overflow-x: auto;">
+          <!-- VIEW MODE 1: Bank & Chapters Grouped View (Default) -->
+          <div id="adminBankChapterView" style="display: flex; flex-direction: column; gap: 20px;">
+            <!-- Dynamically populated via renderExamsWithFilters() -->
+          </div>
+
+          <!-- VIEW MODE 2: Classic Flat Table View -->
+          <div id="adminFlatTableView" style="display: none; overflow-x: auto;">
             <table>
               <thead>
                 <tr>

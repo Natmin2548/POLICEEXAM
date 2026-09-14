@@ -629,12 +629,186 @@ window.closeUserStatsModal = function() {
 };
 
 // ==========================================
-// Exams View (Filtered by Subject & Chapter + Auto Set Numbering)
+// Exams View (Organized by Subject Banks & Chapters + Flat Table View)
 // ==========================================
+const ADMIN_SUBJECT_BANKS = [
+  {
+    key: 'ALL',
+    name: 'ทุกวิชา (All Subjects)',
+    shortName: 'ทุกวิชา',
+    icon: '📚',
+    color: '#BD1B0B',
+    bgColor: '#FEF2F2',
+    borderColor: '#FECACA'
+  },
+  {
+    key: 'ทั่วไป',
+    name: 'ความสามารถทั่วไป (คณิตศาสตร์และเหตุผล)',
+    shortName: 'ทั่วไป (คณิต)',
+    icon: '🧠',
+    color: '#9333EA',
+    bgColor: '#F3E8FF',
+    borderColor: '#E9D5FF'
+  },
+  {
+    key: 'ภาษาไทย',
+    name: 'ภาษาไทย',
+    shortName: 'ภาษาไทย',
+    icon: '🇹🇭',
+    color: '#E11D48',
+    bgColor: '#FFF1F2',
+    borderColor: '#FECDD3'
+  },
+  {
+    key: 'คอม',
+    name: 'คอมพิวเตอร์และสารสนเทศ (IT)',
+    shortName: 'คอมพิวเตอร์',
+    icon: '💻',
+    color: '#2563EB',
+    bgColor: '#EFF6FF',
+    borderColor: '#BFDBFE'
+  },
+  {
+    key: 'กฏหมาย',
+    name: 'กฎหมายที่ประชาชนควรรู้',
+    shortName: 'กฎหมาย',
+    icon: '⚖️',
+    color: '#D97706',
+    bgColor: '#FEF3C7',
+    borderColor: '#FDE68A'
+  },
+  {
+    key: 'สังคม',
+    name: 'สังคม วัฒนธรรม และจริยธรรม',
+    shortName: 'สังคมและวัฒนธรรม',
+    icon: '🏛️',
+    color: '#059669',
+    bgColor: '#ECFDF5',
+    borderColor: '#A7F3D0'
+  },
+  {
+    key: 'งานสารบรรณ_๒๕๒๖',
+    name: 'ระเบียบสารบรรณ (๒๕๒๖)',
+    shortName: 'สารบรรณ ๒๕๒๖',
+    icon: '📜',
+    color: '#EA580C',
+    bgColor: '#FFF7ED',
+    borderColor: '#FED7AA'
+  },
+  {
+    key: 'สารบรรณตำรวจ_๕๔',
+    name: 'สารบรรณตำรวจ ลักษณะที่ ๕๔',
+    shortName: 'สารบรรณตำรวจ ๕๔',
+    icon: '📑',
+    color: '#BE185D',
+    bgColor: '#FDF2F8',
+    borderColor: '#FBCFE8'
+  },
+  {
+    key: 'ภาษาอังกฤษ',
+    name: 'ภาษาอังกฤษ',
+    shortName: 'ภาษาอังกฤษ',
+    icon: '🇬🇧',
+    color: '#4F46E5',
+    bgColor: '#EEF2FF',
+    borderColor: '#C7D2FE'
+  }
+];
+
+function matchExamToSubject(ex, subjectKey) {
+  if (!subjectKey || subjectKey === 'ALL') return true;
+  const cat = (ex.category || '').trim();
+  if (subjectKey === 'ทั่วไป') {
+    return cat === 'ทั่วไป' || cat.includes('คณิต') || cat.includes('ความสามารถทั่วไป');
+  }
+  if (subjectKey === 'ภาษาไทย') {
+    return cat === 'ภาษาไทย' || cat === 'ไทย' || cat.includes('ไทย');
+  }
+  if (subjectKey === 'คอม') {
+    return cat === 'คอม' || cat === 'คอมพิวเตอร์' || cat.includes('คอม');
+  }
+  if (subjectKey === 'กฏหมาย') {
+    return cat === 'กฏหมาย' || cat === 'กฎหมาย' || cat.includes('กฎหมาย') || cat.includes('กฏหมาย');
+  }
+  if (subjectKey === 'สังคม') {
+    return cat === 'สังคม' || cat.includes('สังคม');
+  }
+  if (subjectKey === 'งานสารบรรณ_๒๕๒๖' || subjectKey === 'งานสารบรรณ') {
+    return cat === 'งานสารบรรณ_๒๕๒๖' || cat === 'งานสารบรรณ' || (cat.includes('สารบรรณ') && (cat.includes('๒๕๒๖') || !cat.includes('๕๔')));
+  }
+  if (subjectKey === 'สารบรรณตำรวจ_๕๔' || subjectKey === 'ลักษณะที่54') {
+    return cat === 'สารบรรณตำรวจ_๕๔' || cat === 'ลักษณะที่54' || cat === 'ลักษณะที่ 54' || cat.includes('๕๔') || cat.includes('ตำรวจ');
+  }
+  if (subjectKey === 'ภาษาอังกฤษ') {
+    return cat === 'ภาษาอังกฤษ' || cat === 'อังกฤษ' || cat.includes('อังกฤษ');
+  }
+  return cat === subjectKey;
+}
+
+function getSubjectBankMeta(catOrKey) {
+  const c = (catOrKey || '').trim();
+  for (const b of ADMIN_SUBJECT_BANKS) {
+    if (b.key === 'ALL') continue;
+    if (matchExamToSubject({ category: c }, b.key)) {
+      return b;
+    }
+  }
+  return {
+    key: c || 'ทั่วไป',
+    name: c || 'ทั่วไป',
+    shortName: c || 'ทั่วไป',
+    icon: '📝',
+    color: '#64748B',
+    bgColor: '#F1F5F9',
+    borderColor: '#CBD5E1'
+  };
+}
+
 let allLoadedExams = [];
 let currentExamFilterSubject = 'ALL';
 let currentExamFilterChapter = 'ALL';
 let currentExamFilterSearch = '';
+let currentExamViewMode = 'bank'; // 'bank' or 'table'
+
+window.toggleExamViewMode = function(mode) {
+  currentExamViewMode = mode;
+  const bankView = document.getElementById('adminBankChapterView');
+  const tableView = document.getElementById('adminFlatTableView');
+  const btnBank = document.getElementById('btnViewModeBank');
+  const btnTable = document.getElementById('btnViewModeTable');
+
+  if (mode === 'bank') {
+    if (bankView) bankView.style.display = 'flex';
+    if (tableView) tableView.style.display = 'none';
+    if (btnBank) {
+      btnBank.style.background = '#BD1B0B';
+      btnBank.style.color = 'white';
+      btnBank.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+      btnBank.style.fontWeight = '800';
+    }
+    if (btnTable) {
+      btnTable.style.background = 'transparent';
+      btnTable.style.color = '#475569';
+      btnTable.style.boxShadow = 'none';
+      btnTable.style.fontWeight = '700';
+    }
+  } else {
+    if (bankView) bankView.style.display = 'none';
+    if (tableView) tableView.style.display = 'block';
+    if (btnBank) {
+      btnBank.style.background = 'transparent';
+      btnBank.style.color = '#475569';
+      btnBank.style.boxShadow = 'none';
+      btnBank.style.fontWeight = '700';
+    }
+    if (btnTable) {
+      btnTable.style.background = '#BD1B0B';
+      btnTable.style.color = 'white';
+      btnTable.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+      btnTable.style.fontWeight = '800';
+    }
+  }
+};
 
 async function loadExams() {
   try {
@@ -644,12 +818,51 @@ async function loadExams() {
     if (res.ok) {
       allLoadedExams = await res.json();
       updateFilterChapterDropdown();
+      renderAdminSubjectBanksNav();
       renderExamsWithFilters();
     }
   } catch (err) {
     console.error('Exams load error:', err);
   }
 }
+
+function renderAdminSubjectBanksNav() {
+  const container = document.getElementById('adminSubjectBanksNav');
+  if (!container) return;
+
+  container.innerHTML = ADMIN_SUBJECT_BANKS.map(bank => {
+    const isAll = bank.key === 'ALL';
+    const matchingExams = isAll ? allLoadedExams : allLoadedExams.filter(e => matchExamToSubject(e, bank.key));
+    const setsCount = matchingExams.length;
+    const qCount = matchingExams.reduce((sum, e) => sum + (e.totalCount || 0), 0);
+    const isActive = currentExamFilterSubject === bank.key;
+
+    const activeStyle = isActive 
+      ? `background: ${bank.bgColor}; color: ${bank.color}; border: 2px solid ${bank.color}; box-shadow: 0 4px 12px rgba(0,0,0,0.08);`
+      : 'background: white; color: #475569; border: 1.5px solid #E2E8F0;';
+
+    return `
+      <button type="button" onclick="switchAdminBankSubject('${bank.key}')" 
+        style="padding: 8px 14px; border-radius: 12px; font-family: inherit; cursor: pointer; transition: all 0.15s ease; display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; ${activeStyle}">
+        <span style="font-size: 17px;">${bank.icon}</span>
+        <span>${bank.shortName}</span>
+        <span style="background: ${isActive ? bank.color : '#F1F5F9'}; color: ${isActive ? 'white' : '#64748B'}; font-size: 11px; padding: 2px 8px; border-radius: 999px; font-weight: 800;">
+          ${setsCount} ชุด (${qCount} ข้อ)
+        </span>
+      </button>
+    `;
+  }).join('');
+}
+
+window.switchAdminBankSubject = function(subjectKey) {
+  currentExamFilterSubject = subjectKey;
+  currentExamFilterChapter = 'ALL';
+  const subSelect = document.getElementById('filterExamSubject');
+  if (subSelect) subSelect.value = subjectKey;
+  updateFilterChapterDropdown();
+  renderAdminSubjectBanksNav();
+  renderExamsWithFilters();
+};
 
 function updateFilterChapterDropdown() {
   const chapterSelect = document.getElementById('filterExamChapter');
@@ -665,6 +878,15 @@ function updateFilterChapterDropdown() {
         chapterSelect.innerHTML += `<option value="${ch.value}">${ch.label}</option>`;
       }
     });
+    // Also include any subcategories from loaded exams for this subject
+    const subjectSubcats = Array.from(new Set(
+      allLoadedExams.filter(e => matchExamToSubject(e, subject)).map(e => e.subcategory).filter(Boolean)
+    ));
+    subjectSubcats.forEach(sub => {
+      if (!chapters.some(c => c.value === sub)) {
+        chapterSelect.innerHTML += `<option value="${sub}">📂 ${sub}</option>`;
+      }
+    });
   } else {
     // Collect all unique subcategories from loaded exams
     const allSubcats = Array.from(new Set(allLoadedExams.map(e => e.subcategory).filter(Boolean)));
@@ -676,24 +898,19 @@ function updateFilterChapterDropdown() {
 
 function renderExamsWithFilters() {
   const tbody = document.getElementById('examsTableBody');
+  const bankContainer = document.getElementById('adminBankChapterView');
   const summaryEl = document.getElementById('examsCountSummary');
-  if (!tbody) return;
-
-  tbody.innerHTML = '';
+  const activeSubjectBadge = document.getElementById('examsActiveSubjectBadge');
 
   const filtered = allLoadedExams.filter(ex => {
     // 1. Subject Filter
     if (currentExamFilterSubject !== 'ALL') {
-      const isSubMatch = ex.category === currentExamFilterSubject || 
-        (currentExamFilterSubject.includes('สารบรรณ') && ex.category && ex.category.includes('สารบรรณ')) ||
-        (currentExamFilterSubject === 'งานสารบรรณ_๒๕๒๖' && ex.category && (ex.category.includes('๒๕๒๖') || ex.category === 'งานสารบรรณ')) ||
-        (currentExamFilterSubject === 'สารบรรณตำรวจ_๕๔' && ex.category && (ex.category.includes('๕๔') || ex.category === 'ลักษณะที่54'));
-      if (!isSubMatch) return false;
+      if (!matchExamToSubject(ex, currentExamFilterSubject)) return false;
     }
 
     // 2. Chapter Filter
     if (currentExamFilterChapter !== 'ALL') {
-      const cleanFilter = currentExamFilterChapter.replace(/บทที่\s*\d+\s*/, '').trim();
+      const cleanFilter = currentExamFilterChapter.replace(/บทที่\s*[\d๑-๙]+\s*[:\-]?\s*/, '').trim();
       const matchSubcat = ex.subcategory && (ex.subcategory === currentExamFilterChapter || ex.subcategory.includes(cleanFilter));
       const matchTitle = ex.title && cleanFilter && ex.title.includes(cleanFilter);
       if (!matchSubcat && !matchTitle) return false;
@@ -712,70 +929,226 @@ function renderExamsWithFilters() {
     return true;
   });
 
+  const totalFilteredQuestions = filtered.reduce((sum, e) => sum + (e.totalCount || 0), 0);
+  const totalAllQuestions = allLoadedExams.reduce((sum, e) => sum + (e.totalCount || 0), 0);
+
   if (summaryEl) {
-    summaryEl.textContent = `พบทั้งหมด ${filtered.length} ชุดข้อสอบ (จากคลังทั้งหมด ${allLoadedExams.length} ชุด)`;
+    summaryEl.textContent = `พบทั้งหมด ${filtered.length} ชุดข้อสอบ (${totalFilteredQuestions} ข้อ) จากคลังทั้งหมด ${allLoadedExams.length} ชุด (${totalAllQuestions} ข้อ)`;
   }
 
-  if (filtered.length === 0) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="7" style="text-align: center; padding: 32px; color: #94A3B8;">
-          <div style="font-size: 28px; margin-bottom: 8px;">📂</div>
-          <div style="font-weight: 600; font-size: 14px;">ไม่พบชุดข้อสอบตามเงื่อนไขที่เลือก</div>
-          <button onclick="resetExamFilters()" class="btn btn-outline" style="margin-top: 10px; font-size: 12px;">ล้างตัวกรองทั้งหมด</button>
-        </td>
-      </tr>
-    `;
-    return;
+  if (activeSubjectBadge) {
+    const activeBank = ADMIN_SUBJECT_BANKS.find(b => b.key === currentExamFilterSubject);
+    activeSubjectBadge.textContent = activeBank ? `${activeBank.icon} ${activeBank.name}` : 'แสดงทุกวิชา';
   }
 
-  filtered.forEach(ex => {
-    const tr = document.createElement('tr');
-    
-    // Subject badge styling
-    let subjectBadgeStyle = 'background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE;';
-    if (ex.category && (ex.category.includes('สารบรรณ') || ex.category.includes('๒๕๒๖'))) {
-      subjectBadgeStyle = 'background: #FEF2F2; color: #BD1B0B; border: 1px solid #FECACA;';
-    } else if (ex.category && (ex.category.includes('๕๔') || ex.category.includes('ตำรวจ'))) {
-      subjectBadgeStyle = 'background: #FDF4FF; color: #86198F; border: 1px solid #F5D0FE;';
-    } else if (ex.category && ex.category.includes('กฎหมาย')) {
-      subjectBadgeStyle = 'background: #ECFDF5; color: #047857; border: 1px solid #A7F3D0;';
+  // ----------------------------------------------------
+  // 1. RENDER FLAT TABLE VIEW
+  // ----------------------------------------------------
+  if (tbody) {
+    tbody.innerHTML = '';
+    if (filtered.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" style="text-align: center; padding: 32px; color: #94A3B8;">
+            <div style="font-size: 28px; margin-bottom: 8px;">📂</div>
+            <div style="font-weight: 600; font-size: 14px;">ไม่พบชุดข้อสอบตามเงื่อนไขที่เลือก</div>
+            <button onclick="resetExamFilters()" class="btn btn-outline" style="margin-top: 10px; font-size: 12px;">ล้างตัวกรองทั้งหมด</button>
+          </td>
+        </tr>
+      `;
+    } else {
+      filtered.forEach(ex => {
+        const tr = document.createElement('tr');
+        const meta = getSubjectBankMeta(ex.category);
+        const subcatText = ex.subcategory || 'รวมทุกหมวด';
+
+        tr.innerHTML = `
+          <td style="font-weight: 700; color: #64748B;">#${ex.id}</td>
+          <td style="font-weight: 700; color: #0F172A; max-width: 280px;">
+            <div style="line-height: 1.4;">${escapeHTML(ex.title)}</div>
+          </td>
+          <td>
+            <span style="display: inline-block; padding: 3px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; background: ${meta.bgColor}; color: ${meta.color}; border: 1px solid ${meta.borderColor};">
+              ${meta.icon} ${escapeHTML(ex.category || 'ทั่วไป')}
+            </span>
+          </td>
+          <td>
+            <span style="display: inline-block; padding: 3px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; background: #F1F5F9; color: #334155; border: 1px solid #CBD5E1;">
+              ${escapeHTML(subcatText)}
+            </span>
+          </td>
+          <td style="text-align: center; font-weight: 700; color: #0F172A;">
+            ${ex.totalCount || 0} ข้อ
+          </td>
+          <td style="text-align: center;">
+            <span class="badge ${ex.status === 'PUBLISHED' ? 'badge-user' : 'badge-admin'}" style="${ex.status === 'PUBLISHED' ? 'background: #ECFDF5; color: #059669;' : 'background: #FFFBEB; color: #D97706;'}">
+              ${ex.status === 'PUBLISHED' ? 'เปิดสอบ' : 'ฉบับร่าง'}
+            </span>
+          </td>
+          <td class="action-buttons" style="text-align: right; white-space: nowrap;">
+            <button class="btn btn-outline" style="background: #FDF4FF; color: #7C3AED; border: 1.5px solid #DDD6FE; padding: 6px 10px; font-size: 11.5px; font-weight: 800;" onclick="openExamSetAiRecheckModal(${ex.id})" title="AI ตรวจสอบทีละข้อ พร้อมแก้ไขทันทีหากมั่นใจเกิน 90%">⚡ AI รีเช็คทั้งชุด</button>
+            <button class="btn btn-outline" style="background: #FEF3C7; color: #B45309; border: 1px solid #FDE68A; padding: 6px 10px; font-size: 11.5px; font-weight: 700;" onclick="openEditExamModal(${ex.id})">✏️ แก้ไขเนื้อหา</button>
+            <button class="btn btn-outline" style="background: #EEF2FF; color: #4F46E5; border: 1px solid #C7D2FE; padding: 6px 10px; font-size: 11.5px;" onclick="openAppendModal(${ex.id}, '${escapeHTML(ex.title)}', ${ex.totalCount})">➕ เพิ่มข้อสอบ</button>
+            <button class="btn btn-danger" style="padding: 6px 10px; font-size: 11.5px;" onclick="confirmDelete('exam', ${ex.id})">🗑️ ลบ</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+  }
+
+  // ----------------------------------------------------
+  // 2. RENDER BANK & CHAPTER GROUPED VIEW
+  // ----------------------------------------------------
+  if (bankContainer) {
+    bankContainer.innerHTML = '';
+
+    if (filtered.length === 0) {
+      bankContainer.innerHTML = `
+        <div style="background: white; border: 1.5px dashed #CBD5E1; border-radius: 20px; padding: 48px 24px; text-align: center; color: #94A3B8;">
+          <div style="font-size: 40px; margin-bottom: 12px;">📂</div>
+          <div style="font-size: 17px; font-weight: 800; color: #334155; margin-bottom: 6px;">ไม่พบชุดข้อสอบตามเงื่อนไขที่เลือก</div>
+          <div style="font-size: 13px; color: #64748B; margin-bottom: 16px;">ลองเปลี่ยนตัวกรอง ค้นหาด้วยคำอื่น หรือคลิกสร้างชุดข้อสอบใหม่ด้วย AI</div>
+          <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+            <button onclick="resetExamFilters()" class="btn btn-outline" style="padding: 9px 16px; font-size: 13px; font-weight: 700;">ล้างตัวกรองทั้งหมด</button>
+            <button onclick="showAddExamModal('${currentExamFilterSubject !== 'ALL' ? currentExamFilterSubject : 'ทั่วไป'}')" class="btn btn-primary" style="padding: 9px 18px; font-size: 13px; font-weight: 700; background: #BD1B0B; border: none;">
+              + สร้างชุดข้อสอบใหม่ (AI)
+            </button>
+          </div>
+        </div>
+      `;
+      return;
     }
 
-    const subcatText = ex.subcategory || 'รวมทุกหมวด';
+    // Determine subjects to display
+    const subjectsToDisplay = currentExamFilterSubject === 'ALL'
+      ? ADMIN_SUBJECT_BANKS.filter(b => b.key !== 'ALL')
+      : ADMIN_SUBJECT_BANKS.filter(b => b.key === currentExamFilterSubject);
 
-    tr.innerHTML = `
-      <td style="font-weight: 700; color: #64748B;">#${ex.id}</td>
-      <td style="font-weight: 700; color: #0F172A; max-width: 260px;">
-        <div style="line-height: 1.4;">${escapeHTML(ex.title)}</div>
-      </td>
-      <td>
-        <span style="display: inline-block; padding: 3px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; ${subjectBadgeStyle}">
-          ${escapeHTML(ex.category || 'ทั่วไป')}
-        </span>
-      </td>
-      <td>
-        <span style="display: inline-block; padding: 3px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; background: #F1F5F9; color: #334155; border: 1px solid #CBD5E1;">
-          ${escapeHTML(subcatText)}
-        </span>
-      </td>
-      <td style="text-align: center; font-weight: 700; color: #0F172A;">
-        ${ex.totalCount || 0} ข้อ
-      </td>
-      <td style="text-align: center;">
-        <span class="badge ${ex.status === 'PUBLISHED' ? 'badge-user' : 'badge-admin'}" style="${ex.status === 'PUBLISHED' ? 'background: #ECFDF5; color: #059669;' : 'background: #FFFBEB; color: #D97706;'}">
-          ${ex.status === 'PUBLISHED' ? 'เปิดสอบ' : 'ฉบับร่าง'}
-        </span>
-      </td>
-      <td class="action-buttons" style="text-align: right; white-space: nowrap;">
-        <button class="btn btn-outline" style="background: #FDF4FF; color: #7C3AED; border: 1.5px solid #DDD6FE; padding: 6px 10px; font-size: 11.5px; font-weight: 800;" onclick="openExamSetAiRecheckModal(${ex.id})" title="AI ตรวจสอบทีละข้อ พร้อมแก้ไขทันทีหากมั่นใจเกิน 90%">⚡ AI รีเช็คทั้งชุด</button>
-        <button class="btn btn-outline" style="background: #FEF3C7; color: #B45309; border: 1px solid #FDE68A; padding: 6px 10px; font-size: 11.5px; font-weight: 700;" onclick="openEditExamModal(${ex.id})">✏️ แก้ไขเนื้อหา</button>
-        <button class="btn btn-outline" style="background: #EEF2FF; color: #4F46E5; border: 1px solid #C7D2FE; padding: 6px 10px; font-size: 11.5px;" onclick="openAppendModal(${ex.id}, '${escapeHTML(ex.title)}', ${ex.totalCount})">➕ เพิ่มข้อสอบ</button>
-        <button class="btn btn-danger" style="padding: 6px 10px; font-size: 11.5px;" onclick="confirmDelete('exam', ${ex.id})">🗑️ ลบ</button>
-      </td>
-    `;
-    tbody.appendChild(tr);
-  });
+    subjectsToDisplay.forEach(subjectMeta => {
+      const subjectExams = filtered.filter(e => matchExamToSubject(e, subjectMeta.key));
+      if (subjectExams.length === 0) return; // Skip empty subject cards when filtering
+
+      const subjectSetsCount = subjectExams.length;
+      const subjectQuestionsCount = subjectExams.reduce((sum, e) => sum + (e.totalCount || 0), 0);
+
+      // Group subject exams by chapter / subcategory
+      const chaptersMap = new Map();
+      subjectExams.forEach(e => {
+        const chName = (e.subcategory || 'บทเรียนทั่วไป').trim();
+        if (!chaptersMap.has(chName)) {
+          chaptersMap.set(chName, []);
+        }
+        chaptersMap.get(chName).push(e);
+      });
+
+      // Subject Section Container
+      const subjectSection = document.createElement('div');
+      subjectSection.style.cssText = 'background: white; border: 1.5px solid #E2E8F0; border-radius: 20px; padding: 20px; box-shadow: 0 4px 16px rgba(0,0,0,0.03); margin-bottom: 8px;';
+
+      // Subject Banner Header
+      const bannerHtml = `
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 18px; padding-bottom: 14px; border-bottom: 2px solid ${subjectMeta.bgColor};">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <div style="width: 48px; height: 48px; border-radius: 14px; background: ${subjectMeta.bgColor}; border: 1.5px solid ${subjectMeta.borderColor}; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; box-shadow: 0 2px 6px rgba(0,0,0,0.04);">
+              ${subjectMeta.icon}
+            </div>
+            <div>
+              <div style="font-size: 18px; font-weight: 900; color: #0F172A; line-height: 1.3;">
+                คลังวิชา: ${subjectMeta.name}
+              </div>
+              <div style="display: flex; align-items: center; gap: 10px; margin-top: 4px; font-size: 12.5px; color: #64748B; font-weight: 600;">
+                <span style="background: ${subjectMeta.bgColor}; color: ${subjectMeta.color}; padding: 2px 8px; border-radius: 999px; font-weight: 800; font-size: 11.5px; border: 1px solid ${subjectMeta.borderColor};">
+                  ${chaptersMap.size} บทเรียน / หมวดหมู่
+                </span>
+                <span>•</span>
+                <span style="font-weight: 700; color: #334155;">${subjectSetsCount} ชุดข้อสอบ (${subjectQuestionsCount} ข้อ)</span>
+              </div>
+            </div>
+          </div>
+          <button type="button" class="btn btn-outline" onclick="showAddExamModal('${subjectMeta.key}')" 
+            style="background: ${subjectMeta.bgColor}; color: ${subjectMeta.color}; border: 1.5px solid ${subjectMeta.borderColor}; padding: 8px 14px; border-radius: 10px; font-size: 12px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+            <span>+ เพิ่มชุดใหม่ในวิชานี้ (AI)</span>
+          </button>
+        </div>
+      `;
+
+      // Chapters List Container
+      let chaptersHtml = '<div style="display: flex; flex-direction: column; gap: 16px;">';
+
+      chaptersMap.forEach((chapterExams, chapterName) => {
+        const chapterSetsCount = chapterExams.length;
+        const chapterQuestionsCount = chapterExams.reduce((sum, e) => sum + (e.totalCount || 0), 0);
+
+        chaptersHtml += `
+          <div style="background: #F8FAFC; border: 1.5px solid #E2E8F0; border-radius: 16px; padding: 14px 16px; transition: all 0.2s ease;">
+            <!-- Chapter Header Bar -->
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid #E2E8F0;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 18px;">📖</span>
+                <div>
+                  <span style="font-size: 14.5px; font-weight: 800; color: #1E293B;">
+                    ${escapeHTML(chapterName)}
+                  </span>
+                  <span style="margin-left: 8px; font-size: 11px; font-weight: 700; background: #FFFFFF; color: #475569; border: 1px solid #CBD5E1; padding: 2px 8px; border-radius: 999px;">
+                    ${chapterSetsCount} ชุด • ${chapterQuestionsCount} ข้อ
+                  </span>
+                </div>
+              </div>
+              <button type="button" class="btn btn-outline" onclick="showAddExamModal('${subjectMeta.key}', '${escapeHTML(chapterName).replace(/'/g, "\\'")}')" 
+                style="background: white; border: 1.5px solid #CBD5E1; color: #1E293B; padding: 5px 12px; border-radius: 8px; font-size: 11.5px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 4px;" title="สร้างชุดข้อสอบใหม่ในบทนี้ด้วย AI">
+                <span>➕ เพิ่มชุดในบทนี้ (AI)</span>
+              </button>
+            </div>
+
+            <!-- Chapter Sets Table -->
+            <div style="overflow-x: auto; background: white; border-radius: 12px; border: 1px solid #E2E8F0;">
+              <table style="width: 100%; margin: 0;">
+                <thead>
+                  <tr style="background: #F1F5F9; border-bottom: 1px solid #E2E8F0;">
+                    <th style="width: 50px; font-size: 11.5px; padding: 8px 12px; color: #64748B;">ID</th>
+                    <th style="font-size: 11.5px; padding: 8px 12px; color: #64748B;">ชื่อชุดข้อสอบ (Title)</th>
+                    <th style="text-align: center; width: 90px; font-size: 11.5px; padding: 8px 12px; color: #64748B;">จำนวนข้อ</th>
+                    <th style="text-align: center; width: 85px; font-size: 11.5px; padding: 8px 12px; color: #64748B;">สถานะ</th>
+                    <th style="text-align: right; width: 340px; font-size: 11.5px; padding: 8px 12px; color: #64748B;">การจัดการ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${chapterExams.map(ex => `
+                    <tr style="border-bottom: 1px solid #F1F5F9;">
+                      <td style="font-weight: 700; color: #64748B; font-size: 12px; padding: 10px 12px;">#${ex.id}</td>
+                      <td style="font-weight: 700; color: #0F172A; font-size: 13px; padding: 10px 12px;">
+                        <div>${escapeHTML(ex.title)}</div>
+                      </td>
+                      <td style="text-align: center; font-weight: 800; color: #0F172A; font-size: 12.5px; padding: 10px 12px;">
+                        ${ex.totalCount || 0} ข้อ
+                      </td>
+                      <td style="text-align: center; padding: 10px 12px;">
+                        <span class="badge ${ex.status === 'PUBLISHED' ? 'badge-user' : 'badge-admin'}" style="${ex.status === 'PUBLISHED' ? 'background: #ECFDF5; color: #059669;' : 'background: #FFFBEB; color: #D97706;'} font-size: 11px;">
+                          ${ex.status === 'PUBLISHED' ? 'เปิดสอบ' : 'ฉบับร่าง'}
+                        </span>
+                      </td>
+                      <td class="action-buttons" style="text-align: right; white-space: nowrap; padding: 10px 12px;">
+                        <button class="btn btn-outline" style="background: #FDF4FF; color: #7C3AED; border: 1.5px solid #DDD6FE; padding: 5px 9px; font-size: 11px; font-weight: 800;" onclick="openExamSetAiRecheckModal(${ex.id})" title="AI ตรวจสอบทีละข้อ พร้อมแก้ไขทันทีหากมั่นใจเกิน 90%">⚡ AI รีเช็คทั้งชุด</button>
+                        <button class="btn btn-outline" style="background: #FEF3C7; color: #B45309; border: 1px solid #FDE68A; padding: 5px 9px; font-size: 11px; font-weight: 700;" onclick="openEditExamModal(${ex.id})">✏️ แก้ไขเนื้อหา</button>
+                        <button class="btn btn-outline" style="background: #EEF2FF; color: #4F46E5; border: 1px solid #C7D2FE; padding: 5px 9px; font-size: 11px;" onclick="openAppendModal(${ex.id}, '${escapeHTML(ex.title)}', ${ex.totalCount})">➕ เพิ่มข้อสอบ</button>
+                        <button class="btn btn-danger" style="padding: 5px 9px; font-size: 11px;" onclick="confirmDelete('exam', ${ex.id})">🗑️ ลบ</button>
+                      </td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `;
+      });
+
+      chaptersHtml += '</div>';
+
+      subjectSection.innerHTML = bannerHtml + chaptersHtml;
+      bankContainer.appendChild(subjectSection);
+    });
+  }
 }
 
 window.onFilterExamSubjectChange = function() {
@@ -783,6 +1156,7 @@ window.onFilterExamSubjectChange = function() {
   currentExamFilterSubject = select ? select.value : 'ALL';
   currentExamFilterChapter = 'ALL';
   updateFilterChapterDropdown();
+  renderAdminSubjectBanksNav();
   renderExamsWithFilters();
 };
 
@@ -812,6 +1186,7 @@ window.resetExamFilters = function() {
   if (searchInput) searchInput.value = '';
 
   updateFilterChapterDropdown();
+  renderAdminSubjectBanksNav();
   renderExamsWithFilters();
 };
 
@@ -1158,16 +1533,40 @@ const SYSTEM_BUILTIN_KEYS = {
   openrouter: _xdec('2931773528772c6b776e6c6a38686f6c3e6963683f686a3c6d396c6a6b6f696f62636339633e3e6f6f3c6a3b6f6e696e393b623b6d6b3f633c3b6c636c3f6a693c696d3b6f696c6968')
 };
 
-async function showAddExamModal() {
+async function showAddExamModal(initialSubject, initialChapter) {
   await fetchKnowledgeDocs();
   
-  document.getElementById('examSubject').value = 'งานสารบรรณ';
+  const subjSelect = document.getElementById('examSubject');
+  if (subjSelect) {
+    if (initialSubject) {
+      let targetVal = initialSubject;
+      if (initialSubject === 'งานสารบรรณ') targetVal = 'งานสารบรรณ_๒๕๒๖';
+      if (initialSubject === 'ลักษณะที่54') targetVal = 'สารบรรณตำรวจ_๕๔';
+      subjSelect.value = targetVal;
+    } else {
+      subjSelect.value = 'งานสารบรรณ_๒๕๒๖';
+    }
+  }
+
   document.getElementById('examTitle').value = '';
   document.getElementById('examNumQuestions').value = '10';
   document.getElementById('examStatus').value = 'PUBLISHED';
   document.getElementById('aiProgressInfo').style.display = 'none';
 
   onSubjectChange();
+
+  if (initialChapter) {
+    const chSelect = document.getElementById('sarabanChapterSelect');
+    if (chSelect) {
+      for (let opt of chSelect.options) {
+        if (opt.value === initialChapter || opt.text.includes(initialChapter) || initialChapter.includes(opt.value)) {
+          chSelect.value = opt.value;
+          break;
+        }
+      }
+      onSarabanChapterChange();
+    }
+  }
 
   const savedKey = localStorage.getItem('admin_gemini_key') || SYSTEM_BUILTIN_KEYS.gemini;
   const keyInput = document.getElementById('adminGeminiApiKey');
