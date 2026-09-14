@@ -9455,6 +9455,7 @@ async function callGeminiAiText(prompt, customApiKey = '') {
     temperature: 0.15,
     topP: 0.85,
     topK: 40,
+    maxOutputTokens: 8192,
     responseMimeType: 'application/json'
   };
 
@@ -9484,7 +9485,7 @@ async function callGeminiAiText(prompt, customApiKey = '') {
           // If responseMimeType not supported, retry without it
           if (mErr.message && (mErr.message.includes('responseMimeType') || mErr.message.includes('not supported') || mErr.message.includes('INVALID_ARGUMENT'))) {
             try {
-              const fallbackConfig = { temperature: 0.15, topP: 0.85, topK: 40 };
+              const fallbackConfig = { temperature: 0.15, topP: 0.85, topK: 40, maxOutputTokens: 8192 };
               const model2 = client.getGenerativeModel({ model: modelName, generationConfig: fallbackConfig });
               const result2 = await model2.generateContent(prompt);
               const txt2 = result2.response.text();
@@ -9519,7 +9520,8 @@ async function callGeminiAiText(prompt, customApiKey = '') {
             generationConfig: {
               temperature: 0.15,
               topP: 0.85,
-              topK: 40
+              topK: 40,
+              maxOutputTokens: 8192
             }
           })
         });
@@ -9610,7 +9612,8 @@ async function callGroqAiText(prompt, options = {}) {
             },
             { role: 'user', content: prompt }
           ],
-          temperature
+          temperature,
+          max_tokens: 8192
         })
       });
 
@@ -9710,7 +9713,8 @@ async function callOpenRouterAiText(prompt, options = {}) {
             },
             { role: 'user', content: prompt }
           ],
-          temperature
+          temperature,
+          max_tokens: 8192
         })
       });
 
@@ -9915,10 +9919,119 @@ function sanitizeExamQuestionFormatting(q) {
   };
 }
 
+// --- Helper: Resilient AI JSON Parser with Backward Boundary Recovery ---
+function safeParseAIJson(rawText) {
+  if (!rawText || typeof rawText !== 'string') return [];
+  let clean = rawText.trim();
+  if (clean.includes('</think>')) {
+    clean = clean.substring(clean.indexOf('</think>') + 8).trim();
+  }
+  // Strip markdown codeblocks
+  if (clean.startsWith('```json')) clean = clean.replace(/^```json\s*/i, '').replace(/\s*```$/, '').trim();
+  else if (clean.startsWith('```')) clean = clean.replace(/^```\s*/, '').replace(/\s*```$/, '').trim();
+
+  // 1. Direct JSON parse
+  try {
+    const parsed = JSON.parse(clean);
+    return Array.isArray(parsed) ? parsed : (parsed.questions || parsed.data || parsed.items || []);
+  } catch (e) {}
+
+  // 2. Find opening bracket of array
+  const firstBracket = clean.indexOf('[');
+  if (firstBracket !== -1) {
+    let sub = clean.substring(firstBracket);
+    const lastBracket = sub.lastIndexOf(']');
+    if (lastBracket !== -1) {
+      try {
+        const parsed = JSON.parse(sub.substring(0, lastBracket + 1));
+        return Array.isArray(parsed) ? parsed : (parsed.questions || parsed.data || parsed.items || []);
+      } catch (e) {}
+    }
+
+    // Repair truncated array by searching backwards for a valid JSON boundary
+    let searchFrom = sub.length;
+    while (searchFrom > 0) {
+      const lastBrace = sub.lastIndexOf('}', searchFrom);
+      if (lastBrace === -1) break;
+      try {
+        const repaired = sub.substring(0, lastBrace + 1) + ']';
+        const parsed = JSON.parse(repaired);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          console.log(`[safeParseAIJson] Successfully recovered ${parsed.length} items from truncated array JSON`);
+          return parsed;
+        }
+      } catch (e) {}
+      searchFrom = lastBrace - 1;
+    }
+  }
+
+  // 3. Object format containing "questions": [...]
+  const qIdx = clean.indexOf('"questions"');
+  if (qIdx !== -1) {
+    const bIdx = clean.indexOf('[', qIdx);
+    if (bIdx !== -1) {
+      let sub = clean.substring(bIdx);
+      let searchFrom = sub.length;
+      while (searchFrom > 0) {
+        const lastBrace = sub.lastIndexOf('}', searchFrom);
+        if (lastBrace === -1) break;
+        try {
+          const repaired = sub.substring(0, lastBrace + 1) + ']';
+          const parsed = JSON.parse(repaired);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            console.log(`[safeParseAIJson] Successfully recovered ${parsed.length} questions from truncated object JSON`);
+            return parsed;
+          }
+        } catch (e) {}
+        searchFrom = lastBrace - 1;
+      }
+    }
+  }
+
+  // 4. Regex fallback: extract individual complete object items { "questionText": ... }
+  try {
+    const matches = clean.match(/\{[^{}]*?"questionText"[^{}]*?\}/gs);
+    if (matches && matches.length > 0) {
+      const items = [];
+      for (const m of matches) {
+        try {
+          items.push(JSON.parse(m));
+        } catch (_) {}
+      }
+      if (items.length > 0) {
+        console.log(`[safeParseAIJson] Regex extraction recovered ${items.length} questions`);
+        return items;
+      }
+    }
+  } catch (e) {}
+
+  throw new SyntaxError('Could not parse or repair AI JSON response: ' + clean.slice(0, 150));
+}
+
 // --- Dual-Model Adversarial Cross-Audit: Blind Test & Dispute Resolution ---
 async function crossModelAuditExamQuestions({ questions, subject, subcategory, primaryEngine = '', customApiKey = '', groqApiKey = '', openrouterApiKey = '' }) {
   if (!questions || !Array.isArray(questions) || questions.length === 0) {
     return questions;
+  }
+
+  // If questions > 10, audit in batches of 10 to ensure zero truncation for the auditor
+  if (questions.length > 10) {
+    const CHUNK_SIZE = 10;
+    const auditedBatches = [];
+    for (let i = 0; i < questions.length; i += CHUNK_SIZE) {
+      const chunk = questions.slice(i, i + CHUNK_SIZE);
+      const auditedChunk = await crossModelAuditExamQuestions({
+        questions: chunk,
+        subject,
+        subcategory,
+        primaryEngine,
+        customApiKey,
+        groqApiKey,
+        openrouterApiKey
+      });
+      auditedBatches.push(...auditedChunk);
+    }
+    return auditedBatches;
   }
 
   const isPrimaryGroq = (primaryEngine || '').toLowerCase().includes('groq');
@@ -10005,21 +10118,10 @@ ${JSON.stringify(blindQuestions, null, 2)}
     return questions;
   }
 
-  // 3. Parse Auditor Results
+  // 3. Parse Auditor Results with resilient parser
   let parsedAudits = [];
   try {
-    let clean = auditorResultText.trim();
-    if (clean.includes('</think>')) clean = clean.substring(clean.indexOf('</think>') + 8).trim();
-    if (clean.startsWith('```json')) clean = clean.replace(/^```json\s*/i, '').replace(/\s*```$/, '').trim();
-    else if (clean.startsWith('```')) clean = clean.replace(/^```\s*/, '').replace(/\s*```$/, '').trim();
-
-    if (!clean.startsWith('[') && clean.includes('[')) {
-      const b1 = clean.indexOf('[');
-      const b2 = clean.lastIndexOf(']');
-      if (b1 !== -1 && b2 > b1) clean = clean.substring(b1, b2 + 1).trim();
-    }
-    const rawParsed = JSON.parse(clean);
-    parsedAudits = Array.isArray(rawParsed) ? rawParsed : (rawParsed.audits || rawParsed.questions || []);
+    parsedAudits = safeParseAIJson(auditorResultText);
   } catch (parseErr) {
     console.warn('[Cross-Audit] Failed to parse auditor response JSON:', parseErr.message);
     return questions;
@@ -10294,61 +10396,78 @@ app.post('/api/admin/exams/preview-ai', authenticateToken, async (req, res) => {
       }
     }
 
-    // Build specialized prompt for the requested subject
-    const prompt = buildSubjectSpecificExamPrompt({
-      subject,
-      subcategory,
-      title,
-      count,
-      contextText
-    });
+    // Chunk generation into batches of up to 10 questions each
+    // This completely eliminates JSON cutoff / Unterminated string errors on 20, 30, 40, 50 questions
+    const BATCH_SIZE = 10;
+    const batchCounts = [];
+    let rem = count;
+    while (rem > 0) {
+      const b = Math.min(rem, BATCH_SIZE);
+      batchCounts.push(b);
+      rem -= b;
+    }
 
-    let textResponse = '';
+    console.log(`[Preview AI] Generating ${count} questions in ${batchCounts.length} batch(es): [${batchCounts.join(', ')}]`);
+
+    let rawQuestions = [];
     let engineUsed = 'Google Gemini';
-    try {
-      const aiResult = await callSpecializedAiText({
-        prompt,
+
+    for (let bi = 0; bi < batchCounts.length; bi++) {
+      const currentBatchCount = batchCounts[bi];
+      const batchTitle = batchCounts.length > 1 ? `${title} (ชุดที่ ${bi + 1}/${batchCounts.length})` : title;
+      const prompt = buildSubjectSpecificExamPrompt({
         subject,
-        customApiKey: req.body.apiKey,
-        groqApiKey: req.body.groqApiKey,
-        openrouterApiKey: req.body.openrouterApiKey
+        subcategory,
+        title: batchTitle,
+        count: currentBatchCount,
+        contextText
       });
-      textResponse = aiResult.text;
-      engineUsed = aiResult.engine || 'Google Gemini';
-    } catch (aiErr) {
-      if (aiErr.message.includes('KEY_NOT_FOUND')) {
-        return res.status(400).json({ error: '🔑 ไม่พบ API Key (Gemini, Groq หรือ OpenRouter) กรุณาระบุ API Key ในช่องที่กำหนด หรือในเมนู Admin -> ตั้งค่าระบบ' });
+
+      let textResponse = '';
+      try {
+        const aiResult = await callSpecializedAiText({
+          prompt,
+          subject,
+          customApiKey: req.body.apiKey,
+          groqApiKey: req.body.groqApiKey,
+          openrouterApiKey: req.body.openrouterApiKey
+        });
+        textResponse = aiResult.text;
+        engineUsed = aiResult.engine || engineUsed;
+      } catch (aiErr) {
+        if (aiErr.message.includes('KEY_NOT_FOUND')) {
+          return res.status(400).json({ error: '🔑 ไม่พบ API Key (Gemini, Groq หรือ OpenRouter) กรุณาระบุ API Key ในช่องที่กำหนด หรือในเมนู Admin -> ตั้งค่าระบบ' });
+        }
+        if (aiErr.message.includes('401') || aiErr.message.includes('Unauthorized') || aiErr.message.includes('invalid authentication')) {
+          return res.status(401).json({ error: '🔑 API Key ไม่ถูกต้องหรือไม่มีสิทธิ์ใช้งาน (401 Unauthorized) กรุณาตรวจสอบ API Key ในเมนู Admin' });
+        }
+        if (aiErr.message.includes('429') || aiErr.message.includes('quota') || aiErr.message.includes('RESOURCE_EXHAUSTED') || aiErr.message.includes('Rate limit')) {
+          return res.status(429).json({ error: '⚠️ AI API Rate Limit (429): ' + aiErr.message });
+        }
+        if (rawQuestions.length > 0) {
+          console.warn(`[Preview AI] Batch ${bi + 1} failed (${aiErr.message}), returning ${rawQuestions.length} questions already generated`);
+          break;
+        }
+        return res.status(500).json({ error: 'ไม่สามารถเรียกใช้งาน AI ได้: ' + aiErr.message });
       }
-      if (aiErr.message.includes('401') || aiErr.message.includes('Unauthorized') || aiErr.message.includes('invalid authentication')) {
-        return res.status(401).json({ error: '🔑 API Key ไม่ถูกต้องหรือไม่มีสิทธิ์ใช้งาน (401 Unauthorized) กรุณาตรวจสอบ API Key ในเมนู Admin' });
+
+      let parsedBatch = [];
+      try {
+        parsedBatch = safeParseAIJson(textResponse);
+      } catch (pErr) {
+        console.warn(`[Preview AI] Batch ${bi + 1} JSON parse warning:`, pErr.message);
       }
-      if (aiErr.message.includes('429') || aiErr.message.includes('quota') || aiErr.message.includes('RESOURCE_EXHAUSTED') || aiErr.message.includes('Rate limit')) {
-        return res.status(429).json({ error: '⚠️ AI API Rate Limit (429): ' + aiErr.message });
+
+      if (parsedBatch && parsedBatch.length > 0) {
+        rawQuestions.push(...parsedBatch);
+        console.log(`[Preview AI] Batch ${bi + 1}/${batchCounts.length} successfully collected ${parsedBatch.length} questions (Total so far: ${rawQuestions.length})`);
       }
-      return res.status(500).json({ error: 'ไม่สามารถเรียกใช้งาน AI ได้: ' + aiErr.message });
     }
 
-    let cleanJson = textResponse.trim();
-    if (cleanJson.includes('</think>')) {
-      cleanJson = cleanJson.substring(cleanJson.indexOf('</think>') + 8).trim();
-    }
-    if (cleanJson.startsWith('```json')) cleanJson = cleanJson.replace(/^```json\s*/i, '').replace(/\s*```$/, '').trim();
-    else if (cleanJson.startsWith('```')) cleanJson = cleanJson.replace(/^```\s*/, '').replace(/\s*```$/, '').trim();
-
-    if (!cleanJson.startsWith('[') && !cleanJson.startsWith('{')) {
-      const firstBracket = cleanJson.indexOf('[');
-      const lastBracket = cleanJson.lastIndexOf(']');
-      const firstBrace = cleanJson.indexOf('{');
-      const lastBrace = cleanJson.lastIndexOf('}');
-      if (firstBracket !== -1 && (firstBrace === -1 || firstBracket < firstBrace)) {
-        cleanJson = cleanJson.substring(firstBracket, lastBracket + 1).trim();
-      } else if (firstBrace !== -1) {
-        cleanJson = cleanJson.substring(firstBrace, lastBrace + 1).trim();
-      }
+    if (rawQuestions.length === 0) {
+      return res.status(500).json({ error: 'AI ไม่สามารถสร้างข้อสอบในรูปแบบที่ถูกต้องได้ กรุณาลองใหม่อีกครั้ง' });
     }
 
-    const parsed = JSON.parse(cleanJson);
-    const rawQuestions = Array.isArray(parsed) ? parsed : (parsed.questions || parsed.data || parsed.items || []);
     const auditedQuestions = rawQuestions.map(rawQ => {
       const q = sanitizeExamQuestionFormatting(rawQ);
       const conflict = detectExplanationAnswerConflict(q);
@@ -10801,52 +10920,59 @@ app.post('/api/admin/exams/:examSetId/append-ai', authenticateToken, async (req,
       }
     }
 
-    const prompt = buildSubjectSpecificExamPrompt({
-      subject: examSet.category,
-      subcategory: examSet.subcategory,
-      title: examSet.title,
-      count,
-      contextText
-    });
+    const BATCH_SIZE = 10;
+    const batchCounts = [];
+    let rem = count;
+    while (rem > 0) {
+      const b = Math.min(rem, BATCH_SIZE);
+      batchCounts.push(b);
+      rem -= b;
+    }
 
-    let textResponse = '';
-    try {
-      const aiResult = await callSpecializedAiText({
-        prompt,
+    let newRawQuestions = [];
+    for (let bi = 0; bi < batchCounts.length; bi++) {
+      const currentBatchCount = batchCounts[bi];
+      const batchTitle = batchCounts.length > 1 ? `${examSet.title} (ชุดเพิ่มเติม ${bi + 1}/${batchCounts.length})` : examSet.title;
+      const prompt = buildSubjectSpecificExamPrompt({
         subject: examSet.category,
-        customApiKey: req.body.apiKey,
-        groqApiKey: req.body.groqApiKey,
-        openrouterApiKey: req.body.openrouterApiKey
+        subcategory: examSet.subcategory,
+        title: batchTitle,
+        count: currentBatchCount,
+        contextText
       });
-      textResponse = aiResult.text;
-    } catch (aiErr) {
-      if (aiErr.message.includes('KEY_NOT_FOUND')) {
-        return res.status(400).json({ error: 'ไม่พบ API Key (Gemini, Groq หรือ OpenRouter) ในระบบ' });
+
+      let textResponse = '';
+      try {
+        const aiResult = await callSpecializedAiText({
+          prompt,
+          subject: examSet.category,
+          customApiKey: req.body.apiKey,
+          groqApiKey: req.body.groqApiKey,
+          openrouterApiKey: req.body.openrouterApiKey
+        });
+        textResponse = aiResult.text;
+      } catch (aiErr) {
+        if (aiErr.message.includes('KEY_NOT_FOUND')) {
+          return res.status(400).json({ error: 'ไม่พบ API Key (Gemini, Groq หรือ OpenRouter) ในระบบ' });
+        }
+        if (newRawQuestions.length > 0) {
+          console.warn(`[Add AI Questions] Batch ${bi + 1} failed (${aiErr.message}), proceeding with ${newRawQuestions.length} questions`);
+          break;
+        }
+        return res.status(500).json({ error: 'ไม่สามารถเรียกใช้งาน AI ได้: ' + aiErr.message });
       }
-      return res.status(500).json({ error: 'ไม่สามารถเรียกใช้งาน AI ได้: ' + aiErr.message });
-    }
 
-    let cleanJson = textResponse.trim();
-    if (cleanJson.includes('</think>')) {
-      cleanJson = cleanJson.substring(cleanJson.indexOf('</think>') + 8).trim();
-    }
-    if (cleanJson.startsWith('```json')) cleanJson = cleanJson.replace(/^```json\s*/i, '').replace(/\s*```$/, '').trim();
-    else if (cleanJson.startsWith('```')) cleanJson = cleanJson.replace(/^```\s*/, '').replace(/\s*```$/, '').trim();
+      let parsedBatch = [];
+      try {
+        parsedBatch = safeParseAIJson(textResponse);
+      } catch (pErr) {
+        console.warn(`[Add AI Questions] Batch ${bi + 1} parse warning:`, pErr.message);
+      }
 
-    if (!cleanJson.startsWith('[') && !cleanJson.startsWith('{')) {
-      const firstBracket = cleanJson.indexOf('[');
-      const lastBracket = cleanJson.lastIndexOf(']');
-      const firstBrace = cleanJson.indexOf('{');
-      const lastBrace = cleanJson.lastIndexOf('}');
-      if (firstBracket !== -1 && (firstBrace === -1 || firstBracket < firstBrace)) {
-        cleanJson = cleanJson.substring(firstBracket, lastBracket + 1).trim();
-      } else if (firstBrace !== -1) {
-        cleanJson = cleanJson.substring(firstBrace, lastBrace + 1).trim();
+      if (parsedBatch && parsedBatch.length > 0) {
+        newRawQuestions.push(...parsedBatch);
       }
     }
-
-    const parsedData = JSON.parse(cleanJson);
-    const newRawQuestions = Array.isArray(parsedData) ? parsedData : (parsedData.questions || parsedData.data || parsedData.items || []);
 
     const createdQuestions = [];
     for (let i = 0; i < newRawQuestions.length; i++) {
