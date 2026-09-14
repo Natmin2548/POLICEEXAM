@@ -9935,6 +9935,14 @@ function sanitizeOperationSymbols(text) {
     .replace(/\(\s*([a-zA-Zก-ฮ\d]+)\s*[@#Δ♦⊕⊗▲■★]\s*([a-zA-Zก-ฮ\d]+)\s*\)/g, '($1 * $2)');
 }
 
+function cleanAuditTags(text) {
+  if (!text || typeof text !== 'string') return '';
+  return text
+    .replace(/\s*\[🔍\s*ตรวจทาน[^\]]*\]/gi, '')
+    .replace(/\s*\[(?:Auditor|Audit|ตรวจทาน|Blind Auditor)[^\]]*\]/gi, '')
+    .trim();
+}
+
 function sanitizeExamQuestionFormatting(q) {
   if (!q || typeof q !== 'object') return q;
   const cleanStr = (s) => {
@@ -9963,7 +9971,7 @@ function sanitizeExamQuestionFormatting(q) {
     optionB: cleanStr(q.optionB || q.choice2 || ''),
     optionC: cleanStr(q.optionC || q.choice3 || ''),
     optionD: cleanStr(q.optionD || q.choice4 || ''),
-    explanation: cleanStr(q.explanation || '')
+    explanation: cleanAuditTags(cleanStr(q.explanation || ''))
   };
 }
 
@@ -10215,6 +10223,7 @@ ${JSON.stringify(blindQuestions, null, 2)}
       // 100% Dual-AI Consensus!
       return {
         ...origQ,
+        explanation: cleanAuditTags(origQ.explanation || ''),
         crossAudit: {
           verified: true,
           consensus: true,
@@ -10228,19 +10237,50 @@ ${JSON.stringify(blindQuestions, null, 2)}
       // Dispute detected!
       console.log(`[Cross-Audit Conflict Q#${idx + 1}] Primary: ${origNorm}, Auditor (${auditorEngine}): ${auditNorm}. Flaw: ${audit.flawDetails || 'Discrepancy'}`);
 
-      const adoptedAns = auditNorm;
-      const adoptedNum = adoptedAns === 'B' ? 2 : adoptedAns === 'C' ? 3 : adoptedAns === 'D' ? 4 : 1;
+      const cleanPrimaryExp = cleanAuditTags(origQ.explanation || '');
+      const cleanAuditReasoning = cleanAuditTags(audit.reasoning || '');
 
-      let mergedExplanation = origQ.explanation || '';
-      if (audit.reasoning && !mergedExplanation.includes(audit.reasoning)) {
-        mergedExplanation = `${mergedExplanation} [🔍 ตรวจทานร่วมโดย ${auditorEngine}: ยืนยันข้อ ${adoptedAns} เนื่องจาก ${audit.reasoning}]`;
+      // Detect which choice each explanation actually supports
+      const primarySupports = detectExplanationSupportedChoice(origQ, cleanPrimaryExp);
+      const auditSupports = detectExplanationSupportedChoice(origQ, cleanAuditReasoning);
+
+      let adoptedAns = origNorm;
+      let adoptedExplanation = cleanPrimaryExp;
+
+      if (primarySupports === auditNorm && origNorm !== auditNorm) {
+        // Case 1: Primary's OWN explanation actually proved auditNorm! (Typo in primary's choice key)
+        adoptedAns = auditNorm;
+        adoptedExplanation = cleanPrimaryExp;
+      } else if (primarySupports === origNorm) {
+        // Case 2: Primary wrote a self-consistent question where its explanation directly proves origNorm!
+        // In math / operation questions, Primary's formula is the author's intended rule.
+        // Keep Primary's intended answer & clean explanation.
+        adoptedAns = origNorm;
+        adoptedExplanation = cleanPrimaryExp;
+      } else if (audit.hasFlaw && cleanAuditReasoning) {
+        // Case 3: Auditor detected an explicit flaw in primary and gave a clear correction
+        adoptedAns = auditNorm;
+        adoptedExplanation = cleanAuditReasoning;
+      } else if (auditSupports === auditNorm && cleanAuditReasoning) {
+        // Case 4: Auditor's reasoning cleanly proves auditNorm, while Primary's was incoherent
+        adoptedAns = auditNorm;
+        adoptedExplanation = cleanAuditReasoning;
+      } else {
+        // Fallback: keep Primary
+        adoptedAns = origNorm;
+        adoptedExplanation = cleanPrimaryExp;
       }
+
+      // Ensure explanation is clean and strictly student-facing (NEVER leak [🔍 ตรวจทานร่วมโดย ...])
+      adoptedExplanation = cleanAuditTags(adoptedExplanation);
+
+      const adoptedNum = adoptedAns === 'B' ? 2 : adoptedAns === 'C' ? 3 : adoptedAns === 'D' ? 4 : 1;
 
       return {
         ...origQ,
         correctOption: adoptedAns,
         correctAnswer: adoptedNum,
-        explanation: mergedExplanation,
+        explanation: adoptedExplanation,
         crossAudit: {
           verified: true,
           consensus: false,
@@ -10249,13 +10289,69 @@ ${JSON.stringify(blindQuestions, null, 2)}
           auditorEngine,
           badge: '🥊 ผ่านการดีเบตและปรับแก้ข้ามค่ายแล้ว',
           flaw: audit.flawDetails || `ค่ายแรกเลือก ${origNorm} แต่ค่ายตรวจทานวิเคราะห์ได้ ${auditNorm}`,
-          note: `ปรับเป็นข้อ ${adoptedAns} ตามผลการตรวจทานละเอียดของ ${auditorEngine}`
+          note: `เลือกข้อ ${adoptedAns} เพื่อให้สอดคล้องกับวิธีคิดและคำอธิบายเฉลยที่ถูกต้องชัดเจนที่สุด`
         }
       };
     }
   });
 
   return finalQuestions.map(sanitizeExamQuestionFormatting);
+}
+
+function detectExplanationSupportedChoice(q, exp) {
+  if (!exp || typeof exp !== 'string') return null;
+  const text = cleanAuditTags(exp).trim();
+
+  // 1. Explicit declaration: 'ตอบข้อ 2', 'ตอบข้อ ข', 'ตอบ B', 'คำตอบคือข้อ ก', 'ดังนั้น ตอบข้อ 1'
+  const pat1 = /(?:ตอบ|เฉลย|คำตอบคือ|คำตอบที่ถูกต้องคือ|เลือก)\s*(?:ข้อ|ตัวเลือก(?:ที่)?)\s*([1-4ก-งA-D])(?![0-9a-zA-Z\+\-\*\/=×÷%^])/i;
+  const m1 = text.match(pat1);
+  if (m1 && m1[1]) {
+    const raw = m1[1].toUpperCase();
+    if (raw === '1' || raw === 'A' || raw === 'ก') return 'A';
+    if (raw === '2' || raw === 'B' || raw === 'ข') return 'B';
+    if (raw === '3' || raw === 'C' || raw === 'ค') return 'C';
+    if (raw === '4' || raw === 'D' || raw === 'ง') return 'D';
+  }
+
+  // 2. Trailing confirmation: 'ข้อ ข ถูก', 'ข้อ 2 จึงเป็นคำตอบ', 'ข้อ ก จึงถูกต้อง'
+  const pat2 = /(?:ข้อ|ตัวเลือก(?:ที่)?)\s*([1-4ก-งA-D])(?![0-9a-zA-Z\+\-\*\/=×÷%^])\s*(?:จึง|เป็น|คือ)?\s*(?:ถูกต้อง|ถูก|คำตอบ|คำตอบที่ถูก)/i;
+  const m2 = text.match(pat2);
+  if (m2 && m2[1]) {
+    const raw = m2[1].toUpperCase();
+    if (raw === '1' || raw === 'A' || raw === 'ก') return 'A';
+    if (raw === '2' || raw === 'B' || raw === 'ข') return 'B';
+    if (raw === '3' || raw === 'C' || raw === 'ค') return 'C';
+    if (raw === '4' || raw === 'D' || raw === 'ง') return 'D';
+  }
+
+  // 3. Thai Choice letter or Latin Choice letter with answer verb: 'ตอบ ข', 'เฉลย ก', 'คำตอบคือ ค'
+  const pat3 = /(?:ตอบ|เฉลย|คำตอบคือ|คำตอบที่ถูกต้องคือ)\s*([ก-งA-D])(?![ก-๙a-zA-Z0-9\+\-\*\/=×÷%^])/i;
+  const m3 = text.match(pat3);
+  if (m3 && m3[1]) {
+    const raw = m3[1].toUpperCase();
+    if (raw === 'A' || raw === 'ก') return 'A';
+    if (raw === 'B' || raw === 'ข') return 'B';
+    if (raw === 'C' || raw === 'ค') return 'C';
+    if (raw === 'D' || raw === 'ง') return 'D';
+  }
+
+  // 4. Value matching for math / calculation:
+  // e.g. text ends with '= 11' or 'ดังนั้น 4 * 5 = ... = 11'
+  const optA = String(q.optionA || q.choice1 || '').trim();
+  const optB = String(q.optionB || q.choice2 || '').trim();
+  const optC = String(q.optionC || q.choice3 || '').trim();
+  const optD = String(q.optionD || q.choice4 || '').trim();
+
+  const mVal = text.match(/(?:ดังนั้น|สรุป|ได้|เท่ากับ|=)\s*([0-9]+(?:\.[0-9]+)?)[^0-9]*$/);
+  if (mVal && mVal[1]) {
+    const v = mVal[1].trim();
+    if (optA === v && optB !== v && optC !== v && optD !== v) return 'A';
+    if (optB === v && optA !== v && optC !== v && optD !== v) return 'B';
+    if (optC === v && optA !== v && optB !== v && optD !== v) return 'C';
+    if (optD === v && optA !== v && optB !== v && optC !== v) return 'D';
+  }
+
+  return null;
 }
 
 // --- Admin API: Preview AI Exam Generation ---

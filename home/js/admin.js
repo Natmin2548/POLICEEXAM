@@ -2108,18 +2108,53 @@ function sanitizeOperationSymbols(text) {
     .replace(/\(\s*([a-zA-Zก-ฮ\d]+)\s*[@#Δ♦⊕⊗▲■★]\s*([a-zA-Zก-ฮ\d]+)\s*\)/g, '($1 * $2)');
 }
 
+function cleanAuditTags(text) {
+  if (!text || typeof text !== 'string') return '';
+  return text
+    .replace(/\s*\[🔍\s*ตรวจทาน[^\]]*\]/gi, '')
+    .replace(/\s*\[(?:Auditor|Audit|ตรวจทาน|Blind Auditor)[^\]]*\]/gi, '')
+    .trim();
+}
+
 function renderExamPreviewModal(title, subject, knowledgeBase) {
-  // Normalize any non-* operation symbols in all preview questions
+  // Normalize any non-* operation symbols and clean any leaked audit tags in all preview questions
   if (Array.isArray(previewExamQuestions)) {
-    previewExamQuestions = previewExamQuestions.map(q => ({
-      ...q,
-      questionText: sanitizeOperationSymbols(q.questionText || ''),
-      optionA: sanitizeOperationSymbols(q.optionA || ''),
-      optionB: sanitizeOperationSymbols(q.optionB || ''),
-      optionC: sanitizeOperationSymbols(q.optionC || ''),
-      optionD: sanitizeOperationSymbols(q.optionD || ''),
-      explanation: sanitizeOperationSymbols(q.explanation || '')
-    }));
+    previewExamQuestions = previewExamQuestions.map(q => {
+      let exp = sanitizeOperationSymbols(q.explanation || '');
+      exp = cleanAuditTags(exp);
+
+      // Value-based auto-alignment: If explanation calculates a value that matches an option (e.g. '= 11' and option B is '11')
+      // but correctOption was erroneously set to A (due to the old auditor conflict bug):
+      const optA = String(q.optionA || '').trim();
+      const optB = String(q.optionB || '').trim();
+      const optC = String(q.optionC || '').trim();
+      const optD = String(q.optionD || '').trim();
+      const mVal = exp.match(/(?:ดังนั้น|สรุป|ได้|เท่ากับ|=)\s*([0-9]+(?:\.[0-9]+)?)[^0-9]*$/);
+      let corrOpt = q.correctOption || 'A';
+      if (mVal && mVal[1]) {
+        const val = mVal[1].trim();
+        if (optB === val && optA !== val && corrOpt === 'A') {
+          corrOpt = 'B';
+        } else if (optA === val && optB !== val && corrOpt === 'B') {
+          corrOpt = 'A';
+        } else if (optC === val && corrOpt !== 'C') {
+          corrOpt = 'C';
+        } else if (optD === val && corrOpt !== 'D') {
+          corrOpt = 'D';
+        }
+      }
+
+      return {
+        ...q,
+        questionText: sanitizeOperationSymbols(q.questionText || ''),
+        optionA: sanitizeOperationSymbols(q.optionA || ''),
+        optionB: sanitizeOperationSymbols(q.optionB || ''),
+        optionC: sanitizeOperationSymbols(q.optionC || ''),
+        optionD: sanitizeOperationSymbols(q.optionD || ''),
+        correctOption: corrOpt,
+        explanation: exp
+      };
+    });
   }
 
   const engineText = window._lastEngineUsed ? ` • ⚡ ${window._lastEngineUsed}` : '';
@@ -4104,6 +4139,26 @@ function clientDetectConflict(q) {
       if (m3 && m3[1] && mapChoice[m3[1].toUpperCase()]) {
         detectedAns = mapChoice[m3[1].toUpperCase()];
         matchSnippet = m3[0];
+      } else {
+        // 4. Value calculation matching (e.g. 'ดังนั้น 4 * 5 = ... = 11' matching option B '11')
+        const c1 = String(q.optionA || q.choice1 || '').trim();
+        const c2 = String(q.optionB || q.choice2 || '').trim();
+        const c3 = String(q.optionC || q.choice3 || '').trim();
+        const c4 = String(q.optionD || q.choice4 || '').trim();
+
+        const mVal = exp.match(/(?:ดังนั้น|สรุป|ได้|เท่ากับ|=)\s*([0-9]+(?:\.[0-9]+)?)[^0-9]*$/);
+        if (mVal && mVal[1]) {
+          const v = mVal[1].trim();
+          if (c1 === v && c2 !== v && c3 !== v && c4 !== v) {
+            detectedAns = 1; matchSnippet = `คำนวณได้ ${v} (ตรงกับข้อ ก)`;
+          } else if (c2 === v && c1 !== v && c3 !== v && c4 !== v) {
+            detectedAns = 2; matchSnippet = `คำนวณได้ ${v} (ตรงกับข้อ ข)`;
+          } else if (c3 === v && c1 !== v && c2 !== v && c4 !== v) {
+            detectedAns = 3; matchSnippet = `คำนวณได้ ${v} (ตรงกับข้อ ค)`;
+          } else if (c4 === v && c1 !== v && c2 !== v && c3 !== v) {
+            detectedAns = 4; matchSnippet = `คำนวณได้ ${v} (ตรงกับข้อ ง)`;
+          }
+        }
       }
     }
   }
