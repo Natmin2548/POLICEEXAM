@@ -1,12 +1,15 @@
 // ==========================================
 // exam.js - Dedicated Engine for Standalone Exam Runner (Matching Screenshot 2)
+// Unifies Chapter Bank, Subject-Mixed Random, and Pretest 150 Exams
 // ==========================================
 
 let examState = {
+  track: '',
   subjectKey: 'ภาษาไทย',
   subjectTitle: 'ภาษาไทย',
   setId: null,
   chapter: '',
+  title: '',
   sourcePage: 'bank.html',
   questions: [],
   currentIndex: 0,
@@ -20,28 +23,51 @@ const THAI_LETTERS = ['ก', 'ข', 'ค', 'ง'];
 
 document.addEventListener('DOMContentLoaded', async () => {
   const params = new URLSearchParams(window.location.search);
-  const subject = params.get('subject') || 'ภาษาไทย';
+  const track = params.get('track') || '';
+  const subject = params.get('subject') || '';
   const setId = params.get('setId') || '';
   const chapter = params.get('chapter') || '';
-  const count = parseInt(params.get('count') || '30', 10);
-  const mode = params.get('mode') || ''; // 'mixed' or 'chapter'
-  const source = params.get('source') || 'bank.html';
+  const title = params.get('title') || '';
+  let count = parseInt(params.get('count') || '0', 10);
+  const mode = params.get('mode') || ''; // 'mixed', 'chapter', 'pretest'
+  const source = params.get('source') || (track ? 'index.html' : 'bank.html');
 
-  examState.subjectKey = subject;
-  examState.subjectTitle = subject;
+  if (!count) {
+    count = track ? 150 : 30;
+  }
+
+  examState.track = track;
   examState.setId = setId;
   examState.chapter = chapter;
+  examState.title = title;
   examState.sourcePage = source;
+
+  if (track === 'prabpram') {
+    examState.subjectKey = 'สายปราบปราม';
+    examState.subjectTitle = 'สายปราบปราม (150 ข้อ)';
+  } else if (track === 'amnuay' || track.startsWith('amnuay')) {
+    examState.subjectKey = 'สายอำนวยการ';
+    examState.subjectTitle = 'สายอำนวยการ / พฐ. (150 ข้อ)';
+  } else {
+    examState.subjectKey = subject || 'ภาษาไทย';
+    if (chapter) {
+      examState.subjectTitle = `${examState.subjectKey} • ${chapter}`;
+    } else if (title) {
+      examState.subjectTitle = `${examState.subjectKey} • ${title}`;
+    } else {
+      examState.subjectTitle = examState.subjectKey;
+    }
+  }
 
   const subjectBadge = document.getElementById('subjectBadge');
   if (subjectBadge) {
-    subjectBadge.textContent = subject;
+    subjectBadge.textContent = examState.subjectTitle;
   }
 
-  await loadExamQuestions(subject, setId, chapter, count, mode);
+  await loadExamQuestions(track, subject, setId, chapter, count, mode);
 });
 
-async function loadExamQuestions(subject, setId, chapter, count, mode) {
+async function loadExamQuestions(track, subject, setId, chapter, count, mode) {
   const qTitle = document.getElementById('questionText');
   const choicesContainer = document.getElementById('choicesContainer');
   if (qTitle) qTitle.textContent = 'กำลังโหลดชุดข้อสอบจากฐานข้อมูล...';
@@ -52,9 +78,36 @@ async function loadExamQuestions(subject, setId, chapter, count, mode) {
   let questions = [];
 
   try {
-    if (mode === 'mixed') {
-      // 30 mixed questions across all chapters
-      const res = await fetch(`${API_BASE}/api/exams/subject-mixed?subject=${encodeURIComponent(subject)}&count=${count}`);
+    if (track === 'prabpram') {
+      // 1. Pretest สายปราบปราม 150 ข้อ
+      const res = await fetch(`${API_BASE}/api/exams/prabpram`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && Array.isArray(data.questions) && data.questions.length > 0) {
+          questions = data.questions;
+        }
+      }
+    } else if (track === 'amnuay' || track.startsWith('amnuay')) {
+      // 2. Pretest สายอำนวยการ / พฐ. 150 ข้อ
+      const res = await fetch(`${API_BASE}/api/exams/amnuay`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && Array.isArray(data.questions) && data.questions.length > 0) {
+          questions = data.questions;
+        }
+      }
+    } else if (setId) {
+      // 3. Chapter Exam Set from Bank
+      const res = await fetch(`${API_BASE}/api/exams/questions?subject=${encodeURIComponent(subject || examState.subjectKey)}&setId=${encodeURIComponent(setId)}&count=${count}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          questions = data;
+        }
+      }
+    } else if (mode === 'mixed' || subject) {
+      // 4. Random Subject Mixed (30 items)
+      const res = await fetch(`${API_BASE}/api/exams/subject-mixed?subject=${encodeURIComponent(subject || examState.subjectKey)}&count=${count}`);
       if (res.ok) {
         const data = await res.json();
         if (data && Array.isArray(data.questions) && data.questions.length > 0) {
@@ -62,41 +115,57 @@ async function loadExamQuestions(subject, setId, chapter, count, mode) {
           if (data.subjectTitle) examState.subjectTitle = data.subjectTitle;
         }
       }
-    } else if (setId) {
-      // Specific exam set from chapter
-      const res = await fetch(`${API_BASE}/api/exams/questions?subject=${encodeURIComponent(subject)}&setId=${encodeURIComponent(setId)}&count=${count}`);
-      if (res.ok) {
-        const data = await res.json();
-        if (Array.isArray(data) && data.length > 0) {
-          questions = data;
-        }
-      }
-    } else {
-      // Fallback query
-      const res = await fetch(`${API_BASE}/api/exams/subject-mixed?subject=${encodeURIComponent(subject)}&count=${count}`);
-      if (res.ok) {
-        const data = await res.json();
-        if (data && Array.isArray(data.questions) && data.questions.length > 0) {
-          questions = data.questions;
-        }
-      }
     }
   } catch (err) {
     console.warn('Load questions error:', err);
   }
 
-  // If questions empty, provide formatted high quality fallback
+  // Fallback if questions empty or offline
   if (!Array.isArray(questions) || questions.length === 0) {
-    questions = generateStandardQuestions(subject, count);
+    questions = generateStandardQuestions(examState.subjectKey, count || (track ? 150 : 30));
   }
 
-  examState.questions = questions.map((q, idx) => ({
-    id: q.id || idx + 1,
-    questionText: q.questionText || `ข้อสอบวิชา ${subject} ข้อที่ ${idx + 1}`,
-    choices: q.choices || [q.choice1, q.choice2, q.choice3, q.choice4],
-    correctAnswer: typeof q.correctAnswer === 'number' ? q.correctAnswer : 0,
-    explanation: q.explanation || `คำอธิบายเฉลยวิชา ${subject}: วิเคราะห์ตามหลักการและเนื้อหามาตรฐาน`
-  }));
+  // Normalize questions array
+  examState.questions = questions.map((q, idx) => {
+    let normChoices = [];
+    if (Array.isArray(q.choices) && q.choices.length > 0) {
+      normChoices = q.choices;
+    } else {
+      normChoices = [q.choice1, q.choice2, q.choice3, q.choice4].filter(c => c !== undefined && c !== null);
+    }
+
+    if (normChoices.length === 0) {
+      normChoices = ['ตัวเลือก ก', 'ตัวเลือก ข', 'ตัวเลือก ค', 'ตัวเลือก ง'];
+    }
+
+    // Determine 0-indexed correct answer
+    let normCorrect = 0;
+    if (typeof q.correctAnswer === 'number') {
+      if (q.correctAnswer >= 1 && q.correctAnswer <= normChoices.length) {
+        normCorrect = q.correctAnswer - 1;
+      } else if (q.correctAnswer >= 0 && q.correctAnswer < normChoices.length) {
+        normCorrect = q.correctAnswer;
+      }
+    } else if (typeof q.correctAnswer === 'string') {
+      const parsed = parseInt(q.correctAnswer, 10);
+      if (!isNaN(parsed) && parsed >= 1 && parsed <= normChoices.length) {
+        normCorrect = parsed - 1;
+      } else if (!isNaN(parsed) && parsed >= 0 && parsed < normChoices.length) {
+        normCorrect = parsed;
+      }
+    }
+
+    const subTitle = q.shortSubjectName || q.subjectName || q.subjectTitle || q.category || examState.subjectTitle;
+
+    return {
+      id: q.id || idx + 1,
+      questionText: q.questionText || `ข้อสอบวิชา ${examState.subjectKey} ข้อที่ ${idx + 1}`,
+      choices: normChoices,
+      correctAnswer: normCorrect,
+      explanation: q.explanation || `คำอธิบายเฉลยวิชา ${subTitle}: วิเคราะห์ตามหลักการและเนื้อหามาตรฐาน`,
+      subjectBadge: subTitle
+    };
+  });
 
   examState.currentIndex = 0;
   examState.userAnswers = {};
@@ -114,7 +183,7 @@ function renderExamQuestion() {
   const currentQ = questions[currentIndex];
   const answeredCount = Object.keys(userAnswers).length;
 
-  // 1. Top Bar Counter: [1 / 30]
+  // 1. Top Bar Counter: [1 / N]
   const stepText = document.getElementById('stepText');
   if (stepText) {
     stepText.textContent = `${currentIndex + 1} / ${total}`;
@@ -137,10 +206,14 @@ function renderExamQuestion() {
     progressBar.style.width = `${pct}%`;
   }
 
-  // 4. Subject Pill
+  // 4. Subject Pill Badge (dynamic per question in multi-subject pretest)
   const subjectBadge = document.getElementById('subjectBadge');
   if (subjectBadge) {
-    subjectBadge.textContent = examState.subjectTitle || examState.subjectKey;
+    if (examState.track && currentQ.subjectBadge) {
+      subjectBadge.textContent = currentQ.subjectBadge;
+    } else {
+      subjectBadge.textContent = examState.subjectTitle;
+    }
   }
 
   // 5. Question Text
@@ -182,20 +255,20 @@ function renderExamQuestion() {
     }).join('');
   }
 
-  // 7. Explanation Box (Review Mode Only)
+  // 7. Explanation Section (Review Mode only)
   const explanationBox = document.getElementById('explanationBox');
-  const explanationContent = document.getElementById('explanationContent');
-  if (explanationBox && explanationContent) {
+  const explanationText = document.getElementById('explanationText');
+  if (explanationBox && explanationText) {
     if (isReviewMode && currentQ.explanation) {
+      explanationText.textContent = currentQ.explanation;
       explanationBox.style.display = 'block';
-      explanationContent.textContent = currentQ.explanation;
     } else {
       explanationBox.style.display = 'none';
     }
   }
 
-  // 8. Big Action Button
-  const btnAction = document.getElementById('btnMainAction');
+  // 8. Main Action Button: Next vs Submit vs View Results
+  const btnAction = document.getElementById('btnActionMain');
   if (btnAction) {
     if (isReviewMode) {
       if (currentIndex === total - 1) {
@@ -342,7 +415,7 @@ function showResultsModal() {
 
   if (icon) icon.textContent = pass ? '🎉' : '💪';
   if (title) title.textContent = pass ? 'ยินดีด้วย! คุณผ่านเกณฑ์ทดสอบ' : 'พยายามอีกนิด ทบทวนและฝึกฝนใหม่';
-  if (sub) sub.textContent = `วิชา: ${examState.subjectTitle} (รวม 30 ข้อ)`;
+  if (sub) sub.textContent = `${examState.subjectTitle} (รวม ${total} ข้อ)`;
   if (score) {
     score.textContent = `${correct}/${total}`;
     score.style.color = pass ? '#059669' : '#DC2626';
@@ -384,9 +457,13 @@ function saveExamResult(correct, total) {
     let history = raw ? JSON.parse(raw) : [];
     if (!Array.isArray(history)) history = [];
 
+    const examTitle = examState.track
+      ? (examState.track === 'prabpram' ? 'Pretest สายปราบปราม 150 ข้อ' : 'Pretest สายอำนวยการ 150 ข้อ')
+      : examState.subjectTitle;
+
     const record = {
       subject: examState.subjectKey,
-      title: `ข้อสอบรายวิชา ${examState.subjectTitle}`,
+      title: examTitle,
       correctCount: correct,
       totalQuestions: total,
       scorePct: total > 0 ? Math.round((correct / total) * 100) : 0,
@@ -428,7 +505,7 @@ function generateStandardQuestions(subject, count) {
   for (let i = 1; i <= count; i++) {
     list.push({
       id: i,
-      questionText: `คำถามมาตรฐานข้อที่ ${i}: ตามหลักการสำคัญในวิชา "${subject}" แนวทางปฏิบัติข้อใดถูกต้องที่สุด?`,
+      questionText: `คำถามมาตรฐานข้อที่ ${i}: ตามหลักการสำคัญในหมวด "${subject}" แนวทางปฏิบัติข้อใดถูกต้องที่สุด?`,
       choices: [
         `หลักการวิเคราะห์และนำไปปฏิบัติให้สอดคล้องตามระเบียบที่กำหนด`,
         `การดำเนินการตามดุลพินิจโดยไม่ต้องอิงตามเกณฑ์มาตรฐาน`,
@@ -436,8 +513,21 @@ function generateStandardQuestions(subject, count) {
         `การส่งต่องานโดยไม่มีการตรวจสอบความถูกต้องของเนื้อหา`
       ],
       correctAnswer: 0,
-      explanation: `ตามเกณฑ์และระเบียบมาตรฐานในวิชา ${subject} การปฏิบัติงานจะต้องยึดถือหลักเกณฑ์ ความถูกต้อง และความสอดคล้องตามระเบียบอย่างเคร่งครัดที่สุด`
+      explanation: `ตามเกณฑ์และระเบียบมาตรฐานในหมวด ${subject} การปฏิบัติงานจะต้องยึดถือหลักเกณฑ์ ความถูกต้อง และความสอดคล้องตามระเบียบอย่างเคร่งครัดที่สุด`
     });
   }
   return list;
+}
+
+function escapeHTML(str) {
+  if (typeof str !== 'string') return '';
+  return str.replace(/[&<>"']/g, function (m) {
+    return {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    }[m];
+  });
 }

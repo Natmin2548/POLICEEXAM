@@ -814,7 +814,8 @@ function renderExamSetsList(chapterName) {
 }
 
 window.launchSelectedExamSet = function(subjectKey, setId, questionsCount, setTitle) {
-  const url = `exam.html?subject=${encodeURIComponent(subjectKey)}&setId=${encodeURIComponent(setId)}&count=${questionsCount || 30}&chapter=${encodeURIComponent(activeChapterTitle || '')}&source=bank.html`;
+  const chapterName = activeChapterTitle || setTitle || '';
+  const url = `exam.html?subject=${encodeURIComponent(subjectKey)}&setId=${encodeURIComponent(setId)}&count=${questionsCount || 30}&chapter=${encodeURIComponent(chapterName)}&title=${encodeURIComponent(setTitle || '')}&source=bank.html`;
   window.location.href = url;
 };
 
@@ -935,89 +936,12 @@ function stopQuizCountdownTimer() {
 // ==========================================
 // Exam Runner (Modal & Questions Engine)
 // ==========================================
-window.startBankSubjectQuiz = async function(subjectKey, setId, questionsCount, setTitle) {
-  const modal = document.getElementById('subjectQuizModal');
-  const badgeEl = document.getElementById('quizSubjectBadge');
-  const titleEl = document.getElementById('quizTitle');
-  const bodyContent = document.getElementById('quizBodyContent');
-  const stepText = document.getElementById('quizStepText');
-  const actionRow = document.getElementById('quizActionButtonsRow');
-  const navContainer = document.getElementById('quizNavContainer');
-  const progressBar = document.getElementById('quizProgressBar');
-
-  if (!modal || !bodyContent) return;
-
-  stopQuizCountdownTimer();
-  modal.style.display = 'flex';
-  if (badgeEl) badgeEl.textContent = subjectKey;
-  if (titleEl) titleEl.textContent = setTitle || 'ทำข้อสอบ';
-  if (stepText) stepText.textContent = 'กำลังโหลดข้อสอบ...';
-  if (actionRow) actionRow.style.display = 'none';
-  if (navContainer) navContainer.style.display = 'none';
-  if (progressBar) progressBar.style.width = '5%';
-
-  bodyContent.innerHTML = '<div style="text-align: center; color: #64748B; padding: 40px; font-size: 14px;">กำลังดาวน์โหลดชุดข้อสอบจากระบบ...</div>';
-
-  try {
-    let questions = [];
-    try {
-      const res = await fetch(`${API_BASE}/api/exams/questions?subject=${encodeURIComponent(subjectKey)}&setId=${encodeURIComponent(setId)}&count=${questionsCount}`);
-      if (res.ok) {
-        questions = await res.json();
-      }
-    } catch(fetchErr) {
-      console.warn('Questions fetch warning:', fetchErr);
-    }
-
-    if (!Array.isArray(questions) || questions.length === 0) {
-      questions = [
-        {
-          id: 1,
-          questionText: `ระเบียบและแนวทางปฏิบัติสำคัญในหมวด "${subjectKey}" ข้อใดถูกต้องที่สุด?`,
-          choices: [
-            'การปฏิบัติงานต้องยึดถือระเบียบและมาตรฐานที่กฎหมายกำหนดไว้อย่างเคร่งครัด',
-            'สามารถละเว้นการบันทึกเอกสารได้หากเป็นเรื่องเร่งด่วนภายในหน่วยงาน',
-            'การทำลายเอกสารราชการสามารถทำได้โดยไม่ต้องตั้งคณะกรรมการ',
-            'ให้ผู้ปฏิบัติงานมีดุลพินิจสูงสุดโดยไม่ต้องรายงานผู้บังคับบัญชา'
-          ],
-          correctAnswer: 1,
-          explanation: 'ตามระเบียบและหลักเกณฑ์ของทางราชการ การปฏิบัติงานต้องยึดถือตามระเบียบ กฎหมาย และหนังสือสั่งการอย่างเคร่งครัด'
-        },
-        {
-          id: 2,
-          questionText: `ในการเตรียมตัวสอบวิชา "${subjectKey}" เทคนิคใดมีประสิทธิภาพสูงสุด?`,
-          choices: [
-            'การท่องจำเฉพาะหัวข้อโดยไม่อ่านคำอธิบาย',
-            'การฝึกทำโจทย์จำลอง จับเวลาเสมือนจริง และทบทวนข้อที่ทำผิด',
-            'การรออ่านหนังสือก่อนวันสอบเพียง 1 วัน',
-            'การเดาคำตอบโดยไม่วิเคราะห์ตัวเลือก'
-          ],
-          correctAnswer: 2,
-          explanation: 'การฝึกทำข้อสอบเสมือนจริงพร้อมจับเวลาและวิเคราะห์จุดอ่อน จะช่วยเพิ่มคะแนนและความแม่นยำได้ดีที่สุด'
-        }
-      ];
-    }
-
-    currentQuizState = {
-      subjectKey,
-      setId,
-      setTitle: setTitle || 'ทำข้อสอบ',
-      questions,
-      currentIndex: 0,
-      userAnswers: {},
-      score: 0,
-      isSubmitted: false,
-      isReviewMode: false
-    };
-
-    const duration = Math.max(600, questions.length * 90);
-    startQuizCountdownTimer(duration);
-    renderCurrentQuizQuestion();
-  } catch (err) {
-    console.error('Start quiz error:', err);
-    bodyContent.innerHTML = '<div style="text-align: center; color: #EF4444; padding: 30px;">เกิดข้อผิดพลาดในการโหลดแบบทดสอบ</div>';
-  }
+window.startBankSubjectQuiz = function(subjectKey, setId, questionsCount, setTitle) {
+  const chapterName = activeChapterTitle || setTitle || '';
+  const url = `exam.html?subject=${encodeURIComponent(subjectKey)}&setId=${encodeURIComponent(setId)}&count=${questionsCount || 30}&chapter=${encodeURIComponent(chapterName)}&title=${encodeURIComponent(setTitle || '')}&source=bank.html`;
+  window.location.href = url;
 };
+
 
 window.closeSubjectQuiz = function() {
   if (currentQuizState && !currentQuizState.isSubmitted && currentQuizState.questions && currentQuizState.questions.length > 0 && Object.keys(currentQuizState.userAnswers || {}).length > 0) {

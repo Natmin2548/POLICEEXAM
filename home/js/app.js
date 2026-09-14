@@ -643,11 +643,10 @@ window.closePoliceTrackModal = function() {
 
 window.startStreakChallenge = function(trackKey) {
   closePoliceTrackModal();
-  
   if (trackKey === 'ปราบปราม') {
-    startPrabpramMainExam();
+    window.location.href = 'exam.html?track=prabpram&source=index.html';
   } else {
-    startAmnuayMainExam();
+    window.location.href = 'exam.html?track=amnuay&source=index.html';
   }
 };
 
@@ -1547,7 +1546,8 @@ function renderSubjectExamSets() {
 }
 
 window.launchSelectedExamSet = function(subjectKey, setId, questionsCount, setTitle) {
-  startBankSubjectQuiz(subjectKey, setId, questionsCount, setTitle);
+  const source = window.location.pathname.includes('bank') ? 'bank.html' : 'index.html';
+  window.location.href = `exam.html?subject=${encodeURIComponent(subjectKey)}&setId=${encodeURIComponent(setId)}&count=${questionsCount || 30}&chapter=${encodeURIComponent(setTitle || '')}&title=${encodeURIComponent(setTitle || '')}&source=${source}`;
 };
 
 // Update Subject Stats from 100% Real History
@@ -1607,11 +1607,9 @@ function updateSubjectStatsView() {
   }
 }
 
-// 4. Launch Quiz Modal for Selected Set
 window.launchSelectedExamSet = function(subjectKey, setId, questionsCount, setTitle) {
-  if (typeof startBankSubjectQuiz === 'function') {
-    startBankSubjectQuiz(subjectKey, setId, questionsCount, setTitle);
-  }
+  const source = window.location.pathname.includes('bank') ? 'bank.html' : 'index.html';
+  window.location.href = `exam.html?subject=${encodeURIComponent(subjectKey)}&setId=${encodeURIComponent(setId)}&count=${questionsCount || 30}&chapter=${encodeURIComponent(setTitle || '')}&title=${encodeURIComponent(setTitle || '')}&source=${source}`;
 };
 
 
@@ -6911,7 +6909,8 @@ function renderSubjectStatistics(subjectKey) {
 }
 
 window.launchSelectedExamSet = function(subjectKey, setId, questionsCount, setTitle) {
-  startBankSubjectQuiz(subjectKey, setId, questionsCount, setTitle);
+  const source = window.location.pathname.includes('bank') ? 'bank.html' : 'index.html';
+  window.location.href = `exam.html?subject=${encodeURIComponent(subjectKey)}&setId=${encodeURIComponent(setId)}&count=${questionsCount || 30}&chapter=${encodeURIComponent(setTitle || '')}&title=${encodeURIComponent(setTitle || '')}&source=${source}`;
 };
 
 let currentQuizState = {
@@ -6988,6 +6987,9 @@ function stopQuizCountdownTimer() {
 }
 
 window.startBankSubjectQuiz = async function(subjectKey, setId, questionsCount, setTitle) {
+  const source = window.location.pathname.includes('bank') ? 'bank.html' : 'index.html';
+  window.location.href = `exam.html?subject=${encodeURIComponent(subjectKey)}&setId=${encodeURIComponent(setId)}&count=${questionsCount || 30}&chapter=${encodeURIComponent(setTitle || '')}&title=${encodeURIComponent(setTitle || '')}&source=${source}`;
+  return;
   const modal = document.getElementById('subjectQuizModal');
   const badgeEl = document.getElementById('quizSubjectBadge');
   const titleEl = document.getElementById('quizTitle');
@@ -7089,6 +7091,8 @@ window.startBankSubjectQuiz = async function(subjectKey, setId, questionsCount, 
 };
 
 window.startPrabpramMainExam = async function() {
+  window.location.href = 'exam.html?track=prabpram&source=index.html';
+  return;
   const modal = document.getElementById('subjectQuizModal');
   const badgeEl = document.getElementById('quizSubjectBadge');
   const titleEl = document.getElementById('quizTitle');
@@ -7169,6 +7173,8 @@ window.startPrabpramMainExam = async function() {
 };
 
 window.startAmnuayMainExam = async function() {
+  window.location.href = 'exam.html?track=amnuay&source=index.html';
+  return;
   const modal = document.getElementById('subjectQuizModal');
   const badgeEl = document.getElementById('quizSubjectBadge');
   const titleEl = document.getElementById('quizTitle');
