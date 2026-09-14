@@ -377,6 +377,10 @@ async function loadRealProfile() {
       userProfile = JSON.parse(cached);
       initializeDashboard();
       updateStatsFromProfile(userProfile);
+      const dropdownAdminPanel = document.getElementById('dropdownAdminPanel');
+      if (userProfile && (userProfile.role === 'ADMIN' || userProfile.role === 'OWNER')) {
+        if (dropdownAdminPanel) dropdownAdminPanel.style.display = 'flex';
+      }
     } catch (e) {}
   }
 }
@@ -597,6 +601,17 @@ checkSession();
 // ==========================================
 
 // 1. Profile Dropdown Toggle
+window.toggleProfileDropdown = function(e) {
+  if (e) {
+    if (typeof e.stopPropagation === 'function') e.stopPropagation();
+    if (typeof e.preventDefault === 'function') e.preventDefault();
+  }
+  const dropdown = document.getElementById('profileDropdown');
+  if (dropdown) {
+    dropdown.classList.toggle('active');
+  }
+};
+
 const btnProfileMenu = document.getElementById('btnProfileMenu');
 const profileDropdown = document.getElementById('profileDropdown');
 
@@ -606,8 +621,10 @@ if (btnProfileMenu && profileDropdown) {
     profileDropdown.classList.toggle('active');
   });
 
-  document.addEventListener('click', () => {
-    profileDropdown.classList.remove('active');
+  document.addEventListener('click', (e) => {
+    if (profileDropdown && !profileDropdown.contains(e.target) && !btnProfileMenu.contains(e.target)) {
+      profileDropdown.classList.remove('active');
+    }
   });
 }
 
@@ -1679,35 +1696,11 @@ window.switchTabToHome = function(e) {
 };
 
 window.switchTabToProfile = function(e) {
-  if (e && typeof e.preventDefault === 'function') e.preventDefault();
-  if (typeof stopCommunityPolling === 'function') stopCommunityPolling();
-  document.body.classList.remove('in-bank-view');
-
-  const navTabs = document.querySelectorAll('.bottom-nav .nav-tab');
-  navTabs.forEach(t => t.classList.remove('active'));
-
-  const homeView = document.getElementById('homeView');
-  const communityView = document.getElementById('communityView');
-  const battleView = document.getElementById('battleView');
-  const statsView = document.getElementById('statsView');
-  const profileView = document.getElementById('profileView');
-  const questionBankView = document.getElementById('questionBankView');
-
-  if (profileView) profileView.classList.add('active');
-  if (homeView) homeView.classList.remove('active');
-  if (communityView) communityView.classList.remove('active');
-  if (battleView) battleView.classList.remove('active');
-  if (statsView) statsView.classList.remove('active');
-  if (questionBankView) questionBankView.classList.remove('active');
-
-  const btnHeaderBackHome = document.getElementById('btnHeaderBackHome');
-  if (btnHeaderBackHome) btnHeaderBackHome.style.display = 'inline-flex';
-
-  const dropdown = document.getElementById('profileDropdown');
-  if (dropdown) dropdown.classList.remove('active');
-
-  if (typeof updateProfileTabDetails === 'function') updateProfileTabDetails();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (e) {
+    if (typeof e.stopPropagation === 'function') e.stopPropagation();
+    if (typeof e.preventDefault === 'function') e.preventDefault();
+  }
+  window.toggleProfileDropdown(e);
 };
 
 if (btnBackFromBank) {

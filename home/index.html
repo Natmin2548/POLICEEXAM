@@ -252,15 +252,8 @@
     <div class="nav-container"
       style="display: flex; justify-content: space-between; align-items: center; max-width: 1080px; margin: 0 auto; padding: 0 24px;">
 
-      <!-- Left: Logo & Back Button -->
+      <!-- Left: Logo -->
       <div style="display: flex; align-items: center; gap: 10px;">
-        <button id="btnHeaderBackHome" class="btn-header-back-home" onclick="switchTabToHome(event)"
-          title="ย้อนกลับหน้าหลัก">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="15 18 9 12 15 6"></polyline>
-          </svg>
-          <span>กลับหน้าหลัก</span>
-        </button>
         <a href="#"
           onclick="if(typeof switchTabToHome === 'function') switchTabToHome(event); else if(document.getElementById('btnTabHome')) document.getElementById('btnTabHome').click(); return false;"
           style="display: flex; align-items: center; gap: 8px; text-decoration: none;">
@@ -272,10 +265,10 @@
         </a>
       </div>
 
-      <!-- Right: Greeting & User Avatar (Click to open Profile) -->
+      <!-- Right: Greeting & User Avatar (Click to toggle menu) -->
       <div class="header-actions" style="display: flex; align-items: center; gap: 10px;">
         <div class="nav-greeting" style="display: flex; flex-direction: column; text-align: right; cursor: pointer; user-select: none;"
-          onclick="switchTabToProfile(event)" title="เปิดหน้าโปรไฟล์">
+          onclick="toggleProfileDropdown(event)" title="เมนูผู้ใช้งาน">
           <span class="greeting-subtitle"
             style="font-size: 11px; color: #94A3B8; font-weight: 500; line-height: 1;">สวัสดีตอนเช้า</span>
           <h1 class="greeting-title" id="greetingName"
@@ -285,9 +278,9 @@
         <!-- User Profile Avatar Button -->
         <div class="profile-menu-container" style="position: relative;">
           <button class="btn-profile-menu" id="btnProfileMenu"
-            onclick="switchTabToProfile(event)"
-            aria-label="โปรไฟล์"
-            title="เปิดหน้าโปรไฟล์"
+            onclick="toggleProfileDropdown(event)"
+            aria-label="เมนูผู้ใช้งาน"
+            title="เมนูผู้ใช้งาน"
             style="width: 38px; height: 38px; border-radius: 50%; overflow: hidden; border: 1.5px solid #E2E8F0; padding: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; background: none; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);">
             <img src="" alt="Google Avatar" class="header-avatar" id="headerAvatar"
               style="width: 100%; height: 100%; object-fit: cover; display: none;">
@@ -732,189 +725,7 @@
     </div>
 
 
-    <!-- Profile View Content -->
-    <div id="profileView" class="tab-view">
-      <!-- Profile Header with Back to Home Button & Title -->
-      <div class="profile-top-bar"
-        style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid #F1F5F9;">
-        <div style="display: flex; align-items: center; gap: 12px;">
-          <button type="button" class="btn-profile-back-home" onclick="switchTabToHome(event)"
-            style="display: inline-flex; align-items: center; gap: 8px; background: #FFFFFF; border: 1.5px solid #E2E8F0; border-radius: 12px; padding: 8px 16px; font-size: 14px; font-weight: 700; color: #334155; cursor: pointer; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 0 2px 5px rgba(0,0,0,0.03); font-family: inherit;"
-            title="ย้อนกลับหน้าหลัก">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="15 18 9 12 15 6"></polyline>
-            </svg>
-            <span>กลับหน้าหลัก</span>
-          </button>
-          <h1 class="profile-header-title" style="margin: 0; font-size: 22px; font-weight: 800; color: #0F172A;">โปรไฟล์</h1>
-        </div>
-      </div>
 
-      <!-- Left Column Wrapper -->
-      <div class="profile-left-column">
-        <!-- Profile card -->
-        <section class="profile-user-card">
-          <div class="profile-avatar-container">
-            <div class="profile-avatar-box" id="profileAvatarBox">ส</div>
-            <img src="" alt="Avatar" class="profile-avatar-img" id="profileAvatarImg" style="display: none;">
-            <input type="file" id="profileImageInput" accept="image/*" style="display: none;"
-              onchange="handleProfileImageUpload(event)">
-          </div>
-          <div class="profile-user-info">
-            <h2 class="profile-user-name" id="profileName">สมชาย ใจดี</h2>
-            <p class="profile-user-email" id="profileEmail">somchai@email.com</p>
-            <div class="profile-badge-row">
-              <span class="profile-badge badge-free">Free</span>
-              <span class="profile-badge badge-date" id="profileJoinDate">สมาชิกตั้งแต่ ม.ค. 2568</span>
-            </div>
-          </div>
-        </section>
-
-        <!-- Stats Metric Row -->
-        <section class="profile-stats-row">
-          <div class="profile-stat-item-card">
-            <span class="profile-stat-number" id="profileQuestionsCount">1,248</span>
-            <span class="profile-stat-label">ข้อที่ทำ</span>
-          </div>
-          <div class="profile-stat-item-card">
-            <span class="profile-stat-number" id="profileAvgScore">72.4%</span>
-            <span class="profile-stat-label">คะแนนเฉลี่ย</span>
-          </div>
-          <div class="profile-stat-item-card">
-            <span class="profile-stat-number" id="profileStreakCount">14 วัน</span>
-            <span class="profile-stat-label">Streak</span>
-          </div>
-        </section>
-      </div>
-
-      <!-- Right Column Wrapper -->
-      <div class="profile-right-column">
-        <!-- Menu Settings List -->
-        <section class="profile-menu-container-card">
-          <div class="profile-menu-item" onclick="openEditProfileModal()">
-            <div class="menu-item-left">
-              <svg class="menu-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                <circle cx="12" cy="7" r="4" />
-              </svg>
-              <span class="menu-item-text">แก้ไขโปรไฟล์</span>
-            </div>
-            <svg class="menu-item-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
-          </div>
-
-          <div class="profile-menu-item" id="menuNotifications">
-            <div class="menu-item-left">
-              <svg class="menu-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round">
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0" />
-              </svg>
-              <span class="menu-item-text">การแจ้งเตือน</span>
-            </div>
-            <label class="toggle-switch">
-              <input type="checkbox" id="notificationToggle" checked>
-              <span class="slider round"></span>
-            </label>
-          </div>
-
-          <div class="profile-menu-item" id="menuChangePassword" onclick="openChangePasswordModal()">
-            <div class="menu-item-left">
-              <svg class="menu-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-              </svg>
-              <span class="menu-item-text">เปลี่ยนรหัสผ่าน</span>
-            </div>
-            <svg class="menu-item-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
-          </div>
-
-          <div class="profile-menu-item" onclick="openExamHistoryModal()">
-            <div class="menu-item-left">
-              <svg class="menu-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                <polyline points="14 2 14 8 20 8" />
-                <line x1="16" y1="13" x2="8" y2="13" />
-                <line x1="16" y1="17" x2="8" y2="17" />
-                <polyline points="10 9 9 9 8 9" />
-              </svg>
-              <span class="menu-item-text">ประวัติการสอบ</span>
-            </div>
-            <svg class="menu-item-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
-          </div>
-
-          <div class="profile-menu-item" onclick="alert('ข้อสอบที่บันทึกจะเปิดเร็วๆ นี้');">
-            <div class="menu-item-left">
-              <svg class="menu-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round">
-                <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
-              </svg>
-              <span class="menu-item-text">ข้อสอบที่บันทึก</span>
-            </div>
-            <svg class="menu-item-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
-          </div>
-
-          <div class="profile-menu-item" onclick="openHelpModal()">
-            <div class="menu-item-left">
-              <svg class="menu-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10" />
-                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
-                <line x1="12" y1="17" x2="12.01" y2="17" />
-              </svg>
-              <span class="menu-item-text">ช่วยเหลือ / FAQ</span>
-            </div>
-            <svg class="menu-item-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
-          </div>
-
-          <div class="profile-menu-item" onclick="openSettingsModal()">
-            <div class="menu-item-left">
-              <svg class="menu-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="3" />
-                <path
-                  d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-              </svg>
-              <span class="menu-item-text">ตั้งค่า</span>
-            </div>
-            <svg class="menu-item-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
-          </div>
-        </section>
-
-        <!-- Admin Panel Button (Hidden by default) -->
-        <button class="btn-profile-logout" id="btnAdminPanel"
-          style="display: none; background: var(--surface-color); color: #BD1B0B; border: 1px solid #BD1B0B; margin-bottom: 12px;"
-          onclick="window.location.href='admin.html?t=' + Date.now()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-          </svg>
-          <span>จัดการระบบ (Admin Panel)</span>
-        </button>
-
-        <!-- Logout Button -->
-        <button class="btn-profile-logout" id="btnProfileLogout">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
-          </svg>
-          <span>ออกจากระบบ</span>
-        </button>
-      </div>
-    </div>
 
     <!-- Battle View Content -->
     <div id="battleView" class="tab-view">
@@ -3171,8 +2982,8 @@
   </script>
 
   <!-- Real System Application Scripts -->
-  <script src="vocab-data.js?v=53"></script>
-  <script src="js/app.js?v=53"></script>
+  <script src="vocab-data.js?v=63"></script>
+  <script src="js/app.js?v=63"></script>
 
 </body>
 
