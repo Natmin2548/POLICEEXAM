@@ -1958,6 +1958,8 @@ if (bankTabBtn) {
   });
 }
 
+let _lastHomeRefreshTime = 0;
+
 if (homeTabBtn) {
   homeTabBtn.addEventListener('click', (e) => {
     e.preventDefault();
@@ -1973,10 +1975,16 @@ if (homeTabBtn) {
     if (statsView) statsView.classList.remove('active');
     if (profileView) profileView.classList.remove('active');
     if (questionBankView) questionBankView.classList.remove('active');
-    loadRealProfile(); // Refresh profile values on navigate
-    loadRadarChart();
-    updateStatsTabDetails();
-    if (typeof syncUserQuizHistoryWithServer === 'function') syncUserQuizHistoryWithServer();
+
+    const now = Date.now();
+    // Only refresh heavy charts and server sync if more than 20 seconds have elapsed
+    if (now - _lastHomeRefreshTime > 20000) {
+      _lastHomeRefreshTime = now;
+      loadRealProfile(); // Refresh profile values on navigate
+      loadRadarChart();
+      updateStatsTabDetails();
+      if (typeof syncUserQuizHistoryWithServer === 'function') syncUserQuizHistoryWithServer();
+    }
   });
 }
 
@@ -2063,19 +2071,21 @@ if (profileTabBtn) {
   });
 }
 
-// Support hash navigation (e.g. index.html#leaderboard or index.html#profile)
-window.addEventListener('DOMContentLoaded', () => {
+// Instant hash navigation (e.g. index.html#leaderboard or index.html#profile)
+(function handleInitialHashNavigation() {
   const hash = window.location.hash;
   if ((hash === '#leaderboard' || hash === '#community') && leaderboardTabBtn) {
-    setTimeout(() => leaderboardTabBtn.click(), 100);
+    document.documentElement.classList.remove('init-leaderboard-view');
+    leaderboardTabBtn.click();
   } else if (hash === '#profile') {
-    setTimeout(() => {
-      if (typeof window.switchTabToProfile === 'function') {
-        window.switchTabToProfile();
-      }
-    }, 100);
+    document.documentElement.classList.remove('init-leaderboard-view');
+    if (typeof window.switchTabToProfile === 'function') {
+      window.switchTabToProfile();
+    }
+  } else {
+    document.documentElement.classList.remove('init-leaderboard-view');
   }
-});
+})();
 
 function updateAllMyAvatars(faceImage, fullName) {
   const imgIds = ['defaultAvatarImg', 'profileAvatarImg', 'editProfileAvatarImg', 'composePostAvatarImg', ];
@@ -3450,15 +3460,30 @@ window.setLeaderboardTrackFilter = function(track) {
   loadLeaderboard150(track);
 };
 
-window.loadLeaderboard150 = async function(track = 'all') {
+window._leaderboardCache = window._leaderboardCache || {};
+
+window.loadLeaderboard150 = async function(track = 'all', forceRefresh = false) {
   const container = document.getElementById('leaderboardListContainer');
   if (!container) return;
 
-  container.innerHTML = `
-    <div class="leaderboard-item-loading" style="text-align: center; padding: 24px 12px; color: #94A3B8; font-size: 12.5px;">
-      กำลังโหลดตารางอันดับ...
-    </div>
-  `;
+  const cached = window._leaderboardCache[track];
+  const now = Date.now();
+
+  // If we have cached data, render immediately for instant 0ms response
+  if (cached && !forceRefresh) {
+    renderMyRankCard(cached.data.myRank);
+    renderLeaderboardTop30(cached.data.top30, cached.data.myRank);
+    // If cache is fresh (< 30s), skip background re-fetching
+    if (now - cached.timestamp < 30000) {
+      return;
+    }
+  } else {
+    container.innerHTML = `
+      <div class="leaderboard-item-loading" style="text-align: center; padding: 24px 12px; color: #94A3B8; font-size: 12.5px;">
+        กำลังโหลดตารางอันดับ...
+      </div>
+    `;
+  }
 
   try {
     const token = authToken || localStorage.getItem('authToken');
@@ -3467,15 +3492,22 @@ window.loadLeaderboard150 = async function(track = 'all') {
     if (!res.ok) throw new Error('Failed to load leaderboard');
     const data = await res.json();
 
+    window._leaderboardCache[track] = {
+      data: data,
+      timestamp: Date.now()
+    };
+
     renderMyRankCard(data.myRank);
     renderLeaderboardTop30(data.top30, data.myRank);
   } catch (err) {
     console.error('Load Leaderboard Error:', err);
-    container.innerHTML = `
-      <div style="text-align: center; padding: 20px; color: #EF4444; font-size: 12.5px;">
-        ไม่สามารถโหลดข้อมูลอันดับได้ กรุณาลองใหม่อีกครั้ง
-      </div>
-    `;
+    if (!cached) {
+      container.innerHTML = `
+        <div style="text-align: center; padding: 20px; color: #EF4444; font-size: 12.5px;">
+          ไม่สามารถโหลดข้อมูลอันดับได้ กรุณาลองใหม่อีกครั้ง
+        </div>
+      `;
+    }
   }
 };
 

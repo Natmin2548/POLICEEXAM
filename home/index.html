@@ -12,12 +12,26 @@
           localStorage.removeItem('authToken');
           localStorage.removeItem('userProfile');
           window.location.replace('/index.html');
+          return;
+        }
+        const hash = window.location.hash;
+        if (hash === '#leaderboard' || hash === '#community') {
+          document.documentElement.classList.add('init-leaderboard-view');
         }
       } catch (e) {
         window.location.replace('/index.html');
       }
     })();
   </script>
+  <style>
+    /* Prevent flashing home view when navigating directly to leaderboard */
+    html.init-leaderboard-view #homeView { display: none !important; }
+    html.init-leaderboard-view #leaderboardView { display: block !important; }
+    html.init-leaderboard-view #btnTabHome { color: #94A3B8 !important; }
+    html.init-leaderboard-view #btnTabHome svg { stroke: #94A3B8 !important; }
+    html.init-leaderboard-view #btnTabLeaderboard { color: #BD1B0B !important; }
+    html.init-leaderboard-view #btnTabLeaderboard svg { stroke: #BD1B0B !important; }
+  </style>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
