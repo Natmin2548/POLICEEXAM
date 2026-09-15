@@ -411,24 +411,43 @@ function renderHourlyBarChart(breakdown = []) {
 // ==========================================
 // Online Users Modal Management
 // ==========================================
+let currentOnlineFilter = 'all'; // 'all' | 'members' | 'guests'
+
+function setOnlineUsersFilter(filter = 'all') {
+  currentOnlineFilter = filter;
+
+  // Update tab buttons
+  const tabAll = document.getElementById('tabFilterAll');
+  const tabMembers = document.getElementById('tabFilterMembers');
+  const tabGuests = document.getElementById('tabFilterGuests');
+
+  if (tabAll) tabAll.classList.toggle('active', filter === 'all');
+  if (tabMembers) tabMembers.classList.toggle('active', filter === 'members');
+  if (tabGuests) tabGuests.classList.toggle('active', filter === 'guests');
+
+  filterOnlineUsersList();
+}
+
 function openOnlineUsersModal() {
   const modal = document.getElementById('onlineUsersModal');
   if (!modal) return;
 
   const onlineInfo = currentDashboardStats?.online || {};
-  const total = onlineInfo.totalOnline ?? 0;
-  const members = onlineInfo.membersCount ?? 0;
-  const guests = onlineInfo.guestsCount ?? 0;
+  const total = onlineInfo.totalOnline ?? currentOnlineUsers.length;
+  const members = onlineInfo.membersCount ?? currentOnlineUsers.filter(u => u.role !== 'GUEST').length;
+  const guests = onlineInfo.guestsCount ?? currentOnlineUsers.filter(u => u.role === 'GUEST').length;
 
   const elTotalBadge = document.getElementById('modalOnlineTotalBadge');
-  const elMembersCount = document.getElementById('modalOnlineMembersCount');
-  const elGuestsCount = document.getElementById('modalOnlineGuestsCount');
+  const elFilterAll = document.getElementById('modalOnlineFilterAllCount');
+  const elFilterMembers = document.getElementById('modalOnlineFilterMembersCount');
+  const elFilterGuests = document.getElementById('modalOnlineFilterGuestsCount');
 
   if (elTotalBadge) elTotalBadge.textContent = `${total.toLocaleString()} คน`;
-  if (elMembersCount) elMembersCount.textContent = members.toLocaleString();
-  if (elGuestsCount) elGuestsCount.textContent = guests.toLocaleString();
+  if (elFilterAll) elFilterAll.textContent = total.toLocaleString();
+  if (elFilterMembers) elFilterMembers.textContent = members.toLocaleString();
+  if (elFilterGuests) elFilterGuests.textContent = guests.toLocaleString();
 
-  renderOnlineUsersTable(currentOnlineUsers);
+  filterOnlineUsersList();
   modal.style.display = 'flex';
 }
 
@@ -445,19 +464,27 @@ async function refreshOnlineUsersModal() {
 function filterOnlineUsersList() {
   const input = document.getElementById('onlineUserSearchInput');
   const query = (input ? input.value : '').toLowerCase().trim();
-  if (!query) {
-    renderOnlineUsersTable(currentOnlineUsers);
-    return;
+
+  let list = currentOnlineUsers || [];
+
+  // Filter by category
+  if (currentOnlineFilter === 'members') {
+    list = list.filter(u => u.role !== 'GUEST');
+  } else if (currentOnlineFilter === 'guests') {
+    list = list.filter(u => u.role === 'GUEST');
   }
 
-  const filtered = currentOnlineUsers.filter(u => {
-    const uname = (u.username || '').toLowerCase();
-    const fname = (u.fullName || '').toLowerCase();
-    const role = (u.role || '').toLowerCase();
-    return uname.includes(query) || fname.includes(query) || role.includes(query);
-  });
+  // Filter by search query
+  if (query) {
+    list = list.filter(u => {
+      const uname = (u.username || '').toLowerCase();
+      const fname = (u.fullName || '').toLowerCase();
+      const role = (u.role || '').toLowerCase();
+      return uname.includes(query) || fname.includes(query) || role.includes(query);
+    });
+  }
 
-  renderOnlineUsersTable(filtered);
+  renderOnlineUsersTable(list);
 }
 
 function renderOnlineUsersTable(usersList = []) {
@@ -465,17 +492,34 @@ function renderOnlineUsersTable(usersList = []) {
   const emptyState = document.getElementById('onlineUsersEmptyState');
   const tableWrapper = document.getElementById('onlineUsersTableWrapper');
   const guestsNotice = document.getElementById('onlineGuestsNotice');
+  const emptyTitle = document.getElementById('onlineEmptyTitle');
 
   if (!tbody) return;
 
   const guestsCount = currentDashboardStats?.online?.guestsCount ?? 0;
+  const membersCount = currentDashboardStats?.online?.membersCount ?? 0;
 
   if (!usersList || usersList.length === 0) {
     if (tableWrapper) tableWrapper.style.display = 'none';
     if (emptyState) {
       emptyState.style.display = 'block';
+      if (emptyTitle) {
+        if (currentOnlineFilter === 'guests') {
+          emptyTitle.textContent = 'ขณะนี้ไม่มีผู้เยี่ยมชมทั่วไป (Guest)';
+        } else if (currentOnlineFilter === 'members') {
+          emptyTitle.textContent = 'ยังไม่มีสมาชิกเข้าสู่ระบบออนไลน์ในขณะนี้';
+        } else {
+          emptyTitle.textContent = 'ไม่พบผู้ใช้งานที่ตรงกับเงื่อนไขการค้นหา';
+        }
+      }
       if (guestsNotice) {
-        guestsNotice.textContent = `ขณะนี้มีผู้เยี่ยมชมทั่วไป (Guest) ${guestsCount.toLocaleString()} คน กำลังเปิดใช้งานเว็บไซต์`;
+        if (currentOnlineFilter === 'members') {
+          guestsNotice.textContent = `มีผู้เยี่ยมชมทั่วไป (Guest) ${guestsCount.toLocaleString()} คน กำลังเปิดดูหน้าเว็บ`;
+        } else if (currentOnlineFilter === 'guests') {
+          guestsNotice.textContent = `มีสมาชิกที่ล็อกอินอยู่ ${membersCount.toLocaleString()} คน`;
+        } else {
+          guestsNotice.textContent = 'ลองสลับตัวกรองหรือกดรีเฟรชเพื่ออัปเดตข้อมูลใหม่';
+        }
       }
     }
     return;
@@ -486,9 +530,13 @@ function renderOnlineUsersTable(usersList = []) {
 
   let html = '';
   usersList.forEach(u => {
+    const isGuest = u.role === 'GUEST';
+
     // Role badge
-    let roleBadge = '<span style="background: #F1F5F9; color: #475569; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 11.5px;">👤 สมาชิก</span>';
-    if (u.role === 'OWNER') {
+    let roleBadge = '<span style="background: #F1F5F9; color: #475569; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 11.5px; border: 1px solid #E2E8F0;">👤 สมาชิก</span>';
+    if (isGuest) {
+      roleBadge = '<span style="background: #F8FAFC; color: #64748B; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 11.5px; border: 1px solid #CBD5E1;">🌐 Guest (ยังไม่ล็อกอิน)</span>';
+    } else if (u.role === 'OWNER') {
       roleBadge = '<span style="background: linear-gradient(135deg, #F59E0B, #B45309); color: white; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 11.5px; box-shadow: 0 2px 6px rgba(180, 83, 9, 0.25);">👑 OWNER</span>';
     } else if (u.role === 'ADMIN') {
       roleBadge = '<span style="background: #7C3AED; color: white; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 11.5px;">🛡️ ADMIN</span>';
@@ -510,34 +558,64 @@ function renderOnlineUsersTable(usersList = []) {
       pathLabel = '🏠 หน้าแรก / แดชบอร์ด';
     }
 
-    const firstChar = (u.fullName || u.username || 'U').charAt(0).toUpperCase();
+    const firstChar = isGuest ? '🌐' : (u.fullName || u.username || 'U').charAt(0).toUpperCase();
+    const avatarBg = isGuest ? '#EFF6FF' : '#EEF2F6';
+    const avatarColor = isGuest ? '#2563EB' : '#1E293B';
+    const avatarBorder = isGuest ? '#BFDBFE' : '#CBD5E1';
+    const subLabel = isGuest ? '@ยังไม่เข้าสู่ระบบ' : `@${escapeHTML(u.username)}`;
 
     html += `
-      <tr style="border-bottom: 1px solid #F1F5F9; transition: background 0.15s ease;">
-        <td style="padding: 12px 16px;">
+      <tr class="online-table-row" style="border-bottom: 1px solid #F1F5F9; transition: background 0.15s ease;">
+        <!-- Col 1: User Info (Desktop Table Cell / Mobile Card Header) -->
+        <td class="col-user-info" style="padding: 12px 16px;">
           <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="width: 36px; height: 36px; border-radius: 50%; background: #EEF2F6; color: #1E293B; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; border: 1.5px solid #CBD5E1;">
+            <div style="width: 36px; height: 36px; border-radius: 50%; background: ${avatarBg}; color: ${avatarColor}; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: ${isGuest ? '16px' : '14px'}; border: 1.5px solid ${avatarBorder}; flex-shrink: 0;">
               ${escapeHTML(firstChar)}
             </div>
             <div>
-              <div style="font-weight: 700; color: #0F172A; font-size: 13.5px;">${escapeHTML(u.fullName || u.username)}</div>
-              <div style="font-size: 12px; color: #64748B;">@${escapeHTML(u.username)}</div>
+              <div style="font-weight: 700; color: #0F172A; font-size: 13.5px; line-height: 1.25;">${escapeHTML(u.fullName || u.username)}</div>
+              <div style="font-size: 11.5px; color: #64748B;">${subLabel}</div>
             </div>
           </div>
+          <!-- Visible on Mobile Card Top-Right -->
+          <div class="mobile-role-container">
+            ${roleBadge}
+          </div>
         </td>
-        <td style="padding: 12px 16px;">
+
+        <!-- Col 2: Role Badge (Desktop only) -->
+        <td class="col-role-desktop" style="padding: 12px 16px;">
           ${roleBadge}
         </td>
-        <td style="padding: 12px 16px;">
+
+        <!-- Col 3: Time Ago (Desktop only) -->
+        <td class="col-time-desktop" style="padding: 12px 16px;">
           <div style="display: flex; align-items: center; gap: 6px;">
             <span class="live-dot-pulse"></span>
             <span style="font-weight: 600; color: #0F172A;">${escapeHTML(u.timeAgo || 'เมื่อสักครู่')}</span>
           </div>
         </td>
-        <td style="padding: 12px 16px; color: #475569; font-size: 12.5px;">
-          <span style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 4px 10px; border-radius: 8px; font-weight: 500;">
+
+        <!-- Col 4: Activity (Desktop only) -->
+        <td class="col-activity-desktop" style="padding: 12px 16px; color: #475569; font-size: 12.5px;">
+          <span style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 4px 10px; border-radius: 8px; font-weight: 500; display: inline-block;">
             ${escapeHTML(pathLabel)}
           </span>
+        </td>
+
+        <!-- Mobile Meta Row: Time Ago (Left) + Activity (Right) -->
+        <td class="mobile-meta-row">
+          <div class="mobile-card-meta">
+            <div style="display: flex; align-items: center; gap: 5px;">
+              <span class="live-dot-pulse" style="width: 6px; height: 6px;"></span>
+              <span style="font-weight: 600; color: #0F172A; font-size: 11.5px;">${escapeHTML(u.timeAgo || 'เมื่อสักครู่')}</span>
+            </div>
+            <div>
+              <span style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 3px 8px; border-radius: 6px; font-weight: 500; font-size: 11.5px; color: #475569;">
+                ${escapeHTML(pathLabel)}
+              </span>
+            </div>
+          </div>
         </td>
       </tr>
     `;
@@ -551,6 +629,7 @@ window.openOnlineUsersModal = openOnlineUsersModal;
 window.closeOnlineUsersModal = closeOnlineUsersModal;
 window.refreshOnlineUsersModal = refreshOnlineUsersModal;
 window.filterOnlineUsersList = filterOnlineUsersList;
+window.setOnlineUsersFilter = setOnlineUsersFilter;
 window.loadDashboard = loadDashboard;
 window.loadUsers = loadUsers;
 

@@ -4284,10 +4284,22 @@ app.get('/api/admin/stats', requireAdmin, async (req, res) => {
       }
     }
 
-    let activeGuestsCount = 0;
+    const activeGuests = [];
+    let guestIdx = 1;
     for (const g of activeGuestsMap.values()) {
-      if (new Date(g.lastActive).getTime() >= onlineThreshold) {
-        activeGuestsCount++;
+      const gActiveMs = new Date(g.lastActive).getTime();
+      if (gActiveMs >= onlineThreshold) {
+        const diffMinutes = Math.floor((nowMs - gActiveMs) / 60000);
+        activeGuests.push({
+          id: `guest_${guestIdx}`,
+          username: `guest_${guestIdx}`,
+          fullName: `ผู้เยี่ยมชมทั่วไป #${guestIdx}`,
+          role: 'GUEST',
+          lastActive: g.lastActive,
+          lastPath: g.lastPath || '/',
+          timeAgo: diffMinutes === 0 ? 'เมื่อสักครู่' : `${diffMinutes} นาทีที่แล้ว`
+        });
+        guestIdx++;
       }
     }
 
@@ -4298,7 +4310,7 @@ app.get('/api/admin/stats', requireAdmin, async (req, res) => {
       return new Date(b.lastActive) - new Date(a.lastActive);
     });
 
-    const totalOnlineCount = activeMembers.length + activeGuestsCount;
+    const totalOnlineCount = activeMembers.length + activeGuests.length;
 
     // --- 24-Hour Hourly Activity & Average Usage ---
     const past24hDate = new Date(nowMs - (24 * 60 * 60 * 1000));
@@ -4378,8 +4390,8 @@ app.get('/api/admin/stats', requireAdmin, async (req, res) => {
       online: {
         totalOnline: totalOnlineCount,
         membersCount: activeMembers.length,
-        guestsCount: activeGuestsCount,
-        users: activeMembers
+        guestsCount: activeGuests.length,
+        users: [...activeMembers, ...activeGuests]
       },
       hourlyUsage: {
         avgUsersPerHour,
