@@ -2612,9 +2612,11 @@
           const dbList = (typeof userDbQuizHistory !== 'undefined' && Array.isArray(userDbQuizHistory)) ? userDbQuizHistory : [];
           const uRaw = localStorage.getItem(`userQuizHistory_${uid}`);
           const uList = uRaw ? JSON.parse(uRaw) : [];
+          const globalRaw = localStorage.getItem('userQuizHistory');
+          const globalList = globalRaw ? JSON.parse(globalRaw) : [];
 
           const seen = new Set();
-          const all = [...dbList, ...uList];
+          const all = [...dbList, ...uList, ...globalList];
           for (const h of all) {
             if (!h) continue;
             let time = 0;

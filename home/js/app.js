@@ -241,19 +241,37 @@ async function checkSession() {
   // Pre-load from cached account history if available for instant UI rendering
   try {
     const uid = userProfile.id;
+    let list = [];
     if (uid) {
       const cached = localStorage.getItem(`userQuizHistory_${uid}`);
       if (cached) {
         const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed)) userDbQuizHistory = parsed;
+        if (Array.isArray(parsed)) list = parsed;
       }
     }
+    const globalCached = localStorage.getItem('userQuizHistory');
+    if (globalCached) {
+      const parsedGlobal = JSON.parse(globalCached);
+      if (Array.isArray(parsedGlobal)) {
+        const seen = new Set(list.map(x => x.id || `${x.subject}_${x.scorePct}_${x.timestamp}`));
+        for (const item of parsedGlobal) {
+          const k = item.id || `${item.subject}_${item.scorePct}_${item.timestamp}`;
+          if (!seen.has(k)) {
+            seen.add(k);
+            list.push(item);
+          }
+        }
+      }
+    }
+    if (list.length > 0) userDbQuizHistory = list;
   } catch(e) {}
 
   if (typeof initializeDashboard === 'function') initializeDashboard();
   if (typeof updateStatsTabDetails === 'function') updateStatsTabDetails();
+  if (typeof window.updateHomeDashboardCharts === 'function') window.updateHomeDashboardCharts(userProfile);
   if (typeof loadRealProfile === 'function') await loadRealProfile();
   if (typeof updateStatsTabDetails === 'function') updateStatsTabDetails();
+  if (typeof window.updateHomeDashboardCharts === 'function') window.updateHomeDashboardCharts(userProfile);
   
   // Background live sync with server
   setTimeout(() => syncUserQuizHistoryWithServer(), 100);
@@ -1958,7 +1976,7 @@ if (bankTabBtn) {
   });
 }
 
-let _lastHomeRefreshTime = 0;
+let _lastHomeNetworkRefreshTime = 0;
 
 if (homeTabBtn) {
   homeTabBtn.addEventListener('click', (e) => {
@@ -1976,13 +1994,15 @@ if (homeTabBtn) {
     if (profileView) profileView.classList.remove('active');
     if (questionBankView) questionBankView.classList.remove('active');
 
+    // Always update local stats & charts immediately (0ms UI latency)
+    if (typeof updateStatsTabDetails === 'function') updateStatsTabDetails();
+    if (typeof window.updateHomeDashboardCharts === 'function') window.updateHomeDashboardCharts(userProfile);
+
     const now = Date.now();
-    // Only refresh heavy charts and server sync if more than 20 seconds have elapsed
-    if (now - _lastHomeRefreshTime > 20000) {
-      _lastHomeRefreshTime = now;
-      loadRealProfile(); // Refresh profile values on navigate
-      loadRadarChart();
-      updateStatsTabDetails();
+    // Only refresh heavy network calls if more than 20 seconds have elapsed
+    if (now - _lastHomeNetworkRefreshTime > 20000) {
+      _lastHomeNetworkRefreshTime = now;
+      loadRealProfile();
       if (typeof syncUserQuizHistoryWithServer === 'function') syncUserQuizHistoryWithServer();
     }
   });
@@ -3227,7 +3247,13 @@ checkRoomShareUrlOnLoad();
   var statsBarChartInstance = null;
   var statsLineChartInstance = null;
 
-function updateStatsTabDetails() {
+window.updateStatsTabDetails = function() {
+  if (!userProfile) {
+    try {
+      const stored = localStorage.getItem('userProfile');
+      if (stored) userProfile = JSON.parse(stored);
+    } catch(e) {}
+  }
   if (!userProfile) return;
 
   // 1. Set update date
@@ -3245,6 +3271,8 @@ function updateStatsTabDetails() {
     const dbList = (typeof userDbQuizHistory !== 'undefined' && Array.isArray(userDbQuizHistory)) ? userDbQuizHistory : [];
     const uRaw = localStorage.getItem(`userQuizHistory_${uid}`);
     const uList = uRaw ? JSON.parse(uRaw) : [];
+    const globalRaw = localStorage.getItem('userQuizHistory');
+    const globalList = globalRaw ? JSON.parse(globalRaw) : [];
 
     // Trigger sync if dbList is empty and user is logged in
     if (dbList.length === 0 && (authToken || localStorage.getItem('authToken')) && uid !== 'guest' && !isQuizHistorySyncing) {
@@ -3253,7 +3281,7 @@ function updateStatsTabDetails() {
     
     // Combine and deduplicate seamlessly between DB and LocalStorage
     const seen = new Set();
-    const all = [...dbList, ...uList];
+    const all = [...dbList, ...uList, ...globalList];
     for (const h of all) {
       if (!h) continue;
       let time = 0;
