@@ -1,3 +1,14 @@
+// Utility to escape HTML
+function escapeHTML(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+window.escapeHTML = escapeHTML;
 
 function formatMessageContent(content) {
   if (!content) return '';
@@ -3206,12 +3217,14 @@ function updateStatsTabDetails() {
 // Leaderboard Section Logic (Pretest 150)
 // ==========================================
 let currentLeaderboardTrack = 'all'; // 'all', 'prabpram', 'amnuay'
+window.currentLeaderboardTrack = 'all';
 
 window.stopCommunityPolling = function() {};
 window.updateCommunityTabDetails = function() {};
 
 window.setLeaderboardTrackFilter = function(track) {
   currentLeaderboardTrack = track;
+  window.currentLeaderboardTrack = track;
   const btnAll = document.getElementById('btnFilterLeaderboardAll');
   const btnPrab = document.getElementById('btnFilterLeaderboardPrabpram');
   const btnAmn = document.getElementById('btnFilterLeaderboardAmnuay');
