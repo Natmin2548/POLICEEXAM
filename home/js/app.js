@@ -324,7 +324,221 @@ function initializeDashboard() {
     else if (hour < 17) greetingSub.textContent = 'สวัสดีตอนบ่าย ';
     else greetingSub.textContent = 'สวัสดีตอนเย็น ';
   }
+
+  // Fetch in-app notifications on dashboard load
+  fetchUserNotifications();
 }
+
+// ==========================================
+// In-App User Notifications (Blinking Bell & Thank-You System)
+// ==========================================
+let currentUserNotifications = [];
+
+async function fetchUserNotifications() {
+  if (!authToken) {
+    updateNotificationBadges(0);
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/api/user/notifications`, {
+      headers: { 'Authorization': `Bearer ${authToken}` }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      currentUserNotifications = data.notifications || [];
+      updateNotificationBadges(currentUserNotifications.length);
+      
+      // If modal is currently open, re-render list
+      const modal = document.getElementById('userNotificationsModal');
+      if (modal && modal.style.display === 'flex') {
+        renderUserNotificationsList();
+      }
+    }
+  } catch (err) {
+    console.warn('Fetch notifications error:', err);
+  }
+}
+
+function updateNotificationBadges(count = 0) {
+  const btnBell = document.getElementById('btnHeaderNotif');
+  const badgeHeader = document.getElementById('headerNotifBadge');
+  const badgeDropdown = document.getElementById('dropdownNotifBadge');
+  const badgeModal = document.getElementById('modalNotifCountBadge');
+
+  if (count > 0) {
+    if (btnBell) btnBell.classList.add('has-unread');
+    if (badgeHeader) {
+      badgeHeader.textContent = count > 99 ? '99+' : String(count);
+      badgeHeader.style.display = 'flex';
+    }
+    if (badgeDropdown) {
+      badgeDropdown.textContent = count > 99 ? '99+' : String(count);
+      badgeDropdown.style.display = 'inline-block';
+    }
+    if (badgeModal) {
+      badgeModal.textContent = String(count);
+      badgeModal.style.display = 'inline-block';
+    }
+  } else {
+    if (btnBell) btnBell.classList.remove('has-unread');
+    if (badgeHeader) badgeHeader.style.display = 'none';
+    if (badgeDropdown) badgeDropdown.style.display = 'none';
+    if (badgeModal) badgeModal.style.display = 'none';
+  }
+}
+
+function openUserNotificationsModal(event) {
+  if (event) event.stopPropagation();
+  const modal = document.getElementById('userNotificationsModal');
+  if (!modal) return;
+
+  renderUserNotificationsList();
+  modal.style.display = 'flex';
+}
+
+function closeUserNotificationsModal() {
+  const modal = document.getElementById('userNotificationsModal');
+  if (modal) modal.style.display = 'none';
+}
+
+function renderUserNotificationsList() {
+  const container = document.getElementById('userNotifsListContainer');
+  const emptyState = document.getElementById('userNotifsEmptyState');
+  const btnDismissAll = document.getElementById('btnDismissAllNotifs');
+  if (!container) return;
+
+  if (!currentUserNotifications || currentUserNotifications.length === 0) {
+    container.style.display = 'none';
+    if (emptyState) emptyState.style.display = 'block';
+    if (btnDismissAll) btnDismissAll.style.display = 'none';
+    return;
+  }
+
+  container.style.display = 'flex';
+  if (emptyState) emptyState.style.display = 'none';
+  if (btnDismissAll) btnDismissAll.style.display = 'inline-block';
+
+  let html = '';
+  currentUserNotifications.forEach(n => {
+    const timeAgo = getNotificationTimeAgo(n.createdAt);
+    const isThankYou = n.type === 'REPORT_RESOLVED' || (n.title && n.title.includes('ขอบคุณ'));
+
+    html += `
+      <div class="user-notif-item-card" id="notif_card_${n.id}">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 6px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 20px;">${isThankYou ? '🙏' : '🔔'}</span>
+            <div>
+              <div style="font-weight: 800; font-size: 14px; color: #0F172A; line-height: 1.3;">
+                ${escapeHTML(n.title)}
+              </div>
+              <span class="user-notif-badge-type ${isThankYou ? 'thank-you' : ''}">
+                ${isThankYou ? '✓ แอดมินตรวจสอบแล้ว' : 'แจ้งเตือนจากระบบ'}
+              </span>
+            </div>
+          </div>
+          <span style="font-size: 11px; color: #94A3B8; white-space: nowrap;">${timeAgo}</span>
+        </div>
+
+        <p style="font-size: 13px; color: #334155; margin: 6px 0 8px 0; line-height: 1.5;">
+          ${escapeHTML(n.message)}
+        </p>
+
+        ${n.details ? `
+          <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-left: 3.5px solid #10B981; border-radius: 8px; padding: 7px 12px; font-size: 12px; color: #475569; margin-bottom: 10px; line-height: 1.4;">
+            ${escapeHTML(n.details)}
+          </div>
+        ` : ''}
+
+        <div style="display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin-top: 4px;">
+          <button type="button" class="user-notif-btn-dismiss" onclick="dismissSingleNotification('${n.id}')">
+            <span>✓ รับทราบและลบออก</span>
+          </button>
+        </div>
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
+}
+
+function getNotificationTimeAgo(dateStr) {
+  if (!dateStr) return 'เมื่อสักครู่';
+  try {
+    const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
+    if (diff < 60) return 'เมื่อสักครู่';
+    if (diff < 3600) return `${Math.floor(diff / 60)} นาทีที่แล้ว`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)} ชม. ที่แล้ว`;
+    return `${Math.floor(diff / 86400)} วันที่แล้ว`;
+  } catch (_) {
+    return 'เมื่อสักครู่';
+  }
+}
+
+async function dismissSingleNotification(notifId) {
+  const card = document.getElementById(`notif_card_${notifId}`);
+  if (card) {
+    card.classList.add('removing');
+  }
+
+  // Update in-memory immediately for instant responsive feedback
+  currentUserNotifications = currentUserNotifications.filter(n => n.id !== notifId);
+  updateNotificationBadges(currentUserNotifications.length);
+
+  setTimeout(() => {
+    if (card) card.remove();
+    if (currentUserNotifications.length === 0) {
+      renderUserNotificationsList();
+    }
+  }, 220);
+
+  if (!authToken) return;
+
+  try {
+    await fetch(`${API_BASE}/api/user/notifications/${notifId}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${authToken}` }
+    });
+  } catch (err) {
+    console.warn('Dismiss notification error:', err);
+  }
+}
+
+async function dismissAllNotifications() {
+  if (!confirm('ต้องการลบการแจ้งเตือนทั้งหมดใช่หรือไม่?')) return;
+
+  currentUserNotifications = [];
+  updateNotificationBadges(0);
+  renderUserNotificationsList();
+
+  if (!authToken) return;
+
+  try {
+    await fetch(`${API_BASE}/api/user/notifications/all`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${authToken}` }
+    });
+  } catch (err) {
+    console.warn('Dismiss all notifications error:', err);
+  }
+}
+
+// Global functions binding
+window.openUserNotificationsModal = openUserNotificationsModal;
+window.closeUserNotificationsModal = closeUserNotificationsModal;
+window.dismissSingleNotification = dismissSingleNotification;
+window.dismissAllNotifications = dismissAllNotifications;
+window.fetchUserNotifications = fetchUserNotifications;
+
+// Background polling every 30 seconds & on window focus
+setInterval(() => {
+  if (authToken) fetchUserNotifications();
+}, 30000);
+
+window.addEventListener('focus', () => {
+  if (authToken) fetchUserNotifications();
+});
 
 // ==========================================
 // Load Real Profile from API

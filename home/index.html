@@ -266,7 +266,23 @@
       </div>
 
       <!-- Right: Greeting & User Avatar (Click to toggle menu) -->
-      <div class="header-actions" style="display: flex; align-items: center; gap: 10px;">
+      <div class="header-actions" style="display: flex; align-items: center; gap: 8px;">
+        
+        <!-- In-App Notification Bell Button (Blinks/Pulses when unread) -->
+        <div class="notification-btn-container" style="position: relative;">
+          <button class="btn-header-notif" id="btnHeaderNotif"
+            type="button"
+            onclick="openUserNotificationsModal(event)"
+            aria-label="การแจ้งเตือนจากแอดมิน"
+            title="การแจ้งเตือนจากแอดมิน">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+            </svg>
+            <span class="notif-badge-pulsing" id="headerNotifBadge" style="display: none;">0</span>
+          </button>
+        </div>
+
         <div class="nav-greeting" style="display: flex; flex-direction: column; text-align: right; cursor: pointer; user-select: none;"
           onclick="toggleProfileDropdown(event)" title="เมนูผู้ใช้งาน">
           <span class="greeting-subtitle"
@@ -297,6 +313,14 @@
               <span class="dropdown-user-email" id="dropdownUserEmail">user@policeexam.com</span>
             </div>
             <div class="dropdown-divider"></div>
+            <a href="#" onclick="openUserNotificationsModal(event); return false;" class="dropdown-item" id="dropdownNotifications">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+              </svg>
+              <span>การแจ้งเตือน</span>
+              <span id="dropdownNotifBadge" style="margin-left: auto; background: #DC2626; color: white; font-size: 10.5px; font-weight: 800; padding: 1px 6px; border-radius: 999px; display: none;">0</span>
+            </a>
             <a href="#" onclick="window.location.href='admin.html?t=' + Date.now(); return false;" class="dropdown-item"
               id="dropdownAdminPanel" style="display: none; color: #BD1B0B;">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1015,6 +1039,48 @@
       </a>
     </div>
   </nav>
+
+  <!-- User In-App Notifications Modal (แจ้งเตือนจากแอดมิน) -->
+  <div class="modal-overlay" id="userNotificationsModal" style="display: none; position: fixed; inset: 0; z-index: 10040; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); align-items: center; justify-content: center; padding: 16px;">
+    <div class="user-notif-modal-card">
+      
+      <!-- Modal Header -->
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1.5px solid #F1F5F9; background: #FAFAFA;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="width: 38px; height: 38px; border-radius: 12px; background: #FEF2F2; color: #DC2626; display: flex; align-items: center; justify-content: center; font-size: 18px; border: 1px solid #FECACA;">
+            🔔
+          </div>
+          <div>
+            <h3 style="font-size: 16px; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 6px;">
+              <span>การแจ้งเตือน</span>
+              <span id="modalNotifCountBadge" style="font-size: 11px; font-weight: 700; background: #DC2626; color: white; padding: 2px 7px; border-radius: 999px; display: none;">0</span>
+            </h3>
+            <p style="font-size: 11.5px; color: #64748B; margin: 2px 0 0 0;">ข้อความตอบกลับและการแจ้งเตือนจากแอดมิน</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeUserNotificationsModal()" aria-label="ปิดหน้าต่าง" style="background: #F1F5F9; border: none; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; cursor: pointer; color: #475569; transition: all 0.15s ease;">✕</button>
+      </div>
+
+      <!-- Modal Body (List of Notifications) -->
+      <div id="userNotifsListContainer" style="padding: 16px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 10px; background: #F8FAFC; max-height: 60vh;">
+        <!-- Dynamically rendered -->
+      </div>
+
+      <!-- Empty State -->
+      <div id="userNotifsEmptyState" style="display: none; text-align: center; padding: 40px 20px; color: #64748B; background: #F8FAFC;">
+        <div style="font-size: 36px; margin-bottom: 8px;">📭</div>
+        <div style="font-weight: 700; font-size: 15px; color: #1E293B;">ไม่มีการแจ้งเตือนใหม่ในขณะนี้</div>
+        <div style="font-size: 12px; color: #94A3B8; margin-top: 4px;">เมื่อแอดมินตรวจสอบข้อสอบที่คุณแจ้ง หรือมีข้อความตอบกลับ จะแจ้งเตือนที่นี่ครับ</div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 18px; border-top: 1px solid #F1F5F9; background: white;">
+        <button type="button" id="btnDismissAllNotifs" onclick="dismissAllNotifications()" style="background: none; border: none; color: #64748B; font-size: 12px; font-weight: 600; cursor: pointer; display: none; padding: 0;">ล้างการแจ้งเตือนทั้งหมด</button>
+        <button type="button" onclick="closeUserNotificationsModal()" style="margin-left: auto; padding: 7px 18px; border-radius: 8px; border: 1.5px solid #CBD5E1; background: white; font-weight: 700; font-size: 12.5px; color: #334155; cursor: pointer; transition: all 0.15s ease;">ปิดหน้าต่าง</button>
+      </div>
+
+    </div>
+  </div>
 
   <!-- Apple Minimalist Maintenance Modal -->
   <div id="maintenanceModal" class="modal-overlay"

@@ -1953,6 +1953,136 @@ app.post('/api/user/profile/upload-face', authenticateToken, async (req, res) =>
   }
 });
 
+// ==========================================
+// User In-App Notifications System
+// ==========================================
+async function sendUserNotification(userId, { type, title, message, details, questionId }) {
+  if (!userId) return null;
+  try {
+    const key = `user_notifs_${userId}`;
+    const setting = await prisma.systemSetting.findUnique({ where: { key } });
+    let notifs = [];
+    if (setting && setting.value) {
+      try { notifs = JSON.parse(setting.value); } catch (_) {}
+    }
+
+    const newNotif = {
+      id: `notif_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      type: type || 'ADMIN_THANK_YOU',
+      title: title || '🙏 ขอบคุณสำหรับการช่วยรายงานข้อสอบ!',
+      message: message || 'แอดมินได้ทำการตรวจสอบและปรับปรุงข้อสอบเรียบร้อยแล้วครับ',
+      details: details || '',
+      questionId: questionId ? String(questionId) : null,
+      createdAt: new Date().toISOString(),
+      read: false
+    };
+
+    notifs.unshift(newNotif);
+    if (notifs.length > 50) notifs = notifs.slice(0, 50);
+
+    await prisma.systemSetting.upsert({
+      where: { key },
+      create: { key, value: JSON.stringify(notifs) },
+      update: { value: JSON.stringify(notifs) }
+    });
+
+    return newNotif;
+  } catch (err) {
+    console.error(`sendUserNotification error for user ${userId}:`, err);
+    return null;
+  }
+}
+
+async function getUserNotifications(userId) {
+  if (!userId) return [];
+  try {
+    const key = `user_notifs_${userId}`;
+    const setting = await prisma.systemSetting.findUnique({ where: { key } });
+    if (!setting || !setting.value) return [];
+    const list = JSON.parse(setting.value);
+    return Array.isArray(list) ? list : [];
+  } catch (err) {
+    console.error(`getUserNotifications error for user ${userId}:`, err);
+    return [];
+  }
+}
+
+async function dismissUserNotification(userId, notifId) {
+  if (!userId) return false;
+  try {
+    const key = `user_notifs_${userId}`;
+    const setting = await prisma.systemSetting.findUnique({ where: { key } });
+    if (!setting || !setting.value) return true;
+    let list = [];
+    try { list = JSON.parse(setting.value); } catch (_) {}
+
+    if (notifId === 'all') {
+      list = [];
+    } else {
+      list = list.filter(n => n.id !== notifId);
+    }
+
+    await prisma.systemSetting.upsert({
+      where: { key },
+      create: { key, value: JSON.stringify(list) },
+      update: { value: JSON.stringify(list) }
+    });
+    return true;
+  } catch (err) {
+    console.error(`dismissUserNotification error:`, err);
+    return false;
+  }
+}
+
+// User Notifications Endpoints
+app.get('/api/user/notifications', authenticateToken, async (req, res) => {
+  try {
+    const list = await getUserNotifications(req.user.userId);
+    res.json({
+      notifications: list,
+      unreadCount: list.filter(n => !n.read).length
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'ไม่สามารถโหลดการแจ้งเตือนได้' });
+  }
+});
+
+app.delete('/api/user/notifications/:id', authenticateToken, async (req, res) => {
+  try {
+    const notifId = req.params.id;
+    await dismissUserNotification(req.user.userId, notifId);
+    const remaining = await getUserNotifications(req.user.userId);
+    res.json({
+      success: true,
+      remainingCount: remaining.length,
+      unreadCount: remaining.filter(n => !n.read).length
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'ไม่สามารถลบการแจ้งเตือนได้' });
+  }
+});
+
+// Admin Direct Notification Endpoint
+app.post('/api/admin/notify-user', requireAdmin, async (req, res) => {
+  try {
+    const { userId, title, message, details, type } = req.body;
+    if (!userId || !title || !message) {
+      return res.status(400).json({ error: 'ข้อมูลไม่ครบถ้วน' });
+    }
+
+    const notif = await sendUserNotification(parseInt(userId), {
+      type: type || 'ADMIN_MESSAGE',
+      title,
+      message,
+      details: details || ''
+    });
+
+    res.json({ success: true, notification: notif });
+  } catch (err) {
+    res.status(500).json({ error: 'เกิดข้อผิดพลาด: ' + err.message });
+  }
+});
+
 // --- Student Exam Endpoints ---
 
 // Get daily random exam (10 questions, 1 or 2 from each subject)
@@ -12466,6 +12596,46 @@ app.delete('/api/admin/reports/:id', requireAdmin, async (req, res) => {
     });
 
     if (rep) {
+      // Find all users who reported this question before deleting and send thank-you notification
+      try {
+        const matchingReports = await prisma.reportedQuestion.findMany({
+          where: {
+            OR: [
+              { id },
+              { questionId: String(rep.questionId) }
+            ]
+          },
+          select: { userId: true, questionText: true, reason: true }
+        });
+
+        const notifiedUserIds = new Set();
+        for (const rObj of matchingReports) {
+          if (rObj.userId && !notifiedUserIds.has(rObj.userId)) {
+            notifiedUserIds.add(rObj.userId);
+
+            let subDetails = '';
+            try {
+              const parsed = JSON.parse(rObj.reason);
+              if (parsed.subject) subDetails += `วิชา: ${parsed.subject}`;
+              if (parsed.questionNumber) subDetails += ` (ข้อที่ ${parsed.questionNumber})`;
+            } catch (_) {}
+            if (!subDetails && (rObj.questionText || rep.questionText)) {
+              subDetails = `โจทย์: ${(rObj.questionText || rep.questionText).substring(0, 80)}...`;
+            }
+
+            await sendUserNotification(rObj.userId, {
+              type: 'REPORT_RESOLVED',
+              title: '🙏 ขอบคุณสำหรับการช่วยรายงานข้อสอบ!',
+              message: 'แอดมินได้ทำการตรวจสอบและปรับปรุงข้อสอบเรียบร้อยแล้ว ทีมงานขอขอบคุณที่ร่วมเป็นส่วนหนึ่งในการพัฒนาข้อสอบให้ดียิ่งขึ้นครับ ✨',
+              details: subDetails,
+              questionId: rep.questionId
+            });
+          }
+        }
+      } catch (notifErr) {
+        console.warn('Failed to send thank you notifications for resolved report:', notifErr.message);
+      }
+
       // Mark as resolved and clean all duplicate reports for this question submitted up to now
       const cleanRes = await markQuestionAsResolvedAndCleanReports(
         rep.questionId,
@@ -12810,6 +12980,31 @@ app.post('/api/admin/reports/:id/ai-apply-fix', requireAdmin, async (req, res) =
         }
       });
       updatedDbQuestion = true;
+    }
+
+    // Send thank you notification to the reporter
+    if (report && report.userId) {
+      try {
+        let subDetails = '';
+        try {
+          const parsed = JSON.parse(report.reason);
+          if (parsed.subject) subDetails += `วิชา: ${parsed.subject}`;
+          if (parsed.questionNumber) subDetails += ` (ข้อที่ ${parsed.questionNumber})`;
+        } catch (_) {}
+        if (!subDetails && (questionText || report.questionText)) {
+          subDetails = `โจทย์: ${(questionText || report.questionText).substring(0, 80)}...`;
+        }
+
+        await sendUserNotification(report.userId, {
+          type: 'REPORT_RESOLVED',
+          title: '🙏 ขอบคุณสำหรับการช่วยรายงานข้อสอบ!',
+          message: 'แอดมินได้ทำการตรวจสอบและแก้ไขข้อสอบตามที่คุณแจ้งเข้ามาเรียบร้อยแล้ว ทีมงานขอขอบคุณที่ช่วยพัฒนาข้อสอบให้ดียิ่งขึ้นครับ ✨',
+          details: subDetails,
+          questionId: report.questionId
+        });
+      } catch (e) {
+        console.warn('Send thank you notification error:', e.message);
+      }
     }
 
     // Automatically record fix and clean ALL reports for this question created on or before this fix!

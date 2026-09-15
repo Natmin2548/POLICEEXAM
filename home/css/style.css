@@ -3005,6 +3005,182 @@ body {
   box-shadow: 0 3px 10px rgba(189, 27, 11, 0.15);
 }
 
+/* ==========================================
+   Header Notification Bell & Blinking Pulsing Animations
+   ========================================== */
+.notification-btn-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-header-notif {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1.5px solid #E2E8F0;
+  background: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #475569;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn-header-notif:hover {
+  background: #F8FAFC;
+  border-color: #CBD5E1;
+  color: #0F172A;
+  transform: scale(1.04);
+}
+
+/* Unread State: Continuous Pulsing & Glowing Animation */
+.btn-header-notif.has-unread {
+  border-color: #F87171;
+  background: #FEF2F2;
+  color: #DC2626;
+  animation: notifBellGlow 1.6s infinite ease-in-out;
+}
+
+@keyframes notifBellGlow {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.45);
+  }
+  50% {
+    transform: scale(1.1);
+    box-shadow: 0 0 0 8px rgba(239, 68, 68, 0);
+  }
+}
+
+.notif-badge-pulsing {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  background: #DC2626;
+  color: #FFFFFF;
+  font-size: 10px;
+  font-weight: 800;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #FFFFFF;
+  box-shadow: 0 2px 6px rgba(220, 38, 38, 0.35);
+  animation: notifBadgeBlink 1.2s infinite ease-in-out;
+}
+
+@keyframes notifBadgeBlink {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(0.85);
+  }
+}
+
+/* User Notifications Modal Card */
+.user-notif-modal-card {
+  background: #FFFFFF;
+  max-width: 460px;
+  width: 100%;
+  max-height: 85vh;
+  border-radius: 20px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #E2E8F0;
+  animation: modalScalePop 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalScalePop {
+  0% {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Notification Item Card inside Modal */
+.user-notif-item-card {
+  background: #FFFFFF;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 14px;
+  padding: 14px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.user-notif-item-card:hover {
+  border-color: #CBD5E1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+.user-notif-item-card.removing {
+  opacity: 0;
+  transform: translateX(30px) scale(0.95);
+  max-height: 0;
+  padding: 0 14px;
+  margin: 0;
+  overflow: hidden;
+  border: none;
+}
+
+.user-notif-badge-type {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.user-notif-badge-type.thank-you {
+  background: #ECFDF5;
+  color: #059669;
+  border: 1px solid #A7F3D0;
+}
+
+.user-notif-btn-dismiss {
+  background: #10B981;
+  color: #FFFFFF;
+  border: none;
+  padding: 7px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.25);
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.user-notif-btn-dismiss:hover {
+  background: #059669;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+}
+
+.user-notif-btn-dismiss:active {
+  transform: scale(0.96);
+}
+
+
 
 
 
