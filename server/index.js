@@ -4918,39 +4918,6 @@ function formatDurationTh(sec) {
   return `${minutes} นาที ${seconds} วิ`;
 }
 
-const SEED_PRETEST_CONTENDERS = [
-  { name: 'ส.ต.ต. ณัฐภัทร วงศ์ษา', username: 'natpat_pol', track: 'prabpram', trackTitle: 'สายปราบปราม', score: 146, timeSpentSeconds: 5220, dateFormatted: '12 ก.ย. 67' },
-  { name: 'กรวิชญ์ เมธาสิทธิ์', username: 'korn_m', track: 'amnuay', trackTitle: 'สายอำนวยการ', score: 145, timeSpentSeconds: 5580, dateFormatted: '13 ก.ย. 67' },
-  { name: 'ธีรเดช ศรีสุวรรณ', username: 'theeradej_s', track: 'prabpram', trackTitle: 'สายปราบปราม', score: 144, timeSpentSeconds: 5820, dateFormatted: '10 ก.ย. 67' },
-  { name: 'ปภัสสร เจริญสุข', username: 'papatsorn_c', track: 'amnuay', trackTitle: 'สายอำนวยการ', score: 143, timeSpentSeconds: 5940, dateFormatted: '14 ก.ย. 67' },
-  { name: 'ส.ต.ต. วรเมธ สิทธิชัย', username: 'worameth_cop', track: 'prabpram', trackTitle: 'สายปราบปราม', score: 142, timeSpentSeconds: 6120, dateFormatted: '11 ก.ย. 67' },
-  { name: 'กิตติภูมิ พัฒนากุล', username: 'kittiphum_p', track: 'prabpram', trackTitle: 'สายปราบปราม', score: 142, timeSpentSeconds: 6480, dateFormatted: '13 ก.ย. 67' },
-  { name: 'ชวัลนุช พงษ์ไพบูลย์', username: 'chawan_n', track: 'amnuay', trackTitle: 'สายอำนวยการ', score: 141, timeSpentSeconds: 6060, dateFormatted: '12 ก.ย. 67' },
-  { name: 'ธนกฤต มณีรัตน์', username: 'tanakrit_m', track: 'prabpram', trackTitle: 'สายปราบปราม', score: 140, timeSpentSeconds: 6300, dateFormatted: '09 ก.ย. 67' },
-  { name: 'ศุภโชค เลิศมงคล', username: 'suppachok_l', track: 'prabpram', trackTitle: 'สายปราบปราม', score: 139, timeSpentSeconds: 6540, dateFormatted: '14 ก.ย. 67' },
-  { name: 'นภัสรา สุวรรณเวช', username: 'napatsara_s', track: 'amnuay', trackTitle: 'สายอำนวยการ', score: 139, timeSpentSeconds: 6720, dateFormatted: '11 ก.ย. 67' },
-  { name: 'พงศกร วรเดช', username: 'pongsakorn_w', track: 'prabpram', trackTitle: 'สายปราบปราม', score: 138, timeSpentSeconds: 6600, dateFormatted: '10 ก.ย. 67' },
-  { name: 'อรรถพล พรหมดี', username: 'attapon_p', track: 'prabpram', trackTitle: 'สายปราบปราม', score: 137, timeSpentSeconds: 6780, dateFormatted: '13 ก.ย. 67' },
-  { name: 'เบญญาภา ชัยวัฒน์', username: 'benyapa_c', track: 'amnuay', trackTitle: 'สายอำนวยการ', score: 137, timeSpentSeconds: 7020, dateFormatted: '12 ก.ย. 67' },
-  { name: 'ดนุพล รัตนวิเชียร', username: 'danupol_r', track: 'prabpram', trackTitle: 'สายปราบปราม', score: 136, timeSpentSeconds: 6900, dateFormatted: '08 ก.ย. 67' },
-  { name: 'รพีภัทร บุญญา', username: 'rapeepat_b', track: 'prabpram', trackTitle: 'สายปราบปราม', score: 135, timeSpentSeconds: 7140, dateFormatted: '14 ก.ย. 67' },
-  { name: 'สิรินทรา เกษมสุข', username: 'sirintra_k', track: 'amnuay', trackTitle: 'สายอำนวยการ', score: 135, timeSpentSeconds: 7320, dateFormatted: '11 ก.ย. 67' },
-  { name: 'พิชญ์ เลิศปรีชา', username: 'pitch_lp', track: 'prabpram', trackTitle: 'สายปราบปราม', score: 134, timeSpentSeconds: 7200, dateFormatted: '10 ก.ย. 67' },
-  { name: 'กิตติศักดิ์ ศรีวิชัย', username: 'kittisak_s', track: 'prabpram', trackTitle: 'สายปราบปราม', score: 133, timeSpentSeconds: 7380, dateFormatted: '13 ก.ย. 67' },
-  { name: 'ปณิดา วราภรณ์', username: 'panida_w', track: 'amnuay', trackTitle: 'สายอำนวยการ', score: 133, timeSpentSeconds: 7500, dateFormatted: '09 ก.ย. 67' },
-  { name: 'จักรพันธ์ ภูริพัฒน์', username: 'jakkraphan_p', track: 'prabpram', trackTitle: 'สายปราบปราม', score: 132, timeSpentSeconds: 7440, dateFormatted: '12 ก.ย. 67' },
-  { name: 'อนุรักษ์ บุญมาก', username: 'anurak_b', track: 'prabpram', trackTitle: 'สายปราบปราม', score: 131, timeSpentSeconds: 7620, dateFormatted: '14 ก.ย. 67' },
-  { name: 'ณิชานันท์ อัศวเดช', username: 'nichanan_a', track: 'amnuay', trackTitle: 'สายอำนวยการ', score: 131, timeSpentSeconds: 7740, dateFormatted: '11 ก.ย. 67' },
-  { name: 'ภัทรดนัย ว่องไว', username: 'pattaradanai_v', track: 'prabpram', trackTitle: 'สายปราบปราม', score: 130, timeSpentSeconds: 7680, dateFormatted: '10 ก.ย. 67' },
-  { name: 'กฤติน ชาญชัย', username: 'krittin_c', track: 'prabpram', trackTitle: 'สายปราบปราม', score: 129, timeSpentSeconds: 7860, dateFormatted: '13 ก.ย. 67' },
-  { name: 'มณฑิรา สดใส', username: 'monthira_s', track: 'amnuay', trackTitle: 'สายอำนวยการ', score: 129, timeSpentSeconds: 7980, dateFormatted: '12 ก.ย. 67' },
-  { name: 'ธวัชชัย รักษาสัตย์', username: 'thawatchai_r', track: 'prabpram', trackTitle: 'สายปราบปราม', score: 128, timeSpentSeconds: 8040, dateFormatted: '08 ก.ย. 67' },
-  { name: 'ปฏิภาณ คงมั่น', username: 'patiphan_k', track: 'prabpram', trackTitle: 'สายปราบปราม', score: 127, timeSpentSeconds: 8220, dateFormatted: '14 ก.ย. 67' },
-  { name: 'สุพรรษา วงศ์ทอง', username: 'supansa_w', track: 'amnuay', trackTitle: 'สายอำนวยการ', score: 126, timeSpentSeconds: 8340, dateFormatted: '10 ก.ย. 67' },
-  { name: 'ชัยวัฒน์ บุญลือ', username: 'chaiwat_b', track: 'prabpram', trackTitle: 'สายปราบปราม', score: 125, timeSpentSeconds: 8460, dateFormatted: '12 ก.ย. 67' },
-  { name: 'เอกราช ชัยมงคล', username: 'ekkaraj_c', track: 'prabpram', trackTitle: 'สายปราบปราม', score: 124, timeSpentSeconds: 8580, dateFormatted: '11 ก.ย. 67' }
-];
-
 app.get('/api/leaderboard/pretest150', async (req, res) => {
   try {
     const trackFilter = (req.query.track || 'all').toLowerCase(); // 'all', 'prabpram', 'amnuay'
@@ -5041,31 +5008,10 @@ app.get('/api/leaderboard/pretest150', async (req, res) => {
       }
     });
 
-    // 4. Combine real users and seeds
+    // 4. Collect ONLY 100% REAL users (No seed or dummy data)
     let allCandidates = [];
-
-    // Add real users
     userBestMap.forEach(cand => {
       allCandidates.push(cand);
-    });
-
-    // Add seeds (tag fake seeds as fake id < 0)
-    let seedIdCounter = -1;
-    SEED_PRETEST_CONTENDERS.forEach(seed => {
-      allCandidates.push({
-        userId: seedIdCounter--,
-        name: seed.name,
-        username: seed.username,
-        track: seed.track,
-        trackTitle: seed.trackTitle,
-        score: seed.score,
-        total: 150,
-        scorePct: Math.round((seed.score / 150) * 100),
-        timeSpentSeconds: seed.timeSpentSeconds,
-        timeFormatted: formatDurationTh(seed.timeSpentSeconds),
-        dateFormatted: seed.dateFormatted,
-        isMe: false
-      });
     });
 
     // 5. Apply track filter if requested

@@ -3241,9 +3241,8 @@ window.loadLeaderboard150 = async function(track = 'all') {
   if (!container) return;
 
   container.innerHTML = `
-    <div class="leaderboard-item-loading" style="text-align: center; padding: 36px 12px; color: #94A3B8; font-size: 13.5px;">
-      <div style="font-size: 24px; margin-bottom: 8px;">⏳</div>
-      กำลังโหลดตารางอันดับ 150 ข้อ...
+    <div class="leaderboard-item-loading" style="text-align: center; padding: 24px 12px; color: #94A3B8; font-size: 12.5px;">
+      กำลังโหลดตารางอันดับ...
     </div>
   `;
 
@@ -3259,8 +3258,8 @@ window.loadLeaderboard150 = async function(track = 'all') {
   } catch (err) {
     console.error('Load Leaderboard Error:', err);
     container.innerHTML = `
-      <div style="text-align: center; padding: 30px; color: #EF4444; font-size: 13px;">
-        เกิดข้อผิดพลาดในการโหลดข้อมูลตารางอันดับ กรุณาลองใหม่อีกครั้ง
+      <div style="text-align: center; padding: 20px; color: #EF4444; font-size: 12.5px;">
+        ไม่สามารถโหลดข้อมูลอันดับได้ กรุณาลองใหม่อีกครั้ง
       </div>
     `;
   }
@@ -3296,16 +3295,13 @@ function renderMyRankCard(myRank) {
 
   if (myRank && myRank.hasAttempted && myRank.score > 0) {
     if (lblDesc) {
-      lblDesc.innerHTML = `<span style="color: #16A34A; font-weight: 700;">✓ มีคะแนนในระบบแล้ว</span> • สอบเมื่อ ${myRank.dateFormatted || 'ล่าสุด'}`;
+      lblDesc.innerHTML = `<span style="color: #16A34A; font-weight: 600;">มีผลสอบในระบบ</span> • สอบเมื่อ ${myRank.dateFormatted || 'ล่าสุด'}`;
     }
     if (lblPos) {
-      if (myRank.rank === 1) lblPos.innerHTML = '🥇 อันดับ 1';
-      else if (myRank.rank === 2) lblPos.innerHTML = '🥈 อันดับ 2';
-      else if (myRank.rank === 3) lblPos.innerHTML = '🥉 อันดับ 3';
-      else lblPos.innerHTML = `#${myRank.rank} <span style="font-size: 12px; color: #94A3B8; font-weight: 500;">/ ${myRank.totalParticipants || 30}</span>`;
+      lblPos.innerHTML = `#${myRank.rank} <span style="font-size: 11px; color: #94A3B8; font-weight: 500;">/ ${myRank.totalParticipants || 1}</span>`;
     }
     if (lblScore) {
-      lblScore.innerHTML = `${myRank.score} <span style="font-size: 13px; color: #64748B; font-weight: 600;">/ 150</span> <span style="font-size: 11.5px; color: #16A34A; font-weight: 700;">(${myRank.scorePct}%)</span>`;
+      lblScore.innerHTML = `${myRank.score} <span style="font-size: 11px; color: #94A3B8; font-weight: 600;">/ 150</span>`;
     }
     if (lblTime) {
       lblTime.textContent = myRank.timeFormatted || '-';
@@ -3315,12 +3311,12 @@ function renderMyRankCard(myRank) {
     }
   } else {
     if (lblDesc) {
-      lblDesc.innerHTML = `<span style="color: #EA580C; font-weight: 700;">ยังไม่มีคะแนนสอบ 150 ข้อ</span> • กดปุ่มด้านขวาเพื่อเริ่มทำข้อสอบชิงอันดับ!`;
+      lblDesc.innerHTML = `ยังไม่มีคะแนนสอบ 150 ข้อ`;
     }
-    if (lblPos) lblPos.innerHTML = `<span style="color: #94A3B8; font-size: 16px;">ยังไม่มีอันดับ</span>`;
-    if (lblScore) lblScore.innerHTML = `<span style="color: #94A3B8; font-size: 16px;">0 / 150</span>`;
-    if (lblTime) lblTime.innerHTML = `<span style="color: #94A3B8; font-size: 15px;">-</span>`;
-    if (lblTrack) lblTrack.innerHTML = `<span style="color: #94A3B8; font-size: 13px;">รอสอบครั้งแรก</span>`;
+    if (lblPos) lblPos.innerHTML = `<span style="color: #94A3B8; font-size: 14px;">-</span>`;
+    if (lblScore) lblScore.innerHTML = `<span style="color: #94A3B8; font-size: 14px;">0 / 150</span>`;
+    if (lblTime) lblTime.innerHTML = `<span style="color: #94A3B8; font-size: 13px;">-</span>`;
+    if (lblTrack) lblTrack.innerHTML = `<span style="color: #94A3B8; font-size: 12px;">รอสอบครั้งแรก</span>`;
   }
 }
 
@@ -3330,11 +3326,11 @@ function renderLeaderboardTop30(top30, myRank) {
 
   if (!Array.isArray(top30) || top30.length === 0) {
     container.innerHTML = `
-      <div style="text-align: center; color: #94A3B8; padding: 40px; font-size: 13.5px;">
+      <div style="text-align: center; color: #94A3B8; padding: 28px 12px; font-size: 12.5px;">
         ยังไม่มีข้อมูลผู้เข้าสอบในหมวดนี้<br>
-        <span style="font-size: 12px; color: #BD1B0B; font-weight: 600; margin-top: 6px; display: block; cursor: pointer;" onclick="openPoliceTrackModal()">
-          คลิกที่นี่เพื่อเป็นผู้สอบคนแรก!
-        </span>
+        <button onclick="openPoliceTrackModal()" style="background: none; border: 1px solid #BD1B0B; color: #BD1B0B; font-weight: 600; margin-top: 10px; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-family: inherit; font-size: 12px;">
+          ทำข้อสอบเป็นคนแรก
+        </button>
       </div>
     `;
     return;
@@ -3345,74 +3341,51 @@ function renderLeaderboardTop30(top30, myRank) {
     const isMe = item.isMe || (myRank && myRank.userId === item.userId);
     const rank = item.rank;
 
-    // Podium Badges
     let rankBadge = '';
-    let rowBg = isMe ? '#FEF2F2' : '#FFFFFF';
-    let rowBorder = isMe ? '2px solid #FCA5A5' : '1px solid #F1F5F9';
-    let shadow = isMe ? '0 4px 12px rgba(189,27,11,0.08)' : 'none';
-
     if (rank === 1) {
-      rankBadge = `<div style="width: 36px; height: 36px; border-radius: 12px; background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%); border: 1.5px solid #F59E0B; display: flex; align-items: center; justify-content: center; font-size: 18px; box-shadow: 0 2px 8px rgba(245,158,11,0.25); flex-shrink: 0;">🥇</div>`;
-      if (!isMe) {
-        rowBg = '#FFFDF5';
-        rowBorder = '1.5px solid #FDE68A';
-      }
+      rankBadge = `<div style="width: 26px; height: 26px; border-radius: 6px; background: #0F172A; color: white; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; flex-shrink: 0;">1</div>`;
     } else if (rank === 2) {
-      rankBadge = `<div style="width: 36px; height: 36px; border-radius: 12px; background: linear-gradient(135deg, #F1F5F9 0%, #E2E8F0 100%); border: 1.5px solid #94A3B8; display: flex; align-items: center; justify-content: center; font-size: 18px; box-shadow: 0 2px 8px rgba(148,163,184,0.25); flex-shrink: 0;">🥈</div>`;
-      if (!isMe) {
-        rowBg = '#F8FAFC';
-        rowBorder = '1.5px solid #E2E8F0';
-      }
+      rankBadge = `<div style="width: 26px; height: 26px; border-radius: 6px; background: #334155; color: white; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; flex-shrink: 0;">2</div>`;
     } else if (rank === 3) {
-      rankBadge = `<div style="width: 36px; height: 36px; border-radius: 12px; background: linear-gradient(135deg, #FFEDD5 0%, #FED7AA 100%); border: 1.5px solid #EA580C; display: flex; align-items: center; justify-content: center; font-size: 18px; box-shadow: 0 2px 8px rgba(234,88,12,0.2); flex-shrink: 0;">🥉</div>`;
-      if (!isMe) {
-        rowBg = '#FFFBF7';
-        rowBorder = '1.5px solid #FED7AA';
-      }
+      rankBadge = `<div style="width: 26px; height: 26px; border-radius: 6px; background: #64748B; color: white; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; flex-shrink: 0;">3</div>`;
     } else {
-      rankBadge = `<div style="width: 36px; height: 36px; border-radius: 12px; background: #F8FAFC; border: 1px solid #E2E8F0; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; color: #475569; flex-shrink: 0;">${rank}</div>`;
+      rankBadge = `<div style="width: 26px; height: 26px; border-radius: 6px; background: #F1F5F9; color: #64748B; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0;">${rank}</div>`;
     }
 
+    const rowBg = isMe ? '#FEF2F2' : '#FFFFFF';
+    const rowBorder = isMe ? '1px solid #FCA5A5' : '1px solid #F1F5F9';
     const initial = (item.name || 'ผ').charAt(0);
-    const trackTag = item.track === 'amnuay' ? '📋 อำนวยการ' : '🛡️ ปราบปราม';
-    const trackTagColor = item.track === 'amnuay' ? '#2563EB' : '#BD1B0B';
-    const trackTagBg = item.track === 'amnuay' ? '#EFF6FF' : '#FFF1F2';
-    const trackTagBorder = item.track === 'amnuay' ? '#DBEAFE' : '#FFE4E6';
+    const trackTag = item.track === 'amnuay' ? 'สายอำนวยการ' : 'สายปราบปราม';
 
     html += `
-      <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; border-radius: 16px; background: ${rowBg}; border: ${rowBorder}; box-shadow: ${shadow}; transition: transform 0.15s ease;">
-        <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; border-radius: 8px; background: ${rowBg}; border: ${rowBorder};">
+        <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
           ${rankBadge}
-          <div style="width: 38px; height: 38px; border-radius: 50%; background: #E2E8F0; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 800; color: #334155; flex-shrink: 0;">
+          <div style="width: 30px; height: 30px; border-radius: 50%; background: #F1F5F9; border: 1px solid #E2E8F0; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #334155; flex-shrink: 0;">
             ${initial}
           </div>
           <div style="min-width: 0;">
-            <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-              <span style="font-size: 14.5px; font-weight: 700; color: #0F172A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px;">
-                ${escapeHTML(item.name)}
+            <div style="display: flex; align-items: center; gap: 4px;">
+              <span style="font-size: 13px; font-weight: 600; color: #0F172A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px;">
+                ${escapeHTML(item.name || 'ผู้เข้าสอบ')}
               </span>
-              ${isMe ? '<span style="background: #BD1B0B; color: white; font-size: 10px; font-weight: 800; padding: 1px 6px; border-radius: 4px;">ฉัน</span>' : ''}
+              ${isMe ? '<span style="background: #BD1B0B; color: white; font-size: 9px; font-weight: 700; padding: 1px 4px; border-radius: 3px;">ฉัน</span>' : ''}
             </div>
-            <div style="display: flex; align-items: center; gap: 8px; margin-top: 2px;">
-              <span style="font-size: 11px; font-weight: 700; color: ${trackTagColor}; background: ${trackTagBg}; border: 1px solid ${trackTagBorder}; padding: 1px 6px; border-radius: 4px;">
+            <div style="display: flex; align-items: center; gap: 6px; margin-top: 1px;">
+              <span style="font-size: 10px; font-weight: 500; color: #64748B; background: #F8FAFC; border: 1px solid #E2E8F0; padding: 1px 5px; border-radius: 4px;">
                 ${trackTag}
               </span>
-              <span style="font-size: 11px; color: #94A3B8;">${item.dateFormatted || ''}</span>
+              <span style="font-size: 10px; color: #94A3B8;">${item.dateFormatted || ''}</span>
             </div>
           </div>
         </div>
 
-        <div style="display: flex; align-items: center; gap: 20px; flex-shrink: 0;">
-          <div style="text-align: right; min-width: 80px;">
-            <span style="font-size: 13px; font-weight: 700; color: #475569; display: block;">${item.timeFormatted || '-'}</span>
-            <span style="font-size: 10.5px; color: #94A3B8; display: block;">เวลาที่ใช้</span>
+        <div style="display: flex; align-items: center; gap: 12px; flex-shrink: 0;">
+          <div style="text-align: right; min-width: 55px;">
+            <span style="font-size: 11.5px; font-weight: 600; color: #475569; display: block;">${item.timeFormatted || '-'}</span>
           </div>
-          <div style="text-align: right; min-width: 75px;">
-            <div style="display: flex; align-items: baseline; justify-content: flex-end; gap: 2px;">
-              <span style="font-size: 18px; font-weight: 900; color: #BD1B0B;">${item.score}</span>
-              <span style="font-size: 11px; font-weight: 700; color: #94A3B8;">/150</span>
-            </div>
-            <span style="font-size: 10.5px; font-weight: 700; color: #16A34A; display: block;">${item.scorePct}%</span>
+          <div style="text-align: right; min-width: 55px;">
+            <span style="font-size: 14px; font-weight: 800; color: #BD1B0B;">${item.score}</span><span style="font-size: 10px; color: #94A3B8; font-weight: 500;">/150</span>
           </div>
         </div>
       </div>

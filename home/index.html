@@ -358,8 +358,8 @@
           <!-- 3 -->
           <button onclick="document.getElementById('btnTabLeaderboard').click()"
             style="background: #FFFFFF; border: 1.5px solid #F1F5F9; border-radius: 16px; padding: 16px 14px; text-align: left; cursor: pointer; transition: transform 0.15s ease; font-family: inherit; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
-            <h3 style="margin: 0; font-size: 15px; font-weight: 800; color: #BD1B0B;">🏆 อันดับ</h3>
-            <p style="margin: 4px 0 0 0; font-size: 12px; color: #94A3B8; font-weight: 500;">Top 30 ผู้สอบ 150 ข้อ</p>
+            <h3 style="margin: 0; font-size: 15px; font-weight: 800; color: #BD1B0B;">อันดับ</h3>
+            <p style="margin: 4px 0 0 0; font-size: 12px; color: #94A3B8; font-weight: 500;">ผู้สอบ 150 ข้อ</p>
           </button>
           <!-- 4 -->
           <button onclick="openVocabArena()"
@@ -422,21 +422,15 @@
       <div id="leaderboardView" class="tab-view">
         <!-- Header title -->
         <section class="profile-header-title-section"
-          style="flex-direction: column; align-items: flex-start; gap: 8px; width: 100%; margin-bottom: 18px;">
-          <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; flex-wrap: wrap; gap: 12px;">
-            <div style="display: flex; align-items: center; gap: 12px;">
-              <div
-                style="width: 46px; height: 46px; border-radius: 14px; background: linear-gradient(135deg, #FFF1F2 0%, #FFE4E6 100%); border: 1.5px solid #FECDD3; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; box-shadow: 0 2px 8px rgba(189,27,11,0.08);">
-                🏆
-              </div>
-              <div>
-                <h1 class="profile-header-title" style="margin: 0; font-size: 20px; font-weight: 800; color: #0F172A;">ตารางอันดับข้อสอบ 150 ข้อ (Top 30)</h1>
-                <p style="margin: 2px 0 0 0; font-size: 13px; color: #64748B; font-weight: 500;">จัดอันดับตามคะแนนสูงสุด (150 ข้อ) และเวลาที่ทำเร็วที่สุด</p>
-              </div>
+          style="flex-direction: column; align-items: flex-start; gap: 6px; width: 100%; margin-bottom: 14px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 10px;">
+            <div>
+              <h1 class="profile-header-title" style="margin: 0; font-size: 18px; font-weight: 800; color: #0F172A;">ตารางอันดับ 150 ข้อ</h1>
+              <p style="margin: 2px 0 0 0; font-size: 12px; color: #64748B;">คะแนนสูงสุดและเวลาเร็วที่สุด</p>
             </div>
-            <button onclick="if(typeof loadLeaderboard150 === 'function') loadLeaderboard150(currentLeaderboardTrack)" title="รีเฟรชอันดับล่าสุด"
-              style="background: #FFFFFF; border: 1.5px solid #E2E8F0; padding: 8px 14px; border-radius: 12px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; color: #475569; font-size: 12.5px; font-weight: 700; font-family: inherit; transition: all 0.15s ease; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#BD1B0B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width: 15px; height: 15px;">
+            <button onclick="if(typeof loadLeaderboard150 === 'function') loadLeaderboard150(window.currentLeaderboardTrack || 'all')" title="รีเฟรชข้อมูลล่าสุด"
+              style="background: #FFFFFF; border: 1px solid #E2E8F0; padding: 6px 12px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; color: #475569; font-size: 12px; font-weight: 600; font-family: inherit;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#BD1B0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;">
                 <polyline points="23 4 23 10 17 10"></polyline>
                 <polyline points="1 20 1 14 7 14"></polyline>
                 <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
@@ -447,83 +441,81 @@
         </section>
 
         <!-- ช่องอันดับของฉัน (My Rank Card) -->
-        <div id="myRankCardContainer" style="margin-bottom: 20px; width: 100%;">
+        <div id="myRankCardContainer" style="margin-bottom: 14px; width: 100%;">
           <div class="stats-card-box"
-            style="padding: 20px; border-radius: 20px; background: linear-gradient(135deg, #FFF5F5 0%, #FFFFFF 100%); border: 2px solid #FEE2E2; box-shadow: 0 4px 20px rgba(189,27,11,0.06);">
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
-              <div style="display: flex; align-items: center; gap: 14px;">
+            style="padding: 14px 16px; border-radius: 12px; background: #FFFFFF; border: 1px solid #E2E8F0; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+              <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
                 <div id="myRankAvatarBox"
-                  style="width: 52px; height: 52px; border-radius: 50%; background: linear-gradient(135deg, #BD1B0B 0%, #8B0000 100%); color: white; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800; border: 2px solid #FECACA; box-shadow: 0 4px 12px rgba(189,27,11,0.2); flex-shrink: 0;">
-                  ?
+                  style="width: 38px; height: 38px; border-radius: 50%; background: #0F172A; color: white; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700; flex-shrink: 0;">
+                  -
                 </div>
-                <div>
-                  <div style="display: flex; align-items: center; gap: 8px;">
-                    <span id="lblMyRankName" style="font-size: 16px; font-weight: 800; color: #0F172A;">กำลังโหลด...</span>
-                    <span style="font-size: 11px; font-weight: 700; background: #FEE2E2; color: #BD1B0B; padding: 2px 8px; border-radius: 6px;">อันดับของฉัน</span>
+                <div style="min-width: 0;">
+                  <div style="display: flex; align-items: center; gap: 6px;">
+                    <span id="lblMyRankName" style="font-size: 14px; font-weight: 700; color: #0F172A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px;">-</span>
+                    <span style="font-size: 10px; font-weight: 600; background: #F1F5F9; color: #475569; padding: 1px 6px; border-radius: 4px;">อันดับของฉัน</span>
                   </div>
-                  <div id="lblMyRankStatusDesc" style="font-size: 12.5px; color: #64748B; margin-top: 2px;">
-                    กำลังดึงข้อมูลอันดับจากระบบ...
+                  <div id="lblMyRankStatusDesc" style="font-size: 11.5px; color: #64748B; margin-top: 1px;">
+                    กำลังโหลด...
                   </div>
                 </div>
               </div>
-              <button onclick="openPoliceTrackModal()" class="btn-quick-match"
-                style="padding: 11px 22px; font-size: 13.5px; font-weight: 800; border-radius: 14px; background: #BD1B0B; color: white; border: none; cursor: pointer; font-family: inherit; box-shadow: 0 4px 14px rgba(189,27,11,0.28); display: inline-flex; align-items: center; gap: 8px; transition: transform 0.15s ease;">
-                <span>🎯</span>
-                <span>ทำข้อสอบ 150 ข้อ ชิงอันดับ</span>
+              <button onclick="openPoliceTrackModal()"
+                style="padding: 8px 14px; font-size: 12px; font-weight: 700; border-radius: 8px; background: #BD1B0B; color: white; border: none; cursor: pointer; font-family: inherit; transition: opacity 0.15s ease; white-space: nowrap;">
+                ทำข้อสอบ 150 ข้อ
               </button>
             </div>
 
-            <!-- User 150-Question Quick Stats Strip -->
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-top: 16px; padding-top: 14px; border-top: 1.5px solid #FEE2E2;">
-              <div style="background: white; border: 1px solid #FEE2E2; border-radius: 12px; padding: 10px 14px; text-align: center;">
-                <span style="font-size: 11.5px; color: #64748B; display: block; font-weight: 600;">อันดับของคุณ</span>
-                <span id="lblMyRankPosition" style="font-size: 20px; font-weight: 900; color: #BD1B0B; display: block; margin-top: 2px;">-</span>
+            <!-- User 150-Question Quick Stats 2x2 Grid for Mobile -->
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-top: 12px; padding-top: 10px; border-top: 1px solid #F1F5F9;">
+              <div style="background: #F8FAFC; border: 1px solid #F1F5F9; border-radius: 8px; padding: 6px 8px; text-align: center;">
+                <span style="font-size: 10.5px; color: #64748B; display: block; font-weight: 500;">อันดับ</span>
+                <span id="lblMyRankPosition" style="font-size: 15px; font-weight: 800; color: #BD1B0B; display: block; margin-top: 2px;">-</span>
               </div>
-              <div style="background: white; border: 1px solid #FEE2E2; border-radius: 12px; padding: 10px 14px; text-align: center;">
-                <span style="font-size: 11.5px; color: #64748B; display: block; font-weight: 600;">คะแนนสูงสุด (150 ข้อ)</span>
-                <span id="lblMyRankBestScore" style="font-size: 20px; font-weight: 900; color: #0F172A; display: block; margin-top: 2px;">-</span>
+              <div style="background: #F8FAFC; border: 1px solid #F1F5F9; border-radius: 8px; padding: 6px 8px; text-align: center;">
+                <span style="font-size: 10.5px; color: #64748B; display: block; font-weight: 500;">คะแนนสูงสุด</span>
+                <span id="lblMyRankBestScore" style="font-size: 15px; font-weight: 800; color: #0F172A; display: block; margin-top: 2px;">-</span>
               </div>
-              <div style="background: white; border: 1px solid #FEE2E2; border-radius: 12px; padding: 10px 14px; text-align: center;">
-                <span style="font-size: 11.5px; color: #64748B; display: block; font-weight: 600;">เวลาที่ใช้เร็วที่สุด</span>
-                <span id="lblMyRankBestTime" style="font-size: 18px; font-weight: 800; color: #0F172A; display: block; margin-top: 2px;">-</span>
+              <div style="background: #F8FAFC; border: 1px solid #F1F5F9; border-radius: 8px; padding: 6px 8px; text-align: center;">
+                <span style="font-size: 10.5px; color: #64748B; display: block; font-weight: 500;">เวลาเร็วที่สุด</span>
+                <span id="lblMyRankBestTime" style="font-size: 13.5px; font-weight: 700; color: #0F172A; display: block; margin-top: 2px;">-</span>
               </div>
-              <div style="background: white; border: 1px solid #FEE2E2; border-radius: 12px; padding: 10px 14px; text-align: center;">
-                <span style="font-size: 11.5px; color: #64748B; display: block; font-weight: 600;">สายการสอบ</span>
-                <span id="lblMyRankTrack" style="font-size: 14px; font-weight: 800; color: #475569; display: block; margin-top: 6px;">-</span>
+              <div style="background: #F8FAFC; border: 1px solid #F1F5F9; border-radius: 8px; padding: 6px 8px; text-align: center;">
+                <span style="font-size: 10.5px; color: #64748B; display: block; font-weight: 500;">สายสอบ</span>
+                <span id="lblMyRankTrack" style="font-size: 12px; font-weight: 700; color: #475569; display: block; margin-top: 3px;">-</span>
               </div>
             </div>
           </div>
         </div>
 
         <!-- Filter Subtabs Bar (All, Prabpram, Amnuay) -->
-        <div class="community-subtabs-bar"
-          style="display: flex; gap: 8px; width: 100%; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 16px;">
-          <button class="subtab-btn active" id="btnFilterLeaderboardAll" onclick="setLeaderboardTrackFilter('all')">🏆 ทั้งหมด</button>
-          <button class="subtab-btn" id="btnFilterLeaderboardPrabpram" onclick="setLeaderboardTrackFilter('prabpram')">🛡️ สายปราบปราม (150 ข้อ)</button>
-          <button class="subtab-btn" id="btnFilterLeaderboardAmnuay" onclick="setLeaderboardTrackFilter('amnuay')">📋 สายอำนวยการ / พฐ. (150 ข้อ)</button>
+        <div style="display: flex; gap: 6px; width: 100%; border-bottom: 1px solid #E2E8F0; padding-bottom: 8px; margin-bottom: 12px; overflow-x: auto; scrollbar-width: none;">
+          <button class="subtab-btn active" id="btnFilterLeaderboardAll" onclick="setLeaderboardTrackFilter('all')" style="font-size: 12.5px; padding: 5px 12px;">ทั้งหมด</button>
+          <button class="subtab-btn" id="btnFilterLeaderboardPrabpram" onclick="setLeaderboardTrackFilter('prabpram')" style="font-size: 12.5px; padding: 5px 12px;">สายปราบปราม</button>
+          <button class="subtab-btn" id="btnFilterLeaderboardAmnuay" onclick="setLeaderboardTrackFilter('amnuay')" style="font-size: 12.5px; padding: 5px 12px;">สายอำนวยการ</button>
         </div>
 
-        <!-- Top 30 Leaderboard List Box -->
+        <!-- Leaderboard List Box -->
         <div class="stats-card-box"
-          style="padding: 16px 20px; border-radius: 20px; background: #FFFFFF; border: 1.5px solid #F1F5F9; box-shadow: 0 1px 3px rgba(0,0,0,0.02); margin-bottom: 24px;">
+          style="padding: 12px 14px; border-radius: 12px; background: #FFFFFF; border: 1px solid #E2E8F0; box-shadow: 0 1px 2px rgba(0,0,0,0.02); margin-bottom: 24px;">
           
           <!-- Column Headers -->
           <div
-            style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1.5px solid #F1F5F9; margin-bottom: 12px; font-size: 12px; font-weight: 700; color: #94A3B8;">
-            <div style="display: flex; align-items: center; gap: 14px;">
-              <span style="width: 36px; text-align: center;">อันดับ</span>
+            style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 8px; border-bottom: 1px solid #F1F5F9; margin-bottom: 8px; font-size: 11px; font-weight: 600; color: #94A3B8;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="width: 24px; text-align: center;">#</span>
               <span>ผู้เข้าสอบ</span>
             </div>
-            <div style="display: flex; align-items: center; gap: 20px;">
-              <span style="text-align: right; min-width: 80px;">เวลาที่ใช้</span>
-              <span style="text-align: right; min-width: 75px;">คะแนนสอบ</span>
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span style="text-align: right; min-width: 55px;">เวลา</span>
+              <span style="text-align: right; min-width: 55px;">คะแนน</span>
             </div>
           </div>
 
-          <!-- Dynamic Top 30 List -->
-          <div id="leaderboardListContainer" style="display: flex; flex-direction: column; gap: 8px;">
-            <div class="leaderboard-item-loading" style="text-align: center; padding: 40px; color: #94A3B8; font-size: 13.5px;">
-              กำลังโหลดข้อมูลตารางอันดับ 150 ข้อ...
+          <!-- Dynamic List -->
+          <div id="leaderboardListContainer" style="display: flex; flex-direction: column; gap: 4px;">
+            <div class="leaderboard-item-loading" style="text-align: center; padding: 24px; color: #94A3B8; font-size: 12.5px;">
+              กำลังโหลดข้อมูล...
             </div>
           </div>
         </div>
