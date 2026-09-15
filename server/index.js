@@ -4908,14 +4908,17 @@ app.get('/api/leaderboard', async (req, res) => {
 
 // --- Pretest 150 Leaderboard Route (Top 30 ranked by score & fastest time) ---
 function formatDurationTh(sec) {
-  if (!sec || sec <= 0) return 'ไม่ระบุ';
+  if (!sec || sec <= 0) return '-';
   const hours = Math.floor(sec / 3600);
   const minutes = Math.floor((sec % 3600) / 60);
   const seconds = sec % 60;
   if (hours > 0) {
-    return `${hours} ชม. ${minutes} นาที`;
+    return minutes > 0 ? `${hours} ชม. ${minutes} นาที` : `${hours} ชม.`;
   }
-  return `${minutes} นาที ${seconds} วิ`;
+  if (minutes > 0) {
+    return seconds > 0 ? `${minutes} นาที ${seconds} วิ` : `${minutes} นาที`;
+  }
+  return `${seconds} วิ`;
 }
 
 app.get('/api/leaderboard/pretest150', async (req, res) => {
@@ -4959,20 +4962,28 @@ app.get('/api/leaderboard/pretest150', async (req, res) => {
       } catch (e) {}
     }
 
-    // 3. Aggregate best attempt per real user
+    // 3. Aggregate best attempt per real user with REAL recorded time
     const userBestMap = new Map();
     attempts.forEach(att => {
       if (!att.user) return;
-      const uId = att.userId;
-      const correct = att.correctCount || Math.round((att.scorePct / 100) * 150);
-      const scorePct = att.scorePct || Math.round((correct / 150) * 100);
 
-      // Parse duration
-      let timeSpentSeconds = 7200; // default 2 hours
+      // Exclude partial sub-subject sets (e.g. 15 or 20 questions with bullet point)
+      if (att.totalQuestions < 100) return;
+      if (att.setTitle && att.setTitle.includes('•')) return;
+
+      // Extract real recorded time: ONLY attempts that actually recorded time
+      let timeSpentSeconds = null;
       if (att.setTitle && att.setTitle.includes('[time:')) {
         const m = att.setTitle.match(/\[time:(\d+)\]/);
         if (m) timeSpentSeconds = parseInt(m[1], 10);
       }
+
+      // STRICT: Must have real recorded time!
+      if (!timeSpentSeconds || timeSpentSeconds <= 0) return;
+
+      const uId = att.userId;
+      const correct = typeof att.correctCount === 'number' ? att.correctCount : Math.round((att.scorePct / 100) * 150);
+      const scorePct = att.scorePct || Math.round((correct / 150) * 100);
 
       // Track identification
       const sId = (att.setId || '').toLowerCase();
