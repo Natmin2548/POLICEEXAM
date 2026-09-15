@@ -544,6 +544,123 @@ tr:last-child td {
   animation: pulseGlow 2s infinite ease-in-out;
 }
 
+/* =======================================================
+   24-Hour Activity Card & Chart Styling
+   ======================================================= */
+.activity-card-container {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 20px;
+  padding: 20px 18px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+}
+
+.activity-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  gap: 12px;
+}
+
+.activity-card-title {
+  font-size: 16px;
+  font-weight: 900;
+  color: #0F172A;
+  letter-spacing: -0.01em;
+}
+
+.activity-card-subtitle {
+  font-size: 12px;
+  color: #64748B;
+  font-weight: 500;
+  margin-top: 2px;
+}
+
+.activity-card-rate-badge {
+  font-size: 11px;
+  color: #475569;
+  font-weight: 700;
+  background: #F1F5F9;
+  padding: 4px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Scroll wrapper for smooth touch scrolling on mobile */
+.hourly-chart-scroll-wrapper {
+  position: relative;
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: #E2E8F0 transparent;
+  padding-bottom: 6px;
+}
+
+.hourly-chart-scroll-wrapper::-webkit-scrollbar {
+  height: 5px;
+}
+
+.hourly-chart-scroll-wrapper::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.hourly-chart-scroll-wrapper::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 999px;
+}
+
+.hourly-chart-inner {
+  position: relative;
+  height: 180px;
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  padding: 24px 6px 12px 6px;
+  background: #FFFFFF;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 620px; /* Crucial: guarantees at least ~25px per hour so 24 bars are never squished */
+}
+
+.chart-mobile-hint {
+  display: none;
+  text-align: center;
+  font-size: 11px;
+  color: #94A3B8;
+  font-weight: 600;
+  margin: 6px 0 2px 0;
+}
+
+.chart-legend-strip {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748B;
+  margin: 14px 0 16px 0;
+  padding: 0 4px;
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
 .hourly-bar-col {
   flex: 1;
   min-width: 0;
@@ -574,25 +691,31 @@ tr:last-child td {
   border: 1px solid #FDE68A;
   padding: 2px 6px;
   border-radius: 6px;
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 900;
-  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.25);
+  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.2);
 }
 
 .hourly-bar-val-badge.current {
   color: #047857;
+  background: #D1FAE5;
+  border: 1px solid #A7F3D0;
+  padding: 2px 5px;
+  border-radius: 6px;
   font-weight: 900;
+  font-size: 11px;
 }
 
 .hourly-bar-fill {
   width: 100%;
-  max-width: 26px;
+  max-width: 22px;
   border-radius: 6px 6px 2px 2px;
   transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1), filter 0.2s ease;
   min-height: 3px;
 }
 
-.hourly-bar-col:hover .hourly-bar-fill {
+.hourly-bar-col:hover .hourly-bar-fill,
+.hourly-bar-col:focus .hourly-bar-fill {
   filter: brightness(1.15) contrast(1.1);
   box-shadow: 0 4px 14px rgba(59, 130, 246, 0.35);
 }
@@ -606,7 +729,7 @@ tr:last-child td {
   color: #FFFFFF;
   padding: 10px 14px;
   border-radius: 12px;
-  font-size: 13px;
+  font-size: 12.5px;
   line-height: 1.45;
   white-space: nowrap;
   pointer-events: none;
@@ -629,7 +752,8 @@ tr:last-child td {
   border-color: #0F172A transparent transparent transparent;
 }
 
-.hourly-bar-col:hover .hourly-bar-tooltip {
+.hourly-bar-col:hover .hourly-bar-tooltip,
+.hourly-bar-col:focus .hourly-bar-tooltip {
   opacity: 1;
   visibility: visible;
   transform: translateX(-50%) translateY(-10px);
@@ -637,11 +761,85 @@ tr:last-child td {
 
 .hourly-bar-label {
   margin-top: 8px;
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 700;
-  color: #475569;
+  color: #64748B;
   text-align: center;
   white-space: nowrap;
+}
+
+/* 4-Metric Summary Strip at the bottom of the card */
+.chart-summary-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  background: #F8FAFC;
+  border: 1px solid #F1F5F9;
+  border-radius: 16px;
+  padding: 12px;
+  text-align: center;
+}
+
+.summary-strip-card {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  padding: 12px 8px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-width: 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.summary-strip-val {
+  font-size: 16px;
+  font-weight: 800;
+  color: #0F172A;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  line-height: 1.2;
+}
+
+.summary-strip-lbl {
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748B;
+  margin-top: 5px;
+  white-space: nowrap;
+}
+
+/* Mobile Screens (< 640px) */
+@media (max-width: 640px) {
+  .activity-card-container {
+    padding: 16px 14px;
+    border-radius: 16px;
+  }
+
+  .chart-mobile-hint {
+    display: block;
+  }
+
+  .chart-summary-strip {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .summary-strip-card {
+    padding: 12px 6px;
+  }
+
+  .summary-strip-val {
+    font-size: 17px;
+  }
+
+  .summary-strip-lbl {
+    font-size: 11.5px;
+  }
 }
 
 /* =======================================================

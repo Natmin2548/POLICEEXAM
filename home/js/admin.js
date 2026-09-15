@@ -386,7 +386,7 @@ function renderHourlyBarChart(breakdown = []) {
     const labelStyle = item.isCurrent ? 'color: #047857; font-weight: 900; background: #D1FAE5; padding: 1px 4px; border-radius: 4px;' : '';
 
     chartHtml += `
-      <div class="hourly-bar-col" title="${escapeHTML(hourLabel)}: ${users} คน">
+      <div class="hourly-bar-col" tabindex="0" role="button" aria-label="${escapeHTML(hourLabel)}: ${users} คน" title="${escapeHTML(hourLabel)}: ${users} คน">
         ${tooltip}
         ${valueBadgeHtml}
         <div class="hourly-bar-fill" style="height: ${pct}%; background: ${fillBg};"></div>
@@ -398,6 +398,14 @@ function renderHourlyBarChart(breakdown = []) {
   });
 
   container.innerHTML = chartHtml;
+
+  // Auto-scroll to the current hour (right side) on mobile/touch screens
+  const chartWrapper = document.getElementById('hourlyChartWrapper');
+  if (chartWrapper) {
+    setTimeout(() => {
+      chartWrapper.scrollLeft = chartWrapper.scrollWidth;
+    }, 60);
+  }
 }
 
 // ==========================================
