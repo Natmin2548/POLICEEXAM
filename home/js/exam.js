@@ -16,8 +16,13 @@ let examState = {
   userAnswers: {},
   score: 0,
   isSubmitted: false,
-  isReviewMode: false
+  isReviewMode: false,
+  totalTimerSeconds: 0,
+  remainingSeconds: 0
 };
+
+let examTimerInterval = null;
+const PRETEST_TOTAL_SECONDS = 9000; // 2 hours 30 minutes (150 minutes)
 
 const THAI_LETTERS = ['ก', 'ข', 'ค', 'ง'];
 
@@ -200,7 +205,77 @@ function normalizeAnswerToIndex(rawAns, choices) {
   examState.isReviewMode = false;
   examState.startTime = Date.now();
 
+  initPretestCountdownTimer();
   renderExamQuestion();
+}
+
+function initPretestCountdownTimer() {
+  const isPretest150 = examState.track === 'prabpram' || examState.track === 'amnuay' || (examState.questions && examState.questions.length === 150);
+  const timerBox = document.getElementById('examTimerBox');
+  const timerText = document.getElementById('examTimerText');
+
+  if (examTimerInterval) {
+    clearInterval(examTimerInterval);
+    examTimerInterval = null;
+  }
+
+  if (!isPretest150) {
+    if (timerBox) timerBox.style.display = 'none';
+    return;
+  }
+
+  if (timerBox) timerBox.style.display = 'inline-flex';
+  examState.totalTimerSeconds = PRETEST_TOTAL_SECONDS;
+  examState.remainingSeconds = PRETEST_TOTAL_SECONDS;
+  updateTimerDisplay(PRETEST_TOTAL_SECONDS);
+
+  examTimerInterval = setInterval(() => {
+    if (examState.isSubmitted) {
+      clearInterval(examTimerInterval);
+      examTimerInterval = null;
+      return;
+    }
+
+    examState.remainingSeconds--;
+    if (examState.remainingSeconds <= 0) {
+      examState.remainingSeconds = 0;
+      updateTimerDisplay(0);
+      clearInterval(examTimerInterval);
+      examTimerInterval = null;
+      handleExamTimeout();
+      return;
+    }
+
+    updateTimerDisplay(examState.remainingSeconds);
+  }, 1000);
+}
+
+function updateTimerDisplay(secondsLeft) {
+  const timerBox = document.getElementById('examTimerBox');
+  const timerText = document.getElementById('examTimerText');
+  if (!timerText) return;
+
+  const h = Math.floor(secondsLeft / 3600);
+  const m = Math.floor((secondsLeft % 3600) / 60);
+  const s = secondsLeft % 60;
+  timerText.textContent = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+
+  if (timerBox) {
+    if (secondsLeft <= 600) { // last 10 minutes warning
+      timerBox.style.background = '#FEF2F2';
+      timerBox.style.borderColor = '#FCA5A5';
+      timerBox.style.color = '#BD1B0B';
+    } else {
+      timerBox.style.background = '#F8FAFC';
+      timerBox.style.borderColor = '#E2E8F0';
+      timerBox.style.color = '#0F172A';
+    }
+  }
+}
+
+function handleExamTimeout() {
+  alert('หมดเวลาทำข้อสอบ 2 ชั่วโมง 30 นาทีแล้ว ระบบจะทำการส่งข้อสอบอัตโนมัติ');
+  submitExam();
 }
 
 function renderExamQuestion() {
@@ -461,7 +536,19 @@ async function submitExam() {
   examState.isReviewMode = false;
   examState.subjectStats = subjectStats;
 
-  const timeSpentSeconds = Math.max(1, Math.round((Date.now() - (examState.startTime || Date.now())) / 1000));
+  // Stop countdown timer
+  if (examTimerInterval) {
+    clearInterval(examTimerInterval);
+    examTimerInterval = null;
+  }
+
+  // Calculate actual elapsed time
+  let timeSpentSeconds;
+  if (examState.totalTimerSeconds && examState.remainingSeconds !== undefined) {
+    timeSpentSeconds = Math.max(1, examState.totalTimerSeconds - examState.remainingSeconds);
+  } else {
+    timeSpentSeconds = Math.max(1, Math.round((Date.now() - (examState.startTime || Date.now())) / 1000));
+  }
   examState.timeSpentSeconds = timeSpentSeconds;
 
   // Show score modal immediately
@@ -550,6 +637,10 @@ window.handleExitExam = function() {
     if (!confirm('คุณกำลังทำข้อสอบอยู่ หากออกจากหน้านี้ ข้อสอบจะไม่ถูกบันทึกคะแนน\nต้องการออกจากข้อสอบหรือไม่?')) {
       return;
     }
+  }
+  if (examTimerInterval) {
+    clearInterval(examTimerInterval);
+    examTimerInterval = null;
   }
   window.location.href = examState.sourcePage || 'bank.html';
 };

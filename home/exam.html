@@ -457,19 +457,30 @@
 
   <div class="exam-app-container">
 
-    <!-- Top Bar: [← ออก]  [1 / 30]  [0 ถูก] -->
+    <!-- Top Bar: [← ออก]  [⏱ 02:30:00]  [1 / 30]  [0 ถูก] -->
     <div class="top-bar">
       <button type="button" class="btn-exit" onclick="handleExitExam()">
         <span style="font-size: 17px; line-height: 1;">←</span>
         <span>ออก</span>
       </button>
 
-      <div id="stepText" class="step-counter">
-        1 / 30
+      <!-- Pretest 150 Countdown Timer (2h 30m) -->
+      <div id="examTimerBox" style="display: none; align-items: center; gap: 5px; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 20px; padding: 3px 10px; font-size: 12px; font-weight: 700; color: #0F172A; font-variant-numeric: tabular-nums;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#BD1B0B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width: 13px; height: 13px; flex-shrink: 0;">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>
+        <span id="examTimerText">02:30:00</span>
       </div>
 
-      <div id="scoreText" class="score-counter">
-        0 ถูก
+      <div style="display: flex; align-items: center; gap: 6px;">
+        <div id="stepText" class="step-counter">
+          1 / 30
+        </div>
+
+        <div id="scoreText" class="score-counter">
+          0 ถูก
+        </div>
       </div>
     </div>
 
