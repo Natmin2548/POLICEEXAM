@@ -7,8 +7,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/admin.css?v=65">
-  <script src="js/admin.js?v=65" defer></script>
+  <link rel="stylesheet" href="css/admin.css?v=66">
+  <script src="js/admin.js?v=66" defer></script>
 </head>
 <body>
 
@@ -1288,6 +1288,9 @@
           <button type="button" class="btn btn-outline" onclick="openManualEditFromAudit()" style="padding: 10px 16px; border-radius: 12px; font-weight: 700; font-size: 12.5px;">
             ✏️ ปรับแก้ด้วยตนเอง
           </button>
+          <button type="button" class="btn btn-outline" onclick="openReportReplyFromAudit()" style="padding: 10px 16px; border-radius: 12px; font-weight: 700; font-size: 12.5px; background: #EFF6FF; color: #1D4ED8; border-color: #BFDBFE; cursor: pointer;">
+            💬 พิมพ์ตอบชี้แจงผู้สอบ
+          </button>
         </div>
         <div style="display: flex; gap: 10px;">
           <button type="button" class="btn btn-outline" onclick="closeReportAiAuditModal()" style="padding: 10px 18px; border-radius: 12px; font-weight: 700;">ปิด</button>
@@ -1325,6 +1328,151 @@
       <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; border-top: 1.5px solid #E2E8F0; background: white;">
         <span style="font-size: 12px; color: #64748B;">💡 ข้อที่ตรวจพบความขัดแย้ง จะมีปุ่มให้กดแก้ไขอัตโนมัติทันที</span>
         <button type="button" class="btn btn-outline" onclick="closeBatchAiAuditModal()" style="padding: 10px 20px; border-radius: 12px; font-weight: 700;">ปิดหน้าต่าง</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Report Reply & Clarification Modal (แอดมินพิมพ์ตอบชี้แจงผู้สอบกรณีคำตอบถูกต้องแล้ว) -->
+  <div class="modal-overlay" id="reportReplyModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(8px); z-index: 10030; align-items: center; justify-content: center; padding: 16px;">
+    <div class="modal-card" style="background: white; max-width: 680px; width: 100%; max-height: 92vh; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); display: flex; flex-direction: column; overflow: hidden; border: 1px solid #E2E8F0;">
+      <!-- Header -->
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 18px 24px; border-bottom: 1.5px solid #E2E8F0; background: #F8FAFC;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="width: 44px; height: 44px; border-radius: 14px; background: linear-gradient(135deg, #2563EB, #1D4ED8); color: white; display: flex; align-items: center; justify-content: center; font-size: 22px; box-shadow: 0 4px 12px rgba(37,99,235,0.25);">
+            💬
+          </div>
+          <div>
+            <h3 style="font-size: 17px; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 8px;">
+              <span>ตอบกลับ / ชี้แจงข้อสอบให้ผู้เรียน</span>
+              <span style="font-size: 11px; font-weight: 700; background: #EFF6FF; color: #1D4ED8; padding: 2px 8px; border-radius: 999px; border: 1px solid #BFDBFE;">In-App Notification</span>
+            </h3>
+            <p style="font-size: 12px; color: #64748B; margin: 2px 0 0 0;" id="reportReplyModalSubtitle">ส่งข้อความแจ้งเตือนโดยตรงไปยังกระดิ่งของผู้สอบ</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeReportReplyModal()" style="background: #E2E8F0; border: none; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 15px; cursor: pointer; color: #475569;">✕</button>
+      </div>
+
+      <!-- Body -->
+      <div style="padding: 20px 24px; overflow-y: auto; flex: 1; background: #FAFAFA;">
+        <input type="hidden" id="reportReplyReportId" value="">
+        <input type="hidden" id="reportReplyQuestionId" value="">
+        <input type="hidden" id="reportReplyUserId" value="">
+
+        <!-- Student & Question Context Box -->
+        <div style="background: white; border: 1.5px solid #E2E8F0; border-radius: 14px; padding: 14px 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px;">
+            <div style="font-weight: 800; font-size: 13px; color: #1E293B; display: flex; align-items: center; gap: 6px;">
+              <span>👤 ผู้รับ:</span>
+              <span id="replyModalReporterName" style="color: #2563EB;">-</span>
+            </div>
+            <span id="replyModalSubjectQNum" style="font-size: 11.5px; font-weight: 700; background: #F1F5F9; color: #475569; padding: 2px 8px; border-radius: 6px;">
+              วิชา: -
+            </span>
+          </div>
+
+          <div style="font-size: 12px; color: #64748B; margin-bottom: 6px; line-height: 1.4;" id="replyModalQuestionSnippet">
+            โจทย์: -
+          </div>
+
+          <div id="replyModalStudentFeedbackBox" style="background: #FFF1F2; border-left: 3px solid #EF4444; padding: 8px 12px; border-radius: 0 8px 8px 0; font-size: 12px; color: #991B1B;">
+            <strong>สิ่งที่ผู้สอบทักท้วง:</strong> <span id="replyModalStudentFeedbackText">-</span>
+          </div>
+        </div>
+
+        <!-- Quick Template Chips -->
+        <div style="margin-bottom: 16px;">
+          <div style="font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+            <span>⚡ แม่แบบข้อความด่วน (Quick Templates):</span>
+          </div>
+          <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+            <button type="button" class="btn btn-outline" onclick="applyReplyTemplate('CORRECT_ANSWER')" style="padding: 5px 10px; font-size: 11.5px; font-weight: 700; border-radius: 8px; background: #EFF6FF; color: #1D4ED8; border-color: #BFDBFE; cursor: pointer;">
+              💡 คำตอบเดิมถูกต้องแล้ว (เข้าใจผิด)
+            </button>
+            <button type="button" class="btn btn-outline" id="btnReplyAiTemplate" onclick="applyReplyTemplate('AI_ANALYSIS')" style="padding: 5px 10px; font-size: 11.5px; font-weight: 700; border-radius: 8px; background: #F5F3FF; color: #7C3AED; border-color: #DDD6FE; cursor: pointer; display: none;">
+              🤖 ดึงบทวิเคราะห์จาก AI
+            </button>
+            <button type="button" class="btn btn-outline" onclick="applyReplyTemplate('LAW_CITATION')" style="padding: 5px 10px; font-size: 11.5px; font-weight: 700; border-radius: 8px; background: #F0FDF4; color: #166534; border-color: #BBF7D0; cursor: pointer;">
+              ⚖️ อ้างอิงระเบียบ/หลักวิชาการ
+            </button>
+            <button type="button" class="btn btn-outline" onclick="applyReplyTemplate('RESOLVED_THANKS')" style="padding: 5px 10px; font-size: 11.5px; font-weight: 700; border-radius: 8px; background: #FEF3C7; color: #92400E; border-color: #FDE68A; cursor: pointer;">
+              🙏 ขอบคุณที่ช่วยแก้ไข
+            </button>
+          </div>
+        </div>
+
+        <!-- Title Field -->
+        <div style="margin-bottom: 14px;">
+          <label style="display: block; font-size: 12.5px; font-weight: 700; color: #334155; margin-bottom: 6px;">
+            หัวข้อการแจ้งเตือน (Title)
+          </label>
+          <input type="text" id="reportReplyTitle" class="form-control" style="width: 100%; padding: 9px 12px; border-radius: 10px; border: 1.5px solid #CBD5E1; font-size: 13px; font-weight: 600; color: #0F172A;" value="💡 คำชี้แจงจากแอดมิน: ข้อสอบและเฉลยข้อนี้ถูกต้องแล้ว">
+        </div>
+
+        <!-- Message Field -->
+        <div style="margin-bottom: 14px;">
+          <label style="display: block; font-size: 12.5px; font-weight: 700; color: #334155; margin-bottom: 6px;">
+            ข้อความคำชี้แจงที่ส่งไปยังผู้สอบ (Message)
+          </label>
+          <textarea id="reportReplyMessage" class="form-control" rows="5" style="width: 100%; padding: 10px 12px; border-radius: 10px; border: 1.5px solid #CBD5E1; font-size: 13px; line-height: 1.5; color: #0F172A; resize: vertical;" placeholder="พิมพ์เหตุผลหรือคำอธิบายอย่างละเอียด เช่น ทำไมเฉลยข้อนี้จึงถูกต้อง และจุดที่ผู้สอบมักเข้าใจผิดหรือสับสน..."></textarea>
+        </div>
+
+        <!-- Options Checkboxes -->
+        <div style="background: white; border: 1px solid #E2E8F0; border-radius: 10px; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px;">
+          <label style="display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 600; color: #1E293B; cursor: pointer;">
+            <input type="checkbox" id="reportReplyResolveCheckbox" checked style="width: 16px; height: 16px; accent-color: #2563EB; cursor: pointer;">
+            <span>✓ ทำเครื่องหมายว่าจัดการแล้ว & ปิดรายงานนี้ทันทีหลังส่ง (Mark as Resolved)</span>
+          </label>
+          <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #64748B; cursor: pointer;">
+            <input type="checkbox" id="reportReplyAllDuplicatesCheckbox" checked style="width: 15px; height: 15px; accent-color: #2563EB; cursor: pointer;">
+            <span>👥 ส่งข้อความชี้แจงนี้ให้ผู้สอบทุกคนที่รายงานข้อนี้ด้วย (หากมีรายงานซ้ำ)</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 24px; border-top: 1.5px solid #E2E8F0; background: white;">
+        <button type="button" class="btn btn-outline" onclick="closeReportReplyModal()" style="padding: 9px 18px; border-radius: 10px; font-weight: 700; font-size: 12.5px;">
+          ยกเลิก
+        </button>
+        <button type="button" id="btnSubmitReportReply" onclick="submitReportReply()" class="btn btn-primary" style="background: #2563EB; border: none; padding: 9px 22px; border-radius: 10px; font-weight: 800; font-size: 13px; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(37,99,235,0.25); color: white; cursor: pointer;">
+          <span>📨 ส่งคำชี้แจงไปยังผู้สอบ</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Resolve Choice Modal (เมื่อคลิก Resolve / จัดการแล้ว เลือกว่าจะพิมพ์ตอบชี้แจง หรือปิดทันทีแบบออโต้) -->
+  <div class="modal-overlay" id="resolveChoiceModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(8px); z-index: 10035; align-items: center; justify-content: center; padding: 16px;">
+    <div class="modal-card" style="background: white; max-width: 480px; width: 100%; border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); overflow: hidden; border: 1px solid #E2E8F0;">
+      <div style="padding: 18px 22px; border-bottom: 1px solid #E2E8F0; background: #F8FAFC; display: flex; justify-content: space-between; align-items: center;">
+        <div style="font-weight: 800; font-size: 16px; color: #0F172A; display: flex; align-items: center; gap: 8px;">
+          <span>⚖️ จัดการรายงานข้อสอบ</span>
+        </div>
+        <button type="button" onclick="closeResolveChoiceModal()" style="background: #E2E8F0; border: none; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; cursor: pointer; color: #475569;">✕</button>
+      </div>
+      <div style="padding: 20px 22px;">
+        <p style="font-size: 13px; color: #334155; margin: 0 0 16px 0; line-height: 1.5;">
+          คุณต้องการจัดการรายงานข้อสอบนี้อย่างไร?
+        </p>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <button type="button" class="btn" onclick="chooseReplyFromResolve()" style="background: #EFF6FF; border: 1.5px solid #93C5FD; color: #1D4ED8; padding: 12px 16px; border-radius: 12px; font-weight: 800; font-size: 13px; text-align: left; cursor: pointer; display: flex; align-items: center; gap: 12px; transition: all 0.15s ease;">
+            <span style="font-size: 24px;">💬</span>
+            <div>
+              <div style="font-weight: 800; font-size: 13.5px; color: #1E40AF;">พิมพ์ตอบชี้แจงผู้สอบ (คำตอบถูกต้องแล้ว)</div>
+              <div style="font-size: 11.5px; color: #475569; font-weight: 500; margin-top: 2px;">กรณีคำตอบเดิมถูกแล้ว แต่ผู้สอบเข้าใจผิด หรือตกหลุมพรางข้อสอบ</div>
+            </div>
+          </button>
+          <button type="button" class="btn" onclick="chooseAutoResolve()" style="background: #F0FDF4; border: 1.5px solid #BBF7D0; color: #166534; padding: 12px 16px; border-radius: 12px; font-weight: 800; font-size: 13px; text-align: left; cursor: pointer; display: flex; align-items: center; gap: 12px; transition: all 0.15s ease;">
+            <span style="font-size: 24px;">⚡</span>
+            <div>
+              <div style="font-weight: 800; font-size: 13.5px; color: #15803D;">จัดการทันที (ส่งข้อความขอบคุณอัตโนมัติ)</div>
+              <div style="font-size: 11.5px; color: #475569; font-weight: 500; margin-top: 2px;">ระบบจะส่งข้อความขอบคุณที่ช่วยแจ้งข้อสอบ และปิดรายงาน</div>
+            </div>
+          </button>
+        </div>
+      </div>
+      <div style="padding: 12px 22px; border-top: 1px solid #E2E8F0; background: #FAFAFA; display: flex; justify-content: flex-end;">
+        <button type="button" class="btn btn-outline" onclick="closeResolveChoiceModal()" style="padding: 8px 16px; border-radius: 10px; font-size: 12px; font-weight: 700;">ยกเลิก</button>
       </div>
     </div>
   </div>

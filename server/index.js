@@ -12658,6 +12658,108 @@ app.delete('/api/admin/reports/:id', requireAdmin, async (req, res) => {
   }
 });
 
+// --- Admin API: Reply to Reported Question (Allows custom explanation when answer is already correct) ---
+app.post('/api/admin/reports/:id/reply', requireAdmin, async (req, res) => {
+  try {
+    const reportId = parseInt(req.params.id);
+    if (isNaN(reportId)) return res.status(400).json({ error: 'รหัสรายงานไม่ถูกต้อง' });
+
+    const report = await prisma.reportedQuestion.findUnique({
+      where: { id: reportId },
+      include: {
+        user: { select: { id: true, fullName: true, username: true, email: true } }
+      }
+    });
+
+    if (!report) return res.status(404).json({ error: 'ไม่พบรายงานข้อสอบนี้' });
+
+    const {
+      replyTitle,
+      replyMessage,
+      replyType = 'ADMIN_EXPLANATION',
+      resolveAfterReply = true,
+      notifyAllDuplicates = false
+    } = req.body;
+
+    if (!replyMessage || !replyMessage.trim()) {
+      return res.status(400).json({ error: 'กรุณากรอกข้อความตอบกลับหรือคำชี้แจง' });
+    }
+
+    // Build context details
+    let subDetails = '';
+    let parsedReason = {};
+    try {
+      parsedReason = JSON.parse(report.reason);
+      if (parsedReason.subject) subDetails += `วิชา: ${parsedReason.subject}`;
+      if (parsedReason.questionNumber) subDetails += ` (ข้อที่ ${parsedReason.questionNumber})`;
+    } catch (_) {}
+    if (!subDetails && report.questionText) {
+      subDetails = `โจทย์: ${report.questionText.substring(0, 80)}...`;
+    }
+
+    const finalTitle = (replyTitle && replyTitle.trim()) || '💡 คำชี้แจงจากแอดมิน (ข้อสอบถูกต้องแล้ว)';
+    const finalMessage = replyMessage.trim();
+
+    // Determine target users to notify
+    const targetUserIds = new Set();
+    if (report.userId) {
+      targetUserIds.add(report.userId);
+    }
+
+    if (notifyAllDuplicates && report.questionId) {
+      try {
+        const dups = await prisma.reportedQuestion.findMany({
+          where: { questionId: String(report.questionId) },
+          select: { userId: true }
+        });
+        dups.forEach(d => {
+          if (d.userId) targetUserIds.add(d.userId);
+        });
+      } catch (dupErr) {
+        console.warn('Find duplicate reports error:', dupErr.message);
+      }
+    }
+
+    let notifiedCount = 0;
+    for (const uId of targetUserIds) {
+      try {
+        await sendUserNotification(uId, {
+          type: replyType,
+          title: finalTitle,
+          message: finalMessage,
+          details: subDetails,
+          questionId: report.questionId
+        });
+        notifiedCount++;
+      } catch (err) {
+        console.warn(`Failed to send explanation to user ${uId}:`, err.message);
+      }
+    }
+
+    let deletedCount = 0;
+    if (resolveAfterReply) {
+      const cleanRes = await markQuestionAsResolvedAndCleanReports(
+        report.questionId,
+        report.questionText,
+        `แอดมินตอบกลับชี้แจงผู้สอบ: ${finalTitle}`
+      );
+      await prisma.reportedQuestion.delete({ where: { id: reportId } }).catch(() => {});
+      deletedCount = cleanRes.deletedCount || 1;
+    }
+
+    res.json({
+      success: true,
+      message: `ส่งข้อความชี้แจงไปยังผู้สอบสำเร็จ (${notifiedCount} คน)${resolveAfterReply ? ` และปิดรายงานแล้ว (${deletedCount} รายการ)` : ''}`,
+      notifiedCount,
+      resolved: resolveAfterReply
+    });
+
+  } catch (err) {
+    console.error('Reply to reported question error:', err);
+    res.status(500).json({ error: 'เกิดข้อผิดพลาดในการส่งคำชี้แจง: ' + err.message });
+  }
+});
+
 // --- Admin API: AI Audit on a Reported Question ---
 app.post('/api/admin/reports/:id/ai-audit', requireAdmin, async (req, res) => {
   try {

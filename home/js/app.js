@@ -440,37 +440,52 @@ function renderUserNotificationsList() {
   let html = '';
   currentUserNotifications.forEach(n => {
     const timeAgo = getNotificationTimeAgo(n.createdAt);
-    const isThankYou = n.type === 'REPORT_RESOLVED' || (n.title && n.title.includes('ขอบคุณ'));
+    const isExplanation = n.type === 'ADMIN_EXPLANATION' || n.type === 'EXAM_EXPLANATION' || (n.title && n.title.includes('ชี้แจง'));
+    const isThankYou = !isExplanation && (n.type === 'REPORT_RESOLVED' || (n.title && n.title.includes('ขอบคุณ')));
+
+    let notifIcon = '🔔';
+    let badgeClass = '';
+    let badgeText = 'แจ้งเตือนจากระบบ';
+
+    if (isExplanation) {
+      notifIcon = '💡';
+      badgeClass = 'explanation';
+      badgeText = '💡 ชี้แจงจากแอดมิน (ข้อสอบถูกต้อง)';
+    } else if (isThankYou) {
+      notifIcon = '🙏';
+      badgeClass = 'thank-you';
+      badgeText = '✓ แอดมินตรวจสอบแล้ว';
+    }
 
     html += `
-      <div class="user-notif-item-card" id="notif_card_${n.id}">
+      <div class="user-notif-item-card ${isExplanation ? 'is-explanation' : ''}" id="notif_card_${n.id}">
         <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 6px;">
           <div style="display: flex; align-items: center; gap: 8px;">
-            <span style="font-size: 20px;">${isThankYou ? '🙏' : '🔔'}</span>
+            <span style="font-size: 20px;">${notifIcon}</span>
             <div>
               <div style="font-weight: 800; font-size: 14px; color: #0F172A; line-height: 1.3;">
                 ${escapeHTML(n.title)}
               </div>
-              <span class="user-notif-badge-type ${isThankYou ? 'thank-you' : ''}">
-                ${isThankYou ? '✓ แอดมินตรวจสอบแล้ว' : 'แจ้งเตือนจากระบบ'}
+              <span class="user-notif-badge-type ${badgeClass}">
+                ${badgeText}
               </span>
             </div>
           </div>
           <span style="font-size: 11px; color: #94A3B8; white-space: nowrap;">${timeAgo}</span>
         </div>
 
-        <p style="font-size: 13px; color: #334155; margin: 6px 0 8px 0; line-height: 1.5;">
+        <div class="user-notif-message-text ${isExplanation ? 'explanation-body' : ''}">
           ${escapeHTML(n.message)}
-        </p>
+        </div>
 
         ${n.details ? `
-          <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-left: 3.5px solid #10B981; border-radius: 8px; padding: 7px 12px; font-size: 12px; color: #475569; margin-bottom: 10px; line-height: 1.4;">
+          <div class="user-notif-details-box ${isExplanation ? 'explanation-details' : ''}">
             ${escapeHTML(n.details)}
           </div>
         ` : ''}
 
         <div style="display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin-top: 4px;">
-          <button type="button" class="user-notif-btn-dismiss" onclick="dismissSingleNotification('${n.id}')">
+          <button type="button" class="user-notif-btn-dismiss ${isExplanation ? 'is-blue' : ''}" onclick="dismissSingleNotification('${n.id}')">
             <span>✓ รับทราบและลบออก</span>
           </button>
         </div>

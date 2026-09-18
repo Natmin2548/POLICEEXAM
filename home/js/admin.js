@@ -4483,11 +4483,17 @@ window.loadAdminReports = async function() {
               </div>
 
               <div class="admin-report-btn-group">
+                <button type="button" class="admin-report-btn-reply" onclick="openReportReplyModal(${rep.id}, ${idx})">
+                  💬 พิมพ์ตอบชี้แจง (คำตอบถูกแล้ว)
+                </button>
+                <button type="button" class="admin-report-btn-audit" onclick="openReportAiAuditModal(${rep.id})">
+                  🤖 AI Audit
+                </button>
                 <button type="button" class="admin-report-btn-edit" onclick="openEditSingleQuestionModal('${rep.questionId}', ${rep.id}, ${idx})">
-                  Edit
+                  ✏️ Edit
                 </button>
                 <button type="button" class="admin-report-btn-resolve" onclick="resolveReport(${rep.id})">
-                  Resolve ✓
+                  ✓ Resolve
                 </button>
               </div>
             </div>
@@ -4589,6 +4595,9 @@ window.loadAdminReports = async function() {
         <td style="text-align: right; white-space: nowrap; display: flex; gap: 6px; justify-content: flex-end;">
           <button class="btn btn-outline" style="background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE; padding: 6px 11px; font-size: 12px; font-weight: 700; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" onclick="openReportAiAuditModal(${rep.id})">
             🤖 AI Audit
+          </button>
+          <button class="btn btn-outline" style="background: #F0FDF4; color: #15803D; border: 1px solid #BBF7D0; padding: 6px 10px; font-size: 12px; font-weight: 700; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" onclick="openReportReplyModal(${rep.id}, ${idx})">
+            💬 ตอบกลับ/ชี้แจง
           </button>
           <button class="btn btn-outline" style="background: #FEF3C7; color: #B45309; border: 1px solid #FDE68A; padding: 6px 10px; font-size: 12px; font-weight: 700; border-radius: 8px; cursor: pointer;" onclick="openEditSingleQuestionModal('${rep.questionId}', ${rep.id}, ${idx})">
             ✏️ แก้ไขข้อนี้
@@ -4748,13 +4757,39 @@ window.saveSingleQuestionEdit = async function() {
   }
 };
 
-window.resolveReport = async function(reportId) {
-  if (!confirm('ต้องการทำเครื่องหมายว่าจัดการข้อนี้แล้ว และล้างรายงานซ้ำที่เกี่ยวข้องทั้งหมดใช่หรือไม่?')) {
-    return;
+let pendingResolveReportId = null;
+
+window.resolveReport = function(reportId) {
+  pendingResolveReportId = reportId;
+  const modal = document.getElementById('resolveChoiceModal');
+  if (modal) {
+    modal.style.display = 'flex';
+  } else {
+    chooseAutoResolve();
   }
+};
+
+window.closeResolveChoiceModal = function() {
+  const modal = document.getElementById('resolveChoiceModal');
+  if (modal) modal.style.display = 'none';
+  pendingResolveReportId = null;
+};
+
+window.chooseReplyFromResolve = function() {
+  const rId = pendingResolveReportId;
+  closeResolveChoiceModal();
+  if (rId) {
+    openReportReplyModal(rId);
+  }
+};
+
+window.chooseAutoResolve = async function() {
+  const rId = pendingResolveReportId;
+  closeResolveChoiceModal();
+  if (!rId) return;
 
   try {
-    const res = await fetch(`${API_BASE}/api/admin/reports/${reportId}`, {
+    const res = await fetch(`${API_BASE}/api/admin/reports/${rId}`, {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${authToken}` }
     });
@@ -4763,6 +4798,8 @@ window.resolveReport = async function(reportId) {
     if (res.ok) {
       if (data.deletedCount && data.deletedCount > 1) {
         alert(`✅ จัดการเรียบร้อยแล้ว! ล้างรายงานซ้ำของข้อนี้ออกทั้งหมด (${data.deletedCount} รายการ)`);
+      } else {
+        alert('✅ จัดการเรียบร้อยแล้ว (ส่งการแจ้งเตือนอัตโนมัติ)');
       }
       loadAdminReports();
     } else {
@@ -5443,6 +5480,22 @@ window.openReportAiAuditModal = async function(reportId) {
         ` : ''}
       </div>
 
+      <!-- กล่องชี้แจงผู้สอบ: กรณีคำตอบถูกต้องแล้ว หรือผู้สอบเข้าใจผิด -->
+      <div style="background: #EFF6FF; border: 1.5px solid #BFDBFE; border-radius: 16px; padding: 14px 18px; margin-bottom: 18px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; box-shadow: 0 1px 3px rgba(37,99,235,0.05);">
+        <div style="flex: 1; min-width: 260px;">
+          <div style="font-weight: 800; font-size: 13.5px; color: #1E40AF; display: flex; align-items: center; gap: 6px;">
+            <span>💬 คำตอบถูกต้องแล้ว หรือต้องการชี้แจงผู้สอบ?</span>
+            ${audit.verdict === 'FALSE_ALARM' ? '<span style="font-size: 11px; background: #DCFCE7; color: #15803D; padding: 2px 8px; border-radius: 999px; font-weight: 800;">ข้อสอบถูกต้องแล้ว</span>' : ''}
+          </div>
+          <div style="font-size: 12px; color: #475569; margin-top: 3px; line-height: 1.4;">
+            แอดมินสามารถพิมพ์คำชี้แจง หรือดึงบทวิเคราะห์ของ AI ส่งแจ้งเตือนไปยังกระดิ่งของผู้สอบได้โดยตรง
+          </div>
+        </div>
+        <button type="button" class="btn btn-primary" onclick="openReportReplyFromAudit()" style="background: #2563EB; border: none; padding: 8px 16px; border-radius: 10px; font-weight: 800; font-size: 12.5px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; color: white; box-shadow: 0 3px 10px rgba(37,99,235,0.25);">
+          💬 พิมพ์ตอบชี้แจงผู้สอบ
+        </button>
+      </div>
+
       <!-- 3. เปรียบเทียบข้อสอบเดิม vs ข้อสอบฉบับซ่อมแซมสมบูรณ์โดย AI -->
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px;">
         <!-- ข้อสอบเดิม -->
@@ -5779,6 +5832,202 @@ window.closeBatchAiAuditModal = function() {
   const modal = document.getElementById('batchAiAuditModal');
   if (modal) modal.style.display = 'none';
 };
+
+// =======================================================
+// 💬 REPORT REPLY & CLARIFICATION FUNCTIONS
+// =======================================================
+let currentReplyReportData = null;
+
+window.openReportReplyModal = function(reportId, reportIndex, prefillData = {}) {
+  const rep = (reportIndex !== undefined && allLoadedReports[reportIndex]) ? allLoadedReports[reportIndex] : null;
+  let reasonData = {};
+  if (rep && rep.reason) {
+    try { reasonData = JSON.parse(rep.reason); } catch (_) {}
+  }
+
+  const reporterName = rep && rep.user ? (rep.user.fullName || rep.user.username || rep.user.email || `User #${rep.user.id}`) : (prefillData.reporterName || 'ผู้เข้าสอบ');
+  const subject = (rep && (rep.subject || reasonData.subject)) || prefillData.subject || 'ทั่วไป';
+  const qNum = (reasonData.questionNumber ? `ข้อที่ ${reasonData.questionNumber}` : '') || (prefillData.questionNumber || '');
+  const qText = (rep && rep.questionText) || prefillData.questionText || '';
+  const reasonType = reasonData.reasonType || prefillData.reasonType || 'เฉลยคำตอบผิด';
+  const studentDetails = reasonData.details || prefillData.studentDetails || '';
+
+  currentReplyReportData = {
+    reportId: reportId || (rep && rep.id) || prefillData.reportId,
+    questionId: (rep && rep.questionId) || prefillData.questionId,
+    userId: (rep && rep.userId) || prefillData.userId,
+    reporterName,
+    subject,
+    qNum,
+    questionText: qText,
+    reasonType,
+    studentDetails,
+    aiAnalysis: prefillData.aiAnalysis || '',
+    aiEvaluation: prefillData.aiEvaluation || '',
+    suggestedAnswer: prefillData.suggestedAnswer || ''
+  };
+
+  const idEl = document.getElementById('reportReplyReportId');
+  const qIdEl = document.getElementById('reportReplyQuestionId');
+  const uIdEl = document.getElementById('reportReplyUserId');
+  if (idEl) idEl.value = currentReplyReportData.reportId || '';
+  if (qIdEl) qIdEl.value = currentReplyReportData.questionId || '';
+  if (uIdEl) uIdEl.value = currentReplyReportData.userId || '';
+
+  const repNameEl = document.getElementById('replyModalReporterName');
+  const subQEl = document.getElementById('replyModalSubjectQNum');
+  const qSnipEl = document.getElementById('replyModalQuestionSnippet');
+  const fbTextEl = document.getElementById('replyModalStudentFeedbackText');
+
+  if (repNameEl) repNameEl.textContent = reporterName;
+  if (subQEl) subQEl.textContent = `วิชา: ${subject} ${qNum ? ' • ' + qNum : ''}`;
+  if (qSnipEl) qSnipEl.textContent = `โจทย์: ${qText ? (qText.length > 95 ? qText.substring(0, 95) + '...' : qText) : '-'}`;
+  
+  const fbText = studentDetails ? `"${studentDetails}" (หัวข้อ: ${reasonType})` : reasonType;
+  if (fbTextEl) fbTextEl.textContent = fbText;
+
+  // Show or hide AI template chip
+  const btnAi = document.getElementById('btnReplyAiTemplate');
+  if (btnAi) {
+    btnAi.style.display = (currentReplyReportData.aiAnalysis || currentReplyReportData.aiEvaluation) ? 'inline-block' : 'none';
+  }
+
+  // Pre-fill message
+  if (prefillData.initialMessage) {
+    const msgEl = document.getElementById('reportReplyMessage');
+    if (msgEl) msgEl.value = prefillData.initialMessage;
+  } else if (prefillData.aiAnalysis || prefillData.aiEvaluation) {
+    applyReplyTemplate('AI_ANALYSIS');
+  } else {
+    applyReplyTemplate('CORRECT_ANSWER');
+  }
+
+  const modal = document.getElementById('reportReplyModal');
+  if (modal) modal.style.display = 'flex';
+};
+
+window.openReportReplyFromAudit = function() {
+  if (!currentAuditReportData) return;
+  const audit = currentAuditReportData.aiAudit || {};
+  const feedback = currentAuditReportData.studentFeedback || {};
+  const q = currentAuditReportData.question || {};
+  const reporterName = currentAuditReportData.reporter ? currentAuditReportData.reporter.name : 'ผู้เข้าสอบ';
+
+  openReportReplyModal(currentAuditReportData.reportId, undefined, {
+    reportId: currentAuditReportData.reportId,
+    questionId: currentAuditReportData.questionId,
+    userId: (currentAuditReportData.reporter && currentAuditReportData.reporter.id) || null,
+    reporterName,
+    subject: currentAuditReportData.subject,
+    questionText: q.questionText,
+    reasonType: feedback.reasonType,
+    studentDetails: feedback.details,
+    aiAnalysis: audit.analysis || '',
+    aiEvaluation: audit.studentFeedbackEvaluation || '',
+    suggestedAnswer: audit.suggestedCorrectAnswer || q.correctAnswer
+  });
+};
+
+window.closeReportReplyModal = function() {
+  const modal = document.getElementById('reportReplyModal');
+  if (modal) modal.style.display = 'none';
+};
+
+window.applyReplyTemplate = function(templateType) {
+  const msgInput = document.getElementById('reportReplyMessage');
+  const titleInput = document.getElementById('reportReplyTitle');
+  if (!msgInput) return;
+
+  const data = currentReplyReportData || {};
+  const subject = data.subject || 'ข้อสอบ';
+
+  if (templateType === 'CORRECT_ANSWER') {
+    if (titleInput) titleInput.value = '💡 คำชี้แจงจากแอดมิน: ข้อสอบและเฉลยข้อนี้ถูกต้องแล้ว';
+    msgInput.value = `สวัสดีครับทีมงานได้ตรวจสอบข้อสอบข้อนี้ในวิชา "${subject}" แล้ว พบว่าเฉลยและตัวเลือกเดิมถูกต้องสมบูรณ์ตามหลักวิชาการ/ระเบียบข้อสอบแล้วครับ\n\nสาเหตุที่ตอบข้อนี้ เนื่องจากข้อสอบมีจุดสังเกตสำคัญตามหลักเกณฑ์ที่กำหนดไว้ ผู้สอบอาจเข้าใจผิดหรือสับสนในประเด็นดังกล่าว ขอให้ทบทวนจุดนี้เพิ่มเติมเพื่อความแม่นยำในการสอบจริงนะครับ เป็นกำลังใจให้ครับ! ✨`;
+  } else if (templateType === 'AI_ANALYSIS') {
+    if (titleInput) titleInput.value = '💡 ชี้แจงข้อสงสัยข้อสอบ (ผลการตรวจทานละเอียด)';
+    let text = `สวัสดีครับ ทีมงานได้นำข้อสอบและข้อความทักท้วงของคุณเข้าสู่ระบบตรวจทานวิชาการอย่างละเอียด:\n\n`;
+    if (data.aiEvaluation) {
+      text += `📌 ข้อชี้แจงต่อประเด็นที่ทักท้วง: ${data.aiEvaluation}\n\n`;
+    }
+    if (data.aiAnalysis) {
+      text += `📖 คำอธิบายข้อเท็จจริง: ${data.aiAnalysis}\n\n`;
+    }
+    text += `ข้อสอบข้อนี้จึงเฉลยถูกต้องตามหลักการแล้วครับ ขอบคุณที่ร่วมฝึกทำข้อสอบและช่วยตั้งข้อสังเกตเข้ามานะครับ!`;
+    msgInput.value = text;
+  } else if (templateType === 'LAW_CITATION') {
+    if (titleInput) titleInput.value = '⚖️ คำชี้แจงตามระเบียบ/ข้อกฎหมายที่ถูกต้อง';
+    msgInput.value = `จากการตรวจสอบตามระเบียบและตัวบทกฎหมายที่เกี่ยวข้องกับข้อสอบข้อนี้ พบว่าเฉลยเดิมในระบบสอดคล้องกับหลักเกณฑ์และข้อกฎหมายอย่างถูกต้องแล้วครับ\n\nจุดที่อาจทำให้เข้าใจผิดมักเกิดจากคำสำคัญ (Keyword) ในโจทย์ ขอแนะนำให้อ่านทบทวนตัวบทและเงื่อนไขข้อยกเว้นอย่างละเอียดนะครับ ขอบคุณสำหรับการรายงานครับ`;
+  } else if (templateType === 'RESOLVED_THANKS') {
+    if (titleInput) titleInput.value = '🙏 ขอบคุณสำหรับการช่วยรายงานข้อสอบ!';
+    msgInput.value = `แอดมินได้ทำการตรวจสอบข้อสอบตามที่คุณแจ้งเข้ามาเรียบร้อยแล้วครับ ทีมงานขอขอบคุณเป็นอย่างยิ่งที่ช่วยสอดส่องและร่วมพัฒนาคลังข้อสอบให้สมบูรณ์ยิ่งขึ้นครับ ✨`;
+  } else if (templateType === 'CUSTOM') {
+    msgInput.value = '';
+    msgInput.focus();
+  }
+};
+
+window.submitReportReply = async function() {
+  if (!currentReplyReportData || !currentReplyReportData.reportId) {
+    alert('ไม่พบข้อมูลรายงานข้อสอบ');
+    return;
+  }
+
+  const title = (document.getElementById('reportReplyTitle').value || '').trim();
+  const message = (document.getElementById('reportReplyMessage').value || '').trim();
+  const resolveAfterReply = document.getElementById('reportReplyResolveCheckbox') ? document.getElementById('reportReplyResolveCheckbox').checked : true;
+  const notifyAllDuplicates = document.getElementById('reportReplyAllDuplicatesCheckbox') ? document.getElementById('reportReplyAllDuplicatesCheckbox').checked : false;
+
+  if (!message) {
+    alert('กรุณากรอกข้อความคำชี้แจงที่ต้องการส่งถึงผู้สอบ');
+    const msgEl = document.getElementById('reportReplyMessage');
+    if (msgEl) msgEl.focus();
+    return;
+  }
+
+  const btn = document.getElementById('btnSubmitReportReply');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span>กำลังส่งคำชี้แจง... ⏳</span>';
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/reports/${currentReplyReportData.reportId}/reply`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`
+      },
+      body: JSON.stringify({
+        replyTitle: title,
+        replyMessage: message,
+        replyType: 'ADMIN_EXPLANATION',
+        resolveAfterReply,
+        notifyAllDuplicates
+      })
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(data.error || 'เกิดข้อผิดพลาดในการส่งข้อความ');
+    }
+
+    alert('✅ ' + (data.message || 'ส่งคำชี้แจงไปยังการแจ้งเตือนของผู้สอบเรียบร้อยแล้ว!'));
+    closeReportReplyModal();
+    closeReportAiAuditModal();
+    loadAdminReports();
+
+  } catch (err) {
+    console.error('Submit report reply error:', err);
+    alert('เกิดข้อผิดพลาด: ' + err.message);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<span>📨 ส่งคำชี้แจงไปยังผู้สอบ</span>';
+    }
+  }
+};
+
 
 
 
