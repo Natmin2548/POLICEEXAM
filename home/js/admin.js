@@ -5402,7 +5402,7 @@ window.openExamSetAiRecheckModal = async function(examId) {
                   <div>ค. ${escapeHTML(r.before.choice3)}</div>
                   <div>ง. ${escapeHTML(r.before.choice4)}</div>
                 </div>
-                <div style="margin-top: 6px; font-weight: 800; color: #BD1B0B;">เฉลยเดิม: ข้อ ${r.before.correctAnswer}</div>
+                <div style="margin-top: 6px; font-weight: 800; color: #BD1B0B;">เฉลยเดิม: ข้อ ${['', 'ก', 'ข', 'ค', 'ง'][r.before.correctAnswer] || r.before.correctAnswer} ("${escapeHTML((['', r.before.choice1, r.before.choice2, r.before.choice3, r.before.choice4][r.before.correctAnswer] || ''))}")</div>
                 <div style="font-size: 11px; color: #64748B; margin-top: 2px;">คำอธิบาย: ${escapeHTML(r.before.explanation || '-')}</div>
               </div>
 
@@ -5416,7 +5416,7 @@ window.openExamSetAiRecheckModal = async function(examId) {
                   <div style="${r.after.correctAnswer === 3 ? 'font-weight: 800; color: #047857;' : ''}">ค. ${escapeHTML(r.after.choice3)}</div>
                   <div style="${r.after.correctAnswer === 4 ? 'font-weight: 800; color: #047857;' : ''}">ง. ${escapeHTML(r.after.choice4)}</div>
                 </div>
-                <div style="margin-top: 6px; font-weight: 800; color: #059669;">เฉลยใหม่: ข้อ ${r.after.correctAnswer}</div>
+                <div style="margin-top: 6px; font-weight: 800; color: #059669;">เฉลย: ข้อ ${['', 'ก', 'ข', 'ค', 'ง'][r.after.correctAnswer] || r.after.correctAnswer} ("${escapeHTML((['', r.after.choice1, r.after.choice2, r.after.choice3, r.after.choice4][r.after.correctAnswer] || ''))}")</div>
                 <div style="font-size: 11px; color: #15803D; margin-top: 2px;">คำอธิบาย: ${escapeHTML(r.after.explanation || '-')}</div>
               </div>
             </div>
@@ -5649,27 +5649,35 @@ window.openReportAiAuditModal = async function(reportId) {
       </div>
 
       <!-- 3. เปรียบเทียบข้อสอบเดิม vs ข้อสอบฉบับซ่อมแซมสมบูรณ์โดย AI -->
+      ${!isAnswerChanged ? `
+        <div style="background: #ECFDF5; border: 1.5px solid #86EFAC; border-radius: 14px; padding: 12px 16px; margin-bottom: 14px; display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 18px;">💡</span>
+          <div style="font-size: 12.5px; color: #166534; line-height: 1.45;">
+            <strong>คำตอบเดิมถูกต้องอยู่แล้ว (ข้อ ${currentAnsChar}: "${escapeHTML(currentChoiceVal)}")</strong> — AI ตรวจสอบแล้วพบว่าข้อสอบไม่ได้เฉลยผิด ผู้สอบเข้าใจผิดระหว่าง "ลำดับตัวเลือกที่ ${q.correctAnswer} (ข้อ ${currentAnsChar})" กับ "ตัวเลขคำตอบ" AI จึงได้ปรับปรุงคำอธิบายเฉลยให้แจกแจงชัดเจนยิ่งขึ้น
+          </div>
+        </div>
+      ` : ''}
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px;">
         <!-- ข้อสอบเดิม -->
         <div style="background: white; border: 1.5px solid #E2E8F0; border-radius: 16px; padding: 16px; display: flex; flex-direction: column;">
           <div style="font-size: 12px; font-weight: 800; color: #64748B; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
             <span>📄 ข้อสอบเดิมในระบบ</span>
-            <span style="color: #DC2626; font-weight: 900;">เฉลยเดิม: ข้อ ${currentAnsChar} (${q.correctAnswer})</span>
+            <span style="${isAnswerChanged ? 'color: #DC2626;' : 'color: #1E293B;'} font-weight: 900;">เฉลยเดิม: ข้อ ${currentAnsChar} ("${escapeHTML(currentChoiceVal)}")</span>
           </div>
           <div style="font-size: 13px; font-weight: 700; color: #1E293B; margin-bottom: 12px; min-height: 38px;">
             โจทย์: ${escapeHTML(q.questionText)}
           </div>
           <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; flex: 1;">
-            <div style="padding: 7px 10px; border-radius: 8px; font-size: 12px; ${q.correctAnswer === 1 ? 'background: #FEE2E2; border: 1px solid #FCA5A5; font-weight: 700; color: #991B1B;' : 'background: #F8FAFC; border: 1px solid #E2E8F0; color: #475569;'}">
+            <div style="padding: 7px 10px; border-radius: 8px; font-size: 12px; ${q.correctAnswer === 1 ? (isAnswerChanged ? 'background: #FEE2E2; border: 1px solid #FCA5A5; font-weight: 700; color: #991B1B;' : 'background: #EFF6FF; border: 1.5px solid #93C5FD; font-weight: 700; color: #1E40AF;') : 'background: #F8FAFC; border: 1px solid #E2E8F0; color: #475569;'}">
               ก. ${escapeHTML(q.choice1)} ${q.correctAnswer === 1 ? ' (เฉลยเดิม)' : ''}
             </div>
-            <div style="padding: 7px 10px; border-radius: 8px; font-size: 12px; ${q.correctAnswer === 2 ? 'background: #FEE2E2; border: 1px solid #FCA5A5; font-weight: 700; color: #991B1B;' : 'background: #F8FAFC; border: 1px solid #E2E8F0; color: #475569;'}">
+            <div style="padding: 7px 10px; border-radius: 8px; font-size: 12px; ${q.correctAnswer === 2 ? (isAnswerChanged ? 'background: #FEE2E2; border: 1px solid #FCA5A5; font-weight: 700; color: #991B1B;' : 'background: #EFF6FF; border: 1.5px solid #93C5FD; font-weight: 700; color: #1E40AF;') : 'background: #F8FAFC; border: 1px solid #E2E8F0; color: #475569;'}">
               ข. ${escapeHTML(q.choice2)} ${q.correctAnswer === 2 ? ' (เฉลยเดิม)' : ''}
             </div>
-            <div style="padding: 7px 10px; border-radius: 8px; font-size: 12px; ${q.correctAnswer === 3 ? 'background: #FEE2E2; border: 1px solid #FCA5A5; font-weight: 700; color: #991B1B;' : 'background: #F8FAFC; border: 1px solid #E2E8F0; color: #475569;'}">
+            <div style="padding: 7px 10px; border-radius: 8px; font-size: 12px; ${q.correctAnswer === 3 ? (isAnswerChanged ? 'background: #FEE2E2; border: 1px solid #FCA5A5; font-weight: 700; color: #991B1B;' : 'background: #EFF6FF; border: 1.5px solid #93C5FD; font-weight: 700; color: #1E40AF;') : 'background: #F8FAFC; border: 1px solid #E2E8F0; color: #475569;'}">
               ค. ${escapeHTML(q.choice3)} ${q.correctAnswer === 3 ? ' (เฉลยเดิม)' : ''}
             </div>
-            <div style="padding: 7px 10px; border-radius: 8px; font-size: 12px; ${q.correctAnswer === 4 ? 'background: #FEE2E2; border: 1px solid #FCA5A5; font-weight: 700; color: #991B1B;' : 'background: #F8FAFC; border: 1px solid #E2E8F0; color: #475569;'}">
+            <div style="padding: 7px 10px; border-radius: 8px; font-size: 12px; ${q.correctAnswer === 4 ? (isAnswerChanged ? 'background: #FEE2E2; border: 1px solid #FCA5A5; font-weight: 700; color: #991B1B;' : 'background: #EFF6FF; border: 1.5px solid #93C5FD; font-weight: 700; color: #1E40AF;') : 'background: #F8FAFC; border: 1px solid #E2E8F0; color: #475569;'}">
               ง. ${escapeHTML(q.choice4)} ${q.correctAnswer === 4 ? ' (เฉลยเดิม)' : ''}
             </div>
           </div>
@@ -5682,7 +5690,7 @@ window.openReportAiAuditModal = async function(reportId) {
         <div style="background: #F0FDF4; border: 2px solid #34D399; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; box-shadow: 0 4px 14px rgba(5,150,105,0.1);">
           <div style="font-size: 12px; font-weight: 800; color: #059669; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
             <span>✨ ฉบับที่ AI ซ่อมแซมสมบูรณ์</span>
-            <span style="color: #059669; font-weight: 900; background: #D1FAE5; padding: 2px 8px; border-radius: 6px;">เฉลยใหม่: ข้อ ${repairedAnsChar} (${rp.repairedCorrectAnswer})</span>
+            <span style="color: #059669; font-weight: 900; background: #D1FAE5; padding: 2px 8px; border-radius: 6px;">เฉลย: ข้อ ${repairedAnsChar} ("${escapeHTML(repairedChoiceVal)}")</span>
           </div>
           <div style="font-size: 13px; font-weight: 800; color: #064E3B; margin-bottom: 12px; min-height: 38px;">
             โจทย์: ${escapeHTML(rp.repairedQuestionText)} ${isQuestionChanged ? '<span style="font-size: 10.5px; background: #FEF3C7; color: #92400E; padding: 1px 6px; border-radius: 4px; font-weight: 700;">(โจทย์ปรับปรุง)</span>' : ''}
@@ -6652,7 +6660,7 @@ window.renderBatchCurrentSetResults = function(data) {
         <div style="background: white; border: 1px solid #FDE68A; border-radius: 12px; padding: 12px; font-size: 12px; color: #78350F;">
           <div style="font-weight: 700; margin-bottom: 4px;">${escapeHTML(r.before.questionText)}</div>
           <div style="color: #92400E; font-size: 11.5px;">ก. ${escapeHTML(r.before.choice1)} | ข. ${escapeHTML(r.before.choice2)} | ค. ${escapeHTML(r.before.choice3)} | ง. ${escapeHTML(r.before.choice4)}</div>
-          <div style="margin-top: 4px; font-weight: 800;">เฉลยเดิม: ข้อ ${r.before.correctAnswer}</div>
+          <div style="margin-top: 4px; font-weight: 800;">เฉลยเดิม: ข้อ ${['', 'ก', 'ข', 'ค', 'ง'][r.before.correctAnswer] || r.before.correctAnswer}</div>
         </div>
       `;
     } else if (isFixed) {
@@ -6665,13 +6673,13 @@ window.renderBatchCurrentSetResults = function(data) {
             <div style="font-weight: 800; color: #64748B; margin-bottom: 4px;">❌ ก่อนแก้ไข:</div>
             <div style="font-weight: 700; color: #1E293B; margin-bottom: 4px;">${escapeHTML(r.before.questionText)}</div>
             <div style="color: #475569; font-size: 11px;">ก. ${escapeHTML(r.before.choice1)} | ข. ${escapeHTML(r.before.choice2)} | ค. ${escapeHTML(r.before.choice3)} | ง. ${escapeHTML(r.before.choice4)}</div>
-            <div style="margin-top: 4px; font-weight: 800; color: #BD1B0B;">เฉลย: ข้อ ${r.before.correctAnswer}</div>
+            <div style="margin-top: 4px; font-weight: 800; color: #BD1B0B;">เฉลย: ข้อ ${['', 'ก', 'ข', 'ค', 'ง'][r.before.correctAnswer] || r.before.correctAnswer}</div>
           </div>
           <div style="background: #F0FDF4; border: 1.5px solid #86EFAC; border-radius: 10px; padding: 10px; font-size: 11.5px;">
             <div style="font-weight: 800; color: #15803D; margin-bottom: 4px;">✨ หลังแก้ไข (ลง DB):</div>
             <div style="font-weight: 800; color: #0F172A; margin-bottom: 4px;">${escapeHTML(r.after.questionText)}</div>
             <div style="color: #166534; font-size: 11px;">ก. ${escapeHTML(r.after.choice1)} | ข. ${escapeHTML(r.after.choice2)} | ค. ${escapeHTML(r.after.choice3)} | ง. ${escapeHTML(r.after.choice4)}</div>
-            <div style="margin-top: 4px; font-weight: 800; color: #059669;">เฉลยใหม่: ข้อ ${r.after.correctAnswer}</div>
+            <div style="margin-top: 4px; font-weight: 800; color: #059669;">เฉลย: ข้อ ${['', 'ก', 'ข', 'ค', 'ง'][r.after.correctAnswer] || r.after.correctAnswer}</div>
           </div>
         </div>
       `;
