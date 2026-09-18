@@ -1301,6 +1301,7 @@ function getSubjectBankMeta(catOrKey) {
 }
 
 let allLoadedExams = [];
+window.allLoadedExams = allLoadedExams;
 let currentExamFilterSubject = 'ALL';
 let currentExamFilterChapter = 'ALL';
 let currentExamFilterSearch = '';
@@ -1353,6 +1354,7 @@ async function loadExams() {
     });
     if (res.ok) {
       allLoadedExams = await res.json();
+      window.allLoadedExams = allLoadedExams;
       updateFilterChapterDropdown();
       renderAdminSubjectBanksNav();
       renderExamsWithFilters();
@@ -6155,10 +6157,11 @@ let _batchCurrentQueueIndex = 0;
 let _batchRecheckResultsHistory = [];
 
 window.toggleExamCardSelection = function(id, isChecked) {
+  const numId = Number(id);
   if (isChecked) {
-    window._selectedExamCardIds.add(id);
+    window._selectedExamCardIds.add(numId);
   } else {
-    window._selectedExamCardIds.delete(id);
+    window._selectedExamCardIds.delete(numId);
   }
   updateFloatingSelectionBar();
 };
@@ -6191,13 +6194,24 @@ window.startBatchRecheckFromSelectedCards = function() {
   startBatchAiRecheckQueue(ids);
 };
 
-window.openBatchAiRecheckSelectionModal = function() {
+window.openBatchAiRecheckSelectionModal = async function() {
   const modal = document.getElementById('batchAiRecheckSelectionModal');
   if (!modal) return;
   modal.style.display = 'flex';
 
-  _batchSelectionListItems = [...(window.allLoadedExams || [])];
-  _batchSelectedIds = new Set(window._selectedExamCardIds);
+  let pool = (typeof allLoadedExams !== 'undefined' && allLoadedExams.length > 0)
+    ? allLoadedExams
+    : (window.allLoadedExams || []);
+
+  if (!pool || pool.length === 0) {
+    await loadExams();
+    pool = (typeof allLoadedExams !== 'undefined' && allLoadedExams.length > 0)
+      ? allLoadedExams
+      : (window.allLoadedExams || []);
+  }
+
+  _batchSelectionListItems = [...pool];
+  _batchSelectedIds = new Set(Array.from(window._selectedExamCardIds || []).map(Number));
 
   renderBatchSelectionList();
 };
@@ -6313,23 +6327,67 @@ window.renderBatchSelectionList = function() {
 };
 
 window.toggleBatchSelectItem = function(id, isChecked) {
+  const numId = Number(id);
   if (isChecked) {
-    _batchSelectedIds.add(id);
+    _batchSelectedIds.add(numId);
   } else {
-    _batchSelectedIds.delete(id);
+    _batchSelectedIds.delete(numId);
   }
   renderBatchSelectionList();
 };
 
-window.startBatchAiRecheckQueue = function(customIds) {
-  const idsToRun = customIds || Array.from(_batchSelectedIds);
+window.startBatchAiRecheckQueue = async function(customIds) {
+  const rawIds = customIds || Array.from(_batchSelectedIds);
+  const idsToRun = rawIds.map(Number).filter(n => !isNaN(n) && n > 0);
   if (!idsToRun || idsToRun.length === 0) {
     alert('กรุณาเลือกชุดข้อสอบที่ต้องการรีเช็คอย่างน้อย 1 ชุด');
     return;
   }
 
-  const pool = window.allLoadedExams || [];
-  _batchRecheckQueue = idsToRun.map(id => pool.find(ex => ex.id === id)).filter(Boolean);
+  let pool = (typeof allLoadedExams !== 'undefined' && allLoadedExams.length > 0)
+    ? allLoadedExams
+    : (window.allLoadedExams || []);
+
+  if (!pool || pool.length === 0) {
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/exams`, {
+        headers: { 'Authorization': `Bearer ${authToken}` }
+      });
+      if (res.ok) {
+        pool = await res.json();
+        allLoadedExams = pool;
+        window.allLoadedExams = pool;
+      }
+    } catch (e) {
+      console.error('Fetch exams fallback error:', e);
+    }
+  }
+
+  _batchRecheckQueue = idsToRun.map(id => {
+    return pool.find(ex => Number(ex.id) === Number(id));
+  }).filter(Boolean);
+
+  // If still not found in pool, fallback to fetch each by ID
+  if (_batchRecheckQueue.length === 0) {
+    try {
+      const fetchedQueue = [];
+      for (const eid of idsToRun) {
+        const res = await fetch(`${API_BASE}/api/admin/exams/${eid}`, {
+          headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        if (res.ok) {
+          const exData = await res.json();
+          fetchedQueue.push(exData);
+        }
+      }
+      if (fetchedQueue.length > 0) {
+        _batchRecheckQueue = fetchedQueue;
+      }
+    } catch (fetchErr) {
+      console.error('Fetch individual exam fallback error:', fetchErr);
+    }
+  }
+
   if (_batchRecheckQueue.length === 0) {
     alert('ไม่พบข้อมูลชุดข้อสอบที่เลือก');
     return;
