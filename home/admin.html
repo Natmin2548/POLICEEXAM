@@ -294,6 +294,9 @@
               <button type="button" class="btn btn-primary" onclick="showAddExamModal()" style="background: #BD1B0B; border: none; padding: 11px 18px; border-radius: 14px; font-weight: 800; font-size: 13.5px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 14px rgba(189,27,11,0.25); cursor: pointer; color: white; flex: 1; min-width: 170px; justify-content: center;">
                 <span>+ สร้างข้อสอบด้วย AI</span>
               </button>
+              <button type="button" class="btn" onclick="openBatchAiRecheckSelectionModal()" style="background: linear-gradient(135deg, #7C3AED, #9333EA); color: white; border: none; padding: 11px 16px; border-radius: 14px; font-weight: 700; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 10px rgba(124,58,237,0.25); cursor: pointer;">
+                <span>⚡ AI รีเช็คหลายชุด</span>
+              </button>
               <button type="button" class="btn" onclick="openCsvExamModal()" style="background: #0284C7; color: white; border: none; padding: 11px 16px; border-radius: 14px; font-weight: 700; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 10px rgba(2,132,199,0.25); cursor: pointer;">
                 <span>📁 นำเข้า CSV</span>
               </button>
@@ -1594,6 +1597,155 @@
     </div>
   </div>
 
+  <!-- Batch AI Recheck Selection Modal (เลือกชุดข้อสอบที่จะรีเช็ค) -->
+  <div class="modal-overlay" id="batchAiRecheckSelectionModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(8px); z-index: 10020; align-items: center; justify-content: center; padding: 16px;">
+    <div class="modal-card" style="background: white; max-width: 800px; width: 100%; max-height: 90vh; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); display: flex; flex-direction: column; overflow: hidden;">
+      
+      <!-- Modal Header -->
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 18px 24px; border-bottom: 1.5px solid #E2E8F0; background: #F8FAFC;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="width: 44px; height: 44px; border-radius: 14px; background: linear-gradient(135deg, #7C3AED, #9333EA); color: white; display: flex; align-items: center; justify-content: center; font-size: 22px; box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);">
+            ⚡
+          </div>
+          <div>
+            <h3 style="font-size: 18px; font-weight: 800; color: #0F172A; margin: 0;">AI รีเช็คหลายชุดข้อสอบ (ยืนยันทีละชุด)</h3>
+            <p style="font-size: 12.5px; color: #64748B; margin: 2px 0 0 0;">เลือกชุดข้อสอบที่ต้องการรีเช็ค ระบบจะรันทีละชุด และให้คุณตรวจสอบ & ยืนยันผลทีละชุด</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeBatchAiRecheckSelectionModal()" style="background: #E2E8F0; border: none; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 15px; cursor: pointer; color: #475569;">✕</button>
+      </div>
+
+      <!-- Filter / Control Bar -->
+      <div style="padding: 14px 24px; background: #FAFAFA; border-bottom: 1px solid #E2E8F0; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 260px;">
+          <input type="text" id="batchSelectSearchInput" placeholder="🔍 ค้นหาชุดข้อสอบ..." oninput="filterBatchRecheckList()" style="flex: 1; padding: 8px 12px; border-radius: 10px; border: 1.5px solid #CBD5E1; font-size: 12.5px; outline: none; background: white;">
+          <select id="batchSelectSubjectFilter" onchange="filterBatchRecheckList()" style="padding: 8px 12px; border-radius: 10px; border: 1.5px solid #CBD5E1; font-size: 12px; font-weight: 600; outline: none; background: white;">
+            <option value="ALL">ทุกวิชา</option>
+            <option value="ทั่วไป">🧠 ความสามารถทั่วไป</option>
+            <option value="ภาษาไทย">🇹🇭 ภาษาไทย</option>
+            <option value="คอม">💻 คอมพิวเตอร์</option>
+            <option value="กฏหมาย">⚖️ กฎหมาย</option>
+            <option value="สังคม">🏛️ สังคม</option>
+            <option value="งานสารบรรณ_๒๕๒๖">📜 สารบรรณ ๒๕๒๖</option>
+            <option value="สารบรรณตำรวจ_๕๔">📑 สารบรรณตำรวจ ๕๔</option>
+            <option value="ภาษาอังกฤษ">🇬🇧 ภาษาอังกฤษ</option>
+          </select>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button type="button" onclick="selectAllBatchExams(true)" class="btn btn-outline" style="padding: 6px 12px; font-size: 12px; font-weight: 700; border-radius: 8px;">เลือกทั้งหมด</button>
+          <button type="button" onclick="selectAllBatchExams(false)" class="btn btn-outline" style="padding: 6px 12px; font-size: 12px; font-weight: 700; border-radius: 8px;">ล้างการเลือก</button>
+        </div>
+      </div>
+
+      <!-- Exam List Items -->
+      <div id="batchRecheckSelectionList" style="padding: 16px 24px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 10px; background: white; max-height: 480px;">
+        <!-- Dynamically rendered exam checkboxes -->
+      </div>
+
+      <!-- Modal Footer -->
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; border-top: 1.5px solid #E2E8F0; background: #F8FAFC;">
+        <div>
+          <span style="font-weight: 800; font-size: 13.5px; color: #1E293B;" id="batchSelectCountBadge">เลือกแล้ว 0 ชุด (0 ข้อ)</span>
+          <div style="font-size: 11.5px; color: #64748B;">🔒 ระบบจะหยุดเพื่อให้คุณยืนยันผลการแก้ไขทีละชุดก่อนเริ่มชุดต่อไป</div>
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <button type="button" class="btn btn-outline" onclick="closeBatchAiRecheckSelectionModal()" style="padding: 9px 18px; border-radius: 12px; font-weight: 700;">ยกเลิก</button>
+          <button type="button" id="btnStartBatchRecheck" class="btn btn-primary" onclick="startBatchAiRecheckQueue()" style="background: linear-gradient(135deg, #7C3AED, #9333EA); border: none; padding: 9px 20px; border-radius: 12px; font-weight: 800; font-size: 13px; box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3); cursor: pointer;" disabled>
+            🚀 เริ่มรีเช็คทีละชุด (0 ชุด)
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Batch AI Recheck Wizard Modal (หน้าต่างดำเนินการรีเช็คทีละชุด และกดยืนยันทีละชุด) -->
+  <div class="modal-overlay" id="batchAiRecheckWizardModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); z-index: 10030; align-items: center; justify-content: center; padding: 16px;">
+    <div class="modal-card" style="background: white; max-width: 860px; width: 100%; max-height: 94vh; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3); display: flex; flex-direction: column; overflow: hidden;">
+      
+      <!-- Wizard Header with Overall Queue Progress -->
+      <div style="padding: 18px 24px; border-bottom: 1.5px solid #E2E8F0; background: #F8FAFC;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 38px; height: 38px; border-radius: 12px; background: linear-gradient(135deg, #7C3AED, #9333EA); color: white; display: flex; align-items: center; justify-content: center; font-size: 18px; box-shadow: 0 3px 10px rgba(124, 58, 237, 0.25);">
+              ⚡
+            </div>
+            <div>
+              <div style="font-size: 16px; font-weight: 800; color: #0F172A;" id="batchWizardHeaderTitle">AI รีเช็คหลายชุด (ยืนยันทีละชุด)</div>
+              <div style="font-size: 12px; color: #64748B;" id="batchWizardHeaderSub">กำลังประมวลผลคิวรีเช็คข้อสอบ</div>
+            </div>
+          </div>
+          <div style="text-align: right;">
+            <span id="batchWizardStepBadge" style="background: #F3E8FF; color: #7C3AED; border: 1.5px solid #DDD6FE; padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 800;">
+              ชุดที่ 1 จาก 1
+            </span>
+          </div>
+        </div>
+
+        <!-- Overall Progress Bar across sets -->
+        <div style="height: 8px; background: #E2E8F0; border-radius: 999px; overflow: hidden;">
+          <div id="batchWizardQueueProgressBar" style="height: 100%; width: 0%; background: linear-gradient(90deg, #7C3AED, #A855F7); border-radius: 999px; transition: width 0.4s ease;"></div>
+        </div>
+      </div>
+
+      <!-- Current Exam Info Card -->
+      <div style="padding: 14px 24px; background: #FFFBEB; border-bottom: 1.5px solid #FDE68A; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
+        <div>
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 2px;">
+            <span id="batchCurrentExamBadge" style="background: #FEF3C7; color: #B45309; font-weight: 800; font-size: 11px; padding: 2px 8px; border-radius: 6px;">SET-000</span>
+            <span id="batchCurrentExamCategory" style="font-weight: 700; font-size: 12px; color: #475569;">วิชา</span>
+          </div>
+          <h4 id="batchCurrentExamTitle" style="margin: 0; font-size: 15px; font-weight: 800; color: #1E293B;">ชื่อชุดข้อสอบ</h4>
+        </div>
+        <div id="batchCurrentStatusPill" style="display: flex; align-items: center; gap: 6px; background: white; border: 1.5px solid #FDE68A; padding: 6px 14px; border-radius: 999px; font-size: 12px; font-weight: 800; color: #B45309;">
+          <span id="batchCurrentStatusDot" style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #F59E0B; animation: pulse 1.2s infinite;"></span>
+          <span id="batchCurrentStatusText">กำลังรีเช็คด้วย AI...</span>
+        </div>
+      </div>
+
+      <!-- Wizard Scrollable Body -->
+      <div id="batchWizardModalBody" style="padding: 20px 24px; overflow-y: auto; flex: 1; background: #FAFAFA;">
+        
+        <!-- Live Counters for Current Set -->
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; text-align: center; margin-bottom: 18px;">
+          <div style="background: white; border: 1px solid #E2E8F0; border-radius: 12px; padding: 10px 8px;">
+            <div style="font-size: 11px; font-weight: 700; color: #64748B;">ข้อสอบทั้งหมด</div>
+            <div style="font-size: 18px; font-weight: 900; color: #0F172A; margin-top: 2px;" id="statBatchCurrentTotal">0</div>
+          </div>
+          <div style="background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 12px; padding: 10px 8px;">
+            <div style="font-size: 11px; font-weight: 700; color: #B45309;">ลบข้อซ้ำแล้ว</div>
+            <div style="font-size: 18px; font-weight: 900; color: #D97706; margin-top: 2px;" id="statBatchCurrentDup">0</div>
+          </div>
+          <div style="background: #FEF2F2; border: 1px solid #FECACA; border-radius: 12px; padding: 10px 8px;">
+            <div style="font-size: 11px; font-weight: 700; color: #BD1B0B;">แก้ไขออโต้แล้ว</div>
+            <div style="font-size: 18px; font-weight: 900; color: #DC2626; margin-top: 2px;" id="statBatchCurrentFixed">0</div>
+          </div>
+          <div style="background: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 12px; padding: 10px 8px;">
+            <div style="font-size: 11px; font-weight: 700; color: #047857;">สมบูรณ์ถูกต้อง</div>
+            <div style="font-size: 18px; font-weight: 900; color: #059669; margin-top: 2px;" id="statBatchCurrentPassed">0</div>
+          </div>
+        </div>
+
+        <!-- Details List of current set -->
+        <div id="batchCurrentDetailsList" style="display: flex; flex-direction: column; gap: 14px;">
+          <!-- Dynamically populated review results -->
+        </div>
+
+      </div>
+
+      <!-- Confirmation Footer Bar -->
+      <div id="batchWizardFooter" style="display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; border-top: 1.5px solid #E2E8F0; background: white; flex-wrap: wrap; gap: 10px;">
+        <div style="font-size: 12px; color: #64748B;" id="batchWizardFooterTip">
+          💡 ตรวจสอบผลการรีเช็คของชุดนี้ด้านบน จากนั้นกดยืนยันเพื่อบันทึกและไปชุดถัดไป
+        </div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;" id="batchWizardActionButtons">
+          <!-- Buttons dynamically rendered depending on whether recheck is in progress or completed -->
+        </div>
+      </div>
+
+    </div>
+  </div>
+
   <!-- Online Users List Modal (ดูรายชื่อผู้ใช้ออนไลน์แบบเรียลไทม์) -->
   <!-- Online Users List Modal (ดูรายชื่อผู้ใช้ออนไลน์แบบเรียลไทม์) -->
   <div class="modal-overlay online-modal-overlay" id="onlineUsersModal">
@@ -1724,6 +1876,15 @@
       <span>Approvals</span>
     </a>
   </nav>
+
+  <!-- Floating Action Bar for Selected Exam Cards -->
+  <div id="batchExamFloatingBar" style="display: none; position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #0F172A; color: white; border-radius: 999px; padding: 10px 22px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.4); z-index: 9999; align-items: center; gap: 16px;">
+    <span style="font-size: 13.5px; font-weight: 800;" id="batchFloatingSelectedText">เลือกแล้ว 0 ชุด</span>
+    <button type="button" onclick="startBatchRecheckFromSelectedCards()" class="btn" style="background: linear-gradient(135deg, #7C3AED, #9333EA); color: white; border: none; padding: 7px 18px; border-radius: 999px; font-weight: 800; font-size: 12.5px; cursor: pointer; box-shadow: 0 2px 10px rgba(124,58,237,0.3);">
+      ⚡ เริ่มรีเช็คชุดที่เลือก (ยืนยันทีละชุด)
+    </button>
+    <button type="button" onclick="clearSelectedExamCards()" style="background: transparent; border: none; color: #94A3B8; font-size: 16px; cursor: pointer; padding: 0 4px;" title="ยกเลิกการเลือก">✕</button>
+  </div>
 
 </body>
 </html>

@@ -1523,8 +1523,12 @@ function renderExamsWithFilters() {
                 </button>
               </div>
             </div>
-            <div>
+            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
               <span class="admin-exam-card-badge">${setBadge}</span>
+              <label onclick="event.stopPropagation();" style="display: flex; align-items: center; gap: 4px; cursor: pointer; font-size: 11px; font-weight: 700; color: #64748B; background: #F8FAFC; border: 1px solid #CBD5E1; padding: 2px 7px; border-radius: 6px;" title="เลือกชุดนี้สำหรับรีเช็คหลายชุด">
+                <input type="checkbox" class="exam-card-select-check" value="${ex.id}" ${window._selectedExamCardIds && window._selectedExamCardIds.has(ex.id) ? 'checked' : ''} onchange="toggleExamCardSelection(${ex.id}, this.checked)" style="cursor: pointer; accent-color: #7C3AED;">
+                <span>เลือก</span>
+              </label>
             </div>
           </div>
         `;
@@ -6140,5 +6144,500 @@ window.submitReportReply = async function() {
 };
 
 
+// =========================================================================
+// Batch AI Recheck Controller (รีเช็คหลายชุด & ยืนยันทีละชุด)
+// =========================================================================
+window._selectedExamCardIds = window._selectedExamCardIds || new Set();
+let _batchSelectionListItems = [];
+let _batchSelectedIds = new Set();
+let _batchRecheckQueue = [];
+let _batchCurrentQueueIndex = 0;
+let _batchRecheckResultsHistory = [];
 
+window.toggleExamCardSelection = function(id, isChecked) {
+  if (isChecked) {
+    window._selectedExamCardIds.add(id);
+  } else {
+    window._selectedExamCardIds.delete(id);
+  }
+  updateFloatingSelectionBar();
+};
 
+window.updateFloatingSelectionBar = function() {
+  const bar = document.getElementById('batchExamFloatingBar');
+  const text = document.getElementById('batchFloatingSelectedText');
+  if (!bar) return;
+  const count = window._selectedExamCardIds.size;
+  if (count > 0) {
+    bar.style.display = 'flex';
+    if (text) text.textContent = `เลือกแล้ว ${count} ชุด`;
+  } else {
+    bar.style.display = 'none';
+  }
+};
+
+window.clearSelectedExamCards = function() {
+  window._selectedExamCardIds.clear();
+  document.querySelectorAll('.exam-card-select-check').forEach(cb => cb.checked = false);
+  updateFloatingSelectionBar();
+};
+
+window.startBatchRecheckFromSelectedCards = function() {
+  const ids = Array.from(window._selectedExamCardIds);
+  if (ids.length === 0) {
+    alert('กรุณาเลือกชุดข้อสอบอย่างน้อย 1 ชุด');
+    return;
+  }
+  startBatchAiRecheckQueue(ids);
+};
+
+window.openBatchAiRecheckSelectionModal = function() {
+  const modal = document.getElementById('batchAiRecheckSelectionModal');
+  if (!modal) return;
+  modal.style.display = 'flex';
+
+  _batchSelectionListItems = [...(window.allLoadedExams || [])];
+  _batchSelectedIds = new Set(window._selectedExamCardIds);
+
+  renderBatchSelectionList();
+};
+
+window.closeBatchAiRecheckSelectionModal = function() {
+  const modal = document.getElementById('batchAiRecheckSelectionModal');
+  if (modal) modal.style.display = 'none';
+};
+
+window.filterBatchRecheckList = function() {
+  renderBatchSelectionList();
+};
+
+window.selectAllBatchExams = function(selectAll) {
+  const search = (document.getElementById('batchSelectSearchInput')?.value || '').toLowerCase().trim();
+  const subject = document.getElementById('batchSelectSubjectFilter')?.value || 'ALL';
+
+  const filtered = _batchSelectionListItems.filter(ex => {
+    if (subject !== 'ALL') {
+      const cleanFilter = cleanCategoryName(subject);
+      const exCat = cleanCategoryName(ex.category || '');
+      if (exCat !== cleanFilter && !exCat.includes(cleanFilter)) return false;
+    }
+    if (search) {
+      const titleMatch = (ex.title || '').toLowerCase().includes(search);
+      const subMatch = (ex.subcategory || '').toLowerCase().includes(search);
+      const catMatch = (ex.category || '').toLowerCase().includes(search);
+      if (!titleMatch && !subMatch && !catMatch) return false;
+    }
+    return true;
+  });
+
+  if (selectAll) {
+    filtered.forEach(ex => _batchSelectedIds.add(ex.id));
+  } else {
+    filtered.forEach(ex => _batchSelectedIds.delete(ex.id));
+  }
+  renderBatchSelectionList();
+};
+
+window.renderBatchSelectionList = function() {
+  const container = document.getElementById('batchRecheckSelectionList');
+  const countBadge = document.getElementById('batchSelectCountBadge');
+  const startBtn = document.getElementById('btnStartBatchRecheck');
+  if (!container) return;
+
+  const search = (document.getElementById('batchSelectSearchInput')?.value || '').toLowerCase().trim();
+  const subject = document.getElementById('batchSelectSubjectFilter')?.value || 'ALL';
+
+  const filtered = _batchSelectionListItems.filter(ex => {
+    if (subject !== 'ALL') {
+      const cleanFilter = cleanCategoryName(subject);
+      const exCat = cleanCategoryName(ex.category || '');
+      if (exCat !== cleanFilter && !exCat.includes(cleanFilter)) return false;
+    }
+    if (search) {
+      const titleMatch = (ex.title || '').toLowerCase().includes(search);
+      const subMatch = (ex.subcategory || '').toLowerCase().includes(search);
+      const catMatch = (ex.category || '').toLowerCase().includes(search);
+      if (!titleMatch && !subMatch && !catMatch) return false;
+    }
+    return true;
+  });
+
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div style="text-align: center; padding: 36px 16px; color: #94A3B8;">
+        <div style="font-size: 28px; margin-bottom: 8px;">🔍</div>
+        <div style="font-weight: 700;">ไม่พบชุดข้อสอบตามตัวกรอง</div>
+      </div>
+    `;
+  } else {
+    container.innerHTML = filtered.map(ex => {
+      const meta = getSubjectBankMeta(ex.category);
+      const isChecked = _batchSelectedIds.has(ex.id);
+      const qCount = ex.totalCount || 0;
+
+      return `
+        <label style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border: 1.5px solid ${isChecked ? '#7C3AED' : '#E2E8F0'}; background: ${isChecked ? '#FAF5FF' : 'white'}; border-radius: 14px; cursor: pointer; transition: all 0.2s ease;">
+          <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0;">
+            <input type="checkbox" value="${ex.id}" ${isChecked ? 'checked' : ''} onchange="toggleBatchSelectItem(${ex.id}, this.checked)" style="width: 18px; height: 18px; accent-color: #7C3AED; cursor: pointer;">
+            <div style="flex: 1; min-width: 0;">
+              <div style="font-weight: 800; font-size: 13.5px; color: #0F172A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                ${escapeHTML(ex.title)}
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px; margin-top: 3px; font-size: 11.5px; color: #64748B;">
+                <span style="background: ${meta.bgColor}; color: ${meta.color}; border: 1px solid ${meta.borderColor}; padding: 1px 7px; border-radius: 999px; font-weight: 700;">
+                  ${meta.icon} ${escapeHTML(ex.category || 'ทั่วไป')}
+                </span>
+                <span>• ${ex.subcategory || 'รวมทุกหมวด'}</span>
+              </div>
+            </div>
+          </div>
+          <div style="text-align: right; padding-left: 12px;">
+            <span style="font-weight: 800; font-size: 13px; color: #1E293B;">${qCount} ข้อ</span>
+            <div style="font-size: 10.5px; color: #94A3B8; font-family: monospace;">#${ex.id}</div>
+          </div>
+        </label>
+      `;
+    }).join('');
+  }
+
+  const selectedCount = _batchSelectedIds.size;
+  const selectedQuestionsCount = _batchSelectionListItems
+    .filter(ex => _batchSelectedIds.has(ex.id))
+    .reduce((sum, ex) => sum + (ex.totalCount || 0), 0);
+
+  if (countBadge) countBadge.textContent = `เลือกแล้ว ${selectedCount} ชุด (${selectedQuestionsCount} ข้อ)`;
+  if (startBtn) {
+    startBtn.disabled = selectedCount === 0;
+    startBtn.textContent = `🚀 เริ่มรีเช็คทีละชุด (${selectedCount} ชุด)`;
+  }
+};
+
+window.toggleBatchSelectItem = function(id, isChecked) {
+  if (isChecked) {
+    _batchSelectedIds.add(id);
+  } else {
+    _batchSelectedIds.delete(id);
+  }
+  renderBatchSelectionList();
+};
+
+window.startBatchAiRecheckQueue = function(customIds) {
+  const idsToRun = customIds || Array.from(_batchSelectedIds);
+  if (!idsToRun || idsToRun.length === 0) {
+    alert('กรุณาเลือกชุดข้อสอบที่ต้องการรีเช็คอย่างน้อย 1 ชุด');
+    return;
+  }
+
+  const pool = window.allLoadedExams || [];
+  _batchRecheckQueue = idsToRun.map(id => pool.find(ex => ex.id === id)).filter(Boolean);
+  if (_batchRecheckQueue.length === 0) {
+    alert('ไม่พบข้อมูลชุดข้อสอบที่เลือก');
+    return;
+  }
+
+  _batchCurrentQueueIndex = 0;
+  _batchRecheckResultsHistory = [];
+
+  closeBatchAiRecheckSelectionModal();
+  clearSelectedExamCards();
+
+  const wizard = document.getElementById('batchAiRecheckWizardModal');
+  if (wizard) wizard.style.display = 'flex';
+
+  runBatchRecheckCurrentStep();
+};
+
+window.runBatchRecheckCurrentStep = async function() {
+  const total = _batchRecheckQueue.length;
+  const current = _batchCurrentQueueIndex;
+  const exam = _batchRecheckQueue[current];
+  if (!exam) return;
+
+  const stepBadge = document.getElementById('batchWizardStepBadge');
+  const queueBar = document.getElementById('batchWizardQueueProgressBar');
+  const titleEl = document.getElementById('batchWizardHeaderTitle');
+  const subEl = document.getElementById('batchWizardHeaderSub');
+
+  if (stepBadge) stepBadge.textContent = `ชุดที่ ${current + 1} จาก ${total}`;
+  if (queueBar) queueBar.style.width = `${Math.round(((current) / total) * 100)}%`;
+  if (titleEl) titleEl.textContent = `⚡ AI รีเช็คหลายชุด (ชุดที่ ${current + 1}/${total})`;
+  if (subEl) subEl.textContent = `กำลังประมวลผล: "${exam.title}"`;
+
+  const badge = document.getElementById('batchCurrentExamBadge');
+  const catEl = document.getElementById('batchCurrentExamCategory');
+  const currentTitleEl = document.getElementById('batchCurrentExamTitle');
+  const statusPill = document.getElementById('batchCurrentStatusPill');
+  const statusText = document.getElementById('batchCurrentStatusText');
+  const statusDot = document.getElementById('batchCurrentStatusDot');
+
+  if (badge) badge.textContent = `SET-${String(exam.id).padStart(3, '0')}`;
+  if (catEl) catEl.textContent = `${exam.category || 'ทั่วไป'} • ${exam.subcategory || 'รวมทุกหมวด'}`;
+  if (currentTitleEl) currentTitleEl.textContent = exam.title;
+
+  if (statusPill) {
+    statusPill.style.background = '#FFFBEB';
+    statusPill.style.borderColor = '#FDE68A';
+    statusPill.style.color = '#B45309';
+  }
+  if (statusDot) {
+    statusDot.style.background = '#F59E0B';
+    statusDot.style.display = 'inline-block';
+  }
+  if (statusText) statusText.textContent = 'กำลังสแกนข้อซ้ำ & รีเช็คด้วย AI ทีละข้อ...';
+
+  const statTotal = document.getElementById('statBatchCurrentTotal');
+  const statDup = document.getElementById('statBatchCurrentDup');
+  const statFixed = document.getElementById('statBatchCurrentFixed');
+  const statPassed = document.getElementById('statBatchCurrentPassed');
+
+  if (statTotal) statTotal.textContent = exam.totalCount || '-';
+  if (statDup) statDup.textContent = '0';
+  if (statFixed) statFixed.textContent = '0';
+  if (statPassed) statPassed.textContent = '0';
+
+  const bodyList = document.getElementById('batchCurrentDetailsList');
+  if (bodyList) {
+    bodyList.innerHTML = `
+      <div style="text-align: center; padding: 48px 16px; color: #64748B;">
+        <div style="font-size: 38px; margin-bottom: 12px; animation: pulse 1.2s infinite;">⚡</div>
+        <div style="font-weight: 800; font-size: 15px; color: #1E293B; margin-bottom: 6px;">AI กำลังตรวจสอบข้อสอบในชุดนี้อย่างละเอียด...</div>
+        <div style="font-size: 12.5px; color: #64748B;">หากพบข้อซ้ำจะลบทันที และหากมั่นใจ ≥ 90% จะปรับแก้ลงฐานข้อมูลให้อัตโนมัติ</div>
+      </div>
+    `;
+  }
+
+  const footerTip = document.getElementById('batchWizardFooterTip');
+  const actionBtns = document.getElementById('batchWizardActionButtons');
+  if (footerTip) footerTip.textContent = '⏳ กรุณารอสักครู่ AI กำลังประมวลผลข้อสอบในชุดนี้...';
+  if (actionBtns) {
+    actionBtns.innerHTML = `
+      <button type="button" class="btn btn-outline" onclick="pauseOrStopBatchQueue()" style="padding: 9px 16px; border-radius: 12px; font-weight: 700; color: #64748B;">
+        ✕ ยกเลิกคิวที่เหลือ
+      </button>
+    `;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/exams/${exam.id}/recheck-full-set`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`
+      }
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || res.statusText || 'Server error');
+    }
+
+    const data = await res.json();
+    _batchRecheckResultsHistory.push(data);
+
+    if (queueBar) queueBar.style.width = `${Math.round(((current + 1) / total) * 100)}%`;
+
+    if (statTotal) statTotal.textContent = data.totalCount;
+    if (statDup) statDup.textContent = data.deletedDuplicatesCount || 0;
+    if (statFixed) statFixed.textContent = data.fixedCount;
+    if (statPassed) statPassed.textContent = data.passedCount;
+
+    if (statusPill) {
+      statusPill.style.background = '#ECFDF5';
+      statusPill.style.borderColor = '#A7F3D0';
+      statusPill.style.color = '#047857';
+    }
+    if (statusDot) {
+      statusDot.style.background = '#10B981';
+      statusDot.style.animation = 'none';
+    }
+    if (statusText) statusText.textContent = '✅ ตรวจสอบชุดนี้เสร็จสิ้น! โปรดยืนยันผล';
+
+    renderBatchCurrentSetResults(data);
+
+    const hasNext = (current + 1) < total;
+    const nextExam = hasNext ? _batchRecheckQueue[current + 1] : null;
+
+    if (footerTip) {
+      footerTip.innerHTML = `
+        <span style="font-weight: 800; color: #15803D;">✅ ตรวจสอบชุดที่ ${current + 1}/${total} สำเร็จ</span>: 
+        ลบข้อซ้ำ <strong>${data.deletedDuplicatesCount || 0}</strong> ข้อ, 
+        แก้ไขออโต้ <strong>${data.fixedCount}</strong> ข้อ
+      `;
+    }
+
+    if (actionBtns) {
+      if (hasNext) {
+        actionBtns.innerHTML = `
+          <button type="button" class="btn btn-outline" onclick="openEditExamModal(${exam.id})" style="padding: 9px 14px; border-radius: 12px; font-weight: 700; font-size: 12.5px;" title="เปิดดูชุดนี้ในหน้าต่างแก้ไข">
+            ✏️ ตรวจสอบชุดนี้
+          </button>
+          <button type="button" class="btn btn-outline" onclick="pauseOrStopBatchQueue()" style="padding: 9px 14px; border-radius: 12px; font-weight: 700; font-size: 12.5px; color: #991B1B; border-color: #FECACA;">
+            ⏸️ หยุดแค่นี้
+          </button>
+          <button type="button" class="btn btn-primary" onclick="confirmAndProceedNextBatchStep()" style="background: linear-gradient(135deg, #059669, #10B981); border: none; padding: 10px 22px; border-radius: 12px; font-weight: 800; font-size: 13.5px; box-shadow: 0 4px 14px rgba(5,150,105,0.3); cursor: pointer;">
+            <span>✅ ยืนยันผลชุดนี้ & ไปชุดถัดไป (${current + 2}/${total}) ➔</span>
+          </button>
+        `;
+      } else {
+        actionBtns.innerHTML = `
+          <button type="button" class="btn btn-outline" onclick="openEditExamModal(${exam.id})" style="padding: 9px 14px; border-radius: 12px; font-weight: 700; font-size: 12.5px;">
+            ✏️ ตรวจสอบชุดนี้
+          </button>
+          <button type="button" class="btn btn-primary" onclick="finishAllBatchRecheckQueue()" style="background: linear-gradient(135deg, #059669, #10B981); border: none; padding: 10px 24px; border-radius: 12px; font-weight: 800; font-size: 13.5px; box-shadow: 0 4px 14px rgba(5,150,105,0.3); cursor: pointer;">
+            <span>🎉 ยืนยัน & เสร็จสิ้นการรีเช็คครบทุกชุด (${total} ชุด)</span>
+          </button>
+        `;
+      }
+    }
+
+  } catch (err) {
+    console.error(`Batch recheck error on exam #${exam.id}:`, err);
+    if (statusPill) {
+      statusPill.style.background = '#FEF2F2';
+      statusPill.style.borderColor = '#FECACA';
+      statusPill.style.color = '#DC2626';
+    }
+    if (statusText) statusText.textContent = '❌ เกิดข้อผิดพลาดในชุดนี้';
+    if (bodyList) {
+      bodyList.innerHTML = `
+        <div style="background: #FEF2F2; border: 1.5px solid #FECACA; border-radius: 16px; padding: 24px; text-align: center; color: #991B1B;">
+          <div style="font-size: 32px; margin-bottom: 8px;">⚠️</div>
+          <div style="font-weight: 800; font-size: 15px; margin-bottom: 6px;">เกิดข้อผิดพลาดในการรีเช็คชุดนี้</div>
+          <div style="font-size: 12.5px;">${escapeHTML(err.message)}</div>
+        </div>
+      `;
+    }
+    if (actionBtns) {
+      actionBtns.innerHTML = `
+        <button type="button" class="btn btn-outline" onclick="runBatchRecheckCurrentStep()" style="padding: 9px 16px; border-radius: 12px; font-weight: 700;">
+          🔄 ลองใหม่อีกครั้ง
+        </button>
+        <button type="button" class="btn btn-outline" onclick="confirmAndProceedNextBatchStep()" style="padding: 9px 16px; border-radius: 12px; font-weight: 700;">
+          ข้ามไปชุดถัดไป ➔
+        </button>
+        <button type="button" class="btn btn-outline" onclick="pauseOrStopBatchQueue()" style="padding: 9px 16px; border-radius: 12px; font-weight: 700; color: #991B1B;">
+          ยุติคิว
+        </button>
+      `;
+    }
+  }
+};
+
+window.renderBatchCurrentSetResults = function(data) {
+  const body = document.getElementById('batchCurrentDetailsList');
+  if (!body) return;
+  body.innerHTML = '';
+
+  if (!data.results || data.results.length === 0) {
+    body.innerHTML = `<div style="text-align: center; padding: 32px; color: #64748B;">ไม่พบรายการข้อสอบในชุดนี้</div>`;
+    return;
+  }
+
+  data.results.forEach((r) => {
+    const card = document.createElement('div');
+    const isDupDeleted = r.status === 'DUPLICATE_DELETED';
+    const isFixed = r.status === 'FIXED';
+
+    card.style.cssText = isDupDeleted
+      ? 'background: #FFFBEB; border: 1.5px solid #FDE68A; border-radius: 16px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);'
+      : isFixed
+        ? 'background: white; border: 1.5px solid #FBCFE8; border-radius: 16px; padding: 16px; box-shadow: 0 4px 12px rgba(219, 39, 119, 0.06);'
+        : 'background: white; border: 1.5px solid #E2E8F0; border-radius: 16px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);';
+
+    const statusBadge = isDupDeleted
+      ? `<span style="background: #FEF3C7; color: #B45309; border: 1px solid #FDE68A; font-size: 11.5px; font-weight: 800; padding: 3px 10px; border-radius: 999px;">🗑️ ข้อสอบซ้ำ (ลบออกจากฐานข้อมูลแล้ว)</span>`
+      : isFixed
+        ? `<span style="background: #FDF2F8; color: #DB2777; border: 1px solid #FBCFE8; font-size: 11.5px; font-weight: 800; padding: 3px 10px; border-radius: 999px;">⚡ แก้ไขอัตโนมัติแล้ว (มั่นใจ ${r.confidenceScore}%)</span>`
+        : `<span style="background: #ECFDF5; color: #059669; border: 1px solid #A7F3D0; font-size: 11.5px; font-weight: 800; padding: 3px 10px; border-radius: 999px;">✅ ผ่านการตรวจ (สมบูรณ์แล้ว)</span>`;
+
+    let diffContent = '';
+    if (isDupDeleted) {
+      diffContent = `
+        <div style="background: #FEF3C7; border: 1px solid #FDE68A; border-radius: 12px; padding: 10px 14px; margin: 10px 0; font-size: 12.5px; color: #92400E;">
+          <span style="font-weight: 800;">🗑️ ข้อสอบซ้ำ:</span> ${escapeHTML(r.reason)}
+        </div>
+        <div style="background: white; border: 1px solid #FDE68A; border-radius: 12px; padding: 12px; font-size: 12px; color: #78350F;">
+          <div style="font-weight: 700; margin-bottom: 4px;">${escapeHTML(r.before.questionText)}</div>
+          <div style="color: #92400E; font-size: 11.5px;">ก. ${escapeHTML(r.before.choice1)} | ข. ${escapeHTML(r.before.choice2)} | ค. ${escapeHTML(r.before.choice3)} | ง. ${escapeHTML(r.before.choice4)}</div>
+          <div style="margin-top: 4px; font-weight: 800;">เฉลยเดิม: ข้อ ${r.before.correctAnswer}</div>
+        </div>
+      `;
+    } else if (isFixed) {
+      diffContent = `
+        <div style="background: #FFF1F2; border: 1px solid #FECDD3; border-radius: 12px; padding: 10px 14px; margin: 10px 0; font-size: 12.5px; color: #9F1239;">
+          <span style="font-weight: 800;">🛠️ AI ปรับปรุงแก้ไข:</span> ${escapeHTML(r.reason)}
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px;">
+          <div style="background: #F8FAFC; border: 1.5px solid #E2E8F0; border-radius: 10px; padding: 10px; font-size: 11.5px;">
+            <div style="font-weight: 800; color: #64748B; margin-bottom: 4px;">❌ ก่อนแก้ไข:</div>
+            <div style="font-weight: 700; color: #1E293B; margin-bottom: 4px;">${escapeHTML(r.before.questionText)}</div>
+            <div style="color: #475569; font-size: 11px;">ก. ${escapeHTML(r.before.choice1)} | ข. ${escapeHTML(r.before.choice2)} | ค. ${escapeHTML(r.before.choice3)} | ง. ${escapeHTML(r.before.choice4)}</div>
+            <div style="margin-top: 4px; font-weight: 800; color: #BD1B0B;">เฉลย: ข้อ ${r.before.correctAnswer}</div>
+          </div>
+          <div style="background: #F0FDF4; border: 1.5px solid #86EFAC; border-radius: 10px; padding: 10px; font-size: 11.5px;">
+            <div style="font-weight: 800; color: #15803D; margin-bottom: 4px;">✨ หลังแก้ไข (ลง DB):</div>
+            <div style="font-weight: 800; color: #0F172A; margin-bottom: 4px;">${escapeHTML(r.after.questionText)}</div>
+            <div style="color: #166534; font-size: 11px;">ก. ${escapeHTML(r.after.choice1)} | ข. ${escapeHTML(r.after.choice2)} | ค. ${escapeHTML(r.after.choice3)} | ง. ${escapeHTML(r.after.choice4)}</div>
+            <div style="margin-top: 4px; font-weight: 800; color: #059669;">เฉลยใหม่: ข้อ ${r.after.correctAnswer}</div>
+          </div>
+        </div>
+      `;
+    } else {
+      diffContent = `
+        <div style="margin-top: 8px; font-size: 12.5px; color: #334155;">
+          <div style="font-weight: 700; margin-bottom: 4px;">${escapeHTML(r.after.questionText)}</div>
+          <div style="font-size: 11.5px; color: #64748B;">เฉลยข้อ ${r.after.correctAnswer} • คำอธิบาย: ${escapeHTML(r.after.explanation || '-')}</div>
+        </div>
+      `;
+    }
+
+    card.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #F1F5F9; padding-bottom: 8px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; background: #F3E8FF; color: #7C3AED; font-weight: 800; font-size: 12px;">
+            ${r.questionNumber}
+          </span>
+          <span style="font-weight: 800; color: #1E293B; font-size: 13px;">ข้อที่ ${r.questionNumber}</span>
+          <span style="font-size: 11px; color: #94A3B8; font-family: monospace;">(ID: ${r.questionId})</span>
+        </div>
+        ${statusBadge}
+      </div>
+      ${diffContent}
+    `;
+
+    body.appendChild(card);
+  });
+};
+
+window.confirmAndProceedNextBatchStep = function() {
+  _batchCurrentQueueIndex++;
+  if (_batchCurrentQueueIndex < _batchRecheckQueue.length) {
+    runBatchRecheckCurrentStep();
+  } else {
+    finishAllBatchRecheckQueue();
+  }
+};
+
+window.pauseOrStopBatchQueue = function() {
+  if (!confirm('คุณต้องการหยุดการรีเช็คคิวที่เหลือใช่หรือไม่? (ชุดที่ตรวจสอบและยืนยันไปแล้วได้รับการบันทึกเรียบร้อย)')) {
+    return;
+  }
+  closeBatchAiRecheckWizardModal();
+  loadExams();
+};
+
+window.finishAllBatchRecheckQueue = function() {
+  const total = _batchRecheckQueue.length;
+  const totalFixed = _batchRecheckResultsHistory.reduce((sum, r) => sum + (r.fixedCount || 0), 0);
+  const totalDup = _batchRecheckResultsHistory.reduce((sum, r) => sum + (r.deletedDuplicatesCount || 0), 0);
+
+  closeBatchAiRecheckWizardModal();
+  loadExams();
+
+  alert(`🎉 รีเช็คและยืนยันข้อสอบครบทั้ง ${total} ชุดเรียบร้อยแล้ว!\n\n• ลบข้อสอบซ้ำรวม: ${totalDup} ข้อ\n• แก้ไขข้อสอบอัตโนมัติรวม: ${totalFixed} ข้อ\n\nฐานข้อมูลได้รับการปรับปรุงสมบูรณ์แล้ว!`);
+};
+
+window.closeBatchAiRecheckWizardModal = function() {
+  const wizard = document.getElementById('batchAiRecheckWizardModal');
+  if (wizard) wizard.style.display = 'none';
+};
