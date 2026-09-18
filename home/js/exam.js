@@ -133,20 +133,14 @@ async function loadExamQuestions(track, subject, setId, chapter, count, mode) {
 function normalizeAnswerToIndex(rawAns, choices) {
   if (rawAns === undefined || rawAns === null) return 0;
 
-  // Direct choice text matching
-  if (Array.isArray(choices) && choices.length > 0) {
-    const exactMatch = choices.findIndex(c => String(c).trim() === String(rawAns).trim());
-    if (exactMatch !== -1) return exactMatch;
-  }
-
-  // If number
+  // 1. If already a number: server/database always uses 1-based index (1=ก, 2=ข, 3=ค, 4=ง)
   if (typeof rawAns === 'number') {
-    if (rawAns >= 1 && rawAns <= choices.length) return rawAns - 1;
-    if (rawAns >= 0 && rawAns < choices.length) return rawAns;
+    if (rawAns >= 1 && rawAns <= (choices?.length || 4)) return rawAns - 1;
+    if (rawAns >= 0 && rawAns < (choices?.length || 4)) return rawAns;
     return 0;
   }
 
-  // If string
+  // 2. If standard string representations of choice numbers or letters:
   const clean = String(rawAns).trim().toUpperCase();
   if (clean === '1' || clean === 'A' || clean === 'ก') return 0;
   if (clean === '2' || clean === 'B' || clean === 'ข') return 1;
@@ -159,10 +153,17 @@ function normalizeAnswerToIndex(rawAns, choices) {
   if (stripped.startsWith('3') || stripped.startsWith('C') || stripped.startsWith('ค')) return 2;
   if (stripped.startsWith('4') || stripped.startsWith('D') || stripped.startsWith('ง')) return 3;
 
+  // 3. If string is a digit '1'-'4'
   const num = parseInt(clean, 10);
-  if (!isNaN(num)) {
-    if (num >= 1 && num <= choices.length) return num - 1;
-    if (num >= 0 && num < choices.length) return num;
+  if (!isNaN(num) && String(num) === clean) {
+    if (num >= 1 && num <= (choices?.length || 4)) return num - 1;
+    if (num >= 0 && num < (choices?.length || 4)) return num;
+  }
+
+  // 4. Fallback to direct choice text matching only if not matching 1-based choice numbers
+  if (Array.isArray(choices) && choices.length > 0) {
+    const exactMatch = choices.findIndex(c => String(c).trim() === String(rawAns).trim());
+    if (exactMatch !== -1) return exactMatch;
   }
 
   return 0;
@@ -824,7 +825,7 @@ window.submitReport = async function() {
     reasonType: type === 'WRONG_ANSWER' ? 'เฉลยคำตอบไม่ถูกต้อง' : (type === 'TYPO_ERROR' ? 'พิมพ์ผิด / ข้อความตกหล่น' : (type === 'AMBIGUOUS' ? 'โจทย์กำกวม' : type)),
     details: note,
     choices: q.choices || [q.choice1, q.choice2, q.choice3, q.choice4],
-    correctAnswer: q.correctAnswer !== undefined ? q.correctAnswer : 1,
+    correctAnswer: (typeof q.correctAnswer === 'number' && q.correctAnswer >= 0 && q.correctAnswer < 4) ? (q.correctAnswer + 1) : (q.correctAnswer || 1),
     explanation: q.explanation || ''
   };
 
