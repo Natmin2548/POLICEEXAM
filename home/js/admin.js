@@ -4165,6 +4165,7 @@ window.startBatchAutoExamGeneration = async function() {
 
   const numQuestions = parseInt(document.getElementById('batchQuestionsPerChapter')?.value) || 10;
   const delayMs = parseInt(document.getElementById('batchDelayMs')?.value) || 3500;
+  const enableCrossAudit = document.getElementById('toggleBatchCrossModelAudit') ? document.getElementById('toggleBatchCrossModelAudit').checked : true;
   const apiKey = document.getElementById('adminGeminiApiKey')?.value.trim() || localStorage.getItem('admin_gemini_key') || SYSTEM_BUILTIN_KEYS.gemini;
   const groqApiKey = document.getElementById('adminGroqApiKey')?.value.trim() || localStorage.getItem('admin_groq_key') || SYSTEM_BUILTIN_KEYS.groq;
   const openrouterApiKey = document.getElementById('adminOpenRouterApiKey')?.value.trim() || localStorage.getItem('admin_openrouter_key') || SYSTEM_BUILTIN_KEYS.openrouter;
@@ -4178,9 +4179,12 @@ window.startBatchAutoExamGeneration = async function() {
     chapters: selectedChapters,
     questionsPerChapter: numQuestions,
     delayMs,
+    enableCrossAudit,
     currentIndex: 0,
     successCount: 0,
-    failCount: 0
+    failCount: 0,
+    agreedCount: 0,
+    resolvedCount: 0
   };
 
   // Setup Progress Modal
@@ -4193,9 +4197,10 @@ window.startBatchAutoExamGeneration = async function() {
   const statusEl = document.getElementById('batchCurrentChapterStatus');
   const btnPause = document.getElementById('btnPauseBatch');
 
+  const modeBadge = enableCrossAudit ? ' [🥊 โหมดดีเบตตรวจข้ามค่าย 99.5%+]' : ' [โหมดปกติ]';
   if (progressModal) progressModal.style.display = 'flex';
-  if (subTitleEl) subTitleEl.textContent = `วิชา ${displayName} (${selectedChapters.length} หมวด)`;
-  if (consoleEl) consoleEl.innerHTML = `<div style="color: #94A3B8;">> เริ่มต้นระบบ Batch AI Generator: วิชา ${displayName} จำนวน ${selectedChapters.length} หมวด (หมวดละ ${numQuestions} ข้อ)</div>`;
+  if (subTitleEl) subTitleEl.textContent = `วิชา ${displayName} (${selectedChapters.length} หมวด)${modeBadge}`;
+  if (consoleEl) consoleEl.innerHTML = `<div style="color: #94A3B8;">> เริ่มต้นระบบ Batch AI Generator: วิชา ${displayName} จำนวน ${selectedChapters.length} หมวด (หมวดละ ${numQuestions} ข้อ)${modeBadge}</div>`;
   if (progressBar) progressBar.style.width = '0%';
   if (percentText) percentText.textContent = '0%';
   if (countBadge) countBadge.textContent = `0 / ${selectedChapters.length} หมวด`;
@@ -4230,7 +4235,8 @@ window.startBatchAutoExamGeneration = async function() {
     if (countBadge) countBadge.textContent = `${i + 1} / ${selectedChapters.length} หมวด`;
     if (statusEl) statusEl.textContent = `กำลังสร้าง [${chapterNum}/${selectedChapters.length}]: ${chapterName}...`;
 
-    appendBatchLog(`[${chapterNum}/${selectedChapters.length}] กำลังสั่ง Gemini AI เจนข้อสอบ "${chapterName}"...`, '#60A5FA');
+    const auditStatusText = enableCrossAudit ? ' (พร้อม 🥊 ดีเบตตรวจข้ามค่าย AI)...' : '...';
+    appendBatchLog(`[${chapterNum}/${selectedChapters.length}] กำลังสั่ง AI เจนข้อสอบ "${chapterName}"${auditStatusText}`, '#60A5FA');
 
     let success = false;
     let retries = 0;
@@ -4256,7 +4262,7 @@ window.startBatchAutoExamGeneration = async function() {
         const nextSetNum = Math.max(existingSetsForChapter.length + 1, maxBatchSetNum + 1);
         const title = `แบบทดสอบ${displayName}: ${chapterName} (ชุดที่ ${nextSetNum})`;
         
-        // 1. Generate via Preview-AI
+        // 1. Generate via Preview-AI (with optional cross-model adversarial debate)
         const res = await fetch(`${API_BASE}/api/admin/exams/preview-ai`, {
           method: 'POST',
           headers: {
@@ -4272,7 +4278,8 @@ window.startBatchAutoExamGeneration = async function() {
             numQuestions,
             apiKey,
             groqApiKey,
-            openrouterApiKey
+            openrouterApiKey,
+            enableCrossAudit: enableCrossAudit
           })
         });
 
@@ -4319,9 +4326,16 @@ window.startBatchAutoExamGeneration = async function() {
           questionsCount: data.questions.length
         });
 
+        let auditLogMsg = '';
+        if (data.crossAudit && data.crossAudit.enabled) {
+          batchState.agreedCount = (batchState.agreedCount || 0) + (data.crossAudit.agreed || 0);
+          batchState.resolvedCount = (batchState.resolvedCount || 0) + (data.crossAudit.resolved || 0);
+          auditLogMsg = ` [🥊 ดีเบตเห็นพ้อง ${data.crossAudit.agreed}/${data.crossAudit.total} ข้อ${data.crossAudit.resolved > 0 ? `, ปรับแก้แย้ง ${data.crossAudit.resolved} ข้อ` : ''}]`;
+        }
+
         success = true;
         batchState.successCount++;
-        appendBatchLog(`✅ [${chapterNum}/${selectedChapters.length}] "${title}" สำเร็จ ${data.questions.length} ข้อ (บันทึกเรียบร้อย)`, '#34D399');
+        appendBatchLog(`✅ [${chapterNum}/${selectedChapters.length}] "${title}" สำเร็จ ${data.questions.length} ข้อ (บันทึกเรียบร้อย)${auditLogMsg}`, '#34D399');
 
       } catch (err) {
         retries++;
@@ -4346,7 +4360,11 @@ window.startBatchAutoExamGeneration = async function() {
   if (percentText) percentText.textContent = '100%';
   if (statusEl) statusEl.textContent = `🎉 สร้างเสร็จสิ้น! (สำเร็จ ${batchState.successCount} หมวด, พลาด ${batchState.failCount} หมวด)`;
 
-  appendBatchLog(`🎉 การทำงานเสร็จสิ้นทั้งหมด! สำเร็จ ${batchState.successCount}/${selectedChapters.length} หมวด`, '#34D399');
+  let completeExtra = '';
+  if (enableCrossAudit && ((batchState.agreedCount || 0) > 0 || (batchState.resolvedCount || 0) > 0)) {
+    completeExtra = ` (🥊 ดีเบตตรวจสอบตรงกัน ${batchState.agreedCount} ข้อ, ปรับแก้จุดแย้งสำเร็จ ${batchState.resolvedCount} ข้อ)`;
+  }
+  appendBatchLog(`🎉 การทำงานเสร็จสิ้นทั้งหมด! สำเร็จ ${batchState.successCount}/${selectedChapters.length} หมวด${completeExtra}`, '#34D399');
 
   const btnPauseEl = document.getElementById('btnPauseBatch');
   if (btnPauseEl) {
