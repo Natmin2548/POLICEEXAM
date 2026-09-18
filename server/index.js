@@ -10453,7 +10453,7 @@ ${chapterSpecificRules}
 ${exampleJson}`;
 }
 
-function buildSubjectSpecificExamPrompt({ subject, subcategory, title, count, contextText }) {
+function buildSubjectSpecificExamPrompt({ subject, subcategory, title, count, contextText, avoidDuplicates = [] }) {
   const normSub = String(subject || '').toLowerCase().trim();
   const normSubcat = String(subcategory || '').toLowerCase().trim();
   const normTitle = String(title || '').toLowerCase().trim();
@@ -10506,6 +10506,13 @@ function buildSubjectSpecificExamPrompt({ subject, subcategory, title, count, co
    - ข้อความโจทย์คำถาม (questionText), ตัวเลือกทุกข้อ (optionA, optionB, optionC, optionD) และคำอธิบายเฉลย (explanation) ต้องเขียนเป็นภาษาไทยล้วนเท่านั้น
 2. ❌ **ห้ามออกข้อสอบเป็นภาษาอังกฤษ หรือตอบเป็นภาษาอังกฤษเด็ดขาด!** (ยกเว้นเฉพาะตัวย่อหรือศัพท์เฉพาะทางสากล เช่น CPU, RAM, IPOS, BCG, PDPA ที่มีคำภาษาไทยกำกับชัดเจน)`;
 
+  const avoidDuplicatesRule = (avoidDuplicates && avoidDuplicates.length > 0)
+    ? `\n⛔️ 🚫 กฎเหล็กห้ามออกข้อสอบซ้ำเด็ดขาด (Strict Zero Duplication Mandate - บังคับ 100%):
+ชุดข้อสอบนี้ได้ออกคำถามไปแล้วดังต่อไปนี้ (ห้ามออกซ้ำหรือถามประเด็นเดียวกันเด็ดขาด):
+${avoidDuplicates.slice(-30).map((t, idx) => `${idx + 1}. ${t}`).join('\n')}
+❌ ห้ามออกข้อสอบซ้ำ ห้ามถามประเด็นเดิม และห้ามนำสถานการณ์หรือเนื้อเรื่องข้างต้นมาออกซ้ำอีกเด็ดขาด! จงเลือกมาตรา ข้อยกเว้น หรือหัวข้อย่อยอื่นๆ ในวิชา/บทนี้ที่ยังไม่ได้ถาม`
+    : '';
+
   const universalAntiLeakRules = `
 ⛔️ กฎเหล็กป้องกันการเฉลยคำตอบในตัวโจทย์ (Strict Anti-Answer-Leak & Question-Answer Sync - บังคับ 100%):
 1. ❌ **ห้ามเฉลยคำตอบหรือบอกใบ้คำตอบในข้อความโจทย์คำถาม (questionText) เด็ดขาด 100%**:
@@ -10515,7 +10522,7 @@ function buildSubjectSpecificExamPrompt({ subject, subcategory, title, count, co
 2. 🔄 **ความสอดคล้องกัน 100% (100% Question-Answer Consistency)**:
    - ข้อความคำถาม (questionText) ตัวเลือก ก-ง และคำตอบที่ถูกต้อง (correctOption / correctAnswer) ต้องตรงกันอย่างแม่นยำ ไม่ขัดแย้งกัน`;
 
-  return basePrompt + (universalThaiRule ? '\n\n' + universalThaiRule : '') + '\n\n' + universalAntiLeakRules;
+  return basePrompt + (universalThaiRule ? '\n\n' + universalThaiRule : '') + avoidDuplicatesRule + '\n\n' + universalAntiLeakRules;
 }
 
 // --- Shared Helper: Resolve All Gemini API Keys ---
@@ -11142,6 +11149,88 @@ function sanitizeQuestionAnswerLeak(q) {
     ...q,
     questionText: qText
   };
+}
+
+// --- Helper: High-Precision Duplicate Question & Text Similarity Engine ---
+function normalizeQuestionText(text) {
+  if (!text || typeof text !== 'string') return '';
+  return text
+    .toLowerCase()
+    .replace(/[\(\[\{【].*?[\)\]\}】]/g, '') // strip brackets
+    .replace(/(?:ข้อใด|ต่อไปนี้|ข้อความใด|อยากทราบว่า|ถามว่า|คือข้อใด|กล่าวถูกต้อง|กล่าวไม่ถูกต้อง|ข้อใดถูก|ข้อใดผิด|เป็นข้อใด|ใดต่อไปนี้|ตามกฎหมาย|ตามระเบียบ|ถูกต้องที่สุด)/g, '')
+    .replace(/^[0-9]+[:\.\)\-\s]+/g, '') // remove leading "1. " or "1) "
+    .replace(/[\s\-_–—.,!?:;'"“”‘’`\/\\]+/g, '') // remove punctuation and spaces
+    .trim();
+}
+
+function calculateTextSimilarity(str1, str2) {
+  const s1 = normalizeQuestionText(str1);
+  const s2 = normalizeQuestionText(str2);
+  if (!s1 || !s2) return 0;
+  if (s1 === s2) return 1.0;
+  if (s1.length >= 8 && s2.length >= 8) {
+    if (s1.includes(s2) || s2.includes(s1)) {
+      const minLen = Math.min(s1.length, s2.length);
+      const maxLen = Math.max(s1.length, s2.length);
+      if (minLen / maxLen >= 0.70) return minLen / maxLen;
+    }
+  }
+
+  const getBigrams = (str) => {
+    const bigrams = new Set();
+    for (let i = 0; i < str.length - 1; i++) {
+      bigrams.add(str.substring(i, i + 2));
+    }
+    return bigrams;
+  };
+
+  const b1 = getBigrams(s1);
+  const b2 = getBigrams(s2);
+  if (b1.size === 0 || b2.size === 0) return 0;
+
+  let intersection = 0;
+  for (const bg of b1) {
+    if (b2.has(bg)) intersection++;
+  }
+
+  return (2.0 * intersection) / (b1.size + b2.size);
+}
+
+function areQuestionsDuplicate(q1, q2) {
+  if (!q1 || !q2) return { isDuplicate: false, similarity: 0 };
+  const t1 = q1.questionText || q1.question || '';
+  const t2 = q2.questionText || q2.question || '';
+  const textSim = calculateTextSimilarity(t1, t2);
+
+  if (textSim >= 0.75) {
+    return { isDuplicate: true, similarity: Math.round(textSim * 100), reason: 'โจทย์มีเนื้อหาและประเด็นคำถามคล้ายคลึงกันสูง' };
+  }
+
+  const getChoices = (q) => [
+    normalizeQuestionText(q.optionA || q.choice1 || ''),
+    normalizeQuestionText(q.optionB || q.choice2 || ''),
+    normalizeQuestionText(q.optionC || q.choice3 || ''),
+    normalizeQuestionText(q.optionD || q.choice4 || '')
+  ].filter(c => c.length > 0);
+
+  const c1 = getChoices(q1);
+  const c2 = getChoices(q2);
+  let choiceMatches = 0;
+  for (const ch of c1) {
+    if (c2.includes(ch)) choiceMatches++;
+  }
+
+  // If text is moderately similar (>60%) AND at least 3 choices are identical
+  if (textSim >= 0.58 && choiceMatches >= 3) {
+    return { isDuplicate: true, similarity: Math.round(textSim * 100), reason: 'โจทย์และตัวเลือกซ้ำกัน (ตัวเลือกตรงกันอย่างน้อย 3 ข้อ)' };
+  }
+
+  // If choices are 100% identical (all 4) and text similarity > 45%
+  if (choiceMatches === 4 && textSim >= 0.45) {
+    return { isDuplicate: true, similarity: Math.round(textSim * 100), reason: 'ตัวเลือกตรงกัน 100% และโจทย์มีเนื้อหาเรื่องเดียวกัน' };
+  }
+
+  return { isDuplicate: false, similarity: Math.round(textSim * 100) };
 }
 
 // --- Helper: Clean LaTeX math delimiters ($$, $, \( \), \[ \]) into clean, natural Plain Text ---
@@ -11931,12 +12020,15 @@ app.post('/api/admin/exams/preview-ai', authenticateToken, async (req, res) => {
     for (let bi = 0; bi < batchCounts.length; bi++) {
       const currentBatchCount = batchCounts[bi];
       const batchTitle = batchCounts.length > 1 ? `${title} (ชุดที่ ${bi + 1}/${batchCounts.length})` : title;
+      const avoidList = rawQuestions.map((q, idx) => `${idx + 1}. ${(q.questionText || q.question || '').substring(0, 80)}`);
+
       const prompt = buildSubjectSpecificExamPrompt({
         subject,
         subcategory,
         title: batchTitle,
         count: currentBatchCount,
-        contextText
+        contextText,
+        avoidDuplicates: avoidList
       });
 
       let textResponse = '';
@@ -11975,8 +12067,15 @@ app.post('/api/admin/exams/preview-ai', authenticateToken, async (req, res) => {
       }
 
       if (parsedBatch && parsedBatch.length > 0) {
-        rawQuestions.push(...parsedBatch);
-        console.log(`[Preview AI] Batch ${bi + 1}/${batchCounts.length} successfully collected ${parsedBatch.length} questions (Total so far: ${rawQuestions.length})`);
+        for (const item of parsedBatch) {
+          const dupInfo = rawQuestions.find(existing => areQuestionsDuplicate(existing, item).isDuplicate);
+          if (!dupInfo) {
+            rawQuestions.push(item);
+          } else {
+            console.log(`[Preview AI] 🗑️ Skipped duplicate question: "${(item.questionText || item.question || '').substring(0, 50)}"`);
+          }
+        }
+        console.log(`[Preview AI] Batch ${bi + 1}/${batchCounts.length} successfully collected items (Total unique so far: ${rawQuestions.length})`);
       }
     }
 
@@ -12213,6 +12312,39 @@ ${JSON.stringify(formattedQuestions, null, 2)}
       }
     });
 
+    // Pass 0: Set-wide Duplicate Questions Scanner (Scan for duplicates within the set)
+    const duplicateIssues = [];
+    const duplicateIndices = new Set();
+
+    for (let i = 0; i < formattedQuestions.length; i++) {
+      for (let j = i + 1; j < formattedQuestions.length; j++) {
+        if (duplicateIndices.has(j)) continue;
+        const dupCheck = areQuestionsDuplicate(formattedQuestions[i], formattedQuestions[j]);
+        if (dupCheck.isDuplicate) {
+          duplicateIndices.add(j);
+          duplicateIssues.push({
+            index: j,
+            questionNumber: j + 1,
+            duplicateOfIndex: i,
+            duplicateOfQuestionNumber: i + 1,
+            similarity: dupCheck.similarity,
+            issueType: 'DUPLICATE',
+            title: `พบข้อสอบซ้ำกับข้อที่ ${i + 1} (${dupCheck.similarity}% คล้ายกัน)`,
+            description: `โจทย์ข้อที่ ${j + 1} ("${formattedQuestions[j].questionText.substring(0, 60)}...") มีเนื้อหาและประเด็นคำถามซ้ำซ้อนกับข้อที่ ${i + 1} ("${formattedQuestions[i].questionText.substring(0, 60)}...") [${dupCheck.reason}]`,
+            originalCorrectAnswer: formattedQuestions[j].correctAnswer,
+            suggestedCorrectAnswer: formattedQuestions[j].correctAnswer,
+            originalExplanation: formattedQuestions[j].explanation,
+            suggestedExplanation: formattedQuestions[j].explanation
+          });
+        }
+      }
+    }
+
+    if (duplicateIssues.length > 0) {
+      if (!aiResult.issues) aiResult.issues = [];
+      aiResult.issues = [...duplicateIssues, ...aiResult.issues];
+    }
+
     const issues = aiResult.issues || [];
     const fixedQuestionsRaw = (aiResult.fixedQuestions && aiResult.fixedQuestions.length === formattedQuestions.length)
       ? aiResult.fixedQuestions
@@ -12235,6 +12367,8 @@ ${JSON.stringify(formattedQuestions, null, 2)}
       success: true,
       totalAudited: formattedQuestions.length,
       issuesCount: issues.length,
+      duplicatesCount: duplicateIndices.size,
+      duplicateIndices: Array.from(duplicateIndices),
       hasIssues: issues.length > 0,
       issues,
       fixedQuestions
@@ -12536,16 +12670,24 @@ app.post('/api/admin/exams/:examSetId/append-ai', authenticateToken, async (req,
       rem -= b;
     }
 
+    const existingQuestionTexts = (examSet.questions || []).map((q, idx) => `${idx + 1}. ${(q.questionText || '').substring(0, 80)}`);
     let newRawQuestions = [];
+
     for (let bi = 0; bi < batchCounts.length; bi++) {
       const currentBatchCount = batchCounts[bi];
       const batchTitle = batchCounts.length > 1 ? `${examSet.title} (ชุดเพิ่มเติม ${bi + 1}/${batchCounts.length})` : examSet.title;
+      const avoidList = [
+        ...existingQuestionTexts,
+        ...newRawQuestions.map((q, idx) => `${existingQuestionTexts.length + idx + 1}. ${(q.questionText || q.question || '').substring(0, 80)}`)
+      ];
+
       const prompt = buildSubjectSpecificExamPrompt({
         subject: examSet.category,
         subcategory: examSet.subcategory,
         title: batchTitle,
         count: currentBatchCount,
-        contextText
+        contextText,
+        avoidDuplicates: avoidList
       });
 
       let textResponse = '';
@@ -12577,7 +12719,16 @@ app.post('/api/admin/exams/:examSetId/append-ai', authenticateToken, async (req,
       }
 
       if (parsedBatch && parsedBatch.length > 0) {
-        newRawQuestions.push(...parsedBatch);
+        for (const item of parsedBatch) {
+          const isDupExisting = (examSet.questions || []).some(existing => areQuestionsDuplicate(existing, item).isDuplicate);
+          const isDupNew = newRawQuestions.some(existing => areQuestionsDuplicate(existing, item).isDuplicate);
+          if (!isDupExisting && !isDupNew) {
+            newRawQuestions.push(item);
+          } else {
+            console.log(`[Add AI Questions] 🗑️ Skipped duplicate question: "${(item.questionText || item.question || '').substring(0, 50)}"`);
+          }
+        }
+        console.log(`[Add AI Questions] Batch ${bi + 1}/${batchCounts.length} collected items (Total unique so far: ${newRawQuestions.length})`);
       }
     }
 
@@ -13791,10 +13942,86 @@ app.post('/api/admin/exams/:id/recheck-full-set', requireAdmin, async (req, res)
     const results = [];
     let fixedCount = 0;
 
-    console.log(`[Exam Recheck] 🚀 Starting Question-by-Question AI Re-check for Exam #${exam.id} (${exam.title}) - Total ${exam.questions.length} questions`);
+    // Step 0: Set-wide Duplicate Questions Scanner & Auto-Deleter
+    const duplicateQuestions = [];
+    const duplicateIdsToDelete = new Set();
 
     for (let i = 0; i < exam.questions.length; i++) {
-      const q = exam.questions[i];
+      for (let j = i + 1; j < exam.questions.length; j++) {
+        if (duplicateIdsToDelete.has(exam.questions[j].id)) continue;
+        const dupCheck = areQuestionsDuplicate(exam.questions[i], exam.questions[j]);
+        if (dupCheck.isDuplicate) {
+          duplicateIdsToDelete.add(exam.questions[j].id);
+          duplicateQuestions.push({
+            dupId: exam.questions[j].id,
+            dupNumber: j + 1,
+            firstIndex: i,
+            firstNumber: i + 1,
+            similarity: dupCheck.similarity,
+            reason: dupCheck.reason,
+            question: exam.questions[j]
+          });
+        }
+      }
+    }
+
+    let deletedDuplicatesCount = 0;
+    if (duplicateIdsToDelete.size > 0 && req.body.deleteDuplicates !== false) {
+      console.log(`[Exam Recheck] 🗑️ Deleting ${duplicateIdsToDelete.size} duplicate questions from Exam #${exam.id}...`);
+      await prisma.question.deleteMany({
+        where: { id: { in: Array.from(duplicateIdsToDelete) } }
+      });
+      deletedDuplicatesCount = duplicateIdsToDelete.size;
+
+      // Re-index sortOrder for remaining questions
+      const remainingQuestionsList = await prisma.question.findMany({
+        where: { examSetId: examId },
+        orderBy: { sortOrder: 'asc' }
+      });
+      for (let si = 0; si < remainingQuestionsList.length; si++) {
+        await prisma.question.update({
+          where: { id: remainingQuestionsList[si].id },
+          data: { sortOrder: si + 1 }
+        });
+      }
+
+      // Update totalCount in examSet
+      await prisma.examSet.update({
+        where: { id: examId },
+        data: { totalCount: remainingQuestionsList.length }
+      });
+    }
+
+    // Add duplicate records to results
+    for (const dup of duplicateQuestions) {
+      results.push({
+        questionNumber: dup.dupNumber,
+        questionId: dup.dupId,
+        status: 'DUPLICATE_DELETED',
+        isDuplicate: true,
+        confidenceScore: 100,
+        isReasonable: false,
+        reason: `ตรวจพบข้อสอบซ้ำกับข้อที่ ${dup.firstNumber} (${dup.similarity}% คล้ายกัน - ${dup.reason}) — ระบบได้ลบข้อซ้ำนี้ออกจากฐานข้อมูลแล้ว`,
+        before: {
+          questionText: dup.question.questionText,
+          choice1: dup.question.choice1,
+          choice2: dup.question.choice2,
+          choice3: dup.question.choice3,
+          choice4: dup.question.choice4,
+          correctAnswer: dup.question.correctAnswer,
+          explanation: dup.question.explanation
+        },
+        after: null
+      });
+    }
+
+    // Filter out deleted duplicates for individual question AI audits
+    const questionsToAudit = exam.questions.filter(q => !duplicateIdsToDelete.has(q.id));
+
+    console.log(`[Exam Recheck] 🚀 Starting Question-by-Question AI Re-check for Exam #${exam.id} (${exam.title}) - ${questionsToAudit.length} unique questions to audit (${deletedDuplicatesCount} duplicates purged)`);
+
+    for (let i = 0; i < questionsToAudit.length; i++) {
+      const q = questionsToAudit[i];
       const qNumber = i + 1;
 
       // 1. Fast Rule-based Consistency Check
@@ -13881,56 +14108,58 @@ app.post('/api/admin/exams/:id/recheck-full-set', requireAdmin, async (req, res)
         auditResponse = JSON.parse(cleanText);
       } catch (aiErr) {
         console.warn(`[Exam Recheck] Question #${qNumber} AI call error:`, aiErr.message);
-        if (ruleConflict.hasConflict) {
-          auditResponse = {
-            isReasonable: true,
-            confidenceScore: 92,
-            shouldFix: true,
-            fixReason: `ตรวจพบเฉลยขัดแย้ง: ${ruleConflict.reason}`,
-            repairedQuestion: {
-              questionText: sanitizeQuestionAnswerLeak(q).questionText,
-              choice1: q.choice1,
-              choice2: q.choice2,
-              choice3: q.choice3,
-              choice4: q.choice4,
-              correctAnswer: ruleConflict.detectedAnswer,
-              explanation: q.explanation
-            }
-          };
-        } else {
-          auditResponse = {
-            isReasonable: true,
-            confidenceScore: 85,
-            shouldFix: false,
-            fixReason: 'ไม่พบข้อขัดแย้งเชิงโครงสร้าง',
-            repairedQuestion: null
-          };
-        }
+        auditResponse = {
+          isReasonable: true,
+          confidenceScore: 50,
+          shouldFix: false,
+          fixReason: 'AI API Timeout/Error - ตรวจสอบเฉพาะ Rule Engine'
+        };
       }
 
-      // Check if rule engine detected a conflict that AI missed
-      if (ruleConflict.hasConflict && (!auditResponse.shouldFix || auditResponse.repairedQuestion?.correctAnswer === q.correctAnswer)) {
+      // If rule conflict detected but AI didn't fix it, enforce rule fix
+      if (ruleConflict.hasConflict && !auditResponse.shouldFix) {
         auditResponse.shouldFix = true;
-        auditResponse.confidenceScore = Math.max(auditResponse.confidenceScore || 90, 95);
-        auditResponse.fixReason = (auditResponse.fixReason ? auditResponse.fixReason + '; ' : '') + `แก้ไขเฉลยขัดแย้งเป็นข้อ ${ruleConflict.detectedAnswerLabel}`;
-        if (!auditResponse.repairedQuestion) {
-          auditResponse.repairedQuestion = {
-            questionText: q.questionText,
-            choice1: q.choice1,
-            choice2: q.choice2,
-            choice3: q.choice3,
-            choice4: q.choice4,
-            correctAnswer: ruleConflict.detectedAnswer,
-            explanation: q.explanation
-          };
-        } else {
-          auditResponse.repairedQuestion.correctAnswer = ruleConflict.detectedAnswer;
-        }
+        auditResponse.confidenceScore = 95;
+        auditResponse.fixReason = `เฉลยขัดแย้งกับคำอธิบาย: ${ruleConflict.reason}`;
+        auditResponse.repairedQuestion = {
+          questionText: q.questionText,
+          choice1: q.choice1,
+          choice2: q.choice2,
+          choice3: q.choice3,
+          choice4: q.choice4,
+          correctAnswer: ruleConflict.detectedAnswer,
+          explanation: q.explanation
+        };
       }
 
-      // Auto-Repair Evaluation: Confidence >= 90 OR isUnreasonable OR shouldFix
-      const shouldAutoFix = auditResponse.shouldFix || (auditResponse.confidenceScore >= 90 && auditResponse.repairedQuestion) || auditResponse.isReasonable === false;
+      // Check leak
+      const leak = detectQuestionAnswerLeak({
+        questionText: (auditResponse.repairedQuestion && auditResponse.repairedQuestion.questionText) || q.questionText,
+        correctAnswer: (auditResponse.repairedQuestion && auditResponse.repairedQuestion.correctAnswer) || q.correctAnswer,
+        choice1: q.choice1,
+        choice2: q.choice2,
+        choice3: q.choice3,
+        choice4: q.choice4
+      });
 
+      if (leak.hasLeak) {
+        auditResponse.shouldFix = true;
+        auditResponse.confidenceScore = 98;
+        auditResponse.fixReason = (auditResponse.fixReason ? auditResponse.fixReason + '; ' : '') + `ตัดเฉลยที่ปนในคำถาม: ${leak.reason}`;
+        const cleanedQ = sanitizeExamQuestionFormatting({
+          questionText: (auditResponse.repairedQuestion && auditResponse.repairedQuestion.questionText) || q.questionText,
+          choice1: (auditResponse.repairedQuestion && auditResponse.repairedQuestion.choice1) || q.choice1,
+          choice2: (auditResponse.repairedQuestion && auditResponse.repairedQuestion.choice2) || q.choice2,
+          choice3: (auditResponse.repairedQuestion && auditResponse.repairedQuestion.choice3) || q.choice3,
+          choice4: (auditResponse.repairedQuestion && auditResponse.repairedQuestion.choice4) || q.choice4,
+          correctAnswer: (auditResponse.repairedQuestion && auditResponse.repairedQuestion.correctAnswer) || q.correctAnswer,
+          explanation: (auditResponse.repairedQuestion && auditResponse.repairedQuestion.explanation) || q.explanation
+        });
+        auditResponse.repairedQuestion = cleanedQ;
+      }
+
+      // Auto-Fix Decision: Confidence >= 90 OR unreasonable question
+      const shouldAutoFix = auditResponse.shouldFix && (auditResponse.confidenceScore >= 90 || auditResponse.isReasonable === false);
       let isActuallyFixed = false;
       let finalQuestionData = {
         questionText: q.questionText,
@@ -14011,7 +14240,8 @@ app.post('/api/admin/exams/:id/recheck-full-set', requireAdmin, async (req, res)
       examTitle: exam.title,
       totalCount: exam.questions.length,
       fixedCount,
-      passedCount: exam.questions.length - fixedCount,
+      deletedDuplicatesCount,
+      passedCount: questionsToAudit.length - fixedCount,
       results
     });
 
@@ -14021,7 +14251,83 @@ app.post('/api/admin/exams/:id/recheck-full-set', requireAdmin, async (req, res)
   }
 });
 
-// GET /api/exams/subject-questions - Fetch real questions for Question Bank Mode
+// --- Admin API: Delete Duplicate Questions in Exam Set (1-Click Dedicated Endpoint) ---
+app.post('/api/admin/exams/:id/delete-duplicates', requireAdmin, async (req, res) => {
+  try {
+    const examId = parseInt(req.params.id);
+    if (isNaN(examId)) return res.status(400).json({ error: 'รหัสชุดข้อสอบไม่ถูกต้อง' });
+
+    const exam = await prisma.examSet.findUnique({
+      where: { id: examId },
+      include: {
+        questions: {
+          orderBy: { sortOrder: 'asc' }
+        }
+      }
+    });
+
+    if (!exam || !exam.questions || exam.questions.length === 0) {
+      return res.status(400).json({ error: 'ไม่พบชุดข้อสอบหรือไม่มีข้อสอบในชุด' });
+    }
+
+    const duplicateIdsToDelete = new Set();
+    const duplicateDetails = [];
+
+    for (let i = 0; i < exam.questions.length; i++) {
+      for (let j = i + 1; j < exam.questions.length; j++) {
+        if (duplicateIdsToDelete.has(exam.questions[j].id)) continue;
+        const dupCheck = areQuestionsDuplicate(exam.questions[i], exam.questions[j]);
+        if (dupCheck.isDuplicate) {
+          duplicateIdsToDelete.add(exam.questions[j].id);
+          duplicateDetails.push({
+            deletedId: exam.questions[j].id,
+            deletedNumber: j + 1,
+            keptId: exam.questions[i].id,
+            keptNumber: i + 1,
+            similarity: dupCheck.similarity,
+            deletedText: exam.questions[j].questionText,
+            keptText: exam.questions[i].questionText
+          });
+        }
+      }
+    }
+
+    if (duplicateIdsToDelete.size > 0) {
+      await prisma.question.deleteMany({
+        where: { id: { in: Array.from(duplicateIdsToDelete) } }
+      });
+
+      // Re-index sortOrder
+      const remaining = await prisma.question.findMany({
+        where: { examSetId: examId },
+        orderBy: { sortOrder: 'asc' }
+      });
+      for (let i = 0; i < remaining.length; i++) {
+        await prisma.question.update({
+          where: { id: remaining[i].id },
+          data: { sortOrder: i + 1 }
+        });
+      }
+
+      await prisma.examSet.update({
+        where: { id: examId },
+        data: { totalCount: remaining.length }
+      });
+    }
+
+    res.json({
+      success: true,
+      deletedCount: duplicateIdsToDelete.size,
+      remainingCount: exam.questions.length - duplicateIdsToDelete.size,
+      duplicateDetails
+    });
+  } catch (err) {
+    console.error('Delete duplicates error:', err);
+    res.status(500).json({ error: 'เกิดข้อผิดพลาดในการลบข้อสอบซ้ำ: ' + err.message });
+  }
+});
+
+
 app.get('/api/exams/subject-questions', authenticateToken, async (req, res) => {
   try {
     const { subject } = req.query;

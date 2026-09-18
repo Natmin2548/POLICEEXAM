@@ -5026,7 +5026,18 @@ window.runAi3PassRecheckOnPreview = async function() {
     }
 
     const data = await res.json();
-    if (data.issuesCount > 0) {
+    window._previewDuplicateIndices = data.duplicateIndices || [];
+    const dupBtn = document.getElementById('btnDeleteDuplicatesPreview');
+    if (dupBtn) {
+      if (data.duplicatesCount > 0) {
+        dupBtn.style.display = 'inline-flex';
+        dupBtn.innerHTML = `<span>🗑️ ลบข้อสอบซ้ำออก (${data.duplicatesCount} ข้อ)</span>`;
+      } else {
+        dupBtn.style.display = 'none';
+      }
+    }
+
+    if (data.issuesCount > 0 || (data.duplicatesCount && data.duplicatesCount > 0)) {
       pendingAiFixedPreviewQuestions = data.fixedQuestions.map(fq => ({
         questionText: fq.questionText,
         optionA: fq.choice1 || fq.optionA,
@@ -5041,16 +5052,19 @@ window.runAi3PassRecheckOnPreview = async function() {
         banner.style.display = 'flex';
         banner.style.background = '#FEF2F2';
         banner.style.borderColor = '#FECACA';
-        if (titleEl) titleEl.textContent = `🤖 AI ตรวจพบจุดที่ควรแก้ไข ${data.issuesCount} ข้อ (จาก ${data.totalAudited} ข้อ)`;
-        if (descEl) descEl.textContent = `พบข้อที่เฉลยไม่ตรงกับตัวเลือก หรือคำอธิบายยาว/แปลก AI ได้เตรียมเฉลยและขัดเกลาคำอธิบายใหม่ให้เรียบร้อยแล้ว`;
+        const dupText = data.duplicatesCount > 0 ? `พบข้อสอบซ้ำ ${data.duplicatesCount} ข้อ และ ` : '';
+        if (titleEl) titleEl.textContent = `🤖 AI ตรวจสอบ: ${dupText}พบจุดที่ควรปรับปรุง ${data.issuesCount} ข้อ (จาก ${data.totalAudited} ข้อ)`;
+        if (descEl) descEl.textContent = data.duplicatesCount > 0
+          ? `สามารถกดปุ่ม "ลบข้อสอบซ้ำออก" หรือกด "ยอมรับและแก้ไขออโต้ทั้งหมด" เพื่ออัปเดตเฉลยและคำอธิบาย`
+          : `พบข้อที่เฉลยไม่ตรงกับตัวเลือก หรือคำอธิบายยาว/แปลก AI ได้เตรียมเฉลยและขัดเกลาคำอธิบายใหม่ให้เรียบร้อยแล้ว`;
       }
     } else {
       if (banner) {
         banner.style.display = 'flex';
         banner.style.background = '#ECFDF5';
         banner.style.borderColor = '#A7F3D0';
-        if (titleEl) titleEl.innerHTML = `✅ ผลการรีเช็ค 3 รอบ: ข้อสอบทั้ง ${data.totalAudited} ข้อ ถูกต้องสมบูรณ์ 100%`;
-        if (descEl) descEl.textContent = `ไม่พบข้อขัดแย้ง ตัวเลือกและคำอธิบายสอดคล้องกันตามหลักวิชาการตำรวจ`;
+        if (titleEl) titleEl.innerHTML = `✅ ผลการรีเช็ค: ข้อสอบทั้ง ${data.totalAudited} ข้อ ถูกต้องสมบูรณ์ 100% ไม่พบข้อซ้ำ`;
+        if (descEl) descEl.textContent = `ไม่พบข้อซ้ำหรือข้อขัดแย้ง ตัวเลือกและคำอธิบายสอดคล้องกันตามหลักวิชาการตำรวจ`;
       }
     }
 
@@ -5091,6 +5105,37 @@ window.applyAi3PassFixesToPreview = function() {
   renderExamPreviewModal(title, subject, knowledgeBase);
 };
 
+// 2.1 Delete duplicate questions from preview
+window.deleteDuplicatesFromPreview = function() {
+  const dupIndices = window._previewDuplicateIndices || [];
+  if (!dupIndices || dupIndices.length === 0) {
+    alert('ไม่พบข้อสอบที่ซ้ำกันในชุดนี้');
+    return;
+  }
+  if (!confirm(`คุณต้องการลบข้อสอบที่ซ้ำกันจำนวน ${dupIndices.length} ข้อ ออกจากรายการพรีวิวใช่หรือไม่? (ระบบจะเก็บข้อแรกไว้)`)) {
+    return;
+  }
+  const dupSet = new Set(dupIndices);
+  previewExamQuestions = previewExamQuestions.filter((_, idx) => !dupSet.has(idx));
+  window._previewDuplicateIndices = [];
+
+  const dupBtn = document.getElementById('btnDeleteDuplicatesPreview');
+  if (dupBtn) dupBtn.style.display = 'none';
+
+  const banner = document.getElementById('previewAiRecheckBanner');
+  const titleEl = document.getElementById('previewAiRecheckTitle');
+  const descEl = document.getElementById('previewAiRecheckDesc');
+  if (titleEl) titleEl.textContent = `🗑️ ลบข้อสอบซ้ำ ${dupIndices.length} ข้อเรียบร้อยแล้ว`;
+  if (descEl) descEl.textContent = `เหลือข้อสอบที่ไม่ซ้ำกันทั้งหมด ${previewExamQuestions.length} ข้อ`;
+
+  const title = document.getElementById('examTitle') ? document.getElementById('examTitle').value : '';
+  const subject = document.getElementById('examSubject') ? document.getElementById('examSubject').value : '';
+  const knowledgeBase = document.getElementById('knowledgeBaseSelect') ? document.getElementById('knowledgeBaseSelect').value : '';
+  renderExamPreviewModal(title, subject, knowledgeBase);
+
+  alert(`ลบข้อสอบซ้ำออก ${dupIndices.length} ข้อ เรียบร้อยแล้ว! ปัจจุบันมีข้อสอบทั้งหมด ${previewExamQuestions.length} ข้อ`);
+};
+
 // 3. Run AI 3-Pass Recheck on Edit Exam Modal
 window.runAi3PassRecheckOnEditModal = async function() {
   syncEditQuestionsFromDOM();
@@ -5128,15 +5173,20 @@ window.runAi3PassRecheckOnEditModal = async function() {
     }
 
     const data = await res.json();
+    const dupNotice = data.duplicatesCount > 0 ? `\n\n⚠️ ตรวจพบข้อสอบซ้ำกันในชุดนี้ ${data.duplicatesCount} ข้อ (สามารถกดปุ่ม "สแกน & ลบข้อซ้ำ" ได้)` : '';
     if (data.issuesCount > 0) {
       const issuesSummary = data.issues.map(i => `• ข้อที่ ${i.questionNumber}: ${i.title} (${i.description})`).join('\n');
-      if (confirm(`🤖 AI ตรวจสอบพบจุดที่ควรปรับปรุง ${data.issuesCount} ข้อ:\n\n${issuesSummary}\n\nต้องการให้ AI แก้ไขออโต้ทันทีหรือไม่?`)) {
+      if (confirm(`🤖 AI ตรวจสอบพบจุดที่ควรปรับปรุง ${data.issuesCount} ข้อ:${dupNotice}\n\n${issuesSummary}\n\nต้องการให้ AI แก้ไขออโต้ทันทีหรือไม่?`)) {
         currentEditQuestions = data.fixedQuestions;
         renderEditQuestionsList();
         alert(`✅ นำการแก้ไขออโต้ของ AI ไปปรับใช้เรียบร้อยแล้ว ${data.issuesCount} ข้อ! (อย่าลืมกดปุ่มบันทึกทั้งหมด)`);
       }
+    } else if (data.duplicatesCount > 0) {
+      if (confirm(`⚠️ ตรวจพบข้อสอบซ้ำกันในชุดนี้ ${data.duplicatesCount} ข้อ!\nต้องการลบข้อสอบที่ซ้ำออกทันทีหรือไม่? (ระบบจะเก็บข้อแรกไว้และลบข้อที่ซ้ำออก)`)) {
+        await scanAndDeleteDuplicatesInCurrentExam();
+      }
     } else {
-      alert(`🎉 ตรวจสอบสมบูรณ์: ข้อสอบทั้ง ${data.totalAudited} ข้อ ถูกต้อง สอดคล้องกับเฉลย และคำอธิบายชัดเจน 100%!`);
+      alert(`🎉 ตรวจสอบสมบูรณ์: ข้อสอบทั้ง ${data.totalAudited} ข้อ ถูกต้อง ไม่พบข้อซ้ำ สอดคล้องกับเฉลย และคำอธิบายชัดเจน 100%!`);
     }
 
   } catch (err) {
@@ -5147,6 +5197,47 @@ window.runAi3PassRecheckOnEditModal = async function() {
       btn.disabled = false;
       btn.innerHTML = '<span>🤖 AI 3-Pass รีเช็คชุดนี้</span>';
     }
+  }
+};
+
+// 4. Dedicated Scan & Delete Duplicates in current exam
+window.scanAndDeleteDuplicatesInCurrentExam = async function() {
+  if (!currentEditExamId) {
+    alert('ไม่พบรหัสชุดข้อสอบที่กำลังแก้ไข');
+    return;
+  }
+  if (!confirm('คุณต้องการสแกนหาข้อสอบที่ซ้ำกันในชุดนี้ และลบข้อที่ซ้ำออกทั้งหมดโดยเก็บข้อแรกไว้ใช่หรือไม่?')) {
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/exams/${currentEditExamId}/delete-duplicates`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`
+      }
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || res.statusText);
+    }
+
+    const data = await res.json();
+    if (data.deletedCount === 0) {
+      alert('🎉 ยอดเยี่ยม! ชุดข้อสอบนี้ไม่มีข้อสอบที่ซ้ำกันเลยแม้แต่ข้อเดียว');
+      return;
+    }
+
+    alert(`🗑️ ลบข้อสอบซ้ำสำเร็จ ${data.deletedCount} ข้อ!\nคงเหลือข้อสอบที่ไม่ซ้ำกันทั้งหมด ${data.remainingCount} ข้อ`);
+    
+    // Reload questions into edit modal
+    await openEditExamModal(currentEditExamId);
+    loadExams();
+  } catch (err) {
+    console.error('Scan and delete duplicates error:', err);
+    alert('เกิดข้อผิดพลาดในการลบข้อสอบซ้ำ: ' + err.message);
   }
 };
 
@@ -5163,18 +5254,20 @@ window.openExamSetAiRecheckModal = async function(examId) {
   const totalEl = document.getElementById('statTotalExamQuestions');
   const fixedEl = document.getElementById('statFixedExamQuestions');
   const passedEl = document.getElementById('statPassedExamQuestions');
+  const deletedDupEl = document.getElementById('statDeletedDuplicatesExamQuestions');
 
   if (!modal) return;
   modal.style.display = 'flex';
 
   // Reset UI State
   if (subtitle) subtitle.textContent = `กำลังโหลดข้อมูลและเชื่อมต่อ AI สำหรับชุดข้อสอบ #${examId}...`;
-  if (titleEl) titleEl.textContent = '🤖 AI กำลังตรวจสอบทีละข้ออย่างละเอียด (Question-by-Question)...';
+  if (titleEl) titleEl.textContent = '🤖 AI กำลังตรวจสอบทีละข้อและสแกนหาข้อซ้ำ...';
   if (bar) bar.style.width = '20%';
   if (percentEl) percentEl.textContent = 'ประมวลผล...';
   if (totalEl) totalEl.textContent = '-';
   if (fixedEl) fixedEl.textContent = '0';
   if (passedEl) passedEl.textContent = '0';
+  if (deletedDupEl) deletedDupEl.textContent = '0';
 
   if (body) {
     body.innerHTML = `
@@ -5204,11 +5297,13 @@ window.openExamSetAiRecheckModal = async function(examId) {
 
     if (bar) bar.style.width = '100%';
     if (percentEl) percentEl.textContent = '100%';
-    if (titleEl) titleEl.textContent = `🎉 ตรวจสอบเสร็จสมบูรณ์! (แก้ไขออโต้ไป ${data.fixedCount} ข้อ จากทั้งหมด ${data.totalCount} ข้อ)`;
+    const dupSummary = (data.deletedDuplicatesCount && data.deletedDuplicatesCount > 0) ? `ลบข้อซ้ำ ${data.deletedDuplicatesCount} ข้อ, ` : '';
+    if (titleEl) titleEl.textContent = `🎉 ตรวจสอบเสร็จสมบูรณ์! (${dupSummary}แก้ไขออโต้ ${data.fixedCount} ข้อ จากทั้งหมด ${data.totalCount} ข้อ)`;
     if (subtitle) subtitle.textContent = `ชุดข้อสอบ #${data.examId}: ${data.examTitle || ''}`;
     if (totalEl) totalEl.textContent = data.totalCount;
     if (fixedEl) fixedEl.textContent = data.fixedCount;
     if (passedEl) passedEl.textContent = data.passedCount;
+    if (deletedDupEl) deletedDupEl.textContent = data.deletedDuplicatesCount || 0;
 
     // Render results
     if (body) {
@@ -5221,18 +5316,34 @@ window.openExamSetAiRecheckModal = async function(examId) {
 
       data.results.forEach((r) => {
         const card = document.createElement('div');
+        const isDupDeleted = r.status === 'DUPLICATE_DELETED';
         const isFixed = r.status === 'FIXED';
 
-        card.style.cssText = isFixed
-          ? 'background: white; border: 1.5px solid #FBCFE8; border-radius: 16px; padding: 18px; box-shadow: 0 4px 12px rgba(219, 39, 119, 0.06);'
-          : 'background: white; border: 1.5px solid #E2E8F0; border-radius: 16px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);';
+        card.style.cssText = isDupDeleted
+          ? 'background: #FFFBEB; border: 1.5px solid #FDE68A; border-radius: 16px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);'
+          : isFixed
+            ? 'background: white; border: 1.5px solid #FBCFE8; border-radius: 16px; padding: 18px; box-shadow: 0 4px 12px rgba(219, 39, 119, 0.06);'
+            : 'background: white; border: 1.5px solid #E2E8F0; border-radius: 16px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);';
 
-        const statusBadge = isFixed
-          ? `<span style="background: #FDF2F8; color: #DB2777; border: 1px solid #FBCFE8; font-size: 11.5px; font-weight: 800; padding: 3px 10px; border-radius: 999px;">⚡ แก้ไขอัตโนมัติแล้ว (มั่นใจ ${r.confidenceScore}%)</span>`
-          : `<span style="background: #ECFDF5; color: #059669; border: 1px solid #A7F3D0; font-size: 11.5px; font-weight: 800; padding: 3px 10px; border-radius: 999px;">✅ ผ่านการตรวจ (สมบูรณ์แล้ว)</span>`;
+        const statusBadge = isDupDeleted
+          ? `<span style="background: #FEF3C7; color: #B45309; border: 1px solid #FDE68A; font-size: 11.5px; font-weight: 800; padding: 3px 10px; border-radius: 999px;">🗑️ ข้อสอบซ้ำ (ลบออกจากฐานข้อมูลแล้ว)</span>`
+          : isFixed
+            ? `<span style="background: #FDF2F8; color: #DB2777; border: 1px solid #FBCFE8; font-size: 11.5px; font-weight: 800; padding: 3px 10px; border-radius: 999px;">⚡ แก้ไขอัตโนมัติแล้ว (มั่นใจ ${r.confidenceScore}%)</span>`
+            : `<span style="background: #ECFDF5; color: #059669; border: 1px solid #A7F3D0; font-size: 11.5px; font-weight: 800; padding: 3px 10px; border-radius: 999px;">✅ ผ่านการตรวจ (สมบูรณ์แล้ว)</span>`;
 
         let diffContent = '';
-        if (isFixed) {
+        if (isDupDeleted) {
+          diffContent = `
+            <div style="background: #FEF3C7; border: 1px solid #FDE68A; border-radius: 12px; padding: 10px 14px; margin: 12px 0; font-size: 12.5px; color: #92400E;">
+              <span style="font-weight: 800;">🗑️ รายละเอียดข้อสอบซ้ำ:</span> ${escapeHTML(r.reason)}
+            </div>
+            <div style="background: white; border: 1px solid #FDE68A; border-radius: 12px; padding: 12px; font-size: 12px; color: #78350F;">
+              <div style="font-weight: 700; margin-bottom: 4px;">${escapeHTML(r.before.questionText)}</div>
+              <div style="color: #92400E; font-size: 11.5px;">ก. ${escapeHTML(r.before.choice1)} | ข. ${escapeHTML(r.before.choice2)} | ค. ${escapeHTML(r.before.choice3)} | ง. ${escapeHTML(r.before.choice4)}</div>
+              <div style="margin-top: 4px; font-weight: 800;">เฉลยเดิม: ข้อ ${r.before.correctAnswer}</div>
+            </div>
+          `;
+        } else if (isFixed) {
           diffContent = `
             <div style="background: #FFF1F2; border: 1px solid #FECDD3; border-radius: 12px; padding: 10px 14px; margin: 12px 0; font-size: 12.5px; color: #9F1239;">
               <span style="font-weight: 800;">🛠️ เหตุผลที่ AI ทำการแก้ไข:</span> ${escapeHTML(r.reason)}
