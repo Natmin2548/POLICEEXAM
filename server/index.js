@@ -10498,6 +10498,14 @@ function buildSubjectSpecificExamPrompt({ subject, subcategory, title, count, co
     basePrompt = buildThaiPrompt({ count, subcategory, title, contextText });
   }
 
+  const isEnglishExam = normSub.includes('english') || normSub.includes('อังกฤษ') || normTitle.includes('english') || normTitle.includes('อังกฤษ') || normSubcat.includes('english') || normSubcat.includes('อังกฤษ');
+
+  const universalThaiRule = isEnglishExam ? '' : `
+⛔️ 🇹🇭 กฎเหล็กภาษาไทย 100% (STRICT THAI LANGUAGE ONLY - บังคับ 100% ทุกข้อ):
+1. **ข้อสอบวิชานี้เป็นภาษาไทย 100%**:
+   - ข้อความโจทย์คำถาม (questionText), ตัวเลือกทุกข้อ (optionA, optionB, optionC, optionD) และคำอธิบายเฉลย (explanation) ต้องเขียนเป็นภาษาไทยล้วนเท่านั้น
+2. ❌ **ห้ามออกข้อสอบเป็นภาษาอังกฤษ หรือตอบเป็นภาษาอังกฤษเด็ดขาด!** (ยกเว้นเฉพาะตัวย่อหรือศัพท์เฉพาะทางสากล เช่น CPU, RAM, IPOS, BCG, PDPA ที่มีคำภาษาไทยกำกับชัดเจน)`;
+
   const universalAntiLeakRules = `
 ⛔️ กฎเหล็กป้องกันการเฉลยคำตอบในตัวโจทย์ (Strict Anti-Answer-Leak & Question-Answer Sync - บังคับ 100%):
 1. ❌ **ห้ามเฉลยคำตอบหรือบอกใบ้คำตอบในข้อความโจทย์คำถาม (questionText) เด็ดขาด 100%**:
@@ -10507,7 +10515,7 @@ function buildSubjectSpecificExamPrompt({ subject, subcategory, title, count, co
 2. 🔄 **ความสอดคล้องกัน 100% (100% Question-Answer Consistency)**:
    - ข้อความคำถาม (questionText) ตัวเลือก ก-ง และคำตอบที่ถูกต้อง (correctOption / correctAnswer) ต้องตรงกันอย่างแม่นยำ ไม่ขัดแย้งกัน`;
 
-  return basePrompt + '\n\n' + universalAntiLeakRules;
+  return basePrompt + (universalThaiRule ? '\n\n' + universalThaiRule : '') + '\n\n' + universalAntiLeakRules;
 }
 
 // --- Shared Helper: Resolve All Gemini API Keys ---
