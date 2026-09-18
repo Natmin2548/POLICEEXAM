@@ -1353,7 +1353,11 @@ async function loadExams() {
       headers: { 'Authorization': `Bearer ${authToken}` }
     });
     if (res.ok) {
-      allLoadedExams = await res.json();
+      const exams = await res.json();
+      allLoadedExams = exams.map(e => ({
+        ...e,
+        totalCount: (typeof e.totalCount === 'number' && e.totalCount > 0) ? e.totalCount : (e._count?.questions || e.questionsCount || 0)
+      }));
       window.allLoadedExams = allLoadedExams;
       updateFilterChapterDropdown();
       renderAdminSubjectBanksNav();
@@ -1372,7 +1376,7 @@ function renderAdminSubjectBanksNav() {
     const isAll = bank.key === 'ALL';
     const matchingExams = isAll ? allLoadedExams : allLoadedExams.filter(e => matchExamToSubject(e, bank.key));
     const setsCount = matchingExams.length;
-    const qCount = matchingExams.reduce((sum, e) => sum + (e.totalCount || 0), 0);
+    const qCount = matchingExams.reduce((sum, e) => sum + (e.totalCount || (e._count && e._count.questions) || e.questionsCount || 0), 0);
     const isActive = currentExamFilterSubject === bank.key;
 
     const activeStyle = isActive 
@@ -1499,7 +1503,7 @@ function renderExamsWithFilters() {
       cardsContainer.innerHTML = filtered.map((ex, idx) => {
         const meta = getSubjectBankMeta(ex.category);
         const subjName = meta ? meta.name : (ex.category || 'Thai Law');
-        const qCount = ex.totalCount || 0;
+        const qCount = ex.totalCount || (ex._count && ex._count.questions) || ex.questionsCount || 0;
         const dateText = formatExamDateThai(ex.updatedAt || ex.createdAt);
         const setBadge = `SET-${String(ex.id || (idx + 1)).padStart(3, '0')}`;
 
@@ -4318,12 +4322,16 @@ window.startBatchAutoExamGeneration = async function() {
         }
 
         // Add to local loaded exams cache so subsequent runs know set numbers
+        const savedId = (saveData.examSet && saveData.examSet.id) || saveData.id || Date.now();
         allLoadedExams.push({
-          id: saveData.id || Date.now(),
+          id: savedId,
           title,
           category: subject,
           subcategory: chapterName,
-          questionsCount: data.questions.length
+          totalCount: data.questions.length,
+          _count: { questions: data.questions.length },
+          questionsCount: data.questions.length,
+          updatedAt: new Date().toISOString()
         });
 
         let auditLogMsg = '';
@@ -4366,12 +4374,21 @@ window.startBatchAutoExamGeneration = async function() {
   }
   appendBatchLog(`🎉 การทำงานเสร็จสิ้นทั้งหมด! สำเร็จ ${batchState.successCount}/${selectedChapters.length} หมวด${completeExtra}`, '#34D399');
 
+  // Automatically refresh exam list from database in background
+  if (typeof loadExams === 'function') {
+    try {
+      await loadExams();
+    } catch (_) {}
+  }
+
   const btnPauseEl = document.getElementById('btnPauseBatch');
   if (btnPauseEl) {
     btnPauseEl.textContent = '✓ ปิดหน้าต่างนี้';
-    btnPauseEl.onclick = () => {
+    btnPauseEl.onclick = async () => {
       progressModal.style.display = 'none';
-      loadExamsList(); // Refresh admin exams table
+      if (typeof loadExams === 'function') {
+        await loadExams();
+      }
     };
   }
 };

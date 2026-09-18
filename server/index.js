@@ -4852,7 +4852,11 @@ app.get('/api/admin/exams', requireAdmin, async (req, res) => {
         _count: { select: { questions: true } }
       }
     });
-    res.json(exams);
+    const sanitized = exams.map(e => ({
+      ...e,
+      totalCount: (typeof e.totalCount === 'number' && e.totalCount > 0) ? e.totalCount : (e._count?.questions || 0)
+    }));
+    res.json(sanitized);
   } catch (err) {
     console.error('Admin Exams Error:', err);
     res.status(500).json({ error: 'ไม่สามารถดึงรายการข้อสอบได้' });
@@ -12001,73 +12005,94 @@ app.post('/api/admin/exams/preview-ai', authenticateToken, async (req, res) => {
         contextText = (lastSec > 5000 ? truncated.substring(0, lastSec) : truncated) + '\n\n[...เนื้อหาอ้างอิงถูกจัดขนาดให้เหมาะสม...]';
       }
 
-      // Chunk generation into batches of up to 10 questions each
-    // This completely eliminates JSON cutoff / Unterminated string errors on 20, 30, 40, 50 questions
-    const BATCH_SIZE = 10;
-    const batchCounts = [];
-    let rem = count;
-    while (rem > 0) {
-      const b = Math.min(rem, BATCH_SIZE);
-      batchCounts.push(b);
-      rem -= b;
-    }
-
-    console.log(`[Preview AI] Generating ${count} questions in ${batchCounts.length} batch(es): [${batchCounts.join(', ')}]`);
-
+    // Resilient Target-Fulfillment Loop: Guarantees EXACT requested question count
+    // Generates in chunks of up to 10 with automatic retry, backoff, and top-up for skipped duplicates
+    const targetCount = count;
     let rawQuestions = [];
     let engineUsed = 'Google Gemini';
+    let round = 0;
+    const maxRounds = Math.max(Math.ceil(targetCount / 10) + 3, 5); // Allow enough attempts to fulfill exact count
 
-    for (let bi = 0; bi < batchCounts.length; bi++) {
-      const currentBatchCount = batchCounts[bi];
-      const batchTitle = batchCounts.length > 1 ? `${title} (ชุดที่ ${bi + 1}/${batchCounts.length})` : title;
+    console.log(`[Preview AI] Target: ${targetCount} questions. Starting resilient fulfillment loop...`);
+
+    while (rawQuestions.length < targetCount && round < maxRounds) {
+      round++;
+      const needed = targetCount - rawQuestions.length;
+      // If needed is 1 or 2, request at least 3 so LLM has variance margin, then slice to exact target
+      const askCount = Math.min(Math.max(needed, 1), 10);
+      const batchTitle = targetCount > 10 ? `${title} (รอบที่ ${round}, กำลังเก็บข้อสอบส่วนที่เหลือ)` : title;
       const avoidList = rawQuestions.map((q, idx) => `${idx + 1}. ${(q.questionText || q.question || '').substring(0, 80)}`);
+
+      console.log(`[Preview AI] Round ${round}/${maxRounds}: currently have ${rawQuestions.length}/${targetCount}, requesting ${askCount} questions...`);
+
+      // Gentle pause between rounds to strictly prevent 429 rate limit errors
+      if (round > 1) {
+        await new Promise(r => setTimeout(r, 2000));
+      }
 
       const prompt = buildSubjectSpecificExamPrompt({
         subject,
         subcategory,
         title: batchTitle,
-        count: currentBatchCount,
+        count: askCount,
         contextText,
         avoidDuplicates: avoidList
       });
 
       let textResponse = '';
-      try {
-        const aiResult = await callSpecializedAiText({
-          prompt,
-          subject,
-          customApiKey: req.body.apiKey,
-          groqApiKey: req.body.groqApiKey,
-          openrouterApiKey: req.body.openrouterApiKey
-        });
-        textResponse = aiResult.text;
-        engineUsed = aiResult.engine || engineUsed;
-      } catch (aiErr) {
-        if (aiErr.message.includes('KEY_NOT_FOUND')) {
-          return res.status(400).json({ error: '🔑 ไม่พบ API Key (Gemini, Groq หรือ OpenRouter) กรุณาระบุ API Key ในช่องที่กำหนด หรือในเมนู Admin -> ตั้งค่าระบบ' });
+      let roundSucceeded = false;
+      let roundRetries = 0;
+
+      while (!roundSucceeded && roundRetries <= 2) {
+        try {
+          const aiResult = await callSpecializedAiText({
+            prompt,
+            subject,
+            customApiKey: req.body.apiKey,
+            groqApiKey: req.body.groqApiKey,
+            openrouterApiKey: req.body.openrouterApiKey
+          });
+          textResponse = aiResult.text;
+          engineUsed = aiResult.engine || engineUsed;
+          roundSucceeded = true;
+        } catch (aiErr) {
+          roundRetries++;
+          if (aiErr.message.includes('KEY_NOT_FOUND')) {
+            return res.status(400).json({ error: '🔑 ไม่พบ API Key (Gemini, Groq หรือ OpenRouter) กรุณาระบุ API Key ในช่องที่กำหนด หรือในเมนู Admin -> ตั้งค่าระบบ' });
+          }
+          if (aiErr.message.includes('401') || aiErr.message.includes('Unauthorized') || aiErr.message.includes('invalid authentication')) {
+            return res.status(401).json({ error: '🔑 API Key ไม่ถูกต้องหรือไม่มีสิทธิ์ใช้งาน (401 Unauthorized) กรุณาตรวจสอบ API Key ในเมนู Admin' });
+          }
+          if (aiErr.message.includes('429') || aiErr.message.includes('quota') || aiErr.message.includes('RESOURCE_EXHAUSTED') || aiErr.message.includes('Rate limit')) {
+            if (roundRetries <= 2) {
+              console.warn(`[Preview AI] ⚠️ Rate limit (429) in round ${round}, pausing 4.5s before retry (${roundRetries}/2)...`);
+              await new Promise(r => setTimeout(r, 4500));
+              continue;
+            }
+          }
+          console.warn(`[Preview AI] Round ${round} attempt ${roundRetries} warning:`, aiErr.message);
+          if (rawQuestions.length > 0) {
+            // Already have partial questions, break retry to attempt next round or return what we have
+            break;
+          }
+          if (roundRetries > 2) {
+            return res.status(500).json({ error: 'ไม่สามารถเรียกใช้งาน AI ได้: ' + aiErr.message });
+          }
         }
-        if (aiErr.message.includes('401') || aiErr.message.includes('Unauthorized') || aiErr.message.includes('invalid authentication')) {
-          return res.status(401).json({ error: '🔑 API Key ไม่ถูกต้องหรือไม่มีสิทธิ์ใช้งาน (401 Unauthorized) กรุณาตรวจสอบ API Key ในเมนู Admin' });
-        }
-        if (aiErr.message.includes('429') || aiErr.message.includes('quota') || aiErr.message.includes('RESOURCE_EXHAUSTED') || aiErr.message.includes('Rate limit')) {
-          return res.status(429).json({ error: '⚠️ AI API Rate Limit (429): ' + aiErr.message });
-        }
-        if (rawQuestions.length > 0) {
-          console.warn(`[Preview AI] Batch ${bi + 1} failed (${aiErr.message}), returning ${rawQuestions.length} questions already generated`);
-          break;
-        }
-        return res.status(500).json({ error: 'ไม่สามารถเรียกใช้งาน AI ได้: ' + aiErr.message });
       }
+
+      if (!textResponse) continue;
 
       let parsedBatch = [];
       try {
         parsedBatch = safeParseAIJson(textResponse);
       } catch (pErr) {
-        console.warn(`[Preview AI] Batch ${bi + 1} JSON parse warning:`, pErr.message);
+        console.warn(`[Preview AI] Round ${round} JSON parse warning:`, pErr.message);
       }
 
       if (parsedBatch && parsedBatch.length > 0) {
         for (const item of parsedBatch) {
+          if (rawQuestions.length >= targetCount) break;
           const dupInfo = rawQuestions.find(existing => areQuestionsDuplicate(existing, item).isDuplicate);
           if (!dupInfo) {
             rawQuestions.push(item);
@@ -12075,8 +12100,13 @@ app.post('/api/admin/exams/preview-ai', authenticateToken, async (req, res) => {
             console.log(`[Preview AI] 🗑️ Skipped duplicate question: "${(item.questionText || item.question || '').substring(0, 50)}"`);
           }
         }
-        console.log(`[Preview AI] Batch ${bi + 1}/${batchCounts.length} successfully collected items (Total unique so far: ${rawQuestions.length})`);
+        console.log(`[Preview AI] Round ${round} progress: collected ${rawQuestions.length}/${targetCount} unique items`);
       }
+    }
+
+    // Exact slice guarantee
+    if (rawQuestions.length > targetCount) {
+      rawQuestions = rawQuestions.slice(0, targetCount);
     }
 
     if (rawQuestions.length === 0) {
@@ -12661,65 +12691,81 @@ app.post('/api/admin/exams/:examSetId/append-ai', authenticateToken, async (req,
       contextText = (lastSec > 5000 ? truncated.substring(0, lastSec) : truncated) + '\n\n[...เนื้อหาอ้างอิงถูกจัดขนาดให้เหมาะสม...]';
     }
 
-    const BATCH_SIZE = 10;
-    const batchCounts = [];
-    let rem = count;
-    while (rem > 0) {
-      const b = Math.min(rem, BATCH_SIZE);
-      batchCounts.push(b);
-      rem -= b;
-    }
-
+    // Resilient Target-Fulfillment Loop for Append AI
+    const targetCount = count;
     const existingQuestionTexts = (examSet.questions || []).map((q, idx) => `${idx + 1}. ${(q.questionText || '').substring(0, 80)}`);
     let newRawQuestions = [];
+    let round = 0;
+    const maxRounds = Math.max(Math.ceil(targetCount / 10) + 3, 5);
 
-    for (let bi = 0; bi < batchCounts.length; bi++) {
-      const currentBatchCount = batchCounts[bi];
-      const batchTitle = batchCounts.length > 1 ? `${examSet.title} (ชุดเพิ่มเติม ${bi + 1}/${batchCounts.length})` : examSet.title;
+    while (newRawQuestions.length < targetCount && round < maxRounds) {
+      round++;
+      const needed = targetCount - newRawQuestions.length;
+      const askCount = Math.min(Math.max(needed, 1), 10);
+      const batchTitle = targetCount > 10 ? `${examSet.title} (ชุดเพิ่มเติม รอบที่ ${round})` : examSet.title;
       const avoidList = [
         ...existingQuestionTexts,
         ...newRawQuestions.map((q, idx) => `${existingQuestionTexts.length + idx + 1}. ${(q.questionText || q.question || '').substring(0, 80)}`)
       ];
 
+      if (round > 1) {
+        await new Promise(r => setTimeout(r, 2000));
+      }
+
       const prompt = buildSubjectSpecificExamPrompt({
         subject: examSet.category,
         subcategory: examSet.subcategory,
         title: batchTitle,
-        count: currentBatchCount,
+        count: askCount,
         contextText,
         avoidDuplicates: avoidList
       });
 
       let textResponse = '';
-      try {
-        const aiResult = await callSpecializedAiText({
-          prompt,
-          subject: examSet.category,
-          customApiKey: req.body.apiKey,
-          groqApiKey: req.body.groqApiKey,
-          openrouterApiKey: req.body.openrouterApiKey
-        });
-        textResponse = aiResult.text;
-      } catch (aiErr) {
-        if (aiErr.message.includes('KEY_NOT_FOUND')) {
-          return res.status(400).json({ error: 'ไม่พบ API Key (Gemini, Groq หรือ OpenRouter) ในระบบ' });
+      let roundRetries = 0;
+      let roundSucceeded = false;
+
+      while (!roundSucceeded && roundRetries <= 2) {
+        try {
+          const aiResult = await callSpecializedAiText({
+            prompt,
+            subject: examSet.category,
+            customApiKey: req.body.apiKey,
+            groqApiKey: req.body.groqApiKey,
+            openrouterApiKey: req.body.openrouterApiKey
+          });
+          textResponse = aiResult.text;
+          roundSucceeded = true;
+        } catch (aiErr) {
+          roundRetries++;
+          if (aiErr.message.includes('KEY_NOT_FOUND')) {
+            return res.status(400).json({ error: 'ไม่พบ API Key (Gemini, Groq หรือ OpenRouter) ในระบบ' });
+          }
+          if (aiErr.message.includes('429') || aiErr.message.includes('quota') || aiErr.message.includes('Rate limit')) {
+            if (roundRetries <= 2) {
+              await new Promise(r => setTimeout(r, 4500));
+              continue;
+            }
+          }
+          if (newRawQuestions.length > 0) break;
+          if (roundRetries > 2) {
+            return res.status(500).json({ error: 'ไม่สามารถเรียกใช้งาน AI ได้: ' + aiErr.message });
+          }
         }
-        if (newRawQuestions.length > 0) {
-          console.warn(`[Add AI Questions] Batch ${bi + 1} failed (${aiErr.message}), proceeding with ${newRawQuestions.length} questions`);
-          break;
-        }
-        return res.status(500).json({ error: 'ไม่สามารถเรียกใช้งาน AI ได้: ' + aiErr.message });
       }
+
+      if (!textResponse) continue;
 
       let parsedBatch = [];
       try {
         parsedBatch = safeParseAIJson(textResponse);
       } catch (pErr) {
-        console.warn(`[Add AI Questions] Batch ${bi + 1} parse warning:`, pErr.message);
+        console.warn(`[Add AI Questions] Round ${round} parse warning:`, pErr.message);
       }
 
       if (parsedBatch && parsedBatch.length > 0) {
         for (const item of parsedBatch) {
+          if (newRawQuestions.length >= targetCount) break;
           const isDupExisting = (examSet.questions || []).some(existing => areQuestionsDuplicate(existing, item).isDuplicate);
           const isDupNew = newRawQuestions.some(existing => areQuestionsDuplicate(existing, item).isDuplicate);
           if (!isDupExisting && !isDupNew) {
@@ -12728,8 +12774,11 @@ app.post('/api/admin/exams/:examSetId/append-ai', authenticateToken, async (req,
             console.log(`[Add AI Questions] 🗑️ Skipped duplicate question: "${(item.questionText || item.question || '').substring(0, 50)}"`);
           }
         }
-        console.log(`[Add AI Questions] Batch ${bi + 1}/${batchCounts.length} collected items (Total unique so far: ${newRawQuestions.length})`);
       }
+    }
+
+    if (newRawQuestions.length > targetCount) {
+      newRawQuestions = newRawQuestions.slice(0, targetCount);
     }
 
     const createdQuestions = [];
