@@ -3,26 +3,38 @@
 import React, { useState } from "react";
 import { Navbar } from "./Navbar";
 import { HeroSection } from "./HeroSection";
+import { Footer } from "./Footer";
 import { LoginModal } from "./LoginModal";
+
+import { supabase } from "@/lib/supabaseClient";
 
 export const LandingPage: React.FC = () => {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-
-  React.useEffect(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get("login") === "1") {
-        setIsLoginModalOpen(true);
-      }
-    }
-  }, []);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleOpenLogin = () => setIsLoginModalOpen(true);
   const handleCloseLogin = () => setIsLoginModalOpen(false);
 
-  const handleGoogleLogin = () => {
+  const handleGoogleLogin = async () => {
+    try {
+      setIsLoading(true);
+      const origin = typeof window !== "undefined" ? window.location.origin : "https://police-exam-th.vercel.app";
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${origin}/auth/callback`,
+        },
+      });
 
-    alert("เชื่อมต่อ Google Sign-In ตาม NextAuth.js");
+      if (error) {
+        console.error("Google sign-in error:", error.message);
+        alert("เกิดข้อผิดพลาดในการเข้าสู่ระบบ: " + error.message);
+        setIsLoading(false);
+      }
+    } catch (err) {
+      console.error("Sign-in unexpected error:", err);
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -32,10 +44,13 @@ export const LandingPage: React.FC = () => {
 
       {/* Main Content */}
       <main className="flex-1">
-        <HeroSection onOpenLogin={handleOpenLogin} />
+        <HeroSection onOpenLogin={handleGoogleLogin} />
       </main>
 
-      {/* Google Login Modal Popup */}
+      {/* Footer */}
+      <Footer />
+
+      {/* Login Modal */}
       <LoginModal
         isOpen={isLoginModalOpen}
         onClose={handleCloseLogin}
