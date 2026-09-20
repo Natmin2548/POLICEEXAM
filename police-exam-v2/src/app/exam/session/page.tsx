@@ -14,6 +14,7 @@ import {
   Check,
   Award,
   AlertTriangle,
+  Timer,
 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 
@@ -254,6 +255,11 @@ function ExamSessionContent() {
   const [showReview, setShowReview] = useState(false);
   const [startTime] = useState<number>(Date.now());
 
+  // Countdown timer: 3 hours for pretest, null for practice
+  const isTimedMode = mode.startsWith("pretest");
+  const EXAM_DURATION = 3 * 60 * 60; // 3 hours in seconds
+  const [timeLeft, setTimeLeft] = useState<number>(EXAM_DURATION);
+
   // Choice letters in Thai (ก, ข, ค, ง)
   const choiceLetters = ["ก", "ข", "ค", "ง"];
 
@@ -316,6 +322,32 @@ function ExamSessionContent() {
 
     loadQuestions();
   }, [mode, category]);
+
+  // Countdown timer effect
+  useEffect(() => {
+    if (!isTimedMode || examResult || loading) return;
+    if (timeLeft <= 0) {
+      handleSubmitExam();
+      return;
+    }
+    const interval = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [isTimedMode, examResult, loading, timeLeft]);
+
+  const formatTime = (seconds: number) => {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    return `${h}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+  };
 
   const currentQ = questions[currentIndex];
   const totalQuestions = questions.length;
@@ -614,8 +646,20 @@ function ExamSessionContent() {
             {examTitle || category}
           </div>
 
-          {/* Right: Question Number & Live Score (Screenshot 5: 1 / 30 0 ถูก) */}
+          {/* Right: Timer (pretest only) + Question Number & Live Score */}
           <div className="flex items-center gap-2.5 sm:gap-3">
+            {isTimedMode && (
+              <span
+                className={`inline-flex items-center gap-1 text-xs sm:text-sm font-black px-2.5 py-0.5 rounded-full border transition-colors ${
+                  timeLeft <= 600
+                    ? "bg-red-50 text-[#BD1B0B] border-red-200 animate-pulse"
+                    : "bg-slate-50 text-slate-700 border-slate-200"
+                }`}
+              >
+                <Timer className="w-3.5 h-3.5 shrink-0" />
+                {formatTime(timeLeft)}
+              </span>
+            )}
             <span className="text-xs sm:text-sm font-black text-slate-900 tracking-tight">
               {currentIndex + 1} / {totalQuestions}
             </span>
