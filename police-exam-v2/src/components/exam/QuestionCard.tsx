@@ -156,12 +156,12 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                   {parsed.instruction}
                 </p>
               )}
-              <div className="rounded-2xl bg-[#F8FAFD] border border-blue-100/90 border-l-[5px] border-l-[#2563EB] p-4 sm:p-5 shadow-2xs">
-                <p className="text-slate-800 text-sm sm:text-base font-normal leading-relaxed sm:leading-loose font-passage select-text whitespace-pre-line">
+              <div className="rounded-2xl bg-[#F8FAFD] border border-blue-200/80 border-l-[5px] border-l-[#2563EB] p-4 sm:p-5 shadow-2xs">
+                <p className="text-slate-800 text-sm sm:text-base font-medium leading-relaxed font-sans select-text whitespace-pre-line">
                   {parsed.passage}
                 </p>
               </div>
-              <h2 className="text-base sm:text-lg md:text-xl font-bold text-slate-800 leading-snug pt-1">
+              <h2 className="text-base sm:text-lg md:text-xl font-bold text-slate-900 leading-relaxed pt-1">
                 {parsed.question}
               </h2>
             </div>
