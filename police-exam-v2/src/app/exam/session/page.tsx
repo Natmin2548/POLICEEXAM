@@ -39,10 +39,23 @@ interface DetailedResult {
   category: string;
 }
 
-function parseQuestionContent(text: string) {
+function parseQuestionContent(text: string, category?: string) {
   if (!text) return { instruction: null, passage: null, question: "" };
 
   const cleanText = text.trim();
+
+  // Allowed subjects: ไทย, คอม, สังคม, สารบรรณ, กฎหมาย, อังกฤษ, ลักษณะที่ 54
+  if (category) {
+    const isAllowedSubject = /ไทย|คอม|สังคม|สารบรรณ|กฎหมาย|กฏหมาย|อังกฤษ|๕๔|54/i.test(category);
+    if (!isAllowedSubject) {
+      return { instruction: null, passage: null, question: cleanText };
+    }
+  }
+
+  // Safety fallback for Math / General Ability questions (e.g. กำหนดให้, n(A))
+  if (/^กำหนดให้|^ถ้า\s+\d+|n\(U\)|n\(A\)/i.test(cleanText)) {
+    return { instruction: null, passage: null, question: cleanText };
+  }
 
   // Helper: Format statements A. ... B. ... C. ... D. ... or 1. ... 2. ... cleanly on newlines ONLY when true statement list is present
   const formatPassageText = (str: string) => {
@@ -498,7 +511,7 @@ function ExamSessionContent() {
                   </div>
 
                   {(() => {
-                    const parsed = parseQuestionContent(item.questionText);
+                    const parsed = parseQuestionContent(item.questionText, item.category);
                     if (parsed.passage) {
                       return (
                         <div className="space-y-3 mb-4">
@@ -646,7 +659,7 @@ function ExamSessionContent() {
 
               {/* Question Title & Reading Passage Box */}
               {(() => {
-                const parsed = parseQuestionContent(currentQ.questionText);
+                const parsed = parseQuestionContent(currentQ.questionText, currentQ.category || category);
                 if (parsed.passage) {
                   return (
                     <div className="space-y-3.5">

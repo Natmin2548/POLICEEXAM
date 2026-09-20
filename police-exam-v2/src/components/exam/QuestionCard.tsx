@@ -8,6 +8,7 @@ export interface QuestionCardProps {
   questionNumber?: number;
   totalQuestions?: number;
   chapter?: string;
+  category?: string;
   questionText: string;
   choices: string[];
   correctAnswer?: number; // 0=ก, 1=ข, 2=ค, 3=ง
@@ -18,10 +19,23 @@ export interface QuestionCardProps {
   onSelectChoice?: (choiceIndex: number) => void;
 }
 
-function parseQuestionContent(text: string) {
+function parseQuestionContent(text: string, category?: string) {
   if (!text) return { instruction: null, passage: null, question: "" };
 
   const cleanText = text.trim();
+
+  // Allowed subjects: ไทย, คอม, สังคม, สารบรรณ, กฎหมาย, อังกฤษ, ลักษณะที่ 54
+  if (category) {
+    const isAllowedSubject = /ไทย|คอม|สังคม|สารบรรณ|กฎหมาย|กฏหมาย|อังกฤษ|๕๔|54/i.test(category);
+    if (!isAllowedSubject) {
+      return { instruction: null, passage: null, question: cleanText };
+    }
+  }
+
+  // Safety fallback for Math / General Ability questions (e.g. กำหนดให้, n(A))
+  if (/^กำหนดให้|^ถ้า\s+\d+|n\(U\)|n\(A\)/i.test(cleanText)) {
+    return { instruction: null, passage: null, question: cleanText };
+  }
 
   // Helper: Format statements A. ... B. ... C. ... D. ... or 1. ... 2. ... cleanly on newlines ONLY when true statement list is present
   const formatPassageText = (str: string) => {
@@ -193,6 +207,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   questionNumber = 1,
   totalQuestions = 1,
   chapter,
+  category,
   questionText,
   choices,
   correctAnswer,
@@ -232,7 +247,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
 
       {/* Question Text & Passage */}
       {(() => {
-        const parsed = parseQuestionContent(questionText);
+        const parsed = parseQuestionContent(questionText, category);
         if (parsed.passage) {
           return (
             <div className="space-y-3 mb-6">
