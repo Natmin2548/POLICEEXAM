@@ -15,20 +15,27 @@ export default function PWAInstallBanner() {
 
     if (isStandalone) return;
 
+    // ตรวจสอบว่าแสดง banner วันนี้ไปแล้วหรือยัง
+    const lastShown = localStorage.getItem("pwa_banner_last_shown");
+    const today = new Date().toDateString();
+    if (lastShown === today) return;
+
     const handler = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e);
       setShow(true);
+      localStorage.setItem("pwa_banner_last_shown", today);
     };
 
     window.addEventListener("beforeinstallprompt", handler);
 
-    // สำหรับ browser ที่ไม่รองรับ beforeinstallprompt (iOS Safari) ให้แสดงคำแนะนำ
+    // สำหรับ iOS Safari
     const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
-    const isInBrowser = !isStandalone;
-    if (isIOS && isInBrowser) {
-      // delay เล็กน้อยก่อนแสดง
-      setTimeout(() => setShow(true), 2000);
+    if (isIOS && !isStandalone) {
+      setTimeout(() => {
+        setShow(true);
+        localStorage.setItem("pwa_banner_last_shown", today);
+      }, 2000);
     }
 
     return () => window.removeEventListener("beforeinstallprompt", handler);
