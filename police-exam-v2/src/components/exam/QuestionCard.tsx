@@ -23,7 +23,76 @@ function parseQuestionContent(text: string) {
 
   const cleanText = text.trim();
 
-  // 1. Extract Quoted Passage anywhere in the text: "..." or “...”
+  // Helper: Format statements A. ... B. ... C. ... D. ... cleanly on newlines inside passage box
+  const formatPassageText = (str: string) => {
+    let s = str.trim();
+    s = s.replace(/\s+([B-Dก-ง2-4])\.\s*["“]?/g, "\n$1. \"");
+    if ((s.match(/"/g) || []).length % 2 !== 0) {
+      s += '"';
+    }
+    return s;
+  };
+
+  const questionKeywords = [
+    "ข้อความในข้อใด",
+    "จากข้อความข้างต้น",
+    "จากบทความข้างต้น",
+    "จากบทความ",
+    "จากข้อความ",
+    "ข้อใด",
+    "สรุป/อนุมาน",
+    "สรุป",
+    "อนุมาน",
+    "จงหา",
+    "เท่าไหร่",
+    "กี่",
+    "คืออะไร",
+    "เพราะเหตุใด",
+    "หมายถึงอะไร",
+    "ถูกต้อง",
+  ];
+
+  // 1. Check for explicit instruction prefix (e.g. "พิจารณาข้อความต่อไปนี้: A.", "อ่านบทความต่อไปนี้แล้วตอบคำถาม:")
+  const instructionRegex = /^(พิจารณา[\s\S]*?[:：]|อ่าน[\s\S]*?[:：]|จงอ่าน[\s\S]*?[:：]|จาก[\s\S]*?[:：])/i;
+  const instMatch = cleanText.match(instructionRegex);
+
+  if (instMatch) {
+    const rawInstruction = instMatch[1].trim();
+    let remaining = cleanText.slice(instMatch[0].length).trim();
+
+    let instruction = rawInstruction;
+    const trailingLabelMatch = rawInstruction.match(/(.*?\b(?:ต่อไปนี้|ตอบคำถาม)[:：]?)\s*([A-Dก-ง]\.?.*)$/);
+    if (trailingLabelMatch) {
+      instruction = trailingLabelMatch[1].trim();
+      remaining = `${trailingLabelMatch[2]} ${remaining}`.trim();
+    }
+
+    let questionPart = "";
+    let passagePart = remaining;
+
+    let splitIdx = -1;
+    for (const kw of questionKeywords) {
+      const idx = remaining.lastIndexOf(kw);
+      if (idx !== -1 && (splitIdx === -1 || idx > splitIdx)) {
+        splitIdx = idx;
+      }
+    }
+
+    if (splitIdx > 0) {
+      passagePart = remaining.slice(0, splitIdx).trim();
+      questionPart = remaining.slice(splitIdx).trim();
+    }
+
+    if (passagePart) {
+      return {
+        instruction,
+        passage: formatPassageText(passagePart),
+        question: questionPart || remaining,
+      };
+    }
+  }
+
+  // 2. Extract Quoted Passage or Multi-statement Question (e.g., A. "..." B. "..." C. "..." D. "...")
   const quoteRegex = /([\s\S]*?)["“]([\s\S]+?)["”]([\s\S]*)/;
   const quoteMatch = cleanText.match(quoteRegex);
 
@@ -32,67 +101,47 @@ function parseQuestionContent(text: string) {
     const passage = quoteMatch[2].trim();
     const suffix = quoteMatch[3].trim();
 
-    if (
-      passage.length >= 15 ||
-      prefix.includes("พิจารณา") ||
-      prefix.includes("ข้อความ") ||
-      prefix.includes("บทความ") ||
-      prefix.includes("อ่าน")
-    ) {
-      let instruction = prefix || null;
-      let question = suffix || "";
-
-      if (!instruction && (passage.length > 50 || suffix)) {
-        instruction = "อ่านข้อความต่อไปนี้แล้วตอบคำถาม:";
+    let splitIdx = -1;
+    for (const kw of questionKeywords) {
+      const idx = suffix.lastIndexOf(kw);
+      if (idx !== -1 && (splitIdx === -1 || idx > splitIdx)) {
+        splitIdx = idx;
       }
+    }
+
+    if (splitIdx !== -1) {
+      const passageSuffix = suffix.slice(0, splitIdx).trim();
+      const questionText = suffix.slice(splitIdx).trim();
+      const fullPassage = `${prefix ? prefix + "\n" : ""}"${passage}" ${passageSuffix}`.trim();
 
       return {
-        instruction,
-        passage: `"${passage}"`,
-        question: question || (instruction ? "" : cleanText),
+        instruction: prefix && (prefix.includes("อ่าน") || prefix.includes("พิจารณา")) ? prefix : null,
+        passage: formatPassageText(fullPassage),
+        question: questionText,
+      };
+    }
+
+    if (suffix || prefix || passage.length >= 25) {
+      return {
+        instruction: prefix && (prefix.includes("อ่าน") || prefix.includes("พิจารณา")) ? prefix : null,
+        passage: formatPassageText(`"${passage}"`),
+        question: suffix || cleanText,
       };
     }
   }
 
-  // 2. Multiline paragraphs without quotes (separated by \n or \n\n)
+  // 3. Multiline paragraph without explicit quotes where last line is a question
   const lines = cleanText.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
-  if (lines.length >= 3) {
-    const isFirstLineInstruction = /^(อ่าน|จงอ่าน|พิจารณา|จากข้อความ|Read)/i.test(lines[0]);
+  if (lines.length >= 2) {
     const lastLine = lines[lines.length - 1];
-    const isLastLineQuestion =
-      lastLine.includes("?") ||
-      lastLine.includes("ข้อใด") ||
-      lastLine.includes("คืออะไร") ||
-      lastLine.includes("เพราะเหตุใด") ||
-      lastLine.includes("หมายถึง") ||
-      lastLine.includes("ถูกต้อง") ||
-      lastLine.length < 150;
+    const isLastQuestion = questionKeywords.some((kw) => lastLine.includes(kw)) || lastLine.endsWith("?");
 
-    if (isFirstLineInstruction && isLastLineQuestion) {
-      const instruction = lines[0];
-      const passageLines = lines.slice(1, lines.length - 1).join("\n");
+    if (isLastQuestion) {
+      const passageLines = lines.slice(0, lines.length - 1).join("\n");
       return {
-        instruction,
-        passage: passageLines.startsWith('"') ? passageLines : `"${passageLines}"`,
+        instruction: lines[0].includes("อ่าน") || lines[0].includes("พิจารณา") ? lines[0] : null,
+        passage: formatPassageText(lines[0].includes("อ่าน") || lines[0].includes("พิจารณา") ? lines.slice(1, lines.length - 1).join("\n") : passageLines),
         question: lastLine,
-      };
-    }
-  }
-
-  if (lines.length === 2) {
-    const isFirstLineInstruction = /^(อ่าน|จงอ่าน|พิจารณา|จากข้อความ|Read)/i.test(lines[0]);
-    if (isFirstLineInstruction) {
-      return {
-        instruction: lines[0],
-        passage: null,
-        question: lines[1],
-      };
-    }
-    if (lines[0].length > 40 && (lines[1].includes("?") || lines[1].includes("ข้อใด"))) {
-      return {
-        instruction: "อ่านข้อความต่อไปนี้แล้วตอบคำถาม:",
-        passage: `"${lines[0]}"`,
-        question: lines[1],
       };
     }
   }
