@@ -186,7 +186,8 @@ function ExamSessionContent() {
           setUserEmail(session.user.email);
         }
 
-        const count = mode.startsWith("pretest") ? "150" : "30";
+        const countParam = searchParams.get("count");
+        const count = countParam || (mode.startsWith("pretest") ? "150" : mode === "chapter" ? "20" : "30");
         const setIds = searchParams.get("setIds") || "";
         const res = await fetch(
           `/api/exam/generate?mode=${encodeURIComponent(

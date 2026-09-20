@@ -183,9 +183,12 @@ export async function GET(request: Request) {
               },
             },
           },
-          orderBy: { id: "asc" },
         });
-        selectedQuestions = chapterQuestions;
+        const limit = Math.min(count > 0 ? count : 20, 20);
+        selectedQuestions = sampleRandom(
+          chapterQuestions,
+          Math.min(limit, chapterQuestions.length)
+        );
       }
     } else if (mode === "review_incorrect") {
       const email = searchParams.get("email");
