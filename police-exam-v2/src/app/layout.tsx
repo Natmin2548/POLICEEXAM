@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import PWAInstallBanner from "@/components/PWAInstallBanner";
 
 export const metadata: Metadata = {
   title: "POLICE EXAM - เตรียมพร้อมสู่เครื่องแบบ",
@@ -39,6 +40,7 @@ export default function RootLayout({
       </head>
       <body className="antialiased min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-police-100 selection:text-police-900">
         {children}
+        <PWAInstallBanner />
         <script
           dangerouslySetInnerHTML={{
             __html: `
