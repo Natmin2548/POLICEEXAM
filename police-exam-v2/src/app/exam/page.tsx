@@ -35,9 +35,9 @@ export default function ExamSelectionPage() {
       badge: "สายอำนวยการ",
       badgeColor: "bg-amber-50 text-amber-800 border-amber-200",
       title: "Pretest สายอำนวยการ",
-      subtitle: "150 ข้อ • ตะลุยโจทย์งานสารบรรณและวิชาการ",
+      subtitle: "150 ข้อ • คอม 40 | สารบรรณ+ลักษณะ54 30 | กฎหมาย 25 | ทั่วไป 20 | ไทย 20 | อังกฤษ 15",
       description:
-        "ข้อสอบรวมสายอำนวยการและสนับสนุน ครบทุกหมวดวิชา เน้นงานสารบรรณตำรวจและระเบียบปฏิบัติ",
+        "ข้อสอบเสมือนจริงสายอำนวยการตามโครงสร้าง สกส. ล่าสุด: คอม 40 ข้อ, สารบรรณ+ลักษณะ54 30 ข้อ, กฎหมาย 25 ข้อ, ความรู้ทั่วไป 20 ข้อ, ภาษาไทย 20 ข้อ, ภาษาอังกฤษ 15 ข้อ",
       tags: ["จับเวลา 3 ชม.", "150 ข้อ", "เกณฑ์ผ่าน 60%"],
       icon: FileSpreadsheet,
       iconBg: "bg-amber-50 text-amber-700",
@@ -88,7 +88,7 @@ export default function ExamSelectionPage() {
           <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-white border border-slate-200/80 shadow-2xs self-start sm:self-auto">
             <Sparkles className="w-4 h-4 text-amber-500" />
             <span className="text-xs font-bold text-slate-700">
-              อัปเดตเกณฑ์คะแนนตามประกาศ สกส.
+              อัปเดตเกณฑ์คะแนนตามประกาศ
             </span>
           </div>
         </div>
@@ -99,11 +99,10 @@ export default function ExamSelectionPage() {
             <Link
               key={opt.id}
               href={opt.href}
-              className={`block bg-white border rounded-3xl p-5 shadow-xs active:scale-[0.99] transition-all group ${
-                opt.highlight
+              className={`block bg-white border rounded-3xl p-5 shadow-xs active:scale-[0.99] transition-all group ${opt.highlight
                   ? "border-red-200/90 ring-1 ring-red-100"
                   : "border-slate-200/80"
-              }`}
+                }`}
             >
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0 flex-1">
@@ -137,11 +136,10 @@ export default function ExamSelectionPage() {
             return (
               <div
                 key={opt.id}
-                className={`relative flex flex-col justify-between bg-white rounded-3xl p-6 sm:p-7 border transition-all duration-200 hover:-translate-y-1 hover:shadow-xl ${
-                  opt.highlight
+                className={`relative flex flex-col justify-between bg-white rounded-3xl p-6 sm:p-7 border transition-all duration-200 hover:-translate-y-1 hover:shadow-xl ${opt.highlight
                     ? "border-red-200 shadow-md shadow-red-950/5 ring-1 ring-red-100/80"
                     : "border-slate-200/80 shadow-xs hover:border-slate-300"
-                }`}
+                  }`}
               >
                 {/* Top: Icon + Badge */}
                 <div>
@@ -186,11 +184,10 @@ export default function ExamSelectionPage() {
                 {/* Bottom Action Button */}
                 <Link
                   href={opt.href}
-                  className={`w-full py-3.5 px-4 rounded-2xl text-xs sm:text-sm font-black flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                    opt.highlight
+                  className={`w-full py-3.5 px-4 rounded-2xl text-xs sm:text-sm font-black flex items-center justify-center gap-2 transition-all cursor-pointer ${opt.highlight
                       ? "bg-[#BD1B0B] hover:bg-[#A81507] text-white shadow-lg shadow-red-950/20 active:scale-[0.99]"
                       : "bg-slate-900 hover:bg-slate-800 text-white shadow-sm active:scale-[0.99]"
-                  }`}
+                    }`}
                 >
                   <span>เริ่มทำข้อสอบ</span>
                   <ChevronRight className="w-4 h-4" />

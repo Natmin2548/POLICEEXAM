@@ -111,15 +111,15 @@ export async function GET(request: Request) {
         selectedQuestions.push(...sampled);
       }
     } else if (mode === "pretest_admin") {
-      // Pretest สายอำนวยการ (150 ข้อ)
+      // Pretest สายอำนวยการ (150 ข้อ) - โครงสร้างตามประกาศ สกส. ล่าสุด
       const distribution = [
-        { category: "ทั่วไป", count: 30, subjectName: "ความสามารถทั่วไป" },
-        { category: "ภาษาไทย", count: 25, subjectName: "ภาษาไทย" },
-        { category: "ภาษาอังกฤษ", count: 30, subjectName: "ภาษาอังกฤษ" },
-        { category: "คอม", count: 25, subjectName: "คอมพิวเตอร์และสารสนเทศ" },
-        { category: "สังคม", count: 10, subjectName: "สังคมและวัฒนธรรม" },
+        { category: "ทั่วไป", count: 20, subjectName: "ความสามารถทั่วไป" },
+        { category: "ภาษาไทย", count: 20, subjectName: "ภาษาไทย" },
+        { category: "ภาษาอังกฤษ", count: 15, subjectName: "ภาษาอังกฤษ" },
+        { category: "คอม", count: 40, subjectName: "คอมพิวเตอร์และสารสนเทศ" },
         { category: "งานสารบรรณ_๒๕๒๖", count: 20, subjectName: "งานสารบรรณ (๒๕๒๖)" },
         { category: "สารบรรณตำรวจ_๕๔", count: 10, subjectName: "ระเบียบตำรวจ ลักษณะที่ ๕๔" },
+        { category: "กฏหมาย", count: 25, subjectName: "กฎหมายและสังคม" },
       ];
 
       for (const dist of distribution) {
