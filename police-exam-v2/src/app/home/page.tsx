@@ -159,6 +159,12 @@ export default function HomePage() {
         if (session?.user) {
           setUser(session.user);
           setIsAuthChecking(false);
+          // Heartbeat: track user as online
+          fetch("/api/user/heartbeat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: session.user.email }),
+          }).catch(() => {});
           return;
         }
 

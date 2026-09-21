@@ -29,6 +29,8 @@ export async function GET(request: Request) {
     weekStart.setDate(weekStart.getDate() - 7);
     weekStart.setHours(0, 0, 0, 0);
 
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+
     const [
       totalUsers,
       newUsersToday,
@@ -43,6 +45,7 @@ export async function GET(request: Request) {
       supportTicketCount,
       recentTickets,
       avgScoreRaw,
+      heartbeats,
     ] = await Promise.all([
       prisma.user.count(),
       prisma.user.count({ where: { createdAt: { gte: todayStart } } }),
@@ -65,7 +68,10 @@ export async function GET(request: Request) {
         include: { user: { select: { email: true, fullName: true } } },
       }),
       prisma.quizAttempt.aggregate({ _avg: { scorePct: true } }),
+      prisma.systemSetting.findMany({ where: { key: { startsWith: "hb_" } } }),
     ]);
+
+    const onlineUsers = heartbeats.filter((r) => r.value >= fiveMinutesAgo).length;
 
     return NextResponse.json({
       totalUsers,
@@ -77,6 +83,7 @@ export async function GET(request: Request) {
       totalAttempts,
       attemptsToday,
       avgScore: Math.round(avgScoreRaw._avg.scorePct ?? 0),
+      onlineUsers,
       reportedCount,
       recentReports,
       supportTicketCount,
