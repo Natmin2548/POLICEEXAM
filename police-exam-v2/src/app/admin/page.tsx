@@ -278,13 +278,28 @@ export default function AdminOverviewPage() {
           </div>
         </div>
 
+        {/* Quick Link to Questions Management */}
+        <Link href="/admin/questions"
+          className="flex items-center justify-between bg-white border border-slate-200/80 rounded-2xl px-5 py-4 shadow-xs hover:shadow-md hover:border-[#BD1B0B]/30 transition-all group">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+              <BookOpen className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-sm font-black text-slate-900">จัดการข้อสอบ</p>
+              <p className="text-xs text-slate-400">ดู / แก้ไข / ลบ ข้อสอบในคลัง</p>
+            </div>
+          </div>
+          <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-[#BD1B0B] group-hover:translate-x-0.5 transition-all" />
+        </Link>
+
         {/* Quick Link to Details */}
         {(data.reportedCount > 0 || data.supportTicketCount > 0) && (
           <Link href="/admin/details"
             className="flex items-center justify-between bg-white border border-slate-200/80 rounded-2xl px-5 py-4 shadow-xs hover:shadow-md hover:border-[#BD1B0B]/30 transition-all group">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-red-50 text-[#BD1B0B] flex items-center justify-center">
-                <Activity className="w-4.5 h-4.5" />
+                <Activity className="w-4 h-4" />
               </div>
               <div>
                 <p className="text-sm font-black text-slate-900">มีรายการรอดำเนินการ</p>
