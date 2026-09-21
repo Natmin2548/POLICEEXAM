@@ -13,6 +13,9 @@ import {
   RefreshCw,
   CheckCircle2,
   AlertTriangle,
+  MessageSquare,
+  LayoutDashboard,
+  List,
 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 
@@ -22,6 +25,8 @@ interface AdminOverviewData {
   totalAttempts: number;
   reportedCount: number;
   recentReports: any[];
+  supportTicketCount: number;
+  recentTickets: any[];
 }
 
 export default function AdminDashboardPage() {
@@ -30,6 +35,7 @@ export default function AdminDashboardPage() {
   const [data, setData] = useState<AdminOverviewData | null>(null);
   const [error, setError] = useState("");
   const [userEmail, setUserEmail] = useState("");
+  const [activeTab, setActiveTab] = useState<"overview" | "details">("overview");
 
   const fetchAdminData = async () => {
     setLoading(true);
@@ -51,7 +57,6 @@ export default function AdminDashboardPage() {
       );
 
       if (res.status === 403) {
-        // Not admin
         router.replace("/home");
         return;
       }
@@ -88,10 +93,7 @@ export default function AdminDashboardPage() {
         <AlertTriangle className="w-12 h-12 text-amber-500 mb-3" />
         <h2 className="text-base font-black text-slate-900 mb-1">{error || "ไม่มีสิทธิ์เข้าถึง"}</h2>
         <p className="text-xs text-slate-500 mb-5">หน้านี้สำหรับผู้ดูแลระบบ (ADMIN) เท่านั้น</p>
-        <Link
-          href="/home"
-          className="py-2.5 px-6 bg-[#BD1B0B] text-white text-xs font-black rounded-xl"
-        >
+        <Link href="/home" className="py-2.5 px-6 bg-[#BD1B0B] text-white text-xs font-black rounded-xl">
           กลับสู่หน้าหลัก
         </Link>
       </div>
@@ -99,8 +101,9 @@ export default function AdminDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FBFBFB] py-6 sm:py-10 px-4 sm:px-6 lg:px-8 font-sans">
-      <div className="max-w-6xl mx-auto space-y-6 sm:space-y-8">
+    <div className="min-h-screen bg-[#FBFBFB] font-sans">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10 space-y-6">
+
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-100 pb-5">
           <div>
@@ -130,98 +133,207 @@ export default function AdminDashboardPage() {
           </button>
         </div>
 
-        {/* 4 Stats Cards Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
-          {/* Card 1: Users */}
-          <div className="bg-white border border-slate-200/80 rounded-3xl p-5 shadow-xs">
-            <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mb-3">
-              <Users className="w-5 h-5" />
-            </div>
-            <p className="text-xs text-slate-400 font-bold">ผู้ใช้งานทั้งหมด</p>
-            <h3 className="text-2xl sm:text-3xl font-black text-slate-900 mt-1">
-              {data.totalUsers.toLocaleString()} <span className="text-xs font-normal text-slate-400">คน</span>
-            </h3>
-          </div>
-
-          {/* Card 2: Questions */}
-          <div className="bg-white border border-slate-200/80 rounded-3xl p-5 shadow-xs">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-3">
-              <HelpCircle className="w-5 h-5" />
-            </div>
-            <p className="text-xs text-slate-400 font-bold">คลังข้อสอบทั้งหมด</p>
-            <h3 className="text-2xl sm:text-3xl font-black text-slate-900 mt-1">
-              {data.totalQuestions.toLocaleString()} <span className="text-xs font-normal text-slate-400">ข้อ</span>
-            </h3>
-          </div>
-
-          {/* Card 3: Attempts */}
-          <div className="bg-white border border-slate-200/80 rounded-3xl p-5 shadow-xs">
-            <div className="w-10 h-10 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center mb-3">
-              <BarChart3 className="w-5 h-5" />
-            </div>
-            <p className="text-xs text-slate-400 font-bold">รอบการสอบที่บันทึก</p>
-            <h3 className="text-2xl sm:text-3xl font-black text-slate-900 mt-1">
-              {data.totalAttempts.toLocaleString()} <span className="text-xs font-normal text-slate-400">รอบ</span>
-            </h3>
-          </div>
-
-          {/* Card 4: Reports */}
-          <div className="bg-white border border-slate-200/80 rounded-3xl p-5 shadow-xs">
-            <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mb-3">
-              <Flag className="w-5 h-5" />
-            </div>
-            <p className="text-xs text-slate-400 font-bold">ข้อสอบที่ถูกแจ้งผิด</p>
-            <h3 className="text-2xl sm:text-3xl font-black text-amber-600 mt-1">
-              {data.reportedCount.toLocaleString()} <span className="text-xs font-normal text-slate-400">รายการ</span>
-            </h3>
-          </div>
+        {/* Tab Switcher */}
+        <div className="flex bg-slate-100 rounded-2xl p-1 gap-1 max-w-xs">
+          <button
+            type="button"
+            onClick={() => setActiveTab("overview")}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-black transition-all cursor-pointer ${
+              activeTab === "overview"
+                ? "bg-white text-slate-900 shadow-sm"
+                : "text-slate-500 hover:text-slate-700"
+            }`}
+          >
+            <LayoutDashboard className="w-3.5 h-3.5" />
+            ภาพรวม
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("details")}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-black transition-all cursor-pointer ${
+              activeTab === "details"
+                ? "bg-white text-slate-900 shadow-sm"
+                : "text-slate-500 hover:text-slate-700"
+            }`}
+          >
+            <List className="w-3.5 h-3.5" />
+            รายละเอียด
+            {(data.reportedCount > 0 || data.supportTicketCount > 0) && (
+              <span className="ml-1 w-4 h-4 rounded-full bg-[#BD1B0B] text-white text-[10px] flex items-center justify-center">
+                {data.reportedCount + data.supportTicketCount}
+              </span>
+            )}
+          </button>
         </div>
 
-        {/* Reported Questions List */}
-        <div className="bg-white border border-slate-200/80 rounded-3xl p-5 sm:p-7 shadow-xs">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="text-base font-black text-slate-900">
-                รายการข้อสอบที่ผู้สอบแจ้งข้อผิดพลาดล่าสุด
-              </h3>
-              <p className="text-xs text-slate-400 font-medium">
-                ตรวจสอบและแก้ไขข้อสอบที่มีข้อผิดพลาดในคลัง
-              </p>
-            </div>
-            <span className="text-xs font-bold px-3 py-1 rounded-full bg-slate-100 text-slate-600">
-              {data.recentReports.length} รายการล่าสุด
-            </span>
-          </div>
-
-          {data.recentReports.length === 0 ? (
-            <div className="text-center py-10 text-slate-400 text-xs">
-              <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2 opacity-80" />
-              <p className="font-bold text-slate-700">ไม่มีรายการข้อผิดพลาดที่ค้างอยู่</p>
-              <p className="text-slate-400 mt-0.5">ข้อสอบในคลังมีความสมบูรณ์</p>
-            </div>
-          ) : (
-            <div className="divide-y divide-slate-100">
-              {data.recentReports.map((report: any) => (
-                <div key={report.id} className="py-3.5 first:pt-0 last:pb-0 space-y-1">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-bold text-slate-700">
-                      ข้อที่: #{report.questionId}
-                    </span>
-                    <span className="text-slate-400 text-[11px]">
-                      {new Date(report.createdAt).toLocaleString("th-TH")}
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-800 line-clamp-1">
-                    {report.questionText}
-                  </p>
-                  <p className="text-xs text-amber-700 font-medium bg-amber-50/70 px-2.5 py-1 rounded-xl">
-                    เหตุผลที่แจ้ง: {report.reason}
-                  </p>
+        {/* ===== TAB 1: OVERVIEW ===== */}
+        {activeTab === "overview" && (
+          <div className="space-y-6">
+            {/* 4 Stats Cards */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+              <div className="bg-white border border-slate-200/80 rounded-3xl p-5 shadow-xs">
+                <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mb-3">
+                  <Users className="w-5 h-5" />
                 </div>
-              ))}
+                <p className="text-xs text-slate-400 font-bold">ผู้ใช้งานทั้งหมด</p>
+                <h3 className="text-2xl sm:text-3xl font-black text-slate-900 mt-1">
+                  {data.totalUsers.toLocaleString()} <span className="text-xs font-normal text-slate-400">คน</span>
+                </h3>
+              </div>
+
+              <div className="bg-white border border-slate-200/80 rounded-3xl p-5 shadow-xs">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-3">
+                  <HelpCircle className="w-5 h-5" />
+                </div>
+                <p className="text-xs text-slate-400 font-bold">คลังข้อสอบทั้งหมด</p>
+                <h3 className="text-2xl sm:text-3xl font-black text-slate-900 mt-1">
+                  {data.totalQuestions.toLocaleString()} <span className="text-xs font-normal text-slate-400">ข้อ</span>
+                </h3>
+              </div>
+
+              <div className="bg-white border border-slate-200/80 rounded-3xl p-5 shadow-xs">
+                <div className="w-10 h-10 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center mb-3">
+                  <BarChart3 className="w-5 h-5" />
+                </div>
+                <p className="text-xs text-slate-400 font-bold">รอบการสอบที่บันทึก</p>
+                <h3 className="text-2xl sm:text-3xl font-black text-slate-900 mt-1">
+                  {data.totalAttempts.toLocaleString()} <span className="text-xs font-normal text-slate-400">รอบ</span>
+                </h3>
+              </div>
+
+              <div className="bg-white border border-slate-200/80 rounded-3xl p-5 shadow-xs">
+                <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mb-3">
+                  <Flag className="w-5 h-5" />
+                </div>
+                <p className="text-xs text-slate-400 font-bold">ข้อสอบที่ถูกแจ้งผิด</p>
+                <h3 className="text-2xl sm:text-3xl font-black text-amber-600 mt-1">
+                  {data.reportedCount.toLocaleString()} <span className="text-xs font-normal text-slate-400">รายการ</span>
+                </h3>
+              </div>
             </div>
-          )}
-        </div>
+
+            {/* Support Ticket Summary Card */}
+            <div className="bg-white border border-slate-200/80 rounded-3xl p-5 shadow-xs">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-red-50 text-[#BD1B0B] flex items-center justify-center">
+                    <MessageSquare className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-black text-slate-900">ร้องขอ / แจ้งเรื่อง</p>
+                    <p className="text-xs text-slate-400 font-medium">รอดำเนินการ</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="text-3xl font-black text-[#BD1B0B]">{data.supportTicketCount}</span>
+                  <span className="text-xs text-slate-400 ml-1">รายการ</span>
+                </div>
+              </div>
+              {data.supportTicketCount > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("details")}
+                  className="mt-4 w-full py-2.5 text-xs font-black text-[#BD1B0B] bg-red-50 hover:bg-red-100 rounded-xl transition-colors cursor-pointer"
+                >
+                  ดูรายละเอียดทั้งหมด →
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ===== TAB 2: DETAILS ===== */}
+        {activeTab === "details" && (
+          <div className="space-y-6">
+
+            {/* Support Tickets Section */}
+            <div className="bg-white border border-slate-200/80 rounded-3xl p-5 sm:p-7 shadow-xs">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                    <MessageSquare className="w-4.5 h-4.5 text-[#BD1B0B]" />
+                    ร้องขอ / แจ้งเรื่องจากผู้ใช้
+                  </h3>
+                  <p className="text-xs text-slate-400 font-medium">คำขอที่ผู้ใช้ส่งตรงถึงแอดมิน</p>
+                </div>
+                <span className="text-xs font-bold px-3 py-1 rounded-full bg-red-50 text-[#BD1B0B] border border-red-100">
+                  {data.recentTickets.length} รายการ
+                </span>
+              </div>
+
+              {data.recentTickets.length === 0 ? (
+                <div className="text-center py-8 text-slate-400 text-xs">
+                  <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2 opacity-80" />
+                  <p className="font-bold text-slate-700">ไม่มีคำร้องขอที่รอดำเนินการ</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-slate-100">
+                  {data.recentTickets.map((ticket: any) => (
+                    <div key={ticket.id} className="py-3.5 first:pt-0 last:pb-0 space-y-1">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-bold text-slate-700">{ticket.user?.email || "-"}</span>
+                        <span className="text-slate-400 text-[11px]">
+                          {new Date(ticket.createdAt).toLocaleString("th-TH")}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-800 leading-relaxed">{ticket.message}</p>
+                      <span className={`inline-block text-[11px] font-bold px-2 py-0.5 rounded-lg ${
+                        ticket.status === "PENDING"
+                          ? "bg-amber-50 text-amber-700"
+                          : "bg-emerald-50 text-emerald-700"
+                      }`}>
+                        {ticket.status === "PENDING" ? "รอดำเนินการ" : "ดำเนินการแล้ว"}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Reported Questions Section */}
+            <div className="bg-white border border-slate-200/80 rounded-3xl p-5 sm:p-7 shadow-xs">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                    <Flag className="w-4.5 h-4.5 text-amber-500" />
+                    รายการข้อสอบที่ผู้สอบแจ้งข้อผิดพลาด
+                  </h3>
+                  <p className="text-xs text-slate-400 font-medium">ตรวจสอบและแก้ไขข้อสอบในคลัง</p>
+                </div>
+                <span className="text-xs font-bold px-3 py-1 rounded-full bg-slate-100 text-slate-600">
+                  {data.recentReports.length} รายการ
+                </span>
+              </div>
+
+              {data.recentReports.length === 0 ? (
+                <div className="text-center py-8 text-slate-400 text-xs">
+                  <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2 opacity-80" />
+                  <p className="font-bold text-slate-700">ไม่มีรายการข้อผิดพลาดที่ค้างอยู่</p>
+                  <p className="text-slate-400 mt-0.5">ข้อสอบในคลังมีความสมบูรณ์</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-slate-100">
+                  {data.recentReports.map((report: any) => (
+                    <div key={report.id} className="py-3.5 first:pt-0 last:pb-0 space-y-1">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-bold text-slate-700">ข้อที่: #{report.questionId}</span>
+                        <span className="text-slate-400 text-[11px]">
+                          {new Date(report.createdAt).toLocaleString("th-TH")}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-800 line-clamp-1">{report.questionText}</p>
+                      <p className="text-xs text-amber-700 font-medium bg-amber-50/70 px-2.5 py-1 rounded-xl">
+                        เหตุผลที่แจ้ง: {report.reason}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+          </div>
+        )}
+
       </div>
     </div>
   );

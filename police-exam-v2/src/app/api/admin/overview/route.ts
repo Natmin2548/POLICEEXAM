@@ -22,13 +22,19 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Forbidden: Admin access required" }, { status: 403 });
     }
 
-    const [totalUsers, totalQuestions, totalAttempts, reportedCount, recentReports] = await Promise.all([
+    const [totalUsers, totalQuestions, totalAttempts, reportedCount, recentReports, supportTicketCount, recentTickets] = await Promise.all([
       prisma.user.count(),
       prisma.question.count(),
       prisma.quizAttempt.count(),
       prisma.reportedQuestion.count(),
       prisma.reportedQuestion.findMany({
-        take: 10,
+        take: 20,
+        orderBy: { createdAt: "desc" },
+        include: { user: { select: { email: true, fullName: true } } },
+      }),
+      prisma.supportTicket.count({ where: { status: "PENDING" } }),
+      prisma.supportTicket.findMany({
+        take: 20,
         orderBy: { createdAt: "desc" },
         include: { user: { select: { email: true, fullName: true } } },
       }),
@@ -40,6 +46,8 @@ export async function GET(request: Request) {
       totalAttempts,
       reportedCount,
       recentReports,
+      supportTicketCount,
+      recentTickets,
     });
   } catch (error: any) {
     console.error("Error in admin overview:", error);
