@@ -495,11 +495,8 @@ function ExamSessionContent() {
                         <div key={cat}>
                           <div className="flex items-center justify-between text-xs mb-1">
                             <span className="font-bold text-slate-700 truncate max-w-[55%]">{cat}</span>
-                            <span className="font-black">
-                              <span className="text-emerald-600">{correct} ถูก</span>
-                              <span className="text-slate-400 mx-1">/</span>
-                              <span className="text-red-500">{total - correct} ผิด</span>
-                              <span className="text-slate-400 ml-1">({pct}%)</span>
+                            <span className="font-black text-slate-800">
+                              ถูก <span className={pct >= 60 ? "text-emerald-600" : "text-[#BD1B0B]"}>{correct}</span>/{total}
                             </span>
                           </div>
                           <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
