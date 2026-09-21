@@ -16,13 +16,21 @@ import {
   MessageSquare,
   LayoutDashboard,
   List,
+  Award,
+  TrendingUp,
 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 
 interface AdminOverviewData {
   totalUsers: number;
+  newUsersToday: number;
+  newUsersThisWeek: number;
+  premiumUsers: number;
   totalQuestions: number;
+  totalExamSets: number;
   totalAttempts: number;
+  attemptsToday: number;
+  avgScore: number;
   reportedCount: number;
   recentReports: any[];
   supportTicketCount: number;
@@ -169,8 +177,8 @@ export default function AdminDashboardPage() {
         {/* ===== TAB 1: OVERVIEW ===== */}
         {activeTab === "overview" && (
           <div className="space-y-6">
-            {/* 4 Stats Cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+            {/* Row 1: User Stats */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="bg-white border border-slate-200/80 rounded-3xl p-5 shadow-xs">
                 <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mb-3">
                   <Users className="w-5 h-5" />
@@ -179,26 +187,61 @@ export default function AdminDashboardPage() {
                 <h3 className="text-2xl sm:text-3xl font-black text-slate-900 mt-1">
                   {data.totalUsers.toLocaleString()} <span className="text-xs font-normal text-slate-400">คน</span>
                 </h3>
+                <p className="text-xs text-slate-400 mt-1.5">
+                  <span className="text-emerald-600 font-bold">+{data.newUsersToday}</span> วันนี้ &nbsp;·&nbsp;
+                  <span className="text-blue-500 font-bold">+{data.newUsersThisWeek}</span> สัปดาห์นี้
+                </p>
               </div>
 
               <div className="bg-white border border-slate-200/80 rounded-3xl p-5 shadow-xs">
-                <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-3">
-                  <HelpCircle className="w-5 h-5" />
+                <div className="w-10 h-10 rounded-2xl bg-yellow-50 text-yellow-600 flex items-center justify-center mb-3">
+                  <Award className="w-5 h-5" />
                 </div>
-                <p className="text-xs text-slate-400 font-bold">คลังข้อสอบทั้งหมด</p>
-                <h3 className="text-2xl sm:text-3xl font-black text-slate-900 mt-1">
-                  {data.totalQuestions.toLocaleString()} <span className="text-xs font-normal text-slate-400">ข้อ</span>
+                <p className="text-xs text-slate-400 font-bold">ผู้ใช้ Premium</p>
+                <h3 className="text-2xl sm:text-3xl font-black text-yellow-600 mt-1">
+                  {data.premiumUsers.toLocaleString()} <span className="text-xs font-normal text-slate-400">คน</span>
                 </h3>
+                <p className="text-xs text-slate-400 mt-1.5">
+                  {data.totalUsers > 0 ? Math.round((data.premiumUsers / data.totalUsers) * 100) : 0}% ของผู้ใช้ทั้งหมด
+                </p>
               </div>
 
               <div className="bg-white border border-slate-200/80 rounded-3xl p-5 shadow-xs">
                 <div className="w-10 h-10 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center mb-3">
                   <BarChart3 className="w-5 h-5" />
                 </div>
-                <p className="text-xs text-slate-400 font-bold">รอบการสอบที่บันทึก</p>
+                <p className="text-xs text-slate-400 font-bold">รอบการสอบทั้งหมด</p>
                 <h3 className="text-2xl sm:text-3xl font-black text-slate-900 mt-1">
                   {data.totalAttempts.toLocaleString()} <span className="text-xs font-normal text-slate-400">รอบ</span>
                 </h3>
+                <p className="text-xs text-slate-400 mt-1.5">
+                  <span className="text-purple-600 font-bold">+{data.attemptsToday}</span> วันนี้
+                </p>
+              </div>
+
+              <div className="bg-white border border-slate-200/80 rounded-3xl p-5 shadow-xs">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-3">
+                  <TrendingUp className="w-5 h-5" />
+                </div>
+                <p className="text-xs text-slate-400 font-bold">คะแนนเฉลี่ยผู้ใช้</p>
+                <h3 className="text-2xl sm:text-3xl font-black text-emerald-600 mt-1">
+                  {data.avgScore}<span className="text-xs font-normal text-slate-400">%</span>
+                </h3>
+                <p className="text-xs text-slate-400 mt-1.5">จากทุกรอบการสอบ</p>
+              </div>
+            </div>
+
+            {/* Row 2: Content Stats */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-white border border-slate-200/80 rounded-3xl p-5 shadow-xs">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-3">
+                  <HelpCircle className="w-5 h-5" />
+                </div>
+                <p className="text-xs text-slate-400 font-bold">คลังข้อสอบ</p>
+                <h3 className="text-2xl sm:text-3xl font-black text-slate-900 mt-1">
+                  {data.totalQuestions.toLocaleString()} <span className="text-xs font-normal text-slate-400">ข้อ</span>
+                </h3>
+                <p className="text-xs text-slate-400 mt-1.5">ใน {data.totalExamSets} ชุดข้อสอบ</p>
               </div>
 
               <div className="bg-white border border-slate-200/80 rounded-3xl p-5 shadow-xs">
@@ -209,35 +252,35 @@ export default function AdminDashboardPage() {
                 <h3 className="text-2xl sm:text-3xl font-black text-amber-600 mt-1">
                   {data.reportedCount.toLocaleString()} <span className="text-xs font-normal text-slate-400">รายการ</span>
                 </h3>
+                {data.reportedCount > 0 && (
+                  <button type="button" onClick={() => setActiveTab("details")} className="text-xs text-amber-600 font-bold mt-1.5 cursor-pointer hover:underline">
+                    ดูรายละเอียด →
+                  </button>
+                )}
               </div>
-            </div>
 
-            {/* Support Ticket Summary Card */}
-            <div className="bg-white border border-slate-200/80 rounded-3xl p-5 shadow-xs">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-red-50 text-[#BD1B0B] flex items-center justify-center">
-                    <MessageSquare className="w-5 h-5" />
+              <div className="bg-white border border-slate-200/80 rounded-3xl p-5 shadow-xs col-span-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-red-50 text-[#BD1B0B] flex items-center justify-center">
+                      <MessageSquare className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-black text-slate-900">ร้องขอ / แจ้งเรื่อง</p>
+                      <p className="text-xs text-slate-400 font-medium">รอดำเนินการจากผู้ใช้</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-black text-slate-900">ร้องขอ / แจ้งเรื่อง</p>
-                    <p className="text-xs text-slate-400 font-medium">รอดำเนินการ</p>
+                  <div className="text-right">
+                    <span className="text-3xl font-black text-[#BD1B0B]">{data.supportTicketCount}</span>
+                    <span className="text-xs text-slate-400 ml-1">รายการ</span>
                   </div>
                 </div>
-                <div className="text-right">
-                  <span className="text-3xl font-black text-[#BD1B0B]">{data.supportTicketCount}</span>
-                  <span className="text-xs text-slate-400 ml-1">รายการ</span>
-                </div>
+                {data.supportTicketCount > 0 && (
+                  <button type="button" onClick={() => setActiveTab("details")} className="mt-3 w-full py-2.5 text-xs font-black text-[#BD1B0B] bg-red-50 hover:bg-red-100 rounded-xl transition-colors cursor-pointer">
+                    ดูรายละเอียดทั้งหมด →
+                  </button>
+                )}
               </div>
-              {data.supportTicketCount > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("details")}
-                  className="mt-4 w-full py-2.5 text-xs font-black text-[#BD1B0B] bg-red-50 hover:bg-red-100 rounded-xl transition-colors cursor-pointer"
-                >
-                  ดูรายละเอียดทั้งหมด →
-                </button>
-              )}
             </div>
           </div>
         )}

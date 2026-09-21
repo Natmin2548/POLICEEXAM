@@ -22,10 +22,36 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Forbidden: Admin access required" }, { status: 403 });
     }
 
-    const [totalUsers, totalQuestions, totalAttempts, reportedCount, recentReports, supportTicketCount, recentTickets] = await Promise.all([
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+
+    const weekStart = new Date();
+    weekStart.setDate(weekStart.getDate() - 7);
+    weekStart.setHours(0, 0, 0, 0);
+
+    const [
+      totalUsers,
+      newUsersToday,
+      newUsersThisWeek,
+      premiumUsers,
+      totalQuestions,
+      totalExamSets,
+      totalAttempts,
+      attemptsToday,
+      reportedCount,
+      recentReports,
+      supportTicketCount,
+      recentTickets,
+      avgScoreRaw,
+    ] = await Promise.all([
       prisma.user.count(),
+      prisma.user.count({ where: { createdAt: { gte: todayStart } } }),
+      prisma.user.count({ where: { createdAt: { gte: weekStart } } }),
+      prisma.user.count({ where: { premiumUntil: { gte: new Date() } } }),
       prisma.question.count(),
+      prisma.examSet.count(),
       prisma.quizAttempt.count(),
+      prisma.quizAttempt.count({ where: { createdAt: { gte: todayStart } } }),
       prisma.reportedQuestion.count(),
       prisma.reportedQuestion.findMany({
         take: 20,
@@ -38,12 +64,19 @@ export async function GET(request: Request) {
         orderBy: { createdAt: "desc" },
         include: { user: { select: { email: true, fullName: true } } },
       }),
+      prisma.quizAttempt.aggregate({ _avg: { scorePct: true } }),
     ]);
 
     return NextResponse.json({
       totalUsers,
+      newUsersToday,
+      newUsersThisWeek,
+      premiumUsers,
       totalQuestions,
+      totalExamSets,
       totalAttempts,
+      attemptsToday,
+      avgScore: Math.round(avgScoreRaw._avg.scorePct ?? 0),
       reportedCount,
       recentReports,
       supportTicketCount,
@@ -54,3 +87,4 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
