@@ -23,6 +23,7 @@ import {
 import { supabase } from "@/lib/supabaseClient";
 import type { User } from "@supabase/supabase-js";
 import { MobileBottomNav } from "@/components/navigation/MobileBottomNav";
+import SupportModal from "@/components/SupportModal";
 
 interface Recommendation {
   badge: string;
@@ -124,6 +125,7 @@ export default function HomePage() {
   const [activeTab, setActiveTab] = useState<"home" | "archive" | "rank">("home");
   const [stats, setStats] = useState<UserStats>(defaultStats);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showSupportModal, setShowSupportModal] = useState(false);
 
   useEffect(() => {
     // Load cached stats if available
@@ -486,13 +488,17 @@ export default function HomePage() {
 
             {/* 4 Feature Cards (Simple & Clean 2x2 on Mobile, 4 columns on PC) */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-              {/* Card 1: บีบอัดรูป */}
-              <div className="bg-white border border-slate-100 hover:border-slate-300 rounded-2xl p-4 sm:p-5 shadow-xs hover:shadow-md transition-all cursor-pointer">
-                <h3 className="text-base font-black text-slate-900 mb-0.5">
-                  บีบอัดรูป
+              {/* Card 1: ร้องขอ/แจ้งเรื่อง */}
+              <button
+                type="button"
+                onClick={() => setShowSupportModal(true)}
+                className="bg-white border border-slate-100 hover:border-red-200 rounded-2xl p-4 sm:p-5 shadow-xs hover:shadow-md transition-all cursor-pointer text-left w-full"
+              >
+                <h3 className="text-base font-black text-[#BD1B0B] mb-0.5">
+                  ร้องขอ
                 </h3>
-                <p className="text-xs text-slate-400 font-medium">ลดขนาดไฟล์</p>
-              </div>
+                <p className="text-xs text-slate-400 font-medium">แจ้งเรื่องแอดมิน</p>
+              </button>
 
               {/* Card 2: คลังรายบท */}
               <Link
@@ -811,6 +817,14 @@ export default function HomePage() {
 
       {/* Mobile Full-Width Bottom Nav */}
       <MobileBottomNav />
+
+      {/* Support Modal */}
+      {showSupportModal && (
+        <SupportModal
+          email={user?.email || ""}
+          onClose={() => setShowSupportModal(false)}
+        />
+      )}
     </div>
   );
 }
