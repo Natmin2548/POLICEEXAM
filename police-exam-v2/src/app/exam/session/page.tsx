@@ -474,6 +474,48 @@ function ExamSessionContent() {
               </p>
             </div>
 
+            {/* Subject Breakdown — Pretest only */}
+            {isTimedMode && examResult.detailedResults.length > 0 && (() => {
+              // Group by category
+              const catMap: Record<string, { correct: number; total: number }> = {};
+              examResult.detailedResults.forEach((r) => {
+                const cat = r.category || "อื่นๆ";
+                if (!catMap[cat]) catMap[cat] = { correct: 0, total: 0 };
+                catMap[cat].total += 1;
+                if (r.isCorrect) catMap[cat].correct += 1;
+              });
+              const rows = Object.entries(catMap);
+              return (
+                <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 mb-6 text-left">
+                  <p className="text-xs font-black text-slate-600 mb-3 uppercase tracking-wide">ผลรายวิชา</p>
+                  <div className="space-y-2">
+                    {rows.map(([cat, { correct, total }]) => {
+                      const pct = Math.round((correct / total) * 100);
+                      return (
+                        <div key={cat}>
+                          <div className="flex items-center justify-between text-xs mb-1">
+                            <span className="font-bold text-slate-700 truncate max-w-[55%]">{cat}</span>
+                            <span className="font-black">
+                              <span className="text-emerald-600">{correct} ถูก</span>
+                              <span className="text-slate-400 mx-1">/</span>
+                              <span className="text-red-500">{total - correct} ผิด</span>
+                              <span className="text-slate-400 ml-1">({pct}%)</span>
+                            </span>
+                          </div>
+                          <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
+                            <div
+                              className={`h-1.5 rounded-full transition-all ${pct >= 60 ? "bg-emerald-500" : "bg-[#BD1B0B]"}`}
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
+
             {/* Action Buttons */}
             <div className="space-y-3">
               <button
